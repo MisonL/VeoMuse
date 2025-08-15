@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Uploads and generated files
+uploads/
+generated/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/

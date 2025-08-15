@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeoMuse - 文字/图片生成视频</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        body.dark .container {
+            background: rgba(30, 30, 40, 0.95);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            color: white;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        body.dark .tabs {
+            background: #2d2d3a;
+            border-bottom: 1px solid #444;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        body.dark .tab {
+            color: #aaa;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #4b6cb7;
+            color: #4b6cb7;
+        }
+
+        body.dark .tab.active {
+            background: #3a3a4a;
+            color: #6b9cf8;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        body.dark label {
+            color: #ddd;
+        }
+
+        textarea, input[type="file"], input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            background: white;
+            color: #333;
+        }
+
+        body.dark textarea, 
+        body.dark input[type="file"], 
+        body.dark input[type="text"],
+        body.dark input[type="password"],
+        body.dark select {
+            background: #3a3a4a;
+            border: 2px solid #444;
+            color: #ddd;
+        }
+
+        textarea:focus, input[type="file"]:focus, input[type="text"]:focus, input[type="password"]:focus, select:focus {
+            outline: none;
+            border-color: #4b6cb7;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(75, 108, 183, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(75, 108, 183, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(90deg, #6c757d 0%, #495057 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(90deg, #ffc107 0%, #e0a800 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(90deg, #28a745 0%, #1e7e34 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(90deg, #17a2b8 0%, #117a8b 100%);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            display: none;
+        }
+
+        body.dark .result {
+            background: #2d2d3a;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result video {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            display: none;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4b6cb7;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        body.dark .spinner {
+            border: 4px solid #333;
+            border-top: 4px solid #6b9cf8;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .preview {
+            margin-top: 20px;
+            max-width: 300px;
+        }
+
+        .preview img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        body.dark .footer {
+            color: #aaa;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            background: #4caf50;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: #f44336;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        body.dark .progress-bar {
+            background-color: #444;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #4b6cb7, #182848);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        body.dark .progress {
+            background: linear-gradient(90deg, #6b9cf8, #2a5298);
+        }
+
+        .status-text {
+            text-align: center;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        body.dark .status-text {
+            color: #ddd;
+        }
+
+        .api-key-section {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        body.dark .api-key-section {
+            background: #343a40;
+        }
+
+        .api-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        body.dark .api-warning {
+            background: #332e1d;
+            border: 1px solid #554d2d;
+            color: #d4c285;
+        }
+
+        .transcode-options {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .transcode-option {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .video-actions .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .conversion-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+        }
+
+        body.dark .conversion-section {
+            background: #343a40;
+        }
+
+        .conversion-options {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .conversion-option {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .conversion-preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: #d4edda;
+            border-radius: 10px;
+            display: none;
+        }
+
+        body.dark .conversion-preview {
+            background: #2d483d;
+        }
+
+        .conversion-preview.show {
+            display: block;
+        }
+
+        .transcode-progress {
+            margin: 15px 0;
+            display: none;
+        }
+
+        .transcode-progress.show {
+            display: block;
+        }
+
+        .model-selection {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .model-option {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .optimize-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .optimize-section .btn {
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+
+        .optimized-prompt {
+            background: #d4edda;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        body.dark .optimized-prompt {
+            background: #2d483d;
+        }
+
+        .optimized-prompt.show {
+            display: block;
+        }
+
+        .api-docs {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        body.dark .api-docs {
+            background: #2d2d3a;
+        }
+
+        .api-docs h3 {
+            margin: 15px 0 10px 0;
+            color: #333;
+        }
+
+        body.dark .api-docs h3 {
+            color: #ddd;
+        }
+
+        .api-docs h4 {
+            margin: 10px 0 5px 0;
+            color: #444;
+        }
+
+        body.dark .api-docs h4 {
+            color: #ccc;
+        }
+
+        .api-docs pre {
+            background: #e9ecef;
+            border-radius: 5px;
+            padding: 10px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+
+        body.dark .api-docs pre {
+            background: #3a3a4a;
+        }
+
+        .api-docs code {
+            font-family: 'Courier New', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tab-content {
+                padding: 20px;
+            }
+            
+            .transcode-options, .conversion-options, .model-selection {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="theme-toggle" id="theme-toggle">🌙</button>
+            <h1>VeoMuse</h1>
+            <p>使用Gemini Veo模型将文字或图片生成视频</p>
+        </div>
+        
+        <div class="api-warning">
+            <strong>重要提示：</strong>Gemini Veo模型目前仅在付费层级可用，免费层级的API密钥无法使用此功能。您需要一个有效的付费API密钥才能生成视频。
+        </div>
+        
+        <div class="api-key-section">
+            <div class="form-group">
+                <label for="api-key">临时API密钥 (非持久化):</label>
+                <input type="password" id="api-key" placeholder="输入您的Gemini API密钥以临时使用">
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="text">文字生成视频</div>
+            <div class="tab" data-tab="image">图片生成视频</div>
+            <div class="tab" data-tab="api">API文档</div>
+        </div>
+        
+        <div class="tab-content active" id="text-content">
+            <div class="form-group">
+                <label for="text-input">输入文字描述:</label>
+                <textarea id="text-input" placeholder="请输入您想要生成视频的文字描述，越详细越好...例如：广角镜头：一只可爱的雪豹在冬季森林中欢快地跳跃，场景中有圆润的雪树和缓缓飘落的雪花。"></textarea>
+            </div>
+            
+            <div class="optimize-section">
+                <button id="optimize-text-btn" class="btn btn-info">AI优化提示词</button>
+                <select id="optimize-model-text">
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                </select>
+            </div>
+            
+            <div class="optimized-prompt" id="optimized-text-prompt">
+                <h4>优化后的提示词:</h4>
+                <p id="optimized-text-content"></p>
+            </div>
+            
+            <div class="form-group">
+                <label for="negative-prompt-text">负面提示 (可选):</label>
+                <input type="text" id="negative-prompt-text" placeholder="描述您不希望在视频中出现的内容，例如：卡通、低质量、模糊">
+            </div>
+            
+            <div class="model-selection">
+                <div class="model-option">
+                    <label for="video-model-text">视频生成模型:</label>
+                    <select id="video-model-text">
+                        <option value="veo-3.0-generate-preview">Veo 3.0 (Preview)</option>
+                        <option value="veo-3.0-fast-generate-preview">Veo 3.0 Fast (Preview)</option>
+                        <option value="veo-2.0-generate-001">Veo 2.0</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button id="generate-text-btn" class="btn">生成视频</button>
+        </div>
+        
+        <div class="tab-content" id="image-content">
+            <div class="form-group">
+                <label for="image-input">上传图片:</label>
+                <input type="file" id="image-input" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label for="image-prompt">图片描述:</label>
+                <textarea id="image-prompt" placeholder="详细描述您希望如何基于这张图片生成视频...例如：图片中的雪豹开始在雪地中奔跑，雪花飞舞。"></textarea>
+            </div>
+            
+            <div class="optimize-section">
+                <button id="optimize-image-btn" class="btn btn-info">AI优化提示词</button>
+                <select id="optimize-model-image">
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                </select>
+            </div>
+            
+            <div class="optimized-prompt" id="optimized-image-prompt">
+                <h4>优化后的提示词:</h4>
+                <p id="optimized-image-content"></p>
+            </div>
+            
+            <div class="form-group">
+                <label for="negative-prompt-image">负面提示 (可选):</label>
+                <input type="text" id="negative-prompt-image" placeholder="描述您不希望在视频中出现的内容">
+            </div>
+            
+            <div class="model-selection">
+                <div class="model-option">
+                    <label for="video-model-image">视频生成模型:</label>
+                    <select id="video-model-image">
+                        <option value="veo-3.0-generate-preview">Veo 3.0 (Preview)</option>
+                        <option value="veo-3.0-fast-generate-preview">Veo 3.0 Fast (Preview)</option>
+                        <option value="veo-2.0-generate-001">Veo 2.0</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="image-preview" class="preview"></div>
+            <button id="generate-image-btn" class="btn">生成视频</button>
+        </div>
+        
+        <div class="tab-content" id="api-content">
+            <h2>API文档</h2>
+            <p>以下是Veomuse应用程序提供的API接口文档。</p>
+            
+            <div class="api-docs">
+                <h3>基础信息</h3>
+                <p><strong>Base URL:</strong> <code>http://localhost:3000/api</code></p>
+                <p><strong>认证:</strong> 所有API端点都需要有效的Gemini API密钥。您可以通过环境变量配置或在请求中提供API密钥。</p>
+                
+                <h3>模型接口</h3>
+                <h4>获取可用模型</h4>
+                <p><strong>Endpoint:</strong> <code>GET /models</code></p>
+                <p><strong>查询参数:</strong></p>
+                <ul>
+                    <li><code>apiKey</code> (可选): 您的Gemini API密钥</li>
+                </ul>
+                <p><strong>响应示例:</strong></p>
+                <pre><code>{
+  "videoModels": [
+    {
+      "id": "veo-3.0-generate-preview",
+      "name": "Veo 3.0 (Preview)"
+    }
+  ],
+  "optimizationModels": [
+    {
+      "id": "gemini-2.5-pro",
+      "name": "Gemini 2.5 Pro"
+    }
+  ]
+}</code></pre>
+                
+                <h3>文字生成视频</h3>
+                <h4>生成视频</h4>
+                <p><strong>Endpoint:</strong> <code>POST /text-to-video</code></p>
+                <p><strong>请求体:</strong></p>
+                <pre><code>{
+  "text": "A beautiful sunset over the ocean",
+  "negativePrompt": "blurry, low quality",
+  "apiKey": "your-api-key",
+  "model": "veo-3.0-generate-preview",
+  "optimize": true,
+  "socketId": "socket-id-for-realtime-updates"
+}</code></pre>
+                <p><strong>响应示例:</strong></p>
+                <pre><code>{
+  "success": true,
+  "message": "Video generation started",
+  "operationName": "operations/...",
+  "usedApiKey": "used-api-key",
+  "usedModel": "veo-3.0-generate-preview"
+}</code></pre>
+                
+                <h3>图片生成视频</h3>
+                <h4>生成视频</h4>
+                <p><strong>Endpoint:</strong> <code>POST /image-to-video</code></p>
+                <p><strong>表单数据:</strong></p>
+                <ul>
+                    <li><code>image</code>: 要上传的图片文件</li>
+                    <li><code>prompt</code>: 如何生成视频的描述</li>
+                    <li><code>negativePrompt</code>: 要避免的元素</li>
+                    <li><code>apiKey</code>: 您的API密钥</li>
+                    <li><code>model</code>: 使用的模型</li>
+                    <li><code>optimize</code>: 是否优化提示词</li>
+                    <li><code>socketId</code>: 实时更新的Socket ID</li>
+                </ul>
+                <p><strong>响应示例:</strong></p>
+                <pre><code>{
+  "success": true,
+  "message": "Video generation started",
+  "operationName": "operations/...",
+  "usedApiKey": "used-api-key",
+  "usedModel": "veo-3.0-generate-preview"
+}</code></pre>
+                
+                <h3>提示词优化</h3>
+                <h4>优化提示词</h4>
+                <p><strong>Endpoint:</strong> <code>POST /optimize-prompt</code></p>
+                <p><strong>请求体:</strong></p>
+                <pre><code>{
+  "prompt": "A cat playing",
+  "apiKey": "your-api-key",
+  "model": "gemini-2.5-pro"
+}</code></pre>
+                <p><strong>响应示例:</strong></p>
+                <pre><code>{
+  "success": true,
+  "optimizedPrompt": "A playful orange cat chasing a ball of yarn in a sunlit living room"
+}</code></pre>
+                
+                <h3>操作状态</h3>
+                <h4>检查操作状态</h4>
+                <p><strong>Endpoint:</strong> <code>GET /operation/:operationName</code></p>
+                <p><strong>查询参数:</strong></p>
+                <ul>
+                    <li><code>apiKey</code>: 您的API密钥</li>
+                    <li><code>socketId</code>: 实时更新的Socket ID</li>
+                </ul>
+                <p><strong>响应示例:</strong></p>
+                <pre><code>{
+  "done": false,
+  "response": {
+    "generateVideoResponse": {
+      "generatedSamples": [
+        {
+          "video": {
+            "uri": "https://..."
+          }
+        }
+      ]
+    }
+  }
+}</code></pre>
+                
+                <h3>视频管理</h3>
+                <h4>下载生成的视频</h4>
+                <p><strong>Endpoint:</strong> <code>POST /download-video</code></p>
+                <p><strong>请求体:</strong></p>
+                <pre><code>{
+  "videoUri": "https://...",
+  "apiKey": "your-api-key"
+}</code></pre>
+                <p><strong>响应示例:</strong></p>
+                <pre><code>{
+  "success": true,
+  "message": "Video downloaded successfully",
+  "videoPath": "generated/video-12345.mp4"
+}</code></pre>
+                
+                <h4>转码视频</h4>
+                <p><strong>Endpoint:</strong> <code>POST /transcode-video</code></p>
+                <p><strong>请求体:</strong></p>
+                <pre><code>{
+  "inputPath": "generated/video-12345.mp4",
+  "format": "webm",
+  "resolution": "720p",
+  "fps": 30,
+  "socketId": "socket-id-for-realtime-updates"
+}</code></pre>
+                <p><strong>响应示例:</strong></p>
+                <pre><code>{
+  "success": true,
+  "message": "Video transcoded successfully",
+  "videoPath": "generated/transcoded-12345_720p_30fps.webm"
+}</code></pre>
+                
+                <h3>文件访问</h3>
+                <p><strong>生成的视频:</strong> <code>/generated/:filename</code></p>
+                <p><strong>上传的图片:</strong> <code>/uploads/:filename</code></p>
+                
+                <h3>健康检查</h3>
+                <p><strong>Endpoint:</strong> <code>GET /health</code></p>
+                <p><strong>响应示例:</strong></p>
+                <pre><code>{
+  "status": "ok",
+  "timestamp": "2023-01-01T00:00:00.000Z",
+  "gpuSupport": {
+    "nvidia": true,
+    "intel": true,
+    "amd": false
+  }
+}</code></pre>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="status-text" id="status-text">正在初始化视频生成...</div>
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+            <p>正在生成视频，请稍候...</p>
+            <p style="font-size: 0.9rem; margin-top: 10px;">Gemini Veo模型正在处理您的请求</p>
+        </div>
+        
+        <div class="result" id="result">
+            <h3>生成完成!</h3>
+            <div id="video-container"></div>
+            
+            <div class="conversion-section">
+                <h3>视频转换</h3>
+                <div class="conversion-options">
+                    <div class="conversion-option">
+                        <label for="convert-format">目标格式:</label>
+                        <select id="convert-format">
+                            <option value="mp4">MP4</option>
+                            <option value="webm">WebM</option>
+                            <option value="mov">MOV</option>
+                        </select>
+                    </div>
+                    <div class="conversion-option">
+                        <label for="convert-resolution">分辨率:</label>
+                        <select id="convert-resolution">
+                            <option value="">保持原分辨率</option>
+                            <option value="480p">480p</option>
+                            <option value="720p">720p</option>
+                            <option value="1080p">1080p</option>
+                        </select>
+                    </div>
+                    <div class="conversion-option">
+                        <label for="convert-fps">帧率:</label>
+                        <select id="convert-fps">
+                            <option value="">保持原帧率</option>
+                            <option value="24">24 FPS</option>
+                            <option value="30">30 FPS</option>
+                            <option value="60">60 FPS</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="convert-btn" class="btn btn-warning">转换视频</button>
+                
+                <div class="transcode-progress" id="transcode-progress">
+                    <div class="status-text" id="transcode-status-text">正在初始化视频转换...</div>
+                    <div class="progress-bar">
+                        <div class="progress" id="transcode-progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="conversion-preview" id="conversion-preview">
+                <h3>转换完成!</h3>
+                <div id="converted-video-container"></div>
+                <button id="download-converted-btn" class="btn btn-success" style="margin-top: 15px;">下载转换后的视频</button>
+            </div>
+            
+            <div class="video-actions">
+                <button id="download-btn" class="btn">下载原始视频</button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 VeoMuse - 文字/图片生成视频工具 | 基于Google Gemini Veo模型</p>
+            <p style="font-size: 0.8rem; margin-top: 10px;">注意：Gemini Veo模型目前仅在付费层级可用</p>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // 初始化Socket.IO连接
+        const socket = io();
+        let socketId = socket.id;
+        
+        // 存储优化后的提示词
+        let optimizedTextPrompt = null;
+        let optimizedImagePrompt = null;
+        
+        // 主题切换功能
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        
+        // 检查本地存储的主题设置
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.classList.add('dark');
+            themeToggle.textContent = '☀️';
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark');
+            const isDark = body.classList.contains('dark');
+            themeToggle.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+        
+        // Tab切换功能
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有active类
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                
+                // 添加active类到当前tab
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(`${tabId}-content`).classList.add('active');
+            });
+        });
+        
+        // 图片预览功能
+        const imageInput = document.getElementById('image-input');
+        const imagePreview = document.getElementById('image-preview');
+        
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.innerHTML = `<img src="${e.target.result}" alt="预览图片">`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.innerHTML = '';
+            }
+        });
+        
+        // 点击预览图片查看大图
+        imagePreview.addEventListener('click', function(e) {
+            if (e.target.tagName === 'IMG') {
+                // 创建模态框显示大图
+                const modal = document.createElement('div');
+                modal.style.position = 'fixed';
+                modal.style.top = '0';
+                modal.style.left = '0';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                modal.style.display = 'flex';
+                modal.style.justifyContent = 'center';
+                modal.style.alignItems = 'center';
+                modal.style.zIndex = '2000';
+                modal.style.cursor = 'pointer';
+                
+                const img = document.createElement('img');
+                img.src = e.target.src;
+                img.style.maxWidth = '90%';
+                img.style.maxHeight = '90%';
+                img.style.borderRadius = '10px';
+                
+                modal.appendChild(img);
+                document.body.appendChild(modal);
+                
+                // 点击模态框关闭
+                modal.addEventListener('click', function() {
+                    document.body.removeChild(modal);
+                });
+            }
+        });
+        
+        // 显示通知
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification' + (isError ? ' error' : '');
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 更新进度显示
+        function updateProgress(text, percent) {
+            document.getElementById('status-text').textContent = text;
+            document.getElementById('progress').style.width = percent + '%';
+        }
+        
+        // 更新转换进度显示
+        function updateTranscodeProgress(text, percent) {
+            document.getElementById('transcode-status-text').textContent = text;
+            document.getElementById('transcode-progress-bar').style.width = percent + '%';
+        }
+        
+        // 显示加载状态
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('result').classList.remove('show');
+            updateProgress('正在初始化视频生成...', 0);
+        }
+        
+        // 隐藏加载状态
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+        
+        // 显示转换进度
+        function showTranscodeProgress() {
+            document.getElementById('transcode-progress').classList.add('show');
+            updateTranscodeProgress('正在初始化视频转换...', 0);
+        }
+        
+        // 隐藏转换进度
+        function hideTranscodeProgress() {
+            document.getElementById('transcode-progress').classList.remove('show');
+        }
+        
+        // 显示优化后的提示词
+        function showOptimizedPrompt(content, isImage = false) {
+            const promptElement = isImage ? 
+                document.getElementById('optimized-image-prompt') : 
+                document.getElementById('optimized-text-prompt');
+            const contentElement = isImage ? 
+                document.getElementById('optimized-image-content') : 
+                document.getElementById('optimized-text-content');
+            
+            contentElement.textContent = content;
+            promptElement.classList.add('show');
+        }
+        
+        // 隐藏优化后的提示词
+        function hideOptimizedPrompt(isImage = false) {
+            const promptElement = isImage ? 
+                document.getElementById('optimized-image-prompt') : 
+                document.getElementById('optimized-text-prompt');
+            promptElement.classList.remove('show');
+        }
+        
+        // 显示结果
+        function showResult(videoPath) {
+            hideLoading();
+            
+            const videoContainer = document.getElementById('video-container');
+            videoContainer.innerHTML = `
+                <video controls>
+                    <source src="${videoPath}" type="video/mp4">
+                    您的浏览器不支持视频播放。
+                </video>
+            `;
+            
+            // 隐藏转换预览和进度
+            document.getElementById('conversion-preview').classList.remove('show');
+            hideTranscodeProgress();
+            
+            // 保存视频路径到下载按钮
+            document.getElementById('download-btn').dataset.videoUrl = videoPath;
+            
+            document.getElementById('result').classList.add('show');
+        }
+        
+        // 显示转换结果
+        function showConvertedResult(videoPath) {
+            const videoContainer = document.getElementById('converted-video-container');
+            videoContainer.innerHTML = `
+                <video controls>
+                    <source src="${videoPath}" type="video/mp4">
+                    您的浏览器不支持视频播放。
+                </video>
+            `;
+            
+            // 保存转换后的视频路径到下载按钮
+            document.getElementById('download-converted-btn').dataset.videoUrl = videoPath;
+            
+            // 显示转换预览
+            document.getElementById('conversion-preview').classList.add('show');
+        }
+        
+        // 获取API密钥
+        function getApiKey() {
+            const tempApiKey = document.getElementById('api-key').value.trim();
+            return tempApiKey || null;
+        }
+        
+        // Socket.IO事件监听
+        socket.on('transcodeProgress', function(data) {
+            updateTranscodeProgress(data.message, data.percent);
+        });
+        
+        socket.on('transcodeComplete', function(data) {
+            showNotification(data.message);
+            hideTranscodeProgress();
+        });
+        
+        socket.on('transcodeError', function(data) {
+            showNotification(data.message, true);
+            hideTranscodeProgress();
+        });
+        
+        // 轮询操作状态
+        async function pollOperationStatus(operationName, apiKey) {
+            try {
+                let progress = 10;
+                updateProgress('视频生成已启动...', progress);
+                
+                while (true) {
+                    // 每10秒检查一次状态
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+                    
+                    const response = await fetch(`/api/operation/${operationName}?apiKey=${encodeURIComponent(apiKey)}`);
+                    const data = await response.json();
+                    
+                    if (data.done) {
+                        // 生成完成
+                        if (data.error) {
+                            throw new Error('视频生成失败: ' + data.error.message);
+                        }
+                        
+                        // 获取视频URI
+                        const videoUri = data.response.generateVideoResponse.generatedSamples[0].video.uri;
+                        
+                        // 下载视频到服务器
+                        updateProgress('正在下载视频...', 90);
+                        
+                        const downloadResponse = await fetch('/api/download-video', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ videoUri, apiKey })
+                        });
+                        
+                        const downloadData = await downloadResponse.json();
+                        
+                        if (downloadData.success) {
+                            showResult('/' + downloadData.videoPath);
+                            showNotification('视频生成成功!');
+                        } else {
+                            throw new Error(downloadData.error || '下载视频失败');
+                        }
+                        
+                        return;
+                    }
+                    
+                    // 更新进度（模拟）
+                    progress = Math.min(progress + 5, 80);
+                    updateProgress('视频生成中，请耐心等待...', progress);
+                }
+            } catch (error) {
+                hideLoading();
+                showNotification('检查视频生成状态时出错: ' + error.message, true);
+            }
+        }
+        
+        // 从API获取模型列表
+        async function loadModels() {
+            try {
+                const apiKey = getApiKey();
+                const queryParams = apiKey ? `?apiKey=${encodeURIComponent(apiKey)}` : '';
+                
+                const response = await fetch(`/api/models${queryParams}`);
+                const models = await response.json();
+                
+                // 更新优化模型下拉列表
+                const optimizeModelText = document.getElementById('optimize-model-text');
+                const optimizeModelImage = document.getElementById('optimize-model-image');
+                
+                // 清空现有选项
+                optimizeModelText.innerHTML = '';
+                optimizeModelImage.innerHTML = '';
+                
+                // 添加新选项
+                models.optimizationModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.name;
+                    optimizeModelText.appendChild(option.cloneNode(true));
+                    optimizeModelImage.appendChild(option.cloneNode(true));
+                });
+                
+                // 设置默认选中项
+                if (models.optimizationModels.length > 0) {
+                    optimizeModelText.value = models.optimizationModels[0].id;
+                    optimizeModelImage.value = models.optimizationModels[0].id;
+                }
+                
+                // 更新视频模型下拉列表
+                const videoModelText = document.getElementById('video-model-text');
+                const videoModelImage = document.getElementById('video-model-image');
+                
+                // 清空现有选项
+                videoModelText.innerHTML = '';
+                videoModelImage.innerHTML = '';
+                
+                // 添加新选项
+                models.videoModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.name;
+                    videoModelText.appendChild(option.cloneNode(true));
+                    videoModelImage.appendChild(option.cloneNode(true));
+                });
+                
+                // 设置默认选中项
+                if (models.videoModels.length > 0) {
+                    videoModelText.value = models.videoModels[0].id;
+                    videoModelImage.value = models.videoModels[0].id;
+                }
+            } catch (error) {
+                console.error('Failed to load models:', error);
+                showNotification('加载模型列表失败: ' + error.message, true);
+            }
+        }
+        
+        // 优化提示词（文字）
+        const optimizeTextBtn = document.getElementById('optimize-text-btn');
+        optimizeTextBtn.addEventListener('click', async () => {
+            const textInput = document.getElementById('text-input');
+            const text = textInput.value.trim();
+            const apiKey = getApiKey();
+            const model = document.getElementById('optimize-model-text').value;
+            
+            if (!text) {
+                showNotification('请输入文字描述', true);
+                return;
+            }
+            
+            if (!apiKey) {
+                showNotification('请提供API密钥', true);
+                return;
+            }
+            
+            try {
+                showNotification('正在优化提示词...');
+                
+                const response = await fetch('/api/optimize-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt: text, apiKey, model })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    optimizedTextPrompt = data.optimizedPrompt;
+                    showOptimizedPrompt(data.optimizedPrompt, false);
+                    showNotification('提示词优化完成!');
+                } else {
+                    throw new Error(data.error || '优化失败');
+                }
+            } catch (error) {
+                showNotification('优化提示词时出错: ' + error.message, true);
+            }
+        });
+        
+        // 优化提示词（图片）
+        const optimizeImageBtn = document.getElementById('optimize-image-btn');
+        optimizeImageBtn.addEventListener('click', async () => {
+            const imagePrompt = document.getElementById('image-prompt');
+            const prompt = imagePrompt.value.trim();
+            const apiKey = getApiKey();
+            const model = document.getElementById('optimize-model-image').value;
+            
+            if (!prompt) {
+                showNotification('请输入图片描述', true);
+                return;
+            }
+            
+            if (!apiKey) {
+                showNotification('请提供API密钥', true);
+                return;
+            }
+            
+            try {
+                showNotification('正在优化提示词...');
+                
+                const response = await fetch('/api/optimize-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt: prompt, apiKey, model })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    optimizedImagePrompt = data.optimizedPrompt;
+                    showOptimizedPrompt(data.optimizedPrompt, true);
+                    showNotification('提示词优化完成!');
+                } else {
+                    throw new Error(data.error || '优化失败');
+                }
+            } catch (error) {
+                showNotification('优化提示词时出错: ' + error.message, true);
+            }
+        });
+        
+        // 文字生成视频
+        const generateTextBtn = document.getElementById('generate-text-btn');
+        generateTextBtn.addEventListener('click', async () => {
+            const textInput = document.getElementById('text-input');
+            const negativePromptInput = document.getElementById('negative-prompt-text');
+            const text = optimizedTextPrompt || textInput.value.trim();
+            const negativePrompt = negativePromptInput.value.trim();
+            const apiKey = getApiKey();
+            const model = document.getElementById('video-model-text').value;
+            
+            if (!text) {
+                showNotification('请输入文字描述', true);
+                return;
+            }
+            
+            if (!apiKey) {
+                showNotification('请提供API密钥', true);
+                return;
+            }
+            
+            // 显示加载状态
+            showLoading();
+            
+            try {
+                const requestBody = { 
+                    text, 
+                    apiKey, 
+                    model,
+                    optimize: false // 我们已经手动优化过了
+                };
+                if (negativePrompt) {
+                    requestBody.negativePrompt = negativePrompt;
+                }
+                
+                const response = await fetch('/api/text-to-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 开始轮询操作状态
+                    pollOperationStatus(data.operationName, data.usedApiKey || apiKey);
+                } else {
+                    throw new Error(data.error || '生成失败');
+                }
+            } catch (error) {
+                hideLoading();
+                showNotification('生成视频时出错: ' + error.message, true);
+            }
+        });
+        
+        // 图片生成视频
+        const generateImageBtn = document.getElementById('generate-image-btn');
+        generateImageBtn.addEventListener('click', async () => {
+            const imageInput = document.getElementById('image-input');
+            const imagePrompt = document.getElementById('image-prompt');
+            const negativePromptInput = document.getElementById('negative-prompt-image');
+            const file = imageInput.files[0];
+            const prompt = optimizedImagePrompt || imagePrompt.value.trim();
+            const apiKey = getApiKey();
+            const model = document.getElementById('video-model-image').value;
+            
+            if (!file) {
+                showNotification('请上传一张图片', true);
+                return;
+            }
+            
+            const negativePrompt = negativePromptInput.value.trim();
+            
+            if (!prompt) {
+                showNotification('请输入图片描述', true);
+                return;
+            }
+            
+            if (!apiKey) {
+                showNotification('请提供API密钥', true);
+                return;
+            }
+            
+            // 显示加载状态
+            showLoading();
+            
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('prompt', prompt);
+                formData.append('apiKey', apiKey);
+                formData.append('model', model);
+                formData.append('optimize', false); // 我们已经手动优化过了
+                if (negativePrompt) {
+                    formData.append('negativePrompt', negativePrompt);
+                }
+                
+                const response = await fetch('/api/image-to-video', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 开始轮询操作状态
+                    pollOperationStatus(data.operationName, data.usedApiKey || apiKey);
+                } else {
+                    throw new Error(data.error || '生成失败');
+                }
+            } catch (error) {
+                hideLoading();
+                showNotification('生成视频时出错: ' + error.message, true);
+            }
+        });
+        
+        // 视频转换功能
+        const convertBtn = document.getElementById('convert-btn');
+        convertBtn.addEventListener('click', async () => {
+            const videoUrl = document.getElementById('download-btn').dataset.videoUrl;
+            const format = document.getElementById('convert-format').value;
+            const resolution = document.getElementById('convert-resolution').value;
+            const fps = document.getElementById('convert-fps').value;
+            
+            if (!videoUrl) {
+                showNotification('没有可转换的视频', true);
+                return;
+            }
+            
+            // 显示转换进度
+            showTranscodeProgress();
+            updateTranscodeProgress('正在开始视频转换...', 0);
+            
+            try {
+                // 提取视频路径（移除前面的斜杠）
+                const videoPath = videoUrl.startsWith('/') ? videoUrl.substring(1) : videoUrl;
+                
+                const response = await fetch('/api/transcode-video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        inputPath: videoPath,
+                        format: format,
+                        resolution: resolution,
+                        fps: fps ? parseInt(fps) : null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateTranscodeProgress('转换完成', 100);
+                    setTimeout(() => {
+                        hideTranscodeProgress();
+                        showConvertedResult('/' + data.videoPath);
+                        showNotification('视频转换成功!');
+                    }, 500);
+                } else {
+                    throw new Error(data.error || '转换失败');
+                }
+            } catch (error) {
+                hideTranscodeProgress();
+                showNotification('转换视频时出错: ' + error.message, true);
+            }
+        });
+        
+        // 下载原始视频
+        const downloadBtn = document.getElementById('download-btn');
+        downloadBtn.addEventListener('click', () => {
+            const videoUrl = downloadBtn.dataset.videoUrl;
+            if (videoUrl) {
+                const a = document.createElement('a');
+                a.href = videoUrl;
+                a.download = 'generated-video.mp4';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        });
+        
+        // 下载转换后的视频
+        const downloadConvertedBtn = document.getElementById('download-converted-btn');
+        downloadConvertedBtn.addEventListener('click', () => {
+            const videoUrl = downloadConvertedBtn.dataset.videoUrl;
+            if (videoUrl) {
+                const a = document.createElement('a');
+                a.href = videoUrl;
+                // 根据格式设置文件扩展名
+                const format = document.getElementById('convert-format').value;
+                const ext = format === 'webm' ? '.webm' : format === 'mov' ? '.mov' : '.mp4';
+                a.download = `converted-video${ext}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        });
+        
+        // API密钥输入框变化时重新加载模型
+        document.getElementById('api-key').addEventListener('input', loadModels);
+        
+        // 页面加载时获取模型列表
+        window.addEventListener('load', loadModels);
+    </script>
+</body>
+</html>
