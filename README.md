@@ -1,4 +1,4 @@
-# VeoMuse
+<h1 align="center">VeoMuse</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js">
@@ -15,6 +15,10 @@
 
 <p align="center">
   <strong>使用Google Gemini Veo模型将文字或图片生成视频的Web应用程序</strong>
+</p>
+
+<p align="center">
+  <img src="https://github.com/MisonL/veomuse/blob/main/screenshot.png?raw=true" alt="VeoMuse界面截图" width="800">
 </p>
 
 ## 🌟 简介
