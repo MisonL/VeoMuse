@@ -38,11 +38,29 @@ jobs:
         
       - name: Build documentation
         run: |
+          # 创建构建目录
           mkdir -p docs/build
+          echo "📁 创建构建目录..."
+          
+          # 复制文档文件
+          echo "📋 复制README.md..."
           cp README.md docs/build/
+          
+          echo "📄 复制API文档..."
           cp docs/API_DOCUMENTATION.md docs/build/
-          if [ -d "image" ]; then cp -r image docs/build/; fi
-          if [ -f "screenshot.png" ]; then cp screenshot.png docs/build/; fi
+          
+          # 复制静态资源
+          if [ -d "image" ]; then 
+            echo "🖼️ 复制图片目录..."
+            cp -r image docs/build/
+          fi
+          
+          if [ -f "screenshot.png" ]; then 
+            echo "📷 复制截图..."
+            cp screenshot.png docs/build/
+          fi
+          
+          echo "✅ 文档构建完成"
           
       - name: Create index.html for GitHub Pages
         run: |
