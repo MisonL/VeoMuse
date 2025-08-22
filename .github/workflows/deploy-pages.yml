@@ -42,6 +42,17 @@ jobs:
           mkdir -p docs/build
           echo "📁 创建构建目录..."
           
+          # 检查文件是否存在
+          if [ ! -f "README.md" ]; then
+            echo "❌ README.md 文件不存在"
+            exit 1
+          fi
+          
+          if [ ! -f "docs/API_DOCUMENTATION.md" ]; then
+            echo "❌ docs/API_DOCUMENTATION.md 文件不存在"
+            exit 1
+          fi
+          
           # 复制文档文件
           echo "📋 复制README.md..."
           cp README.md docs/build/
@@ -61,6 +72,7 @@ jobs:
           fi
           
           echo "✅ 文档构建完成"
+          ls -la docs/build/
           
       - name: Create index.html for GitHub Pages
         run: |
