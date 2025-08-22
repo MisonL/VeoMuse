@@ -1,0 +1,2 @@
+# 这个文件确保generated目录被Git跟踪
+# 但目录中的生成文件会被.gitignore忽略

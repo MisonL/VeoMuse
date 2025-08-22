@@ -1,0 +1,196 @@
+# VeoMuse CI/CD 工作流
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # 代码质量检查
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        run: npm audit --audit-level high
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run test coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+
+  # 安全扫描
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # 构建Docker镜像
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: [lint-and-test, security-scan]
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # 部署到GitHub Packages
+  deploy-package:
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@misonl'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: |
+          # 创建发布包
+          mkdir -p dist
+          cp -r public dist/
+          cp -r src dist/
+          cp server.js dist/
+          cp server-new.js dist/
+          cp config.js dist/
+          cp logger.js dist/
+          cp security.js dist/
+          cp batch-video-service.js dist/
+          cp package*.json dist/
+          cp README.md dist/
+          cp API_DOCUMENTATION.md dist/
+
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 创建GitHub Release
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [build-docker, deploy-package]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: VeoMuse ${{ github.ref }}
+          body: |
+            ## 🚀 VeoMuse ${{ github.ref }} 发布
+
+            ### ✨ 新功能
+            - 查看 [更新日志](CHANGELOG.md) 了解详情
+
+            ### 📦 部署方式
+            
+            **Docker 部署:**
+            ```bash
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            docker run -d -p 3000:3000 --env-file .env ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ```
+            
+            **Docker Compose 部署:**
+            ```bash
+            curl -O https://raw.githubusercontent.com/MisonL/VeoMuse/main/docker-compose.yml
+            docker-compose up -d
+            ```
+            
+            ### 📖 文档
+            - [README](README.md)
+            - [API文档](API_DOCUMENTATION.md)
+            - [在线演示](https://misonl.github.io/VeoMuse/)
+
+          draft: false
+          prerelease: false

@@ -1,19 +1,70 @@
-# Dependencies
+# 依赖
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Environment variables
+# 环境配置
 .env
+.env.local
+.env.development.local
+.env.test.local
 
-# Uploads and generated files
-uploads/
-generated/
-
-# Logs
+# 运行时文件
 *.log
+logs/
+*.log.*
 
-# OS generated files
+# 上传和生成的文件
+uploads/*
+!uploads/.gitkeep
+generated/*
+!generated/.gitkeep
+
+# 操作系统
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Test coverage
+# IDE/编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 测试覆盖率
 coverage/
+.nyc_output/
+
+# 构建输出
+dist/
+build/
+docs/
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# 运行时pid文件
+*.pid
+*.seed
+*.pid.lock
+
+# 可选的npm缓存目录
+.npm
+
+# 可选的REPL历史
+.node_repl_history
+
+# 本地数据库文件
+*.db
+*.sqlite
+
+# Redis dump文件
+dump.rdb

@@ -1,0 +1,53 @@
+# VeoMuse Docker 忽略文件
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 日志文件
+logs/
+*.log
+
+# 运行时文件
+uploads/
+generated/
+.env
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 测试和覆盖率
+coverage/
+.nyc_output/
+
+# 构建文件
+dist/
+build/
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# CI/CD
+.github/
+
+# 其他
+README.md
+*.md
+screenshot.png
+image/

@@ -1,0 +1,166 @@
+# GitHub Pages 部署工作流
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # 构建作业
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests
+        run: npm test
+        
+      - name: Build documentation
+        run: |
+          mkdir -p docs
+          cp README.md docs/
+          cp API_DOCUMENTATION.md docs/
+          cp -r image docs/
+          cp screenshot.png docs/
+          
+      - name: Create index.html for GitHub Pages
+        run: |
+          cat > docs/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="zh-CN">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>VeoMuse - 文字/图片生成视频</title>
+              <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+              <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css">
+              <style>
+                  .markdown-body { max-width: 980px; margin: 0 auto; padding: 45px; }
+                  .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+              </style>
+          </head>
+          <body class="bg-gray-50">
+              <div class="hero text-white py-20">
+                  <div class="container mx-auto text-center">
+                      <h1 class="text-5xl font-bold mb-4">VeoMuse</h1>
+                      <p class="text-xl mb-8">使用Google Gemini Veo模型将文字或图片生成视频的Web应用程序</p>
+                      <div class="flex justify-center space-x-4">
+                          <a href="https://github.com/MisonL/VeoMuse" class="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
+                              📦 GitHub 仓库
+                          </a>
+                          <a href="#documentation" class="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition">
+                              📖 查看文档
+                          </a>
+                      </div>
+                  </div>
+              </div>
+              
+              <div class="container mx-auto py-12">
+                  <div class="grid md:grid-cols-2 gap-8 mb-12">
+                      <div class="bg-white p-6 rounded-lg shadow-lg">
+                          <h3 class="text-2xl font-bold mb-4 text-gray-800">🎬 主要功能</h3>
+                          <ul class="space-y-2 text-gray-600">
+                              <li>📝 文字生成视频</li>
+                              <li>🖼️ 图片生成视频</li>
+                              <li>🚫 负面提示支持</li>
+                              <li>🔑 多API密钥支持</li>
+                              <li>▶️ 视频在线预览</li>
+                              <li>🔄 视频转码功能</li>
+                              <li>🎨 提示词模板库</li>
+                              <li>📈 实时生成状态</li>
+                          </ul>
+                      </div>
+                      
+                      <div class="bg-white p-6 rounded-lg shadow-lg">
+                          <h3 class="text-2xl font-bold mb-4 text-gray-800">⚡ 技术特性</h3>
+                          <ul class="space-y-2 text-gray-600">
+                              <li>🏗️ Node.js + Express 后端</li>
+                              <li>🎨 响应式前端设计</li>
+                              <li>🔒 多层安全防护</li>
+                              <li>📊 结构化日志系统</li>
+                              <li>🔄 智能轮询机制</li>
+                              <li>📦 批量视频生成</li>
+                              <li>⚡ GPU加速支持</li>
+                              <li>🌗 深色/浅色主题</li>
+                          </ul>
+                      </div>
+                  </div>
+                  
+                  <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                      <h2 class="text-3xl font-bold mb-6 text-gray-800">📸 应用截图</h2>
+                      <img src="screenshot.png" alt="VeoMuse界面截图" class="w-full rounded-lg shadow-md">
+                  </div>
+              </div>
+              
+              <div id="documentation" class="bg-gray-100 py-12">
+                  <div class="container mx-auto">
+                      <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">📚 项目文档</h2>
+                      <div class="grid md:grid-cols-2 gap-6">
+                          <a href="README.html" class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
+                              <h3 class="text-xl font-semibold mb-2 text-blue-600">📖 项目说明</h3>
+                              <p class="text-gray-600">详细的项目介绍、安装指南和使用说明</p>
+                          </a>
+                          <a href="API_DOCUMENTATION.html" class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
+                              <h3 class="text-xl font-semibold mb-2 text-green-600">🔌 API文档</h3>
+                              <p class="text-gray-600">完整的API接口文档和使用示例</p>
+                          </a>
+                      </div>
+                  </div>
+              </div>
+              
+              <footer class="bg-gray-800 text-white py-8">
+                  <div class="container mx-auto text-center">
+                      <p>&copy; 2025 VeoMuse - 基于Google Gemini Veo模型的视频生成工具</p>
+                      <p class="mt-2 text-gray-400">MIT License</p>
+                  </div>
+              </footer>
+          </body>
+          </html>
+          EOF
+          
+      - name: Convert Markdown to HTML
+        run: |
+          npm install -g marked
+          marked README.md > docs/README.html
+          marked API_DOCUMENTATION.md > docs/API_DOCUMENTATION.html
+          
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+
+  # 部署作业
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

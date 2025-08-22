@@ -1,3 +1,5 @@
+![VeoMuse界面展示](image/README/1755848909306.png)
+
 <h1 align="center">VeoMuse</h1>
 
 <p align="center">
@@ -8,9 +10,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/license/yourusername/veomuse" alt="License">
-  <img src="https://img.shields.io/github/languages/top/yourusername/veomuse" alt="Language">
-  <img src="https://img.shields.io/github/last-commit/yourusername/veomuse" alt="Last Commit">
+  <img src="https://img.shields.io/github/license/MisonL/VeoMuse" alt="License">
+  <img src="https://img.shields.io/github/languages/top/MisonL/VeoMuse" alt="Language">
+  <img src="https://img.shields.io/github/last-commit/MisonL/VeoMuse" alt="Last Commit">
 </p>
 
 <p align="center">
@@ -18,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="https://github.com/MisonL/veomuse/blob/main/screenshot.png?raw=true" alt="VeoMuse界面截图" width="800">
+  <img src="https://github.com/MisonL/VeoMuse/blob/main/screenshot.png?raw=true" alt="VeoMuse界面截图" width="800">
 </p>
 
 ## 🌟 简介
@@ -55,13 +57,18 @@ VeoMuse是一个基于Google Gemini Veo模型的文字/图片生成视频的应�
 
 ## 🛠️ 技术栈
 
-- **后端**：Node.js + Express
-- **前端**：HTML5 + CSS3 + Vanilla JavaScript
+- **后端架构**：Node.js + Express（MVC模式）
+- **前端**：HTML5 + CSS3 + Vanilla JavaScript（模块化）
 - **文件处理**：Multer
 - **HTTP客户端**：Axios
 - **视频生成**：Google Gemini Veo API
 - **视频处理**：FFmpeg + GPU加速
 - **实时通信**：Socket.IO
+- **安全中间件**：多层安全防护、请求限流、IP黑名单
+- **日志系统**：Winston结构化日志
+- **测试框架**：Jest
+- **身份认证**：JWT + bcryptjs
+- **缓存服务**：Redis（可选）
 
 ## 🚀 快速开始
 
@@ -74,8 +81,8 @@ VeoMuse是一个基于Google Gemini Veo模型的文字/图片生成视频的应�
 
 1. 克隆项目到本地：
    ```bash
-   git clone https://github.com/yourusername/veomuse.git
-   cd veomuse
+   git clone https://github.com/MisonL/VeoMuse.git
+   cd VeoMuse
    ```
 
 2. 安装依赖：
@@ -104,17 +111,30 @@ VeoMuse是一个基于Google Gemini Veo模型的文字/图片生成视频的应�
 
 ```
 VeoMuse/
-├── server.js          # 服务器主文件
+├── server.js          # 服务器入口文件（MVC架构）
+├── src/               # 源代码目录（模块化架构）
+│   ├── app.js         # 应用主类
+│   ├── routes/        # 路由模块
+│   ├── controllers/   # 控制器模块
+│   ├── services/      # 业务服务模块
+│   └── middleware/    # 中间件模块
 ├── config.js          # 应用配置文件
 ├── package.json       # 项目配置文件
 ├── .env.example       # 环境变量示例文件
 ├── .env               # 环境变量配置文件
 ├── public/            # 静态文件目录
-│   └── index.html     # 主页面
+│   ├── index.html     # 主页面
+│   ├── css/           # 样式文件
+│   └── js/            # JavaScript模块
 ├── uploads/           # 上传文件目录
 ├── generated/         # 生成的视频文件目录
 ├── tests/             # 测试文件目录
-├── API_DOCUMENTATION.md # API文档
+├── .github/           # GitHub Actions部署配置
+├── Dockerfile         # Docker容器配置
+├── docker-compose.yml # Docker编排配置
+├── ecosystem.config.js # PM2生产环境配置
+├── API_DOCUMENTATION.md # API接口文档
+├── DEPLOYMENT.md      # 部署指南
 └── README.md          # 项目说明文件
 ```
 
@@ -201,6 +221,20 @@ VeoMuse/
 - **Intel GPU**：使用h264_qsv编码器
 - **AMD GPU**：使用h264_amf编码器
 - **CPU回退**：当无GPU可用时自动使用CPU编码
+
+## 🚀 部署
+
+### 快速部署
+
+```bash
+# Docker部署（推荐）
+npm run docker:compose
+
+# 或本地部署
+npm start
+```
+
+详细部署说明请参考 [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ## 🧪 测试
 

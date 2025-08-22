@@ -1,24 +1,24 @@
 // tests/server.test.js
 
 const request = require('supertest');
-const express = require('express');
 
 // Mock the main server
 jest.mock('../server.js', () => {
-  const app = express();
+  const mockExpress = require('express');
+  const mockApp = mockExpress();
   
-  app.get('/', (req, res) => {
+  mockApp.get('/', (req, res) => {
     res.send('Hello World!');
   });
   
-  app.get('/health', (req, res) => {
+  mockApp.get('/health', (req, res) => {
     res.json({ 
       status: 'ok', 
       timestamp: new Date().toISOString()
     });
   });
   
-  return app;
+  return mockApp;
 });
 
 describe('Server', () => {
