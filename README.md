@@ -24,7 +24,7 @@
 
 <p align="center">
   <a href="https://misonl.github.io/VeoMuse/app.html">🚀 在线体验</a> |
-  <a href="#🚀-快速开始">📖 快速开始</a> |
+  <a href="#快速开始">📖 快速开始</a> |
   <a href="docs/API_DOCUMENTATION.md">🔌 API文档</a> |
   <a href="docs/DEPLOYMENT.md">🐳 部署指南</a>
 </p>

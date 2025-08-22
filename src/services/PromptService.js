@@ -3,7 +3,7 @@ const axios = require('axios');
 const ApiKeyService = require('./ApiKeyService');
 
 class PromptService {
-  static async optimizePrompt(prompt, apiKey, model = 'gemini-1.5-flash') {
+  static async optimizePrompt(prompt, apiKey, model = 'gemini-2.5-flash') {
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     
     try {

@@ -3,7 +3,9 @@
 services:
   # VeoMuse主应用
   veomuse:
-    build: ../..
+    build:
+      context: ../..
+      dockerfile: config/docker/Dockerfile
     ports:
       - "3000:3000"
     environment:

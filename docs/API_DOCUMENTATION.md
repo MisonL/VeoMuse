@@ -1,29 +1,29 @@
-# VeoMuse API Documentation
+# VeoMuse API 接口文档
 
-## Base URL
+## 基础URL
 ```
 http://localhost:3000/api
 ```
 
-## Authentication
-All API endpoints require a valid Gemini API key. You can provide it in the request body or through the `.env` file.
+## 身份验证
+所有API接口都需要有效的Gemini API密钥。您可以在请求体中提供，或通过`.env`文件配置。
 
-## Models
+## 模型管理
 
-### Get Available Models
-Retrieve a list of available models for video generation and prompt optimization.
+### 获取可用模型
+获取可用于视频生成和提示词优化的模型列表。
 
-**Endpoint:** `GET /models`  
-**Query Parameters:**
-- `apiKey` (optional): Your Gemini API key
+**接口地址：** `GET /models`  
+**查询参数：**
+- `apiKey` (可选)：您的Gemini API密钥
 
-**Response:**
+**响应示例：**
 ```json
 {
   "videoModels": [
     {
       "id": "veo-3.0-generate-preview",
-      "name": "Veo 3.0 (Preview)"
+      "name": "Veo 3.0 (预览版)"
     }
   ],
   "optimizationModels": [
@@ -35,95 +35,95 @@ Retrieve a list of available models for video generation and prompt optimization
 }
 ```
 
-## Text-to-Video Generation
+## 文字生成视频
 
-### Generate Video from Text
-Create a video based on a text description.
+### 根据文字描述生成视频
+基于文字描述创建视频内容。
 
-**Endpoint:** `POST /text-to-video`  
-**Request Body:**
+**接口地址：** `POST /text-to-video`  
+**请求体：**
 ```json
 {
-  "text": "A beautiful sunset over the ocean",
-  "negativePrompt": "blurry, low quality",
+  "text": "海洋上美丽的日落景色",
+  "negativePrompt": "模糊，低质量",
   "apiKey": "your-api-key",
   "model": "veo-3.0-generate-preview",
   "optimize": true,
-  "socketId": "socket-id-for-realtime-updates"
+  "socketId": "实时更新的socket-id"
 }
 ```
 
-**Response:**
+**响应示例：**
 ```json
 {
   "success": true,
-  "message": "Video generation started",
+  "message": "视频生成已开始",
   "operationName": "operations/...",
-  "usedApiKey": "used-api-key",
+  "usedApiKey": "使用的API密钥",
   "usedModel": "veo-3.0-generate-preview"
 }
 ```
 
-## Image-to-Video Generation
+## 图片生成视频
 
-### Generate Video from Image
-Create a video based on an uploaded image and description.
+### 根据图片生成视频
+基于上传的图片和描述创建视频内容。
 
-**Endpoint:** `POST /image-to-video`  
-**Form Data:**
-- `image`: The image file to upload
-- `prompt`: Description of how to generate the video
-- `negativePrompt`: Elements to avoid in the video
-- `apiKey`: Your Gemini API key
-- `model`: The model to use for generation
-- `optimize`: Whether to optimize the prompt
-- `socketId`: Socket ID for real-time updates
+**接口地址：** `POST /image-to-video`  
+**表单数据：**
+- `image`：要上传的图片文件
+- `prompt`：如何生成视频的描述
+- `negativePrompt`：视频中要避免的元素
+- `apiKey`：您的Gemini API密钥
+- `model`：用于生成的模型
+- `optimize`：是否优化提示词
+- `socketId`：实时更新的Socket ID
 
-**Response:**
+**响应示例：**
 ```json
 {
   "success": true,
-  "message": "Video generation started",
+  "message": "视频生成已开始",
   "operationName": "operations/...",
-  "usedApiKey": "used-api-key",
+  "usedApiKey": "使用的API密钥",
   "usedModel": "veo-3.0-generate-preview"
 }
 ```
 
-## Prompt Optimization
+## 提示词优化
 
-### Optimize Prompt
-Improve a text prompt for better video generation results.
+### 优化提示词
+改进文字提示词以获得更好的视频生成效果。
 
-**Endpoint:** `POST /optimize-prompt`  
-**Request Body:**
+**接口地址：** `POST /optimize-prompt`  
+**请求体：**
 ```json
 {
-  "prompt": "A cat playing",
+  "prompt": "一只猫在玩耍",
   "apiKey": "your-api-key",
   "model": "gemini-2.5-pro"
 }
 ```
 
-**Response:**
+**响应示例：**
 ```json
 {
   "success": true,
-  "optimizedPrompt": "A playful orange cat chasing a ball of yarn in a sunlit living room"
+  "optimizedPrompt": "一只顽皮的橙色小猫在阳光洒落的客厅里追逐毛线球"
 }
 ```
 
-## Operation Status
+## 操作状态查询
 
-### Check Operation Status
-Poll the status of a video generation operation.
+### 检查操作状态
+轮询视频生成操作的状态。
 
-**Endpoint:** `GET /operation/:operationName`  
-**Query Parameters:**
-- `apiKey`: Your Gemini API key
-- `socketId`: Socket ID for real-time updates
+**接口地址：** `GET /operation/:operationName`  
+**查询参数：**
+- `apiKey`：您的Gemini API密钥
+- `socketId`：实时更新的Socket ID
 
-**Response:**
+**响应示例：**
 ```json
 {
   "done": false,
@@ -141,13 +141,13 @@ Poll the status of a video generation operation.
 }
 ```
 
-## Video Management
+## 视频管理
 
-### Download Generated Video
-Download and save a generated video to the server.
+### 下载生成的视频
+下载并保存生成的视频到服务器。
 
-**Endpoint:** `POST /download-video`  
-**Request Body:**
+**接口地址：** `POST /download-video`  
+**请求体：**
 ```json
 {
   "videoUri": "https://...",
@@ -155,65 +155,65 @@ Download and save a generated video to the server.
 }
 ```
 
-**Response:**
+**响应示例：**
 ```json
 {
   "success": true,
-  "message": "Video downloaded successfully",
+  "message": "视频下载成功",
   "videoPath": "generated/video-12345.mp4"
 }
 ```
 
-### Transcode Video
-Convert a video to different formats, resolutions, or frame rates.
+### 视频转码
+将视频转换为不同的格式、分辨率或帧率。
 
-**Endpoint:** `POST /transcode-video`  
-**Request Body:**
+**接口地址：** `POST /transcode-video`  
+**请求体：**
 ```json
 {
   "inputPath": "generated/video-12345.mp4",
   "format": "webm",
   "resolution": "720p",
   "fps": 30,
-  "socketId": "socket-id-for-realtime-updates"
+  "socketId": "实时更新的socket-id"
 }
 ```
 
-**Response:**
+**响应示例：**
 ```json
 {
   "success": true,
-  "message": "Video transcoded successfully",
+  "message": "视频转码成功",
   "videoPath": "generated/transcoded-12345_720p_30fps.webm"
 }
 ```
 
-## Real-time Updates
+## 实时更新
 
-The application uses Socket.IO for real-time progress updates during video generation and transcoding.
+应用程序使用Socket.IO在视频生成和转码过程中提供实时进度更新。
 
-### Events
+### 事件列表
 
-- `generationProgress`: Emitted during video generation
-- `transcodeProgress`: Emitted during video transcoding
-- `transcodeComplete`: Emitted when transcoding is complete
-- `transcodeError`: Emitted when transcoding fails
+- `generationProgress`：视频生成过程中触发
+- `transcodeProgress`：视频转码过程中触发
+- `transcodeComplete`：转码完成时触发
+- `transcodeError`：转码失败时触发
 
-## File Access
+## 文件访问
 
-### Generated Videos
-Access generated videos at `/generated/:filename`
+### 生成的视频
+在`/generated/:filename`路径访问生成的视频
 
-### Uploaded Images
-Access uploaded images at `/uploads/:filename`
+### 上传的图片
+在`/uploads/:filename`路径访问上传的图片
 
-## Health Check
+## 健康检查
 
-### Application Health
-Check if the application is running properly.
+### 应用程序健康状态
+检查应用程序是否正常运行。
 
-**Endpoint:** `GET /health`  
-**Response:**
+**接口地址：** `GET /health`  
+**响应示例：**
 ```json
 {
   "status": "ok",

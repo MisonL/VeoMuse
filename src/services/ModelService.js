@@ -40,11 +40,35 @@ class ModelService {
           model.name.includes('flash') || 
           model.name.includes('pro')
         ) && !model.name.includes('veo')
-      ).map(model => ({
-        name: model.name.split('/').pop(),
-        displayName: model.displayName || model.name,
-        description: model.description || '文本生成模型'
-      }));
+      ).map(model => {
+        // 根据模型名称设置正确的显示名称和描述，覆盖API返回的displayName
+        let displayName = model.name;
+        let description = '文本生成模型';
+        
+        // 更新Gemini 2.5模型的显示名称
+        if (model.name.includes('gemini-2.0')) {
+          displayName = 'Gemini 2.0 Flash';
+          description = '快速文本生成模型';
+        } else if (model.name.includes('gemini-2.5') && model.name.includes('flash')) {
+          displayName = 'Gemini 2.5 Flash';
+          description = '快速文本生成模型';
+        } else if (model.name.includes('gemini-2.5') && model.name.includes('pro')) {
+          displayName = 'Gemini 2.5 Pro';
+          description = '高质量文本生成模型';
+        } else if (model.name.includes('gemini-1.5') && model.name.includes('flash')) {
+          displayName = 'Gemini 1.5 Flash';
+          description = '快速文本生成模型';
+        } else if (model.name.includes('gemini-1.5') && model.name.includes('pro')) {
+          displayName = 'Gemini 1.5 Pro';
+          description = '高质量文本生成模型';
+        }
+        
+        return {
+          name: model.name.split('/').pop(),
+          displayName: displayName,
+          description: description
+        };
+      });
 
       return {
         videoModels: videoModels.length > 0 ? videoModels : this.getDefaultModels().videoModels,
@@ -69,6 +93,16 @@ class ModelService {
       textModels: [
         {
           name: config.video.defaultOptimizationModel,
+          displayName: 'Gemini 2.5 Flash',
+          description: '快速文本生成模型'
+        },
+        {
+          name: 'gemini-2.5-pro',
+          displayName: 'Gemini 2.5 Pro',
+          description: '高质量文本生成模型'
+        },
+        {
+          name: 'gemini-1.5-flash',
           displayName: 'Gemini 1.5 Flash',
           description: '快速文本生成模型'
         },

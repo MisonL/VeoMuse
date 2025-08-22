@@ -9,7 +9,8 @@ RUN apk add --no-cache \
     ffmpeg \
     python3 \
     make \
-    g++
+    g++ \
+    curl
 
 # 复制package文件
 COPY package*.json ./
