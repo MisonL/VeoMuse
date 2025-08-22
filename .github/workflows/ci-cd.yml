@@ -81,7 +81,7 @@ jobs:
       run: |
         mkdir -p build
         cp README.md build/
-        cp API_DOCUMENTATION.md build/
+        cp docs/API_DOCUMENTATION.md build/
         if [ -d "image" ]; then cp -r image build/; fi
         if [ -f "screenshot.png" ]; then cp screenshot.png build/; fi
         echo "文档构建完成"
