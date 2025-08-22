@@ -40,7 +40,7 @@ jobs:
         run: |
           mkdir -p docs
           cp README.md docs/
-          cp API_DOCUMENTATION.md docs/
+          cp docs/API_DOCUMENTATION.md docs/
           if [ -d "image" ]; then cp -r image docs/; fi
           if [ -f "screenshot.png" ]; then cp screenshot.png docs/; fi
           
@@ -136,7 +136,7 @@ jobs:
           npm install -g marked
           # 生成HTML文档
           marked README.md > docs/README.html
-          marked API_DOCUMENTATION.md > docs/API_DOCUMENTATION.html
+          marked docs/API_DOCUMENTATION.md > docs/API_DOCUMENTATION.html
           echo "文档生成完成"
           
       - name: Setup Pages (if enabled)

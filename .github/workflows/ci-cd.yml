@@ -105,7 +105,8 @@ jobs:
       
     - name: Build Docker image
       run: |
-        docker build -t veomuse:latest .
+        cd config/docker
+        docker build -f Dockerfile -t veomuse:latest ../..
         echo "Docker构建完成"
         
     - name: Test Docker image

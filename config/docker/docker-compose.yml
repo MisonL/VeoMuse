@@ -1,21 +1,20 @@
 # VeoMuse Docker Compose 配置
-version: '3.8'
 
 services:
   # VeoMuse主应用
   veomuse:
-    build: .
+    build: ../..
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
     env_file:
-      - .env
+      - ../../.env
     volumes:
-      - ./uploads:/app/uploads
-      - ./generated:/app/generated
-      - ./logs:/app/logs
+      - ../../uploads:/app/uploads
+      - ../../generated:/app/generated
+      - ../../logs:/app/logs
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
@@ -47,7 +46,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
     depends_on:
       - veomuse

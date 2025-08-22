@@ -92,20 +92,20 @@ deploy_docker() {
     
     # 构建和启动
     echo "🔨 构建Docker镜像..."
-    docker-compose down 2>/dev/null || true
-    docker-compose up -d --build
+    docker-compose -f config/docker/docker-compose.yml down 2>/dev/null || true
+    docker-compose -f config/docker/docker-compose.yml up -d --build
     
     # 健康检查
     echo "🔍 等待服务启动..."
     sleep 10
     
-    if docker-compose ps | grep -q "Up"; then
+    if docker-compose -f config/docker/docker-compose.yml ps | grep -q "Up"; then
         echo "✅ Docker 部署成功"
         echo "🌐 应用地址: http://localhost:3000"
-        echo "📊 查看日志: docker-compose logs -f"
+        echo "📊 查看日志: docker-compose -f config/docker/docker-compose.yml logs -f"
     else
         echo "❌ Docker 部署失败"
-        docker-compose logs
+        docker-compose -f config/docker/docker-compose.yml logs
         exit 1
     fi
 }

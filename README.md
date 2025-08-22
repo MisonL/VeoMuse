@@ -112,16 +112,16 @@ VeoMuse是一个基于Google Gemini Veo模型的文字/图片生成视频的应�
 ```
 VeoMuse/
 ├── server.js          # 服务器入口文件（MVC架构）
+├── config.js          # 应用配置文件
+├── package.json       # 项目配置文件
+├── .env.example       # 环境变量示例文件
+├── .env               # 环境变量配置文件
 ├── src/               # 源代码目录（模块化架构）
 │   ├── app.js         # 应用主类
 │   ├── routes/        # 路由模块
 │   ├── controllers/   # 控制器模块
 │   ├── services/      # 业务服务模块
 │   └── middleware/    # 中间件模块
-├── config.js          # 应用配置文件
-├── package.json       # 项目配置文件
-├── .env.example       # 环境变量示例文件
-├── .env               # 环境变量配置文件
 ├── public/            # 静态文件目录
 │   ├── index.html     # 主页面
 │   ├── css/           # 样式文件
@@ -129,12 +129,21 @@ VeoMuse/
 ├── uploads/           # 上传文件目录
 ├── generated/         # 生成的视频文件目录
 ├── tests/             # 测试文件目录
+├── config/            # 配置文件目录
+│   ├── docker/        # Docker配置
+│   │   ├── Dockerfile # Docker容器配置
+│   │   ├── docker-compose.yml # Docker编排配置
+│   │   └── .dockerignore # Docker忽略文件
+│   ├── pm2/           # PM2配置
+│   │   └── ecosystem.config.js # PM2生产环境配置
+│   └── nginx/         # Nginx配置
+│       └── nginx.conf # Nginx配置文件
+├── docs/              # 文档目录
+│   ├── API_DOCUMENTATION.md # API接口文档
+│   └── DEPLOYMENT.md  # 部署指南
+├── scripts/           # 脚本目录
+│   └── deploy.sh      # 部署脚本
 ├── .github/           # GitHub Actions部署配置
-├── Dockerfile         # Docker容器配置
-├── docker-compose.yml # Docker编排配置
-├── ecosystem.config.js # PM2生产环境配置
-├── API_DOCUMENTATION.md # API接口文档
-├── DEPLOYMENT.md      # 部署指南
 └── README.md          # 项目说明文件
 ```
 
@@ -228,13 +237,13 @@ VeoMuse/
 
 ```bash
 # Docker部署（推荐）
-npm run docker:compose
+cd config/docker && docker-compose up -d
 
 # 或本地部署
 npm start
 ```
 
-详细部署说明请参考 [DEPLOYMENT.md](DEPLOYMENT.md)
+详细部署说明请参考 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ## 🧪 测试
 
@@ -255,7 +264,7 @@ npm run test:coverage
 
 ## 📚 API文档
 
-详细的API接口文档请查看 [API_DOCUMENTATION.md](API_DOCUMENTATION.md) 文件。
+详细的API接口文档请查看 [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) 文件。
 
 ## ⚠️ 注意事项
 
