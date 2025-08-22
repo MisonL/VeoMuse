@@ -3,6 +3,14 @@
 <h1 align="center">VeoMuse</h1>
 
 <p align="center">
+  <strong>🎬 AI视频生成神器 | 基于Google Gemini Veo模型</strong>
+</p>
+
+<p align="center">
+  <em>将文字和图片转化为精彩视频，让创意触手可及</em>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js">
   <img src="https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express">
   <img src="https://img.shields.io/badge/Gemini-FF6B6B?style=for-the-badge&logo=google&logoColor=white" alt="Gemini">
@@ -13,7 +21,17 @@
   <img src="https://img.shields.io/github/license/MisonL/VeoMuse" alt="License">
   <img src="https://img.shields.io/github/languages/top/MisonL/VeoMuse" alt="Language">
   <img src="https://img.shields.io/github/last-commit/MisonL/VeoMuse" alt="Last Commit">
+  <img src="https://img.shields.io/github/stars/MisonL/VeoMuse?style=social" alt="Stars">
 </p>
+
+<p align="center">
+  <a href="https://misonl.github.io/VeoMuse/app.html">🚀 在线体验</a> |
+  <a href="#🚀-快速开始">📖 快速开始</a> |
+  <a href="docs/API_DOCUMENTATION.md">🔌 API文档</a> |
+  <a href="docs/DEPLOYMENT.md">🐳 部署指南</a>
+</p>
+
+---
 
 <p align="center">
   <strong>使用Google Gemini Veo模型将文字或图片生成视频的Web应用程序</strong>
@@ -25,7 +43,14 @@
 
 ## 🌟 简介
 
-VeoMuse是一个基于Google Gemini Veo模型的文字/图片生成视频的应用程序。用户可以通过简单的Web界面输入文字描述或上传图片，应用程序会调用Gemini Veo模型生成相应的视频。
+**VeoMuse** 是一款革命性的AI视频生成工具，基于Google最先进的Gemini Veo模型打造。无论您是内容创作者、设计师还是开发者，都可以轻松地将文字描述或图片转化为高质量的视频内容。
+
+🎆 **为什么选择VeoMuse？**
+- ✨ **简单易用**：输入文字或上传图片，一键生成视频
+- 🚀 **在线体验**：无需安装，[GitHub Pages在线使用](https://misonl.github.io/VeoMuse/app.html)
+- 🎨 **多样化**：支持多种视频风格和提示词模板
+- ⚡ **高性能**：GPU加速 + 智能轮询 + 批量处理
+- 🔒 **企业级**：完整的安全防护和日志系统
 
 > ⚠️ **重要提示**：Gemini Veo模型目前仅在付费层级可用，免费层级的API密钥无法使用此功能。您需要一个有效的付费API密钥才能生成视频。
 
@@ -71,6 +96,18 @@ VeoMuse是一个基于Google Gemini Veo模型的文字/图片生成视频的应�
 - **缓存服务**：Redis（可选）
 
 ## 🚀 快速开始
+
+### 🌐 在线体验（推荐）
+
+<p align="center">
+  <a href="https://misonl.github.io/VeoMuse/app.html">
+    <img src="https://img.shields.io/badge/🚀_%E5%9C%A8%E7%BA%BF%E4%BD%93%E9%AA%8C-4285F4?style=for-the-badge&logoColor=white" alt="在线体验" height="50">
+  </a>
+</p>
+
+无需安装，直接在浏览器中体验AI视频生成！只需输入您的Gemini API密钥即可开始创作。
+
+### 💻 本地安装
 
 ### 环境要求
 - Node.js >= 14.0.0
