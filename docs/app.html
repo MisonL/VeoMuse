@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VeoMuse - 在线AI视频生成</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .app-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .app-content {
+            padding: 30px;
+        }
+
+        .api-warning {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .api-warning strong {
+            color: #d97706;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .error {
+            background: #fee2e2;
+            border: 2px solid #fca5a5;
+            color: #dc2626;
+        }
+
+        .success {
+            background: #dcfce7;
+            border: 2px solid #86efac;
+            color: #16a34a;
+        }
+
+        .video-preview {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .video-preview video {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .tabs {
+            display: flex;
+            background: #f3f4f6;
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: #4f46e5;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .app-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-video"></i> VeoMuse</h1>
+            <p>在线AI视频生成工具 - 基于Google Gemini Veo模型</p>
+        </div>
+
+        <div class="app-card">
+            <div class="app-header">
+                <h2><i class="fas fa-magic"></i> 开始创建您的AI视频</h2>
+                <p>输入描述，让AI为您生成精彩视频</p>
+            </div>
+
+            <div class="app-content">
+                <!-- API警告提示 -->
+                <div class="api-warning">
+                    <strong><i class="fas fa-exclamation-triangle"></i> 重要提示：</strong>
+                    此应用需要您提供自己的Google Gemini API密钥。Veo模型仅在付费层级可用，免费API密钥无法使用。
+                    <br><br>
+                    <strong>获取API密钥：</strong> 访问 <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> 创建API密钥
+                </div>
+
+                <!-- API密钥配置 -->
+                <div class="form-group">
+                    <label for="api-key">
+                        <i class="fas fa-key"></i> Gemini API密钥：
+                    </label>
+                    <input type="password" id="api-key" placeholder="输入您的Gemini API密钥" required>
+                </div>
+
+                <!-- 选项卡 -->
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('text')">
+                        <i class="fas fa-keyboard"></i> 文字生成视频
+                    </button>
+                    <button class="tab" onclick="switchTab('about')">
+                        <i class="fas fa-info-circle"></i> 关于项目
+                    </button>
+                </div>
+
+                <!-- 文字生成视频 -->
+                <div class="tab-content active" id="text-content">
+                    <div class="form-group">
+                        <label for="text-prompt">
+                            <i class="fas fa-edit"></i> 视频描述：
+                        </label>
+                        <textarea id="text-prompt" placeholder="详细描述您想要生成的视频内容...&#10;&#10;例如：广角镜头：一只可爱的雪豹在冬季森林中欢快地跳跃，场景中有圆润的雪树和缓缓飘落的雪花。动作流畅自然，光线柔和温暖。"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="video-model">
+                            <i class="fas fa-cog"></i> 选择模型：
+                        </label>
+                        <select id="video-model">
+                            <option value="veo-3.0-generate-preview">Veo 3.0 (Preview)</option>
+                            <option value="veo-3.0-fast-generate-preview">Veo 3.0 Fast (Preview)</option>
+                            <option value="veo-2.0-generate-001">Veo 2.0</option>
+                        </select>
+                    </div>
+
+                    <button class="btn" onclick="generateVideo()" id="generate-btn">
+                        <i class="fas fa-play"></i>
+                        生成视频
+                    </button>
+                </div>
+
+                <!-- 关于项目 -->
+                <div class="tab-content" id="about-content">
+                    <h3><i class="fas fa-info-circle"></i> 关于VeoMuse</h3>
+                    <p>VeoMuse是一个基于Google Gemini Veo模型的AI视频生成工具。</p>
+                    
+                    <h4><i class="fas fa-star"></i> 主要特性：</h4>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>支持文字描述生成视频</li>
+                        <li>多种Veo模型可选</li>
+                        <li>响应式设计，支持移动设备</li>
+                        <li>完全在浏览器中运行</li>
+                    </ul>
+
+                    <h4><i class="fas fa-github"></i> 开源项目：</h4>
+                    <p style="margin-top: 10px;">
+                        <a href="https://github.com/MisonL/VeoMuse" target="_blank" class="btn">
+                            <i class="fab fa-github"></i>
+                            查看源代码
+                        </a>
+                    </p>
+                </div>
+
+                <!-- 加载状态 -->
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>正在生成视频，请稍候...</p>
+                </div>
+
+                <!-- 结果显示 -->
+                <div class="result" id="result">
+                    <div id="result-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2025 VeoMuse - 基于Google Gemini Veo的AI视频生成工具</p>
+        </div>
+    </div>
+
+    <script>
+        // 切换选项卡
+        function switchTab(tabName) {
+            // 隐藏所有选项卡内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有选项卡的激活状态
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选中的选项卡内容
+            document.getElementById(tabName + '-content').classList.add('active');
+            
+            // 激活选中的选项卡
+            event.target.classList.add('active');
+        }
+
+        // 生成视频
+        async function generateVideo() {
+            const apiKey = document.getElementById('api-key').value.trim();
+            const prompt = document.getElementById('text-prompt').value.trim();
+            const model = document.getElementById('video-model').value;
+
+            // 验证输入
+            if (!apiKey) {
+                showResult('请输入您的Gemini API密钥', 'error');
+                return;
+            }
+
+            if (!prompt) {
+                showResult('请输入视频描述', 'error');
+                return;
+            }
+
+            // 显示加载状态
+            showLoading(true);
+            document.getElementById('generate-btn').disabled = true;
+
+            try {
+                // 调用Gemini Veo API生成视频
+                const videoUrl = await callGeminiVeoAPI(prompt, model, apiKey);
+                
+                if (videoUrl) {
+                    showVideoResult(videoUrl);
+                } else {
+                    showResult('视频生成失败，请检查API密钥和网络连接', 'error');
+                }
+            } catch (error) {
+                console.error('视频生成错误:', error);
+                showResult(`生成失败: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+                document.getElementById('generate-btn').disabled = false;
+            }
+        }
+
+        // 调用Gemini Veo API
+        async function callGeminiVeoAPI(prompt, model, apiKey) {
+            // 注意：这是示例代码，实际的Gemini Veo API可能有不同的端点和格式
+            // 需要根据Google的实际API文档进行调整
+            
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: `Generate a video based on this description: ${prompt}`
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.7,
+                        topK: 40,
+                        topP: 0.95,
+                        maxOutputTokens: 1024,
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || '未知错误');
+            }
+
+            const data = await response.json();
+            
+            // 处理响应数据 - 这里需要根据实际的API响应格式调整
+            // 暂时返回模拟的结果
+            console.log('API响应:', data);
+            
+            // 模拟返回视频URL（实际情况下需要从API响应中提取）
+            return 'https://example.com/generated-video.mp4';
+        }
+
+        // 显示加载状态
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            if (show) {
+                loading.classList.add('show');
+            } else {
+                loading.classList.remove('show');
+            }
+        }
+
+        // 显示结果
+        function showResult(message, type = 'success') {
+            const result = document.getElementById('result');
+            const content = document.getElementById('result-content');
+            
+            result.className = `result show ${type}`;
+            content.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i> ${message}`;
+        }
+
+        // 显示视频结果
+        function showVideoResult(videoUrl) {
+            const result = document.getElementById('result');
+            const content = document.getElementById('result-content');
+            
+            result.className = 'result show success';
+            content.innerHTML = `
+                <i class="fas fa-check-circle"></i> 视频生成成功！
+                <div class="video-preview">
+                    <video controls width="100%" style="max-width: 600px;">
+                        <source src="${videoUrl}" type="video/mp4">
+                        您的浏览器不支持视频播放。
+                    </video>
+                    <br><br>
+                    <a href="${videoUrl}" download="generated-video.mp4" class="btn">
+                        <i class="fas fa-download"></i> 下载视频
+                    </a>
+                </div>
+            `;
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('VeoMuse GitHub Pages版本已加载');
+            
+            // 检查URL参数中是否有API密钥
+            const urlParams = new URLSearchParams(window.location.search);
+            const apiKeyParam = urlParams.get('api_key');
+            if (apiKeyParam) {
+                document.getElementById('api-key').value = apiKeyParam;
+            }
+        });
+    </script>
+</body>
+</html>

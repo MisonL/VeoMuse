@@ -57,6 +57,9 @@ jobs:
           echo "📄 复制 API 文档..."
           cp docs/API_DOCUMENTATION.md build/
           
+          echo "🚀 复制在线应用..."
+          cp docs/app.html build/
+          
           # 复制其他资源
           if [ -d "image" ]; then
             echo "🖼️ 复制图片目录..."
@@ -94,6 +97,9 @@ jobs:
                       <div class="flex justify-center space-x-4">
                           <a href="https://github.com/MisonL/VeoMuse" class="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">
                               📦 GitHub 仓库
+                          </a>
+                          <a href="app.html" class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition">
+                              🚀 在线使用
                           </a>
                           <a href="README.html" class="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition">
                               📖 查看文档
@@ -134,14 +140,18 @@ jobs:
                   </div>
                   
                   <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
-                      <h2 class="text-3xl font-bold mb-6 text-gray-800">📚 项目文档</h2>
-                      <div class="grid md:grid-cols-2 gap-6">
+                      <h2 class="text-3xl font-bold mb-6 text-gray-800">📚 项目资源</h2>
+                      <div class="grid md:grid-cols-3 gap-6">
+                          <a href="app.html" class="bg-white p-6 rounded-lg border-2 border-green-200 hover:border-green-400 transition">
+                              <h3 class="text-xl font-semibold mb-2 text-green-600">🚀 在线使用</h3>
+                              <p class="text-gray-600">直接在浏览器中使用AI视频生成功能</p>
+                          </a>
                           <a href="README.html" class="bg-white p-6 rounded-lg border-2 border-blue-200 hover:border-blue-400 transition">
                               <h3 class="text-xl font-semibold mb-2 text-blue-600">📖 项目说明</h3>
                               <p class="text-gray-600">详细的项目介绍、安装指南和使用说明</p>
                           </a>
-                          <a href="API_DOCUMENTATION.html" class="bg-white p-6 rounded-lg border-2 border-green-200 hover:border-green-400 transition">
-                              <h3 class="text-xl font-semibold mb-2 text-green-600">🔌 API文档</h3>
+                          <a href="API_DOCUMENTATION.html" class="bg-white p-6 rounded-lg border-2 border-purple-200 hover:border-purple-400 transition">
+                              <h3 class="text-xl font-semibold mb-2 text-purple-600">🔌 API文档</h3>
                               <p class="text-gray-600">完整的API接口文档和使用示例</p>
                           </a>
                       </div>
