@@ -38,45 +38,43 @@ jobs:
         
       - name: Build documentation
         run: |
+          echo "🚀 开始构建文档..."
+          
           # 创建构建目录
-          mkdir -p docs/build
-          echo "📁 创建构建目录..."
+          mkdir -p build
+          echo "📁 创建 build 目录"
           
-          # 检查文件是否存在
-          if [ ! -f "README.md" ]; then
-            echo "❌ README.md 文件不存在"
-            exit 1
-          fi
+          # 显示当前文件结构
+          echo "📂 当前文件结构："
+          ls -la
+          echo "📂 docs 目录内容："
+          ls -la docs/ || echo "docs 目录不存在"
           
-          if [ ! -f "docs/API_DOCUMENTATION.md" ]; then
-            echo "❌ docs/API_DOCUMENTATION.md 文件不存在"
-            exit 1
-          fi
+          # 复制文档文件到 build 目录
+          echo "📋 复制 README.md..."
+          cp README.md build/
           
-          # 复制文档文件
-          echo "📋 复制README.md..."
-          cp README.md docs/build/
+          echo "📄 复制 API 文档..."
+          cp docs/API_DOCUMENTATION.md build/
           
-          echo "📄 复制API文档..."
-          cp docs/API_DOCUMENTATION.md docs/build/
-          
-          # 复制静态资源
-          if [ -d "image" ]; then 
+          # 复制其他资源
+          if [ -d "image" ]; then
             echo "🖼️ 复制图片目录..."
-            cp -r image docs/build/
+            cp -r image build/
           fi
           
-          if [ -f "screenshot.png" ]; then 
+          if [ -f "screenshot.png" ]; then
             echo "📷 复制截图..."
-            cp screenshot.png docs/build/
+            cp screenshot.png build/
           fi
           
-          echo "✅ 文档构建完成"
-          ls -la docs/build/
+          echo "✅ 文档构建完成！"
+          echo "📁 构建结果："
+          ls -la build/
           
       - name: Create index.html for GitHub Pages
         run: |
-          cat > docs/build/index.html << 'EOF'
+          cat > build/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="zh-CN">
           <head>
@@ -165,9 +163,9 @@ jobs:
           # 安装marked并转换文档
           npm install -g marked
           # 生成HTML文档
-          marked docs/build/README.md > docs/build/README.html
-          marked docs/build/API_DOCUMENTATION.md > docs/build/API_DOCUMENTATION.html
-          echo "文档生成完成"
+          marked build/README.md > build/README.html
+          marked build/API_DOCUMENTATION.md > build/API_DOCUMENTATION.html
+          echo "✅ 文档转换完成"
           
       - name: Setup Pages (if enabled)
         id: pages
@@ -177,7 +175,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './docs/build'
+          path: './build'
         continue-on-error: true
 
       - name: Deploy to GitHub Pages (if configured)
@@ -189,5 +187,5 @@ jobs:
         run: |
           echo "✅ 构建完成！"
           echo "📦 测试通过：$(npm test > /dev/null 2>&1 && echo '是' || echo '否')"
-          echo "📄 文档生成：docs/build/目录"
+          echo "📄 文档生成：build/目录"
           echo "🌐 如需启用GitHub Pages，请在仓库设置中配置Pages功能"
