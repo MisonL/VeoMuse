@@ -1,5 +1,3 @@
-![VeoMuse界面展示](image/README/1755848909306.png)
-
 <h1 align="center">VeoMuse</h1>
 
 <p align="center">
