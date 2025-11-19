@@ -92,90 +92,106 @@
                 <div class="input-column">
                     <!-- 文字生成视频选项卡 -->
                     <div class="tab-content active" id="text-content">
-                        <div class="input-panel glass-panel">
-                            <div class="panel-header">
-                                <h3>创意描述</h3>
-                                <div class="template-actions">
-                                    <button id="random-template-text-btn" class="btn btn-sm btn-ghost">
-                                        <span class="icon">🎲</span> 随机灵感
-                                    </button>
-                                    <button id="show-all-templates-btn" class="btn btn-sm btn-ghost">
-                                        <span class="icon">📚</span> 模板库
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- 快速模板选择区 -->
-                            <div id="template-categories-compact"></div>
-
-                            <div class="form-group">
-                                <textarea id="text-input" class="premium-input"
-                                    placeholder="描述您想象中的画面... 例如：一只发光的透明水母在深邃的宇宙星空中游动，周围环绕着绚丽的星云，电影级光效，4k分辨率。"></textarea>
-                            </div>
-
-                            <div class="controls-grid">
-                                <div class="control-item">
-                                    <label>视频风格</label>
-                                    <div class="select-wrapper">
-                                        <select id="style-select-text" class="premium-select">
-                                            <option value="">默认风格</option>
-                                            <option value="写实风格">📸 写实风格</option>
-                                            <option value="动画风格">🎨 动画风格</option>
-                                            <option value="电影风格">🎬 电影风格</option>
-                                            <option value="梦幻风格">🦄 梦幻风格</option>
-                                            <option value="复古风格">📼 复古风格</option>
-                                            <option value="科幻风格">🚀 科幻风格</option>
-                                            <option value="3D渲染">🧊 3D渲染</option>
-                                            <option value="水墨画">🖌️ 水墨画</option>
-                                        </select>
+                        <div class="two-column-layout">
+                            <!-- 左侧：输入区域 -->
+                            <div class="input-panel glass-panel">
+                                <div class="panel-header">
+                                    <h3>创意描述</h3>
+                                    <div class="template-actions">
+                                        <button id="random-template-text-btn" class="btn btn-sm btn-ghost">
+                                            <span class="icon">🎲</span> 随机灵感
+                                        </button>
+                                        <button id="show-all-templates-btn" class="btn btn-sm btn-ghost">
+                                            <span class="icon">📚</span> 模板库
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div class="control-item">
-                                    <label>模型版本</label>
-                                    <div class="select-wrapper">
-                                        <select id="video-model-text" class="premium-select">
-                                            <option value="veo-3.1-generate-preview">Veo 3.1 (Preview)</option>
-                                            <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast</option>
-                                            <option value="veo-3.0-generate-preview">Veo 3.0</option>
-                                        </select>
-                                    </div>
+                                <!-- 快速模板选择区 -->
+                                <div id="template-categories-compact"></div>
+
+                                <div class="form-group">
+                                    <textarea id="text-input" class="premium-input textarea-full-height"
+                                        placeholder="描述您想象中的画面... 例如：一只发光的透明水母在深邃的宇宙星空中游动，周围环绕着绚丽的星云，电影级光效，4k分辨率。"></textarea>
                                 </div>
                             </div>
 
-                            <div class="advanced-options">
-                                <details>
-                                    <summary>高级设置 <span class="arrow">▼</span></summary>
-                                    <div class="advanced-content">
-                                        <div class="form-group">
-                                            <label>负面提示 (不希望出现的内容)</label>
-                                            <input type="text" id="negative-prompt-text" class="premium-input"
-                                                placeholder="例如：模糊、变形、低质量、水印...">
+                            <!-- 右侧：控制区域 -->
+                            <div class="controls-panel glass-panel">
+                                <div class="panel-header">
+                                    <h3>生成设置</h3>
+                                </div>
+
+                                <div class="controls-grid">
+                                    <div class="control-item">
+                                        <label>视频风格</label>
+                                        <div class="select-wrapper">
+                                            <select id="style-select-text" class="premium-select">
+                                                <option value="">默认风格</option>
+                                                <option value="写实风格">📸 写实风格</option>
+                                                <option value="动画风格">🎨 动画风格</option>
+                                                <option value="电影风格">🎬 电影风格</option>
+                                                <option value="梦幻风格">🦄 梦幻风格</option>
+                                                <option value="复古风格">📼 复古风格</option>
+                                                <option value="科幻风格">🚀 科幻风格</option>
+                                                <option value="3D渲染">🧊 3D渲染</option>
+                                                <option value="水墨画">🖌️ 水墨画</option>
+                                            </select>
                                         </div>
+                                    </div>
 
-                                        <div class="optimize-row">
-                                            <div class="optimize-control">
-                                                <label>提示词优化模型</label>
-                                                <select id="optimize-model-text" class="premium-select sm">
-                                                    <option value="gemini-3.0-pro">Gemini 3.0 Pro</option>
-                                                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                                                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                                                </select>
+                                    <div class="control-item">
+                                        <label>模型版本</label>
+                                        <div class="select-wrapper">
+                                            <select id="video-model-text" class="premium-select">
+                                                <option value="veo-3.1-generate-preview">Veo 3.1 (Preview)</option>
+                                                <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast</option>
+                                                <option value="veo-3.0-generate-preview">Veo 3.0</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="advanced-options">
+                                    <details>
+                                        <summary>高级设置 <span class="arrow">▼</span></summary>
+                                        <div class="advanced-content">
+                                            <div class="form-group">
+                                                <label>负面提示 (不希望出现的内容)</label>
+                                                <input type="text" id="negative-prompt-text" class="premium-input"
+                                                    placeholder="例如：模糊、变形、低质量、水印...">
                                             </div>
-                                            <button id="optimize-text-btn" class="btn btn-secondary btn-icon-text">
-                                                <span class="icon">✨</span> AI 优化提示词
-                                            </button>
-                                        </div>
 
-                                        <div class="optimized-prompt glass-panel inner-panel" id="optimized-text-prompt"
-                                            style="display:none;">
-                                            <div class="prompt-header">
-                                                <span class="icon">✨</span> 优化后的提示词
+                                            <div class="optimize-row">
+                                                <div class="optimize-control">
+                                                    <label>提示词优化模型</label>
+                                                    <select id="optimize-model-text" class="premium-select sm">
+                                                        <option value="gemini-3.0-pro">Gemini 3.0 Pro</option>
+                                                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                                    </select>
+                                                </div>
+                                                <button id="optimize-text-btn" class="btn btn-secondary btn-icon-text">
+                                                    <span class="icon">✨</span> AI 优化提示词
+                                                </button>
                                             </div>
-                                            <p id="optimized-text-content"></p>
+
+                                            <div class="optimized-prompt glass-panel inner-panel"
+                                                id="optimized-text-prompt" style="display:none;">
+                                                <div class="prompt-header">
+                                                    <span class="icon">✨</span> 优化后的提示词
+                                                </div>
+                                                <p id="optimized-text-content"></p>
+                                            </div>
                                         </div>
-                                    </div>
-                                </details>
+                                    </details>
+                                </div>
+
+                                <div class="action-area">
+                                    <button id="generate-text-btn" class="btn btn-primary btn-lg btn-block btn-glow">
+                                        <span class="icon">✨</span> 开始生成视频
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -418,18 +434,6 @@
             <!-- 右侧：公共预览区 -->
             <div class="preview-column">
                 <div class="preview-panel glass-panel sticky-panel">
-                    <!-- Generate Buttons -->
-                    <div class="preview-actions" id="preview-actions">
-                        <button id="generate-text-btn" class="btn btn-primary btn-lg btn-block btn-glow"
-                            style="display: none;">
-                            <span class="icon">✨</span> 开始生成视频
-                        </button>
-                        <button id="generate-image-btn" class="btn btn-primary btn-lg btn-block btn-glow"
-                            style="display: none;">
-                            <span class="icon">✨</span> 开始生成视频
-                        </button>
-                    </div>
-
                     <div class="empty-state" id="preview-empty-state">
                         <div class="empty-icon-wrapper">
                             <div class="empty-icon-bg"></div>

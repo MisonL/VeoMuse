@@ -1546,3 +1546,40 @@ textarea.premium-input {
 .preview-actions .btn {
     width: 100%;
 }
+
+/* Two Column Layout for Tab Content */
+.two-column-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+}
+
+.textarea-full-height {
+    min-height: 500px;
+    resize: vertical;
+}
+
+.controls-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.controls-panel .panel-header {
+    margin-bottom: 0;
+}
+
+.controls-panel .action-area {
+    margin-top: auto;
+}
+
+@media (max-width: 1024px) {
+    .two-column-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .textarea-full-height {
+        min-height: 300px;
+    }
+}
