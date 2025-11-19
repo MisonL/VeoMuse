@@ -1566,10 +1566,26 @@ textarea.premium-input {
 
 .controls-panel .panel-header {
     margin-bottom: 0;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.controls-panel .panel-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
 }
 
 .controls-panel .action-area {
-    margin-top: auto;
+    margin-top: 4px;
+}
+
+.controls-panel .action-area .btn {
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 600;
 }
 
 @media (max-width: 1024px) {
