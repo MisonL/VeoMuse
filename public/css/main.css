@@ -782,28 +782,29 @@ textarea.premium-input {
 .upload-area {
     border: 2px dashed var(--glass-border);
     border-radius: var(--radius-md);
-    padding: 40px;
+    padding: 24px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s ease;
-    background: var(--input-bg);
-    position: relative;
+    transition: var(--transition-fast);
+    background: var(--hover-bg);
+    margin-bottom: 20px;
+    min-height: 200px;
+    max-height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .upload-area:hover {
     border-color: var(--primary-color);
-    background: var(--hover-bg);
+    background: rgba(124, 58, 237, 0.05);
 }
 
 /* Drag and drop states */
 .upload-area.drag-over {
     border-color: var(--primary-color);
-    background: linear-gradient(135deg,
-            rgba(99, 102, 241, 0.1) 0%,
-            rgba(139, 92, 246, 0.1) 100%);
-    border-style: solid;
-    border-width: 3px;
-    transform: scale(1.02);
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(99, 102, 241, 0.1));
+    animation: pulse-drag 1.5s ease-in-out infinite;
 }
 
 .upload-area.drag-over::before {

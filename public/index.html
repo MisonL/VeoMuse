@@ -235,81 +235,92 @@
                         </div>
                     </div>
 
-                    <!-- 图片生成视频选项卡 -->
+                    <!-- 图片转视频选项卡 -->
                     <div class="tab-content" id="image-content">
-                        <div class="input-panel glass-panel">
-                            <div class="panel-header">
-                                <h3>图片转视频</h3>
-                                <div class="template-actions">
-                                    <button id="random-template-image-btn" class="btn btn-sm btn-ghost">
-                                        <span class="icon">🎲</span> 随机灵感
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- 快速模板选择区 -->
-                            <div id="template-categories-image"></div>
-
-                            <div class="upload-area" id="upload-area">
-                                <input type="file" id="image-input" accept="image/*" hidden>
-                                <div class="upload-placeholder"
-                                    onclick="document.getElementById('image-input').click()">
-                                    <div class="upload-icon">☁️</div>
-                                    <p>点击上传或拖拽图片到这里</p>
-                                    <span class="upload-hint">支持 JPG, PNG, WebP</span>
-                                </div>
-                                <div id="image-preview-container" class="image-preview-container"
-                                    style="display: none;">
-                                    <img id="uploaded-image-preview" src="" alt="Preview">
-                                    <button class="remove-image" id="remove-image-btn">×</button>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>动态描述</label>
-                                <textarea id="image-prompt" class="premium-input"
-                                    placeholder="描述您希望图片如何动起来... 例如：镜头缓慢推进，瀑布流动，水雾缭绕。"></textarea>
-                            </div>
-
-                            <div class="controls-grid">
-                                <div class="control-item">
-                                    <label>视频风格</label>
-                                    <div class="select-wrapper">
-                                        <select id="style-select-image" class="premium-select">
-                                            <option value="">默认风格</option>
-                                            <option value="写实风格">📸 写实风格</option>
-                                            <option value="动画风格">🎨 动画风格</option>
-                                            <option value="电影风格">🎬 电影风格</option>
-                                            <option value="梦幻风格">🦄 梦幻风格</option>
-                                        </select>
+                        <div class="two-column-layout">
+                            <!-- 左侧：图片上传和描述区域 -->
+                            <div class="input-panel glass-panel">
+                                <div class="panel-header">
+                                    <h3>图片转视频</h3>
+                                    <div class="template-actions">
+                                        <button id="random-template-image-btn" class="btn btn-sm btn-ghost">
+                                            <span class="icon">🎲</span> 随机灵感
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div class="control-item">
-                                    <label>模型版本</label>
-                                    <div class="select-wrapper">
-                                        <select id="video-model-image" class="premium-select">
-                                            <option value="veo-3.1-generate-preview">Veo 3.1 (Preview)</option>
-                                            <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast</option>
-                                            <option value="veo-3.0-generate-preview">Veo 3.0</option>
-                                        </select>
+                                <!-- 快速模板选择区 -->
+                                <div id="template-categories-image"></div>
+
+                                <!-- 图片上传区域 -->
+                                <div class="upload-area" id="upload-area">
+                                    <input type="file" id="image-input" accept="image/*" hidden>
+                                    <div class="upload-placeholder"
+                                        onclick="document.getElementById('image-input').click()">
+                                        <div class="upload-icon">☁️</div>
+                                        <p>点击上传或拖拽图片到这里</p>
+                                        <span class="upload-hint">支持 JPG, PNG, WebP</span>
                                     </div>
+                                    <div id="image-preview-container" class="image-preview-container"
+                                        style="display: none;">
+                                        <img id="uploaded-image-preview" src="" alt="Preview">
+                                        <button class="remove-image" id="remove-image-btn">×</button>
+                                    </div>
+                                </div>
+
+                                <!-- 动态描述 -->
+                                <div class="form-group">
+                                    <label>动态描述</label>
+                                    <textarea id="image-prompt" class="premium-input"
+                                        placeholder="描述您希望图片如何动起来... 例如：镜头缓慢推进，瀑布流动，水雾缭绕。"></textarea>
                                 </div>
                             </div>
 
-                            <div class="advanced-options">
-                                <details>
-                                    <summary>高级设置 <span class="arrow">▼</span></summary>
-                                    <div class="advanced-content">
-                                        <div class="form-group">
-                                            <label>负面提示</label>
-                                            <input type="text" id="negative-prompt-image" class="premium-input"
-                                                placeholder="不希望出现的内容...">
+                            <!-- 右侧：控制区域 -->
+                            <div class="controls-panel glass-panel">
+                                <div class="panel-header">
+                                    <h3>生成设置</h3>
+                                </div>
+
+                                <div class="controls-grid">
+                                    <div class="control-item">
+                                        <label>视频风格</label>
+                                        <div class="select-wrapper">
+                                            <select id="style-select-image" class="premium-select">
+                                                <option value="">默认风格</option>
+                                                <option value="写实风格">📸 写实风格</option>
+                                                <option value="动画风格">🎨 动画风格</option>
+                                                <option value="电影风格">🎬 电影风格</option>
+                                                <option value="梦幻风格">🦄 梦幻风格</option>
+                                            </select>
                                         </div>
+                                    </div>
 
-                                        <div class="optimize-row">
-                                            <div class="optimize-control">
-                                                <div class="select-wrapper">
+                                    <div class="control-item">
+                                        <label>模型版本</label>
+                                        <div class="select-wrapper">
+                                            <select id="video-model-image" class="premium-select">
+                                                <option value="veo-3.1-generate-preview">Veo 3.1 (Preview)</option>
+                                                <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast</option>
+                                                <option value="veo-3.0-generate-preview">Veo 3.0</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="advanced-options">
+                                    <details>
+                                        <summary>高级设置 <span class="arrow">▼</span></summary>
+                                        <div class="advanced-content">
+                                            <div class="form-group">
+                                                <label>负面提示</label>
+                                                <input type="text" id="negative-prompt-image" class="premium-input"
+                                                    placeholder="不希望出现的内容...">
+                                            </div>
+
+                                            <div class="optimize-row">
+                                                <div class="optimize-control">
+                                                    <label>提示词优化模型</label>
                                                     <select id="optimize-model-image" class="premium-select sm">
                                                         <option value="gemini-3.0-pro">Gemini 3.0 Pro</option>
                                                         <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
@@ -328,7 +339,25 @@
                                                 <p id="optimized-image-content"></p>
                                             </div>
                                         </div>
-                                </details>
+                                    </details>
+                                </div>
+
+                                <div class="action-area">
+                                    <button id="generate-image-btn" class="btn btn-primary btn-lg btn-block btn-glow">
+                                        <span class="icon">✨</span> 开始生成视频
+                                    </button>
+                                </div>
+
+                                <!-- Video Preview Section -->
+                                <div class="preview-section">
+                                    <!-- Empty State -->
+                                    <div class="preview-empty" id="preview-empty-image" style="display: block;">
+                                        <div class="empty-icon">🎬</div>
+                                        <p>视频将在这里预览</p>
+                                    </div>
+
+                                    <!-- Loading and Result states would be shared/duplicated if needed -->
+                                </div>
                             </div>
                         </div>
                     </div>
