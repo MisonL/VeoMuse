@@ -23,7 +23,6 @@
 </p>
 
 <p align="center">
-  <a href="https://misonl.github.io/VeoMuse/app.html">🚀 在线体验</a> |
   <a href="#快速开始">📖 快速开始</a> |
   <a href="docs/API_DOCUMENTATION.md">🔌 API文档</a> |
   <a href="docs/DEPLOYMENT.md">🐳 部署指南</a>
@@ -45,7 +44,7 @@
 
 🎆 **为什么选择VeoMuse？**
 - ✨ **简单易用**：输入文字或上传图片，一键生成视频
-- 🚀 **在线体验**：无需安装，[GitHub Pages在线使用](https://misonl.github.io/VeoMuse/app.html)
+- 🚀 **快速部署**：支持 Docker、Vercel、Railway 等多种部署方式
 - 🎨 **多样化**：支持多种视频风格和提示词模板
 - ⚡ **高性能**：GPU加速 + 智能轮询 + 批量处理
 - 🔒 **企业级**：完整的安全防护和日志系统
@@ -95,15 +94,27 @@
 
 ## 🚀 快速开始
 
-### 🌐 在线体验（推荐）
+### 🚀 部署选项
 
-<p align="center">
-  <a href="https://misonl.github.io/VeoMuse/app.html">
-    <img src="https://img.shields.io/badge/🚀_%E5%9C%A8%E7%BA%BF%E4%BD%93%E9%AA%8C-4285F4?style=for-the-badge&logoColor=white" alt="在线体验" height="50">
-  </a>
-</p>
+> **注意**：VeoMuse 是一个全栈应用，需要 Node.js 后端支持，**不能**直接部署到 GitHub Pages。
 
-无需安装，直接在浏览器中体验AI视频生成！只需输入您的Gemini API密钥即可开始创作。
+推荐的部署方式：
+
+1. **Vercel/Netlify**（推荐）
+   - 支持 Serverless Functions
+   - 免费额度充足
+   - 自动 CI/CD
+
+2. **Railway/Render**
+   - 完整的 Node.js 环境
+   - 一键部署
+   - 免费层可用
+
+3. **Docker + 云服务器**
+   - 使用项目中的 Docker 配置
+   - 适合生产环境
+
+详细部署指南请查看 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ### 💻 本地安装
 

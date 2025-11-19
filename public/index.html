@@ -1,364 +1,528 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VeoMuse - 文字/图片生成视频</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>VeoMuse - AI 视频创作平台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/css/main.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
 </head>
+
 <body>
-    <div class="container">
-        <!-- 头部区域 -->
-        <div class="header">
-            <button class="theme-toggle" id="theme-toggle">🌙</button>
-            <h1>VeoMuse</h1>
-            <p>使用Gemini Veo模型将文字或图片生成视频</p>
-        </div>
-        
-        <!-- API警告提示 -->
-        <div class="api-warning">
-            <strong>重要提示：</strong>Gemini Veo模型目前仅在付费层级可用，免费层级的API密钥无法使用此功能。您需要一个有效的付费API密钥才能生成视频。
-        </div>
-        
-        <!-- API密钥配置区域 -->
-        <div class="api-key-section">
-            <div class="form-group">
-                <label for="api-key">临时API密钥 (非持久化):</label>
-                <input type="password" id="api-key" placeholder="输入您的Gemini API密钥以临时使用">
-            </div>
-        </div>
-        
-        <!-- 选项卡导航 -->
-        <div class="tabs">
-            <button class="tab active" data-tab="text">文字生成视频</button>
-            <button class="tab" data-tab="image">图片生成视频</button>
-            <button class="tab" data-tab="history">生成历史</button>
-            <button class="tab" data-tab="api">API文档</button>
-        </div>
-        
-        <!-- 文字生成视频选项卡 -->
-        <div class="tab-content active" id="text-content">
-            <!-- 提示词模板快速选择 -->
-            <div class="template-quick-select">
-                <h3>🎨 提示词模板快速选择</h3>
-                <div class="template-categories-compact" id="template-categories-compact">
-                    <!-- 模板分类将在JavaScript中动态生成 -->
-                </div>
-                <div class="template-quick-actions">
-                    <button id="random-template-text-btn" class="btn btn-sm btn-info">🎲 随机获取模板</button>
-                    <button id="show-all-templates-btn" class="btn btn-sm btn-secondary">📚 查看所有模板</button>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="text-input">输入文字描述:</label>
-                <textarea id="text-input" placeholder="请输入您想要生成视频的文字描述，越详细越好...例如：广角镜头：一只可爱的雪豹在冬季森林中欢快地跳跃，场景中有圆润的雪树和缓缓飘落的雪花。"></textarea>
-            </div>
-            
-            <!-- 风格选择 -->
-            <div class="form-group">
-                <label for="style-select-text">选择视频风格:</label>
-                <select id="style-select-text">
-                    <option value="">默认风格</option>
-                    <option value="写实风格">写实风格 - 真实感强，细节丰富</option>
-                    <option value="动画风格">动画风格 - 卡通动画，色彩鲜艳</option>
-                    <option value="电影风格">电影风格 - 电影级画质，戏剧性光影</option>
-                    <option value="梦幻风格">梦幻风格 - 梦幻般视觉效果</option>
-                    <option value="复古风格">复古风格 - 怀旧复古感，温暖色调</option>
-                    <option value="科幻风格">科幻风格 - 未来感科技风格</option>
-                </select>
-            </div>
-            
-            <div class="optimize-section">
-                <button id="optimize-text-btn" class="btn btn-info">AI优化提示词</button>
-                <select id="optimize-model-text">
-                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                </select>
-            </div>
-            
-            <div class="optimized-prompt" id="optimized-text-prompt">
-                <h4>优化后的提示词:</h4>
-                <p id="optimized-text-content"></p>
-            </div>
-            
-            <div class="form-group">
-                <label for="negative-prompt-text">负面提示 (可选):</label>
-                <input type="text" id="negative-prompt-text" placeholder="描述您不希望在视频中出现的内容，例如：卡通、低质量、模糊">
-            </div>
-            
-            <div class="model-selection">
-                <div class="model-option">
-                    <label for="video-model-text">视频生成模型:</label>
-                    <select id="video-model-text">
-                        <option value="veo-3.0-generate-preview">Veo 3.0 (Preview)</option>
-                        <option value="veo-3.0-fast-generate-preview">Veo 3.0 Fast (Preview)</option>
-                        <option value="veo-2.0-generate-001">Veo 2.0</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button id="generate-text-btn" class="btn">生成视频</button>
-        </div>
-        
-        <!-- 图片生成视频选项卡 -->
-        <div class="tab-content" id="image-content">
-            <div class="form-group">
-                <label for="image-input">上传图片:</label>
-                <input type="file" id="image-input" accept="image/*">
-            </div>
-            
-            <!-- 图片相关的提示词模板 -->
-            <div class="template-quick-select">
-                <h3>🎨 图片视频模板快速选择</h3>
-                <div class="template-categories-compact" id="template-categories-image">
-                    <!-- 图片相关模板将在JavaScript中动态生成 -->
-                </div>
-                <div class="template-quick-actions">
-                    <button id="random-template-image-btn" class="btn btn-sm btn-info">🎲 随机获取模板</button>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="image-prompt">图片描述:</label>
-                <textarea id="image-prompt" placeholder="详细描述您希望如何基于这张图片生成视频...例如：图片中的雪豹开始在雪地中奔跑，雪花飞舞。"></textarea>
-            </div>
-            
-            <!-- 风格选择 -->
-            <div class="form-group">
-                <label for="style-select-image">选择视频风格:</label>
-                <select id="style-select-image">
-                    <option value="">默认风格</option>
-                    <option value="写实风格">写实风格 - 真实感强，细节丰富</option>
-                    <option value="动画风格">动画风格 - 卡通动画，色彩鲜艳</option>
-                    <option value="电影风格">电影风格 - 电影级画质，戏剧性光影</option>
-                    <option value="梦幻风格">梦幻风格 - 梦幻般视觉效果</option>
-                    <option value="复古风格">复古风格 - 怀旧复古感，温暖色调</option>
-                    <option value="科幻风格">科幻风格 - 未来感科技风格</option>
-                </select>
-            </div>
-            
-            <div class="optimize-section">
-                <button id="optimize-image-btn" class="btn btn-info">AI优化提示词</button>
-                <select id="optimize-model-image">
-                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                    <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                </select>
-            </div>
-            
-            <div class="optimized-prompt" id="optimized-image-prompt">
-                <h4>优化后的提示词:</h4>
-                <p id="optimized-image-content"></p>
-            </div>
-            
-            <div class="form-group">
-                <label for="negative-prompt-image">负面提示 (可选):</label>
-                <input type="text" id="negative-prompt-image" placeholder="描述您不希望在视频中出现的内容">
-            </div>
-            
-            <div class="model-selection">
-                <div class="model-option">
-                    <label for="video-model-image">视频生成模型:</label>
-                    <select id="video-model-image">
-                        <option value="veo-3.0-generate-preview">Veo 3.0 (Preview)</option>
-                        <option value="veo-3.0-fast-generate-preview">Veo 3.0 Fast (Preview)</option>
-                        <option value="veo-2.0-generate-001">Veo 2.0</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div id="image-preview" class="preview"></div>
-            <button id="generate-image-btn" class="btn">生成视频</button>
-        </div>
-        
-        
-        <!-- 生成历史选项卡 -->
-        <div class="tab-content" id="history-content">
-            <div class="history-header">
-                <h2>生成历史</h2>
-                <button id="clear-history-btn" class="btn btn-warning">清空历史</button>
-            </div>
-            
-            <div class="history-list" id="history-list">
-                <!-- 历史记录将在JavaScript中动态生成 -->
-            </div>
-            
-            <div class="history-empty" id="history-empty" style="display: none;">
-                <p>暂无生成历史，开始创建您的第一个视频吧！</p>
-            </div>
-        </div>
-        
-        <!-- API文档选项卡 -->
-        <div class="tab-content" id="api-content">
-            <h2>API文档</h2>
-            <p>以下是VeoMuse应用程序提供的API接口文档。</p>
-            
-            <div class="api-docs">
-                <h3>基础信息</h3>
-                <p><strong>Base URL:</strong> <code>http://localhost:3000/api</code></p>
-                <p><strong>认证:</strong> 所有API端点都需要有效的Gemini API密钥。您可以通过环境变量配置或在请求中提供API密钥。</p>
-                
-                <h3>模型接口</h3>
-                <h4>获取可用模型</h4>
-                <p><strong>Endpoint:</strong> <code>GET /models</code></p>
-                <p><strong>查询参数:</strong></p>
-                <ul>
-                    <li><code>apiKey</code> (可选): 您的Gemini API密钥</li>
-                </ul>
-                <p><strong>响应示例:</strong></p>
-                <pre><code>{
-  "videoModels": [
-    {
-      "id": "veo-3.0-generate-preview",
-      "name": "Veo 3.0 (Preview)"
-    }
-  ],
-  "optimizationModels": [
-    {
-      "id": "gemini-2.5-pro",
-      "name": "Gemini 2.5 Pro"
-    }
-  ]
-}</code></pre>
-                
-                <h3>文字生成视频</h3>
-                <h4>生成视频</h4>
-                <p><strong>Endpoint:</strong> <code>POST /text-to-video</code></p>
-                <p><strong>请求体:</strong></p>
-                <pre><code>{
-  "text": "A beautiful sunset over the ocean",
-  "negativePrompt": "blurry, low quality",
-  "apiKey": "your-api-key",
-  "model": "veo-3.0-generate-preview",
-  "optimize": true,
-  "socketId": "socket-id-for-realtime-updates"
-}</code></pre>
-                
-                <h3>图片生成视频</h3>
-                <h4>生成视频</h4>
-                <p><strong>Endpoint:</strong> <code>POST /image-to-video</code></p>
-                <p><strong>表单数据:</strong></p>
-                <ul>
-                    <li><code>image</code>: 要上传的图片文件</li>
-                    <li><code>prompt</code>: 如何生成视频的描述</li>
-                    <li><code>negativePrompt</code>: 要避免的元素</li>
-                    <li><code>apiKey</code>: 您的API密钥</li>
-                    <li><code>model</code>: 使用的模型</li>
-                </ul>
-                
-                <h3>提示词优化</h3>
-                <h4>优化提示词</h4>
-                <p><strong>Endpoint:</strong> <code>POST /optimize-prompt</code></p>
-                <p><strong>请求体:</strong></p>
-                <pre><code>{
-  "prompt": "A cat playing",
-  "apiKey": "your-api-key",
-  "model": "gemini-2.5-pro"
-}</code></pre>
-                
-                <h3>视频管理</h3>
-                <h4>下载生成的视频</h4>
-                <p><strong>Endpoint:</strong> <code>POST /download-video</code></p>
-                <h4>转码视频</h4>
-                <p><strong>Endpoint:</strong> <code>POST /transcode-video</code></p>
-                
-                <h3>健康检查</h3>
-                <p><strong>Endpoint:</strong> <code>GET /health</code></p>
-            </div>
-        </div>
-        
-        <!-- 加载状态 -->
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <div class="status-text" id="status-text">正在初始化视频生成...</div>
-            <div class="progress-bar">
-                <div class="progress" id="progress"></div>
-            </div>
-            <p>正在生成视频，请稍候...</p>
-            <p style="font-size: 0.9rem; margin-top: 10px;">Gemini Veo模型正在处理您的请求</p>
-        </div>
-        
-        <!-- 结果显示 -->
-        <div class="result" id="result">
-            <h3>生成完成!</h3>
-            <div id="video-container"></div>
-            
-            <div class="conversion-section">
-                <h3>视频转换</h3>
-                <div class="conversion-options">
-                    <div class="conversion-option">
-                        <label for="convert-format">目标格式:</label>
-                        <select id="convert-format">
-                            <option value="mp4">MP4</option>
-                            <option value="webm">WebM</option>
-                            <option value="mov">MOV</option>
-                        </select>
-                    </div>
-                    <div class="conversion-option">
-                        <label for="convert-resolution">分辨率:</label>
-                        <select id="convert-resolution">
-                            <option value="">保持原分辨率</option>
-                            <option value="480p">480p</option>
-                            <option value="720p">720p</option>
-                            <option value="1080p">1080p</option>
-                        </select>
-                    </div>
-                    <div class="conversion-option">
-                        <label for="convert-fps">帧率:</label>
-                        <select id="convert-fps">
-                            <option value="">保持原帧率</option>
-                            <option value="24">24 FPS</option>
-                            <option value="30">30 FPS</option>
-                            <option value="60">60 FPS</option>
-                        </select>
-                    </div>
-                </div>
-                <button id="convert-btn" class="btn btn-warning">转换视频</button>
-                
-                <div class="transcode-progress" id="transcode-progress">
-                    <div class="status-text" id="transcode-status-text">正在初始化视频转换...</div>
-                    <div class="progress-bar">
-                        <div class="progress" id="transcode-progress-bar"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="conversion-preview" id="conversion-preview">
-                <h3>转换完成!</h3>
-                <div id="converted-video-container"></div>
-                <button id="download-converted-btn" class="btn btn-success" style="margin-top: 15px;">下载转换后的视频</button>
-            </div>
-            
-            <div class="video-actions">
-                <button id="download-btn" class="btn">下载原始视频</button>
-            </div>
-        </div>
-        
-        <!-- 页脚 -->
-        <div class="footer">
-            <p>© 2025 VeoMuse - 文字/图片生成视频工具 | 基于Google Gemini Veo模型</p>
-            <p style="font-size: 0.8rem; margin-top: 10px;">注意：Gemini Veo模型目前仅在付费层级可用</p>
-        </div>
+    <div class="app-background">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
     </div>
-    
+
+    <div class="app-container">
+        <!-- 侧边栏导航 -->
+        <aside class="sidebar glass-panel">
+            <div class="logo-container">
+                <div class="logo-icon">V</div>
+                <h1>VeoMuse</h1>
+            </div>
+
+            <nav class="main-nav">
+                <button class="nav-item active" data-tab="text">
+                    <span class="icon">📝</span>
+                    <span class="label">文字转视频</span>
+                </button>
+                <button class="nav-item" data-tab="image">
+                    <span class="icon">🖼️</span>
+                    <span class="label">图片转视频</span>
+                </button>
+                <button class="nav-item" data-tab="history">
+                    <span class="icon">🕒</span>
+                    <span class="label">创作历史</span>
+                </button>
+                <button class="nav-item" data-tab="api">
+                    <span class="icon">🔌</span>
+                    <span class="label">API 文档</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="theme-toggle" title="切换主题">
+                    <span class="icon">🌙</span>
+                </button>
+                <div class="user-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">系统就绪</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <!-- 顶部栏 -->
+            <header class="top-bar glass-panel">
+                <div class="page-title">
+                    <h2 id="page-title-text">文字转视频</h2>
+                    <p id="page-subtitle-text">使用 Gemini Veo 模型将您的创意转化为精彩视频</p>
+                </div>
+
+                <div class="api-config">
+                    <div class="api-input-wrapper">
+                        <input type="password" id="api-key" placeholder="输入 Gemini API 密钥 (临时)">
+                        <span class="input-icon">🔑</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- API警告提示 -->
+            <div class="api-warning glass-panel warning-panel">
+                <span class="icon">⚠️</span>
+                <div class="warning-content">
+                    <strong>需要付费 API 密钥：</strong> Gemini Veo 模型目前仅在付费层级可用。请确保您使用的是有效的付费 API 密钥。
+                </div>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="content-area-grid">
+
+                <!-- 左侧：输入控制区 -->
+                <div class="input-column">
+                    <!-- 文字生成视频选项卡 -->
+                    <div class="tab-content active" id="text-content">
+                        <div class="input-panel glass-panel">
+                            <div class="panel-header">
+                                <h3>创意描述</h3>
+                                <div class="template-actions">
+                                    <button id="random-template-text-btn" class="btn btn-sm btn-ghost">
+                                        <span class="icon">🎲</span> 随机灵感
+                                    </button>
+                                    <button id="show-all-templates-btn" class="btn btn-sm btn-ghost">
+                                        <span class="icon">📚</span> 模板库
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 快速模板选择区 -->
+                            <div id="template-categories-compact"></div>
+
+                            <div class="form-group">
+                                <textarea id="text-input" class="premium-input"
+                                    placeholder="描述您想象中的画面... 例如：一只发光的透明水母在深邃的宇宙星空中游动，周围环绕着绚丽的星云，电影级光效，4k分辨率。"></textarea>
+                            </div>
+
+                            <div class="controls-grid">
+                                <div class="control-item">
+                                    <label>视频风格</label>
+                                    <div class="select-wrapper">
+                                        <select id="style-select-text" class="premium-select">
+                                            <option value="">默认风格</option>
+                                            <option value="写实风格">📸 写实风格</option>
+                                            <option value="动画风格">🎨 动画风格</option>
+                                            <option value="电影风格">🎬 电影风格</option>
+                                            <option value="梦幻风格">🦄 梦幻风格</option>
+                                            <option value="复古风格">📼 复古风格</option>
+                                            <option value="科幻风格">🚀 科幻风格</option>
+                                            <option value="3D渲染">🧊 3D渲染</option>
+                                            <option value="水墨画">🖌️ 水墨画</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="control-item">
+                                    <label>模型版本</label>
+                                    <div class="select-wrapper">
+                                        <select id="video-model-text" class="premium-select">
+                                            <option value="veo-3.1-generate-preview">Veo 3.1 (Preview)</option>
+                                            <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast</option>
+                                            <option value="veo-3.0-generate-preview">Veo 3.0</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="advanced-options">
+                                <details>
+                                    <summary>高级设置 <span class="arrow">▼</span></summary>
+                                    <div class="advanced-content">
+                                        <div class="form-group">
+                                            <label>负面提示 (不希望出现的内容)</label>
+                                            <input type="text" id="negative-prompt-text" class="premium-input"
+                                                placeholder="例如：模糊、变形、低质量、水印...">
+                                        </div>
+
+                                        <div class="optimize-row">
+                                            <div class="optimize-control">
+                                                <label>提示词优化模型</label>
+                                                <select id="optimize-model-text" class="premium-select sm">
+                                                    <option value="gemini-3.0-pro">Gemini 3.0 Pro</option>
+                                                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                                </select>
+                                            </div>
+                                            <button id="optimize-text-btn" class="btn btn-secondary btn-icon-text">
+                                                <span class="icon">✨</span> AI 优化提示词
+                                            </button>
+                                        </div>
+
+                                        <div class="optimized-prompt glass-panel inner-panel" id="optimized-text-prompt"
+                                            style="display:none;">
+                                            <div class="prompt-header">
+                                                <span class="icon">✨</span> 优化后的提示词
+                                            </div>
+                                            <p id="optimized-text-content"></p>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+
+                            <div class="action-area">
+                                <button id="generate-text-btn" class="btn btn-primary btn-lg btn-block btn-glow">
+                                    <span class="icon">✨</span> 开始生成视频
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 图片生成视频选项卡 -->
+                    <div class="tab-content" id="image-content">
+                        <div class="input-panel glass-panel">
+                            <div class="panel-header">
+                                <h3>图片转视频</h3>
+                                <div class="template-actions">
+                                    <button id="random-template-image-btn" class="btn btn-sm btn-ghost">
+                                        <span class="icon">🎲</span> 随机灵感
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 快速模板选择区 -->
+                            <div id="template-categories-image"></div>
+
+                            <div class="upload-area" id="upload-area">
+                                <input type="file" id="image-input" accept="image/*" hidden>
+                                <div class="upload-placeholder"
+                                    onclick="document.getElementById('image-input').click()">
+                                    <div class="upload-icon">☁️</div>
+                                    <p>点击上传或拖拽图片到这里</p>
+                                    <span class="upload-hint">支持 JPG, PNG, WebP</span>
+                                </div>
+                                <div id="image-preview-container" class="image-preview-container"
+                                    style="display: none;">
+                                    <img id="uploaded-image-preview" src="" alt="Preview">
+                                    <button class="remove-image" id="remove-image-btn">×</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>动态描述</label>
+                                <textarea id="image-prompt" class="premium-input"
+                                    placeholder="描述您希望图片如何动起来... 例如：镜头缓慢推进，瀑布流动，水雾缭绕。"></textarea>
+                            </div>
+
+                            <div class="controls-grid">
+                                <div class="control-item">
+                                    <label>视频风格</label>
+                                    <div class="select-wrapper">
+                                        <select id="style-select-image" class="premium-select">
+                                            <option value="">默认风格</option>
+                                            <option value="写实风格">📸 写实风格</option>
+                                            <option value="动画风格">🎨 动画风格</option>
+                                            <option value="电影风格">🎬 电影风格</option>
+                                            <option value="梦幻风格">🦄 梦幻风格</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="control-item">
+                                    <label>模型版本</label>
+                                    <div class="select-wrapper">
+                                        <select id="video-model-image" class="premium-select">
+                                            <option value="veo-3.1-generate-preview">Veo 3.1 (Preview)</option>
+                                            <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast</option>
+                                            <option value="veo-3.0-generate-preview">Veo 3.0</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="advanced-options">
+                                <details>
+                                    <summary>高级设置 <span class="arrow">▼</span></summary>
+                                    <div class="advanced-content">
+                                        <div class="form-group">
+                                            <label>负面提示</label>
+                                            <input type="text" id="negative-prompt-image" class="premium-input"
+                                                placeholder="不希望出现的内容...">
+                                        </div>
+
+                                        <div class="optimize-row">
+                                            <div class="optimize-control">
+                                                <div class="select-wrapper">
+                                                    <select id="optimize-model-image" class="premium-select sm">
+                                                        <option value="gemini-3.0-pro">Gemini 3.0 Pro</option>
+                                                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                                    </select>
+                                                </div>
+                                                <button id="optimize-image-btn" class="btn btn-secondary btn-icon-text">
+                                                    <span class="icon">✨</span> AI 优化
+                                                </button>
+                                            </div>
+
+                                            <div class="optimized-prompt glass-panel inner-panel"
+                                                id="optimized-image-prompt" style="display:none;">
+                                                <div class="prompt-header">
+                                                    <span class="icon">✨</span> 优化结果
+                                                </div>
+                                                <p id="optimized-image-content"></p>
+                                            </div>
+                                        </div>
+                                </details>
+                            </div>
+
+                            <div class="action-area">
+                                <button id="generate-image-btn" class="btn btn-primary btn-lg btn-block btn-glow">
+                                    <span class="icon">✨</span> 生成视频
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 历史记录选项卡 -->
+                    <div class="tab-content" id="history-content">
+                        <div class="glass-panel full-panel">
+                            <div class="panel-header">
+                                <h3>创作历史</h3>
+                                <button id="clear-history-btn" class="btn btn-danger btn-sm">清空历史</button>
+                            </div>
+                            <div class="history-grid" id="history-list">
+                                <!-- 历史记录项 -->
+                            </div>
+                            <div class="history-empty" id="history-empty" style="display: none;">
+                                <div class="empty-icon">🕒</div>
+                                <p>暂无历史记录</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API文档选项卡 -->
+                    <div class="tab-content" id="api-content">
+                        <div class="glass-panel full-panel">
+                            <div class="panel-header">
+                                <h3>API 参考文档</h3>
+                                <div class="api-status">
+                                    <span class="status-dot"></span>
+                                    <span class="status-text">v1.0.0</span>
+                                </div>
+                            </div>
+
+                            <div class="api-docs-content">
+                                <!-- 认证部分 -->
+                                <div class="api-section">
+                                    <h4>🔐 认证鉴权</h4>
+                                    <p class="endpoint-desc">所有 API 请求都需要在 Header 中包含 API 密钥。</p>
+                                    <div class="code-block">
+                                        Authorization: Bearer YOUR_API_KEY
+                                    </div>
+                                </div>
+
+                                <!-- 核心接口 -->
+                                <div class="api-section">
+                                    <h4>🚀 核心接口</h4>
+
+                                    <!-- 文字转视频 -->
+                                    <div class="api-endpoint">
+                                        <div class="endpoint-header">
+                                            <span class="method-badge post">POST</span>
+                                            <span class="endpoint-url">/api/generate-text</span>
+                                        </div>
+                                        <p class="endpoint-desc">根据文字描述生成视频。</p>
+
+                                        <span class="code-label">请求参数 (JSON)</span>
+                                        <table class="param-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>参数名</th>
+                                                    <th>类型</th>
+                                                    <th>说明</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><span class="param-name">text</span><span
+                                                            class="param-required">*</span></td>
+                                                    <td><span class="param-type">string</span></td>
+                                                    <td>视频内容的详细文字描述</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="param-name">model</td>
+                                                    <td><span class="param-type">string</span></td>
+                                                    <td>模型版本 (默认: veo-3.1-preview)</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                        <span class="code-label">示例请求</span>
+                                        <div class="code-block">
+                                            {
+                                            "text": "一只发光的水母在太空中游动",
+                                            "model": "veo-3.1-generate-preview"
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 图片转视频 -->
+                                <div class="api-endpoint">
+                                    <div class="endpoint-header">
+                                        <span class="method-badge post">POST</span>
+                                        <span class="endpoint-url">/api/generate-image</span>
+                                    </div>
+                                    <p class="endpoint-desc">让静态图片动起来。</p>
+
+                                    <span class="code-label">请求参数 (FormData)</span>
+                                    <table class="param-table">
+                                        <tbody>
+                                            <tr>
+                                                <td><span class="param-name">image</span><span
+                                                        class="param-required">*</span></td>
+                                                <td><span class="param-type">file</span></td>
+                                                <td>源图片文件 (JPG/PNG)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="param-name">prompt</span><span
+                                                        class="param-required">*</span></td>
+                                                <td><span class="param-type">string</span></td>
+                                                <td>指导运动的文字提示</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- 错误码 -->
+                            <div class="api-section">
+                                <h4>⚠️ 常见错误码</h4>
+                                <table class="param-table">
+                                    <tbody>
+                                        <tr>
+                                            <td><span class="param-name">401</span></td>
+                                            <td>未授权 (API Key 无效)</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="param-name">429</span></td>
+                                            <td>请求过于频繁 (Rate Limit)</td>
+                                        </tr>
+                                        <tr>
+                                            <td><span class="param-name">500</span></td>
+                                            <td>服务器内部错误</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：公共预览区 -->
+            <div class="preview-column">
+                <div class="preview-panel glass-panel sticky-panel">
+                    <div class="empty-state" id="preview-empty-state">
+                        <div class="empty-icon">🎬</div>
+                        <h3>准备生成</h3>
+                        <p>您的视频将在这里展示</p>
+                    </div>
+
+                    <!-- 加载状态 -->
+                    <div class="loading-state" id="loading" style="display: none;">
+                        <div class="loader-container">
+                            <div class="loader-ring"></div>
+                            <div class="loader-core"></div>
+                        </div>
+                        <div class="loading-text">
+                            <h3>正在创造奇迹...</h3>
+                            <p id="status-text">初始化生成引擎</p>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 结果显示 -->
+                    <div class="result-display" id="result" style="display: none;">
+                        <div class="video-wrapper" id="video-container"></div>
+
+                        <div class="result-actions">
+                            <button id="download-btn" class="btn btn-secondary">
+                                <span class="icon">⬇️</span> 下载原片
+                            </button>
+                            <button class="btn btn-secondary"
+                                onclick="document.getElementById('conversion-tools').style.display = document.getElementById('conversion-tools').style.display === 'none' ? 'block' : 'none'">
+                                <span class="icon">🔄</span> 格式转换
+                            </button>
+                        </div>
+
+                        <div class="conversion-tools glass-panel inner-panel" id="conversion-tools"
+                            style="display:none">
+                            <h4>视频转换工具</h4>
+                            <div class="tools-grid">
+                                <div class="tool-group">
+                                    <label>格式</label>
+                                    <select id="convert-format" class="premium-select sm">
+                                        <option value="mp4">MP4</option>
+                                        <option value="webm">WebM</option>
+                                        <option value="mov">MOV</option>
+                                    </select>
+                                </div>
+                                <div class="tool-group">
+                                    <label>分辨率</label>
+                                    <select id="convert-resolution" class="premium-select sm">
+                                        <option value="">原始</option>
+                                        <option value="1080p">1080p</option>
+                                        <option value="720p">720p</option>
+                                    </select>
+                                </div>
+                                <button id="convert-btn" class="btn btn-primary btn-sm">开始转换</button>
+                            </div>
+
+                            <div class="transcode-status" id="transcode-progress" style="display: none;">
+                                <div class="status-text" id="transcode-status-text">转换中...</div>
+                                <div class="progress-bar sm">
+                                    <div class="progress-fill" id="transcode-progress-bar"></div>
+                                </div>
+                            </div>
+
+                            <div class="conversion-result" id="conversion-preview" style="display: none;">
+                                <div id="converted-video-container"></div>
+                                <button id="download-converted-btn"
+                                    class="btn btn-success btn-sm btn-block">下载转换视频</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+    </main>
+    </div>
+
     <!-- 通知提示 -->
-    <div class="notification" id="notification"></div>
-    
+    <div class="notification-container" id="notification"></div>
+
     <!-- 模板弹窗 -->
-    <div class="modal" id="template-modal">
-        <div class="modal-content">
+    <div class="modal-overlay" id="template-modal" style="display: none;">
+        <div class="modal-glass">
             <div class="modal-header">
-                <h2>🎨 提示词模板库</h2>
-                <span class="close" id="close-template-modal">&times;</span>
+                <h2>🎨 灵感库</h2>
+                <button class="close-btn" id="close-template-modal">×</button>
             </div>
             <div class="modal-body">
-                <p>选择一个模板直接应用到输入框中，立即开始生成视频。</p>
-                
                 <div class="template-categories" id="template-categories-modal">
-                    <!-- 模板分类将在JavaScript中动态生成 -->
+                    <!-- 动态生成 -->
                 </div>
             </div>
         </div>
@@ -370,5 +534,56 @@
     <script src="/js/api-client.js"></script>
     <script src="/js/app.js"></script>
     <script src="/js/features.js"></script>
+
+    <script>
+        // Tab 切换逻辑
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+
+                const tabId = item.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(tabId + '-content').classList.add('active');
+
+                // 更新标题
+                const titles = {
+                    'text': '文字转视频',
+                    'image': '图片转视频',
+                    'history': '创作历史',
+                    'api': 'API 文档'
+                };
+                document.getElementById('page-title-text').textContent = titles[tabId];
+
+                // 控制右侧预览面板的显示
+                const previewColumn = document.querySelector('.preview-column');
+                if (tabId === 'text' || tabId === 'image') {
+                    previewColumn.style.display = 'block';
+                    document.querySelector('.content-area-grid').style.gridTemplateColumns = '1fr 1fr';
+                } else {
+                    previewColumn.style.display = 'none';
+                    document.querySelector('.content-area-grid').style.gridTemplateColumns = '1fr';
+                }
+            });
+        });
+
+        // 模态框关闭逻辑
+        document.getElementById('close-template-modal').addEventListener('click', () => {
+            document.getElementById('template-modal').style.display = 'none';
+        });
+
+        // 简单的通知显示函数，如果原 JS 没覆盖到
+        window.showNotification = function (message, type = 'info') {
+            const container = document.getElementById('notification');
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.textContent = message;
+            container.appendChild(notif);
+            setTimeout(() => {
+                notif.remove();
+            }, 3000);
+        };
+    </script>
 </body>
+
 </html>

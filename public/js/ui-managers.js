@@ -3,82 +3,111 @@
 // 通知管理器
 class NotificationManager {
     static show(message, type = 'success') {
-        const notification = document.getElementById('notification');
-        notification.textContent = message;
+        let container = document.getElementById('notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            container.className = 'notification-container';
+            document.body.appendChild(container);
+        }
+
+        const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        notification.classList.add('show');
-        
+        notification.textContent = message;
+
+        // 添加关闭按钮
+        const closeBtn = document.createElement('span');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.style.marginLeft = '10px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.onclick = () => {
+            notification.style.animation = 'fadeOut 0.3s forwards';
+            setTimeout(() => notification.remove(), 300);
+        };
+        notification.appendChild(closeBtn);
+
+        container.appendChild(notification);
+
+        // 自动消失
         setTimeout(() => {
-            notification.classList.remove('show');
-        }, 3000);
+            if (notification.parentNode) {
+                notification.style.animation = 'fadeOut 0.3s forwards';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
     }
 }
 
 // 加载状态管理器
 class LoadingManager {
     static show() {
-        document.getElementById('loading').classList.add('show');
-        document.getElementById('result').classList.remove('show');
+        const loadingEl = document.getElementById('loading');
+        const resultEl = document.getElementById('result');
+
+        if (loadingEl) loadingEl.style.display = 'flex'; // 使用 flex 布局居中
+        if (resultEl) resultEl.style.display = 'none';
+
         this.updateProgress('正在初始化视频生成...', 0);
     }
 
     static hide() {
-        document.getElementById('loading').classList.remove('show');
+        const loadingEl = document.getElementById('loading');
+        if (loadingEl) loadingEl.style.display = 'none';
     }
 
     static updateProgress(text, percent) {
-        document.getElementById('status-text').textContent = text;
-        document.getElementById('progress').style.width = percent + '%';
+        const statusText = document.getElementById('status-text');
+        const progressBar = document.getElementById('progress');
+        const progressText = document.querySelector('.progress-text');
+
+        if (statusText) statusText.textContent = text;
+        if (progressBar) progressBar.style.width = percent + '%';
+        if (progressText) progressText.textContent = percent + '%';
     }
 }
 
 // 图片模态框管理器
 class ImageModal {
     static show(imageSrc) {
-        // 创建模态框
-        const modal = document.createElement('div');
-        modal.className = 'image-modal';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            cursor: pointer;
-        `;
-        
+        // 检查是否已存在
+        if (document.querySelector('.modal-overlay.image-preview-modal')) return;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay image-preview-modal';
+        overlay.style.opacity = '0';
+
         const img = document.createElement('img');
         img.src = imageSrc;
-        img.style.cssText = `
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        `;
-        
-        modal.appendChild(img);
-        document.body.appendChild(modal);
-        
-        // 点击模态框关闭
-        modal.addEventListener('click', () => {
-            document.body.removeChild(modal);
+        img.style.maxWidth = '90%';
+        img.style.maxHeight = '90%';
+        img.style.borderRadius = '8px';
+        img.style.boxShadow = '0 20px 50px rgba(0,0,0,0.5)';
+        img.style.transform = 'scale(0.9)';
+        img.style.transition = 'transform 0.3s ease';
+
+        overlay.appendChild(img);
+        document.body.appendChild(overlay);
+
+        // 动画显示
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            img.style.transform = 'scale(1)';
         });
-        
-        // ESC键关闭
-        const handleEscKey = (e) => {
-            if (e.key === 'Escape') {
-                if (document.body.contains(modal)) {
-                    document.body.removeChild(modal);
-                }
-                document.removeEventListener('keydown', handleEscKey);
-            }
+
+        // 关闭事件
+        const close = () => {
+            overlay.style.opacity = '0';
+            img.style.transform = 'scale(0.9)';
+            setTimeout(() => overlay.remove(), 300);
         };
-        document.addEventListener('keydown', handleEscKey);
+
+        overlay.addEventListener('click', close);
+        document.addEventListener('keydown', function escListener(e) {
+            if (e.key === 'Escape') {
+                close();
+                document.removeEventListener('keydown', escListener);
+            }
+        });
     }
 }
 
@@ -170,13 +199,13 @@ class GenerationHistoryManager {
             timestamp: Date.now(),
             date: new Date().toLocaleString('zh-CN')
         };
-        
+
         history.unshift(newItem);
-        
+
         // 保持最大数量限制
         const limitedHistory = history.slice(0, this.maxHistoryItems);
         localStorage.setItem('generation_history', JSON.stringify(limitedHistory));
-        
+
         return newItem;
     }
 
@@ -268,53 +297,53 @@ class BatchProcessingManager {
             result: null,
             error: null
         };
-        
+
         this.queue.push(item);
         return item.id;
     }
 
     async processQueue() {
         if (this.processing) return;
-        
+
         this.processing = true;
         this.currentIndex = 0;
-        
+
         for (let i = 0; i < this.queue.length; i++) {
             const item = this.queue[i];
             this.currentIndex = i;
-            
+
             try {
                 item.status = 'processing';
                 this.updateBatchProgress();
-                
+
                 // 这里调用相应的生成方法
                 if (item.type === 'text') {
                     // await this.processTextGeneration(item);
                 } else if (item.type === 'image') {
                     // await this.processImageGeneration(item);
                 }
-                
+
                 item.status = 'completed';
             } catch (error) {
                 item.status = 'error';
                 item.error = error.message;
             }
-            
+
             this.updateBatchProgress();
         }
-        
+
         this.processing = false;
         NotificationManager.show('批量处理完成!');
     }
 
     updateBatchProgress() {
         const total = this.queue.length;
-        const completed = this.queue.filter(item => 
+        const completed = this.queue.filter(item =>
             item.status === 'completed' || item.status === 'error'
         ).length;
-        
+
         const progress = Math.round((completed / total) * 100);
-        
+
         // 这里可以更新UI显示批量处理进度
         console.log(`批量处理进度: ${completed}/${total} (${progress}%)`);
     }

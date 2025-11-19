@@ -6,7 +6,7 @@ class FeatureManager {
         this.app = app;
         this.selectedTemplate = null;
         this.batchProcessor = new BatchProcessingManager();
-        
+
         this.init();
     }
 
@@ -22,10 +22,10 @@ class FeatureManager {
     initTemplateFeatures() {
         // 初始化文字生成页面的模板快速选择
         this.initTextTemplateQuickSelect();
-        
+
         // 初始化图片生成页面的模板快速选择
         this.initImageTemplateQuickSelect();
-        
+
         // 初始化模板弹窗
         this.initTemplateModal();
     }
@@ -35,16 +35,16 @@ class FeatureManager {
         const container = document.getElementById('template-categories-compact');
         const randomBtn = document.getElementById('random-template-text-btn');
         const showAllBtn = document.getElementById('show-all-templates-btn');
-        
+
         // 渲染紧凑版模板分类（只显示几个常用的）
         this.renderCompactTemplateCategories(container, 'text');
-        
+
         // 随机获取模板并直接应用
         randomBtn.addEventListener('click', () => {
             const randomTemplate = PromptTemplateManager.getRandomTemplate();
             this.applyTemplateToInput(randomTemplate, 'text-input');
         });
-        
+
         // 显示所有模板弹窗
         showAllBtn.addEventListener('click', () => {
             this.showTemplateModal('text');
@@ -55,10 +55,10 @@ class FeatureManager {
     initImageTemplateQuickSelect() {
         const container = document.getElementById('template-categories-image');
         const randomBtn = document.getElementById('random-template-image-btn');
-        
+
         // 渲染适合图片生成的模板
         this.renderImageTemplateCategories(container);
-        
+
         // 随机获取图片相关模板并直接应用
         randomBtn.addEventListener('click', () => {
             const imageTemplates = PromptTemplateManager.getImageVideoTemplates();
@@ -70,10 +70,10 @@ class FeatureManager {
     // 渲染紧凑版模板分类（用于快速选择区域）
     renderCompactTemplateCategories(container, type) {
         const categories = PromptTemplateManager.getAllCategories();
-        
+
         // 只显示前3个分类，每个分类只显示2个模板
         const limitedCategories = categories.slice(0, 3);
-        
+
         container.innerHTML = limitedCategories.map(category => {
             const templates = PromptTemplateManager.getTemplatesByCategory(category).slice(0, 2);
             return `
@@ -103,7 +103,7 @@ class FeatureManager {
     // 渲染图片生成专用模板
     renderImageTemplateCategories(container) {
         const imageTemplates = PromptTemplateManager.getImageVideoTemplates();
-        
+
         container.innerHTML = `
             <div class="template-category-compact">
                 <h4>图片视频模板</h4>
@@ -134,7 +134,7 @@ class FeatureManager {
             input.value = template;
             input.focus();
             NotificationManager.show('✨ 模板已应用，您可以直接开始生成视频！', 'success');
-            
+
             // 滚动到输入框位置
             input.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
@@ -145,15 +145,15 @@ class FeatureManager {
         const modal = document.getElementById('template-modal');
         const closeBtn = document.getElementById('close-template-modal');
         const categoriesContainer = document.getElementById('template-categories-modal');
-        
+
         // 渲染完整的模板分类
         this.renderFullTemplateCategories(categoriesContainer);
-        
+
         // 关闭弹窗
         closeBtn.addEventListener('click', () => {
             modal.style.display = 'none';
         });
-        
+
         // 点击弹窗外部关闭
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
@@ -172,7 +172,7 @@ class FeatureManager {
     // 渲染完整的模板分类（用于弹窗）
     renderFullTemplateCategories(container) {
         const categories = PromptTemplateManager.getAllCategories();
-        
+
         container.innerHTML = categories.map(category => {
             const templates = PromptTemplateManager.getTemplatesByCategory(category);
             return `
@@ -198,17 +198,12 @@ class FeatureManager {
                 const modal = document.getElementById('template-modal');
                 const targetType = modal.dataset.targetType || 'text';
                 const targetInputId = targetType === 'text' ? 'text-input' : 'image-prompt';
-                
+
                 this.applyTemplateToInput(template, targetInputId);
                 modal.style.display = 'none'; // 关闭弹窗
             }
         });
     }
-
-    // 这个方法已经不需要了，因为我们改为直接应用模板
-    // selectTemplate(template) {
-    //     // 旧的选择逻辑，已被直接应用替代
-    // }
 
     // 初始化历史记录功能
     initHistoryFeatures() {
@@ -338,243 +333,13 @@ class FeatureManager {
 }
 
 // 扩展CSS样式
-const additionalStyles = `
-    /* 模板相关样式 */
-    .template-category {
-        margin-bottom: 30px;
-        padding: 20px;
-        background: #f8f9fa;
-        border-radius: 10px;
-    }
-    
-    body.dark .template-category {
-        background: #2d2d3a;
-    }
-    
-    .template-category h3 {
-        color: #333;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #4b6cb7;
-    }
-    
-    body.dark .template-category h3 {
-        color: #ddd;
-    }
-    
-    .template-items {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 15px;
-    }
-    
-    .template-item {
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #e0e0e0;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-    
-    body.dark .template-item {
-        background: #3a3a4a;
-        border: 1px solid #444;
-    }
-    
-    .template-item:hover {
-        border-color: #4b6cb7;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(75, 108, 183, 0.2);
-    }
-    
-    .template-item p {
-        color: #666;
-        margin-bottom: 10px;
-        line-height: 1.5;
-    }
-    
-    body.dark .template-item p {
-        color: #ccc;
-    }
-    
-    .template-actions {
-        margin-top: 20px;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    
-    .selected-template {
-        background: #d4edda;
-        padding: 15px;
-        border-radius: 10px;
-        margin: 15px 0;
-        border: 1px solid #c3e6cb;
-    }
-    
-    body.dark .selected-template {
-        background: #2d483d;
-        border: 1px solid #3d5a47;
-    }
-    
-    .selected-template h4 {
-        color: #155724;
-        margin-bottom: 10px;
-    }
-    
-    body.dark .selected-template h4 {
-        color: #b3d9c1;
-    }
-    
-    .selected-template p {
-        color: #0c5460;
-        line-height: 1.5;
-    }
-    
-    body.dark .selected-template p {
-        color: #a8c8d1;
-    }
-    
-    /* 历史记录样式 */
-    .history-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #e0e0e0;
-    }
-    
-    body.dark .history-header {
-        border-bottom-color: #444;
-    }
-    
-    .history-header h2 {
-        color: #333;
-        margin: 0;
-    }
-    
-    body.dark .history-header h2 {
-        color: #ddd;
-    }
-    
-    .history-item {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 15px;
-        border: 1px solid #e0e0e0;
-        transition: all 0.3s ease;
-    }
-    
-    body.dark .history-item {
-        background: #2d2d3a;
-        border: 1px solid #444;
-    }
-    
-    .history-item:hover {
-        border-color: #4b6cb7;
-        box-shadow: 0 2px 8px rgba(75, 108, 183, 0.1);
-    }
-    
-    .history-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-    
-    .history-type {
-        background: #4b6cb7;
-        color: white;
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: 500;
-    }
-    
-    .history-date {
-        color: #666;
-        font-size: 0.9rem;
-    }
-    
-    body.dark .history-date {
-        color: #aaa;
-    }
-    
-    .history-prompt {
-        color: #333;
-        line-height: 1.5;
-        margin-bottom: 15px;
-        padding: 10px;
-        background: white;
-        border-radius: 6px;
-        border-left: 3px solid #4b6cb7;
-    }
-    
-    body.dark .history-prompt {
-        color: #ddd;
-        background: #3a3a4a;
-    }
-    
-    .history-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    
-    .history-actions .btn {
-        padding: 6px 12px;
-        font-size: 0.85rem;
-    }
-    
-    .history-empty {
-        text-align: center;
-        padding: 40px 20px;
-        color: #666;
-        font-style: italic;
-    }
-    
-    body.dark .history-empty {
-        color: #aaa;
-    }
-    
-    /* 按钮尺寸变体 */
-    .btn-sm {
-        padding: 6px 12px;
-        font-size: 0.875rem;
-        border-radius: 20px;
-    }
-    
-    /* 响应式调整 */
-    @media (max-width: 768px) {
-        .template-items {
-            grid-template-columns: 1fr;
-        }
-        
-        .history-header {
-            flex-direction: column;
-            gap: 15px;
-            align-items: stretch;
-        }
-        
-        .history-meta {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-        }
-        
-        .history-actions {
-            justify-content: center;
-        }
-    }
-`;
+// 注意：样式已迁移至 main.css，此处不再注入
+const additionalStyles = '';
 
-// 注入额外样式
-const styleSheet = document.createElement('style');
-styleSheet.textContent = additionalStyles;
-document.head.appendChild(styleSheet);
+// 注入额外样式 - 已禁用
+// const styleSheet = document.createElement('style');
+// styleSheet.textContent = additionalStyles;
+// document.head.appendChild(styleSheet);
 
 // 扩展应用类
 let featureManager;
@@ -585,27 +350,27 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (window.app) {
             featureManager = new FeatureManager(window.app);
-            
+
             // 扩展应用类方法
             const originalShowResult = window.app.showResult.bind(window.app);
-            window.app.showResult = function(videoPath) {
+            window.app.showResult = function (videoPath) {
                 originalShowResult(videoPath);
-                
+
                 // 保存到历史记录
                 const currentTab = document.querySelector('.tab.active').dataset.tab;
                 let prompt = '';
-                
+
                 if (currentTab === 'text') {
                     prompt = this.optimizedTextPrompt || document.getElementById('text-input').value;
                 } else if (currentTab === 'image') {
                     prompt = this.optimizedImagePrompt || document.getElementById('image-prompt').value;
                 }
-                
+
                 if (prompt) {
                     featureManager.saveGenerationToHistory(prompt, videoPath, currentTab);
                 }
             };
-            
+
             console.log('Feature Manager initialized');
         }
     }, 1000);
