@@ -343,13 +343,18 @@ body {
 /* 警告面板 */
 .warning-panel {
     padding: 12px 20px;
-    background: rgba(234, 179, 8, 0.1);
-    border-color: rgba(234, 179, 8, 0.3);
-    color: #fcd34d;
+    background: linear-gradient(135deg, #fff4e6 0%, #ffe8cc 100%);
+    border: 1px solid #ffb84d;
+    border-radius: var(--radius-md);
+    color: #996300;
     display: flex;
     align-items: center;
     gap: 12px;
     font-size: 14px;
+}
+
+.warning-panel strong {
+    color: #804d00;
 }
 
 /* 预览面板 - HIDDEN (using integrated layout) */
