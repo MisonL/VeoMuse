@@ -1581,3 +1581,26 @@ textarea.premium-input {
         min-height: 300px;
     }
 }
+
+/* Preview Section in Controls Panel */
+.preview-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--glass-border);
+}
+
+.preview-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+.preview-empty .empty-icon {
+    font-size: 48px;
+    opacity: 0.5;
+    margin-bottom: 12px;
+}
+
+.preview-empty p {
+    font-size: 14px;
+}

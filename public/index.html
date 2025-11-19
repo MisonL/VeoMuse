@@ -192,6 +192,45 @@
                                         <span class="icon">✨</span> 开始生成视频
                                     </button>
                                 </div>
+
+                                <!-- Video Preview Section -->
+                                <div class="preview-section">
+                                    <!-- Empty State -->
+                                    <div class="preview-empty" id="preview-empty" style="display: block;">
+                                        <div class="empty-icon">🎬</div>
+                                        <p>视频将在这里预览</p>
+                                    </div>
+
+                                    <!-- Loading State -->
+                                    <div class="loading-state" id="loading" style="display: none;">
+                                        <div class="loader-container">
+                                            <div class="loader-ring"></div>
+                                            <div class="loader-core"></div>
+                                        </div>
+                                        <div class="loading-text">
+                                            <h3>正在创造奇迹...</h3>
+                                            <p id="status-text">初始化生成引擎</p>
+                                        </div>
+                                        <div class="progress-container">
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" id="progress"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Result Display -->
+                                    <div class="result-display" id="result" style="display: none;">
+                                        <div class="video-wrapper" id="video-container"></div>
+                                        <div class="result-actions">
+                                            <button id="download-btn" class="btn btn-secondary btn-sm">
+                                                <span class="icon">⬇️</span> 下载
+                                            </button>
+                                            <button id="copy-link-btn" class="btn btn-secondary btn-sm">
+                                                <span class="icon">📋</span> 复制链接
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
