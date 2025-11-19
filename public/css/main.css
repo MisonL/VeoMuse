@@ -514,15 +514,58 @@ textarea.premium-input {
 
 /* 按钮 */
 .btn {
-    border: none;
-    border-radius: var(--radius-md);
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition-normal);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    font-family: inherit;
+    white-space: nowrap;
+    position: relative;
+}
+
+/* Button loading state */
+.btn:disabled,
+.btn.loading {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn.loading::after {
+    content: '';
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.btn:not(:disabled):active {
+    transform: translateY(0);
 }
 
 .btn-primary {
@@ -720,33 +763,111 @@ textarea.premium-input {
 .upload-area {
     border: 2px dashed var(--glass-border);
     border-radius: var(--radius-md);
-    padding: 40px 20px;
+    padding: 40px;
     text-align: center;
     cursor: pointer;
-    transition: var(--transition-fast);
-    margin-bottom: 20px;
-    background: rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    background: var(--input-bg);
+    position: relative;
 }
 
 .upload-area:hover {
     border-color: var(--primary-color);
-    background: rgba(99, 102, 241, 0.05);
+    background: var(--hover-bg);
+}
+
+/* Drag and drop states */
+.upload-area.drag-over {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg,
+            rgba(99, 102, 241, 0.1) 0%,
+            rgba(139, 92, 246, 0.1) 100%);
+    border-style: solid;
+    border-width: 3px;
+    transform: scale(1.02);
+}
+
+.upload-area.drag-over::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle,
+            rgba(99, 102, 241, 0.2) 0%,
+            transparent 70%);
+    pointer-events: none;
+    animation: pulse-drag 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-drag {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+}
+
+.drag-over .upload-placeholder {
+    transform: scale(1.05);
+}
+
+.drag-over .upload-icon {
+    animation: bounce 0.6s ease-in-out infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 .upload-icon {
     font-size: 48px;
-    margin-bottom: 12px;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.drag-over .upload-icon {
+    opacity: 1;
+    font-size: 56px;
+}
+
+.upload-hint {
+    font-size: 12px;
+    color: var(--text-muted);
 }
 
 .image-preview-container {
     position: relative;
+    max-width: 100%;
+    border-radius: var(--radius-md);
+    overflow: hidden;
     margin-top: 20px;
 }
 
 .image-preview-container img {
-    max-width: 100%;
+    width: 100%;
+    height: auto;
+    display: block;
+    cursor: pointer;
     max-height: 300px;
-    border-radius: var(--radius-md);
 }
 
 .remove-image {
@@ -1200,4 +1321,105 @@ textarea.premium-input {
     color: #ef4444;
     font-size: 12px;
     margin-left: 4px;
+}
+
+/* Empty States */
+.history-empty,
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.empty-icon {
+    font-size: 64px;
+    opacity: 0.5;
+    margin-bottom: 16px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.empty-state p {
+    font-size: 16px;
+    margin: 8px 0;
+}
+
+.empty-state .empty-hint {
+    font-size: 14px;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        transition: left 0.3s ease;
+        z-index: 1000;
+    }
+
+    .sidebar.mobile-open {
+        left: 0;
+    }
+
+    .content-area-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .preview-column {
+        display: none !important;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .controls-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .top-bar {
+        padding: 16px;
+    }
+
+    .page-title h2 {
+        font-size: 20px;
+    }
+
+    .glass-panel {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .premium-input,
+    .premium-select {
+        font-size: 16px;
+        /* Prevent iOS zoom */
+    }
+
+    .upload-area {
+        padding: 30px 20px;
+    }
+
+    .modal-glass {
+        margin: 20px;
+    }
 }

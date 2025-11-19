@@ -172,6 +172,7 @@ class VeoMuseApp {
         const previewImg = document.getElementById('uploaded-image-preview');
         const removeBtn = document.getElementById('remove-image-btn');
         const uploadPlaceholder = document.querySelector('.upload-placeholder');
+        const uploadArea = document.getElementById('upload-area');
 
         if (!imageInput) return;
 
@@ -187,6 +188,50 @@ class VeoMuseApp {
                 reader.readAsDataURL(file);
             }
         });
+
+        // Drag and drop functionality
+        if (uploadArea) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => {
+                    uploadArea.classList.add('drag-over');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => {
+                    uploadArea.classList.remove('drag-over');
+                }, false);
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    // Check if it's an image
+                    if (file.type.startsWith('image/')) {
+                        // Update the input element
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        imageInput.files = dataTransfer.files;
+
+                        // Trigger the change event
+                        const event = new Event('change', { bubbles: true });
+                        imageInput.dispatchEvent(event);
+
+                        NotificationManager.show('图片上传成功！', 'success');
+                    } else {
+                        NotificationManager.show('请上传图片文件（JPG、PNG、WebP）', 'error');
+                    }
+                }
+            }, false);
+        }
 
         if (removeBtn) {
             removeBtn.addEventListener('click', (e) => {
@@ -296,6 +341,10 @@ class VeoMuseApp {
                 }
 
                 try {
+                    // Add loading state to button
+                    generateTextBtn.classList.add('loading');
+                    generateTextBtn.disabled = true;
+
                     LoadingManager.show();
 
                     const result = await APIClient.generateTextToVideo({
@@ -310,6 +359,10 @@ class VeoMuseApp {
                 } catch (error) {
                     LoadingManager.hide();
                     NotificationManager.show('生成视频时出错: ' + error.message, 'error');
+                } finally {
+                    // Remove loading state from button
+                    generateTextBtn.classList.remove('loading');
+                    generateTextBtn.disabled = false;
                 }
             });
         }
@@ -344,6 +397,10 @@ class VeoMuseApp {
                 }
 
                 try {
+                    // Add loading state to button
+                    generateImageBtn.classList.add('loading');
+                    generateImageBtn.disabled = true;
+
                     LoadingManager.show();
 
                     const result = await APIClient.generateImageToVideo({
@@ -359,6 +416,10 @@ class VeoMuseApp {
                 } catch (error) {
                     LoadingManager.hide();
                     NotificationManager.show('生成视频时出错: ' + error.message, 'error');
+                } finally {
+                    // Remove loading state from button
+                    generateImageBtn.classList.remove('loading');
+                    generateImageBtn.disabled = false;
                 }
             });
         }
@@ -407,6 +468,29 @@ class VeoMuseApp {
             downloadBtn.addEventListener('click', () => {
                 if (this.currentVideoPath) {
                     this.downloadFile(this.currentVideoPath, 'generated-video.mp4');
+                }
+            });
+        }
+
+        // 复制链接按钮事件
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        if (copyLinkBtn) {
+            copyLinkBtn.addEventListener('click', async () => {
+                if (this.currentVideoPath) {
+                    const fullUrl = window.location.origin + this.currentVideoPath;
+                    try {
+                        await navigator.clipboard.writeText(fullUrl);
+                        NotificationManager.show('链接已复制到剪贴板！', 'success');
+                    } catch (error) {
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = fullUrl;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        NotificationManager.show('链接已复制！', 'success');
+                    }
                 }
             });
         }
