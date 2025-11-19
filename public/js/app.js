@@ -89,6 +89,9 @@ class VeoMuseApp {
         const tabContents = document.querySelectorAll('.tab-content');
         const previewColumn = document.querySelector('.preview-column');
         const contentGrid = document.querySelector('.content-area-grid');
+        const generateTextBtn = document.getElementById('generate-text-btn');
+        const generateImageBtn = document.getElementById('generate-image-btn');
+        const previewEmptyState = document.getElementById('preview-empty-state');
 
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
@@ -124,16 +127,33 @@ class VeoMuseApp {
                 if (titleEl && titles[tabId]) titleEl.textContent = titles[tabId];
                 if (subtitleEl && subtitles[tabId]) subtitleEl.textContent = subtitles[tabId];
 
-                // 控制右侧预览面板的显示
+                // 控制右侧预览面板的显示和按钮
                 if (tabId === 'text' || tabId === 'image') {
                     if (previewColumn) previewColumn.style.display = 'block';
                     if (contentGrid) contentGrid.style.gridTemplateColumns = '1fr 1fr';
+
+                    // Show correct generate button
+                    if (generateTextBtn) generateTextBtn.style.display = tabId === 'text' ? 'flex' : 'none';
+                    if (generateImageBtn) generateImageBtn.style.display = tabId === 'image' ? 'flex' : 'none';
+
+                    // Show empty state
+                    if (previewEmptyState) previewEmptyState.style.display = 'flex';
                 } else {
                     if (previewColumn) previewColumn.style.display = 'none';
                     if (contentGrid) contentGrid.style.gridTemplateColumns = '1fr';
+
+                    // Hide all buttons
+                    if (generateTextBtn) generateTextBtn.style.display = 'none';
+                    if (generateImageBtn) generateImageBtn.style.display = 'none';
                 }
             });
         });
+
+        // Initialize first tab
+        const firstTab = document.querySelector('.nav-item[data-tab="text"]');
+        if (firstTab && generateTextBtn) {
+            generateTextBtn.style.display = 'flex';
+        }
     }
 
     initEventListeners() {

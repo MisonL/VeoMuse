@@ -1535,3 +1535,14 @@ textarea.premium-input {
         margin: 20px;
     }
 }
+
+/* Preview Actions */
+.preview-actions {
+    padding: 0 0 20px 0;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 20px;
+}
+
+.preview-actions .btn {
+    width: 100%;
+}

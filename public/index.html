@@ -177,12 +177,6 @@
                                     </div>
                                 </details>
                             </div>
-
-                            <div class="action-area">
-                                <button id="generate-text-btn" class="btn btn-primary btn-lg btn-block btn-glow">
-                                    <span class="icon">✨</span> 开始生成视频
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -280,12 +274,6 @@
                                             </div>
                                         </div>
                                 </details>
-                            </div>
-
-                            <div class="action-area">
-                                <button id="generate-image-btn" class="btn btn-primary btn-lg btn-block btn-glow">
-                                    <span class="icon">✨</span> 生成视频
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -430,6 +418,18 @@
             <!-- 右侧：公共预览区 -->
             <div class="preview-column">
                 <div class="preview-panel glass-panel sticky-panel">
+                    <!-- Generate Buttons -->
+                    <div class="preview-actions" id="preview-actions">
+                        <button id="generate-text-btn" class="btn btn-primary btn-lg btn-block btn-glow"
+                            style="display: none;">
+                            <span class="icon">✨</span> 开始生成视频
+                        </button>
+                        <button id="generate-image-btn" class="btn btn-primary btn-lg btn-block btn-glow"
+                            style="display: none;">
+                            <span class="icon">✨</span> 开始生成视频
+                        </button>
+                    </div>
+
                     <div class="empty-state" id="preview-empty-state">
                         <div class="empty-icon-wrapper">
                             <div class="empty-icon-bg"></div>
