@@ -352,10 +352,16 @@ body {
     font-size: 14px;
 }
 
+/* 预览面板 - HIDDEN (using integrated layout) */
+.preview-column {
+    display: none !important;
+}
+
 /* 内容网格布局 */
 .content-area-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr !important;
+    /* Overrides default 1fr 1fr */
     gap: 20px;
     flex: 1;
 }
@@ -1490,14 +1496,6 @@ textarea.premium-input {
         left: 0;
     }
 
-    .content-area-grid {
-        grid-template-columns: 1fr !important;
-    }
-
-    .preview-column {
-        display: none !important;
-    }
-
     .btn {
         width: 100%;
     }
@@ -1578,7 +1576,7 @@ textarea.premium-input {
     .two-column-layout {
         grid-template-columns: 1fr;
     }
-    
+
     .textarea-full-height {
         min-height: 300px;
     }
