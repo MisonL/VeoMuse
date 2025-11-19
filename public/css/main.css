@@ -509,6 +509,7 @@ textarea.premium-input {
     background: rgba(0, 0, 0, 0.1);
     border-radius: var(--radius-md);
     margin-top: 8px;
+    margin-bottom: 16px;
 }
 
 .optimize-row {
