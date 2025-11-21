@@ -14,7 +14,7 @@
     "test:coverage": "jest --coverage",
     "docker:build": "cd config/docker && docker build -f Dockerfile -t veomuse ../.. ",
     "docker:run": "cd config/docker && docker run -d -p 5173:5173 --env-file ../../.env veomuse",
-    "docker:compose": "cd config/docker && docker-compose up -d",
+    "docker:compose": "cd config/docker && docker-compose -p veomuse up -d",
     "pm2:start": "pm2 start config/pm2/ecosystem.config.js --env production",
     "pm2:stop": "pm2 stop veomuse",
     "pm2:logs": "pm2 logs veomuse",
