@@ -13,12 +13,12 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "docker:build": "cd config/docker && docker build -f Dockerfile -t veomuse ../.. ",
-    "docker:run": "cd config/docker && docker run -d -p 3000:3000 --env-file ../../.env veomuse",
+    "docker:run": "cd config/docker && docker run -d -p 5173:5173 --env-file ../../.env veomuse",
     "docker:compose": "cd config/docker && docker-compose up -d",
     "pm2:start": "pm2 start config/pm2/ecosystem.config.js --env production",
     "pm2:stop": "pm2 stop veomuse",
     "pm2:logs": "pm2 logs veomuse",
-    "health:check": "curl -f http://localhost:3000/health || exit 1"
+    "health:check": "curl -f http://localhost:5173/health || exit 1"
   },
   "keywords": [
     "video-generation",

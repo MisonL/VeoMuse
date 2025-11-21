@@ -3,7 +3,7 @@
 ## 基础 URL
 
 ```
-http://localhost:3000/api
+http://localhost:5173/api
 ```
 
 ## 身份验证
