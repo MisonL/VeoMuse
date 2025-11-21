@@ -101,7 +101,7 @@ deploy_docker() {
     
     if docker-compose -f config/docker/docker-compose.yml ps | grep -q "Up"; then
         echo "✅ Docker 部署成功"
-        echo "🌐 应用地址: http://localhost:3000"
+        echo "🌐 应用地址: http://localhost:5173"
         echo "📊 查看日志: docker-compose -f config/docker/docker-compose.yml logs -f"
     else
         echo "❌ Docker 部署失败"
@@ -139,7 +139,7 @@ deploy_pm2() {
     pm2 startup
     
     echo "✅ PM2 部署成功"
-    echo "🌐 应用地址: http://localhost:3000"
+    echo "🌐 应用地址: http://localhost:5173"
     echo "📊 查看状态: pm2 status"
     echo "📝 查看日志: pm2 logs veomuse"
 }
@@ -166,7 +166,7 @@ verify_deployment() {
         echo "🔍 验证部署..."
         sleep 5
         
-        if curl -f http://localhost:3000/health &> /dev/null; then
+        if curl -f http://localhost:5173/health &> /dev/null; then
             echo "✅ 服务健康检查通过"
         else
             echo "⚠️  服务健康检查失败，请检查日志"
