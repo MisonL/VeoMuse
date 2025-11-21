@@ -7,11 +7,11 @@ class SecurityService {
     // 加密配置
     this.algorithm = 'aes-256-cbc';
     this.secretKey = process.env.ENCRYPTION_KEY || this.generateSecretKey();
-    
+
     // 请求记录
     this.requestLog = new Map();
     this.blockedIPs = new Set();
-    
+
     console.log('SecurityService 初始化完成');
   }
 
@@ -27,13 +27,13 @@ class SecurityService {
     try {
       const iv = crypto.randomBytes(16);
       const cipher = crypto.createCipher(this.algorithm, this.secretKey);
-      
+
       let encrypted = cipher.update(apiKey, 'utf8', 'hex');
       encrypted += cipher.final('hex');
-      
+
       // 将IV和加密数据组合
       const result = iv.toString('hex') + ':' + encrypted;
-      
+
       return result;
     } catch (error) {
       console.error('API密钥加密失败:', error);
@@ -48,15 +48,15 @@ class SecurityService {
       if (parts.length !== 2) {
         throw new Error('无效的加密格式');
       }
-      
+
       const iv = Buffer.from(parts[0], 'hex');
       const encryptedData = parts[1];
-      
+
       const decipher = crypto.createDecipher(this.algorithm, this.secretKey);
-      
+
       let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
-      
+
       return decrypted;
     } catch (error) {
       console.error('API密钥解密失败:', error);
@@ -69,25 +69,25 @@ class SecurityService {
     if (!apiKey || typeof apiKey !== 'string') {
       return { valid: false, error: 'API密钥不能为空' };
     }
-    
+
     // 基本格式验证
     if (apiKey.length < 20) {
       return { valid: false, error: 'API密钥格式无效' };
     }
-    
+
     // Google API密钥通常以 'AI' 开头
     if (!apiKey.startsWith('AI')) {
       return { valid: false, error: 'API密钥格式无效' };
     }
-    
+
     return { valid: true };
   }
 
-  // 创建基础限流中间件
+  // 创建基础限流中间件 (已禁用 - 设置极高限制)
   createBasicRateLimit() {
     return rateLimit({
       windowMs: 15 * 60 * 1000, // 15分钟
-      max: 100, // 每15分钟最多100个请求
+      max: 999999, // 实际上不限制
       message: {
         error: '请求过于频繁，请稍后再试',
         retryAfter: '15分钟'
@@ -97,13 +97,13 @@ class SecurityService {
     });
   }
 
-  // 创建严格限流中间件（用于API调用）
+  // 创建严格限流中间件（用于API调用）(已禁用 - 设置极高限制)
   createStrictRateLimit() {
     const { ipKeyGenerator } = require('express-rate-limit');
-    
+
     return rateLimit({
       windowMs: 60 * 1000, // 1分钟
-      max: 10, // 每分钟最多10个请求
+      max: 999999, // 实际上不限制
       message: {
         error: 'API调用过于频繁，请稍后再试',
         retryAfter: '1分钟'
@@ -132,31 +132,22 @@ class SecurityService {
     });
   }
 
-  // IP黑名单检查中间件
+  // IP黑名单检查中间件 (已禁用)
   createIPBlacklistMiddleware() {
     return (req, res, next) => {
-      const clientIP = this.getClientIP(req);
-      
-      if (this.blockedIPs.has(clientIP)) {
-        console.log(`阻止黑名单IP访问: ${clientIP}`);
-        return res.status(403).json({
-          error: '访问被拒绝',
-          code: 'IP_BLOCKED'
-        });
-      }
-      
+      // IP黑名单功能已禁用，直接放行
       next();
     };
   }
 
   // 获取客户端真实IP
   getClientIP(req) {
-    return req.headers['x-forwarded-for'] || 
-           req.headers['x-real-ip'] || 
-           req.connection.remoteAddress || 
-           req.socket.remoteAddress ||
-           (req.connection.socket ? req.connection.socket.remoteAddress : null) ||
-           req.ip;
+    return req.headers['x-forwarded-for'] ||
+      req.headers['x-real-ip'] ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
+      (req.connection.socket ? req.connection.socket.remoteAddress : null) ||
+      req.ip;
   }
 
   // 添加IP到黑名单
@@ -179,7 +170,7 @@ class SecurityService {
       const method = req.method;
       const path = req.path;
       const userAgent = req.headers['user-agent'] || '';
-      
+
       // 记录请求信息
       const logEntry = {
         timestamp,
@@ -192,13 +183,13 @@ class SecurityService {
           'authorization': req.headers['authorization'] ? '[REDACTED]' : undefined
         }
       };
-      
+
       // 保存日志（这里可以扩展为写入文件或数据库）
       console.log(`[${timestamp}] ${clientIP} - ${method} ${path}`);
-      
+
       // 检测可疑行为
       this.detectSuspiciousActivity(req, clientIP);
-      
+
       next();
     };
   }
@@ -207,34 +198,35 @@ class SecurityService {
   detectSuspiciousActivity(req, clientIP) {
     const now = Date.now();
     const windowMs = 60 * 1000; // 1分钟窗口
-    
+
     // 获取该IP的请求历史
     if (!this.requestLog.has(clientIP)) {
       this.requestLog.set(clientIP, []);
     }
-    
+
     const requests = this.requestLog.get(clientIP);
-    
+
     // 清理过期记录
     const validRequests = requests.filter(time => now - time < windowMs);
-    
+
     // 添加当前请求
     validRequests.push(now);
     this.requestLog.set(clientIP, validRequests);
-    
+
     // 检测异常高频请求
-    if (validRequests.length > 30) { // 1分钟内超过30个请求
+    const limit = process.env.NODE_ENV === 'development' ? 1000 : 30;
+    if (validRequests.length > limit) { // 1分钟内超过限制
       console.warn(`检测到异常高频请求: ${clientIP} - ${validRequests.length}个请求/分钟`);
       this.blockIP(clientIP, '异常高频请求');
     }
-    
+
     // 检测可疑的用户代理
     const userAgent = req.headers['user-agent'] || '';
     const suspiciousPatterns = [
       /bot/i, /crawler/i, /spider/i, /scraper/i,
       /python/i, /curl/i, /wget/i
     ];
-    
+
     if (suspiciousPatterns.some(pattern => pattern.test(userAgent))) {
       console.warn(`检测到可疑用户代理: ${clientIP} - ${userAgent}`);
       // 可以选择阻止或标记
@@ -245,7 +237,7 @@ class SecurityService {
   cleanup() {
     const now = Date.now();
     const maxAge = 24 * 60 * 60 * 1000; // 24小时
-    
+
     // 清理请求日志
     for (const [ip, requests] of this.requestLog.entries()) {
       const validRequests = requests.filter(time => now - time < maxAge);
@@ -255,7 +247,7 @@ class SecurityService {
         this.requestLog.set(ip, validRequests);
       }
     }
-    
+
     console.log('安全服务清理完成');
   }
 

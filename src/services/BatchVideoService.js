@@ -4,19 +4,20 @@ const { getInstance: getVideoProcessingQueue } = require('./VideoProcessingQueue
 const VideoService = require('./VideoService');
 const PromptService = require('./PromptService');
 const SocketService = require('./SocketService');
+const OperationService = require('./OperationService');
 const path = require('path');
 const fs = require('fs').promises;
 
 class BatchVideoService extends EventEmitter {
   constructor() {
     super();
-    
+
     this.batches = new Map();
     this.templates = new Map();
-    
+
     // 加载默认模板
     this.loadDefaultTemplates();
-    
+
     console.log('BatchVideoService 初始化完成');
   }
 
@@ -83,7 +84,7 @@ class BatchVideoService extends EventEmitter {
   // 创建批量生成任务
   async createBatch(batchData) {
     const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const batch = {
       id: batchId,
       name: batchData.name || `批量任务_${new Date().toLocaleString()}`,
@@ -91,22 +92,22 @@ class BatchVideoService extends EventEmitter {
       status: 'preparing',
       createdAt: new Date(),
       updatedAt: new Date(),
-      
+
       // 输入数据
       inputs: batchData.inputs || [], // 文本提示词数组或图片路径数组
       template: batchData.template, // 使用的模板
       settings: batchData.settings || {},
-      
+
       // 处理状态
       totalJobs: 0,
       completedJobs: 0,
       failedJobs: 0,
       progress: 0,
-      
+
       // 结果
       results: [],
       errors: [],
-      
+
       // 配置
       config: {
         apiKey: batchData.apiKey,
@@ -119,12 +120,12 @@ class BatchVideoService extends EventEmitter {
     };
 
     this.batches.set(batchId, batch);
-    
+
     console.log(`批量任务已创建: ${batchId}`);
-    
+
     // 开始处理
     this.processBatch(batchId);
-    
+
     return {
       batchId,
       status: batch.status,
@@ -142,11 +143,11 @@ class BatchVideoService extends EventEmitter {
     try {
       batch.status = 'processing';
       batch.updatedAt = new Date();
-      
+
       // 准备任务列表
       const jobs = await this.prepareBatchJobs(batch);
       batch.totalJobs = jobs.length;
-      
+
       if (jobs.length === 0) {
         batch.status = 'completed';
         this.emitBatchUpdate(batch);
@@ -157,7 +158,7 @@ class BatchVideoService extends EventEmitter {
 
       // 执行批量任务
       await this.executeBatchJobs(batch, jobs);
-      
+
     } catch (error) {
       console.error(`批量任务处理失败 ${batchId}:`, error);
       batch.status = 'failed';
@@ -184,10 +185,10 @@ class BatchVideoService extends EventEmitter {
     // 为每个输入创建任务
     for (let i = 0; i < inputs.length; i++) {
       const input = inputs[i];
-      
+
       // 生成提示词
       let prompt = input.text || input.prompt;
-      
+
       if (templateData) {
         // 应用模板
         prompt = this.applyTemplate(templateData, input, i);
@@ -213,23 +214,23 @@ class BatchVideoService extends EventEmitter {
   // 应用模板到输入
   applyTemplate(template, input, index) {
     let prompt = template.basePrompt;
-    
+
     // 添加用户输入
     if (input.text || input.prompt) {
       prompt += ` ${input.text || input.prompt}`;
     }
-    
+
     // 应用变化
     if (template.variations && template.variations.length > 0) {
       const variation = template.variations[index % template.variations.length];
       prompt += ` ${variation.suffix}`;
     }
-    
+
     // 应用样式设置
     if (template.settings && template.settings.style) {
       prompt += ` 风格: ${template.settings.style}`;
     }
-    
+
     return prompt;
   }
 
@@ -237,29 +238,29 @@ class BatchVideoService extends EventEmitter {
   async executeBatchJobs(batch, jobs) {
     const { config } = batch;
     const maxConcurrent = config.maxConcurrent || 3;
-    
+
     // 分批处理任务
     const batches = this.chunkArray(jobs, maxConcurrent);
-    
+
     for (const jobBatch of batches) {
       // 并行执行当前批次的任务
       const promises = jobBatch.map(job => this.executeSingleJob(batch, job));
-      
+
       try {
         await Promise.allSettled(promises);
       } catch (error) {
         console.error('批次执行出错:', error);
       }
-      
+
       // 更新批量任务状态
       this.updateBatchProgress(batch);
-      
+
       // 如果所有任务都完成了，退出循环
       if (batch.completedJobs + batch.failedJobs >= batch.totalJobs) {
         break;
       }
     }
-    
+
     // 完成批量任务
     this.completeBatch(batch);
   }
@@ -269,23 +270,22 @@ class BatchVideoService extends EventEmitter {
     try {
       job.status = 'processing';
       job.startedAt = new Date();
-      
+
       this.emitJobUpdate(batch, job);
-      
+
       let result;
-      
+      let optimizedPrompt = job.prompt; // Initialize optimizedPrompt here
+
       if (job.type === 'image-to-video') {
         // 图片生成视频
-        result = await VideoService.generateVideoFromImage({
+        result = await VideoService.generateFromImage({
           imagePath: job.input.image,
           prompt: job.prompt,
           negativePrompt: job.input.negativePrompt,
-          apiKey: batch.config.apiKey,
           socketId: batch.config.socketId
         });
       } else {
         // 优化提示词（如果启用）
-        let optimizedPrompt = job.prompt;
         if (batch.config.optimizePrompts) {
           try {
             optimizedPrompt = await PromptService.optimizePrompt(
@@ -297,7 +297,7 @@ class BatchVideoService extends EventEmitter {
             console.warn(`提示词优化失败，使用原始提示词: ${error.message}`);
           }
         }
-        
+
         // 文字生成视频
         result = await VideoService.generateFromText({
           text: optimizedPrompt,
@@ -307,12 +307,52 @@ class BatchVideoService extends EventEmitter {
           socketId: batch.config.socketId
         });
       }
-      
+
+      // 如果返回了 operationName，说明是异步任务，需要轮询等待完成
+      if (result.success && result.operationName) {
+        const operationName = result.operationName;
+        let isDone = false;
+        let pollResult;
+
+        console.log(`任务 ${job.id} 开始轮询: ${operationName}`);
+
+        // 轮询最多 120 次，每次 5 秒，共 10 分钟
+        for (let i = 0; i < 120; i++) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+
+          try {
+            pollResult = await OperationService.checkStatus(operationName);
+
+            if (pollResult.done) {
+              isDone = true;
+              if (pollResult.error) {
+                throw new Error(pollResult.message || '生成失败');
+              }
+
+              // 更新结果
+              result = {
+                ...result,
+                videoUri: pollResult.videoUrl,
+                videoPath: pollResult.videoUrl
+              };
+              break;
+            }
+          } catch (err) {
+            console.warn(`轮询出错 (尝试 ${i + 1}):`, err.message);
+            // 继续轮询，除非是致命错误
+          }
+        }
+
+        if (!isDone) {
+          throw new Error('视频生成超时');
+        }
+      }
+
       job.status = 'completed';
       job.completedAt = new Date();
       job.result = result;
-      job.optimizedPrompt = optimizedPrompt;
-      
+      job.optimizedPrompt = job.type === 'text-to-video' ? optimizedPrompt : null; // Use the local optimizedPrompt variable
+
       batch.completedJobs++;
       batch.results.push({
         jobId: job.id,
@@ -320,16 +360,16 @@ class BatchVideoService extends EventEmitter {
         input: job.input,
         result: result,
         prompt: job.prompt,
-        optimizedPrompt: optimizedPrompt
+        optimizedPrompt: job.type === 'text-to-video' ? optimizedPrompt : null // Use the local optimizedPrompt variable
       });
-      
+
       console.log(`批量任务 ${batch.id} 中的任务 ${job.id} 完成`);
-      
+
     } catch (error) {
       job.status = 'failed';
       job.failedAt = new Date();
       job.error = error.message;
-      
+
       batch.failedJobs++;
       batch.errors.push({
         jobId: job.id,
@@ -337,10 +377,10 @@ class BatchVideoService extends EventEmitter {
         input: job.input,
         error: error.message
       });
-      
+
       console.error(`批量任务 ${batch.id} 中的任务 ${job.id} 失败:`, error);
     }
-    
+
     this.emitJobUpdate(batch, job);
   }
 
@@ -348,10 +388,10 @@ class BatchVideoService extends EventEmitter {
   updateBatchProgress(batch) {
     const total = batch.totalJobs;
     const completed = batch.completedJobs + batch.failedJobs;
-    
+
     batch.progress = total > 0 ? Math.round((completed / total) * 100) : 0;
     batch.updatedAt = new Date();
-    
+
     this.emitBatchUpdate(batch);
   }
 
@@ -360,11 +400,11 @@ class BatchVideoService extends EventEmitter {
     batch.status = batch.failedJobs > 0 ? 'completed_with_errors' : 'completed';
     batch.completedAt = new Date();
     batch.progress = 100;
-    
+
     console.log(`批量任务完成: ${batch.id} - 成功: ${batch.completedJobs}, 失败: ${batch.failedJobs}`);
-    
+
     this.emitBatchUpdate(batch);
-    
+
     // 触发完成事件
     this.emit('batchCompleted', {
       batchId: batch.id,
@@ -389,7 +429,7 @@ class BatchVideoService extends EventEmitter {
         totalJobs: batch.totalJobs
       });
     }
-    
+
     this.emit('batchUpdate', batch);
   }
 
@@ -477,11 +517,11 @@ class BatchVideoService extends EventEmitter {
 
     batch.status = 'cancelled';
     batch.updatedAt = new Date();
-    
+
     this.emitBatchUpdate(batch);
-    
+
     console.log(`批量任务已取消: ${batchId}`);
-    
+
     return true;
   }
 
@@ -504,7 +544,7 @@ class BatchVideoService extends EventEmitter {
     };
 
     this.templates.set(template.id, template);
-    
+
     return template;
   }
 
@@ -534,7 +574,7 @@ class BatchVideoService extends EventEmitter {
   // 获取批量服务统计
   getStats() {
     const batches = Array.from(this.batches.values());
-    
+
     return {
       totalBatches: batches.length,
       activeBatches: batches.filter(b => b.status === 'processing').length,

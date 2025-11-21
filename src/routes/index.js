@@ -6,11 +6,13 @@ const videoRoutes = require('./video');
 const modelRoutes = require('./models');
 const operationRoutes = require('./operations');
 const authRoutes = require('./auth');
+const promptsRoutes = require('./prompts'); // 引入 prompts 路由
+const batchRoutes = require('./batch'); // 引入 batch 路由
 
 // 健康检查端点
 router.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     version: '1.0.0'
   });
@@ -20,6 +22,8 @@ router.get('/health', (req, res) => {
 router.use('/api', videoRoutes);
 router.use('/api', modelRoutes);
 router.use('/api', operationRoutes);
+router.use('/api', promptsRoutes); // 挂载 prompts 路由
+router.use('/api', batchRoutes); // 挂载 batch 路由
 router.use('/auth', authRoutes);
 
 module.exports = router;

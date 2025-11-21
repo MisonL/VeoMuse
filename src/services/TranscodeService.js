@@ -12,11 +12,11 @@ class TranscodeService {
 
       // 获取GPU支持情况
       const gpuCodec = this.getOptimalCodec(format);
-      
+
       // 分辨率映射
       const resolutionMap = {
         '480p': '854x480',
-        '720p': '1280x720', 
+        '720p': '1280x720',
         '1080p': '1920x1080',
         '1440p': '2560x1440',
         '4k': '3840x2160'
@@ -24,10 +24,22 @@ class TranscodeService {
 
       const targetResolution = resolutionMap[resolution] || '1280x720';
 
-      console.log(`开始转码: ${inputPath} -> ${outputPath}`);
+
+
+      // 处理输入路径
+      let fullInputPath = inputPath;
+      if (inputPath.startsWith('/generated/')) {
+        const filename = inputPath.replace('/generated/', '');
+        fullInputPath = path.join(config.upload.generatedDir, filename);
+      }
+
+      // 转换为绝对路径
+      fullInputPath = path.resolve(fullInputPath);
+
+      console.log(`开始转码: ${fullInputPath} -> ${outputPath}`);
       console.log(`使用编码器: ${gpuCodec}, 分辨率: ${targetResolution}, 帧率: ${fps}`);
 
-      let command = ffmpeg(inputPath)
+      let command = ffmpeg(fullInputPath)
         .videoCodec(gpuCodec)
         .videoBitrate('2000k')
         .fps(fps)
@@ -45,7 +57,7 @@ class TranscodeService {
       command.on('progress', (progress) => {
         const percent = Math.round(progress.percent || 0);
         console.log(`转码进度: ${percent}%`);
-        
+
         if (socketId) {
           SocketService.emitToSocket(socketId, 'transcodeProgress', {
             percent: percent,
@@ -57,7 +69,7 @@ class TranscodeService {
       // 监听完成
       command.on('end', () => {
         console.log('视频转码完成:', outputPath);
-        
+
         if (socketId) {
           SocketService.emitToSocket(socketId, 'transcodeComplete', {
             message: '视频转换完成!'
@@ -76,7 +88,7 @@ class TranscodeService {
       // 监听错误
       command.on('error', (error) => {
         console.error('视频转码失败:', error);
-        
+
         if (socketId) {
           SocketService.emitToSocket(socketId, 'transcodeError', {
             message: `视频转换失败: ${error.message}`
@@ -94,7 +106,7 @@ class TranscodeService {
   static getOptimalCodec(format) {
     // 根据平台和格式选择最优编码器
     const platform = process.platform;
-    
+
     if (format === 'webm') {
       // WebM格式优先使用VP9编码器
       if (platform === 'darwin') {

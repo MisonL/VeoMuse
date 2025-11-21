@@ -9,10 +9,10 @@ class OperationController {
       const { apiKey } = req.query;
       const socketId = req.headers['socket-id'];
 
-      if (!operationName || !apiKey) {
-        return res.status(400).json({ 
-          success: false, 
-          error: '缺少必要参数' 
+      if (!operationName) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少必要参数'
         });
       }
 
@@ -25,9 +25,32 @@ class OperationController {
       res.json(status);
     } catch (error) {
       console.error('Operation status error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message 
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  // 检查操作状态 (不启动新轮询)
+  static async checkStatus(req, res) {
+    try {
+      const { operationName } = req.params;
+
+      if (!operationName) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少操作名称'
+        });
+      }
+
+      const status = await OperationService.checkStatus(operationName);
+      res.json(status);
+    } catch (error) {
+      console.error('Check status error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
       });
     }
   }

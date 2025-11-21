@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "server": "nodemon server.js",
+    "client": "vite",
+    "build": "vite build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -48,12 +51,15 @@
     "multer": "^1.4.5-lts.1",
     "redis": "^4.6.7",
     "socket.io": "^4.8.1",
+    "socket.io-client": "^4.7.5",
     "winston": "^3.17.0"
   },
   "devDependencies": {
     "jest": "^29.5.0",
     "nodemon": "^3.0.1",
-    "supertest": "^6.3.3"
+    "supertest": "^6.3.3",
+    "vite": "^7.2.2",
+    "concurrently": "^8.2.2"
   },
   "jest": {
     "testEnvironment": "node",

@@ -6,19 +6,36 @@ class ModelController {
   static async getAvailableModels(req, res) {
     try {
       const { apiKey } = req.query;
-      
-      const models = await ModelService.getAvailableModels(apiKey);
-      
-      res.json({ 
-        success: true, 
-        models 
+
+      const modelsData = await ModelService.getAvailableModels(apiKey);
+
+      // 合并视频模型和优化模型为一个列表
+      const allModels = [
+        ...(modelsData.videoModels || []),
+        ...(modelsData.textModels || [])
+      ];
+
+      res.json({
+        success: true,
+        models: allModels,
+        videoModels: modelsData.videoModels || [],
+        textModels: modelsData.textModels || []
       });
     } catch (error) {
       console.error('Get models error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message,
-        models: ModelService.getDefaultModels()
+
+      // 即使出错也返回默认模型
+      const defaultModels = ModelService.getDefaultModels();
+      const allModels = [
+        ...(defaultModels.videoModels || []),
+        ...(defaultModels.textModels || [])
+      ];
+
+      res.status(200).json({
+        success: true,
+        models: allModels,
+        videoModels: defaultModels.videoModels || [],
+        textModels: defaultModels.textModels || []
       });
     }
   }

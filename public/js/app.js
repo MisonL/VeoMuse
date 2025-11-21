@@ -1,681 +1,637 @@
-// js/app.js - 主应用程序类
-class VeoMuseApp {
+import { API } from './api.js';
+import { UI } from './ui.js';
+import { I18n } from './i18n.js';
+import { TemplateManager } from './templates.js';
+import { VideoProcessor } from './video-processor.js';
+import { BatchManager } from './batch.js';
+
+class App {
     constructor() {
-        this.socket = null;
-        this.socketId = null;
-        this.optimizedTextPrompt = null;
-        this.optimizedImagePrompt = null;
-        this.currentVideoPath = null;
+        this.i18n = new I18n();
+        this.templateManager = new TemplateManager(this.i18n);
+        this.videoProcessor = new VideoProcessor(this.i18n);
+        this.batchManager = new BatchManager(this.i18n);
 
-        this.init();
-    }
-
-    async init() {
-        // 初始化Socket.IO连接
-        this.initSocket();
-
-        // 初始化主题 (新主题默认深色，此方法可能只需处理切换逻辑或留空)
-        this.initTheme();
-
-        // 初始化选项卡
+        this.initI18n();
         this.initTabs();
+        this.initTheme();
+        this.initForms();
+        this.initImageUpload();
+        this.initHistory();
+        this.initTemplates();
+        this.initModels();
+        this.initKeyboardShortcuts(); // New: keyboard shortcuts
+        this.batchManager.init();
 
-        // 初始化事件监听器
-        this.initEventListeners();
-
-        // 加载模型列表
-        await this.loadModels();
-
-        console.log('VeoMuse App initialized');
+        // Initial render
+        this.updateLanguage();
     }
 
-    initSocket() {
-        this.socket = io();
-        this.socketId = this.socket.id;
+    initI18n() {
+        const langToggle = document.getElementById('lang-toggle');
+        langToggle.addEventListener('click', () => {
+            this.i18n.toggle();
+            this.updateLanguage();
+        });
+    }
 
-        // Socket事件监听
-        this.socket.on('transcodeProgress', (data) => {
-            this.updateTranscodeProgress(data.message, data.percent);
+    updateLanguage() {
+        // Update all elements with data-i18n
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            el.textContent = this.i18n.get(el.dataset.i18n);
         });
 
-        this.socket.on('transcodeComplete', (data) => {
-            NotificationManager.show(data.message);
-            this.hideTranscodeProgress();
+        // Update placeholders
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            el.placeholder = this.i18n.get(el.dataset.i18nPlaceholder);
         });
 
-        this.socket.on('transcodeError', (data) => {
-            NotificationManager.show(data.message, 'error');
-            this.hideTranscodeProgress();
+        // Update tooltips (for nav buttons)
+        document.querySelectorAll('[data-tooltip]').forEach(el => {
+            const tooltipKey = el.dataset.tooltip;
+            el.setAttribute('data-tooltip', this.i18n.get(tooltipKey));
+        });
+
+        // Update page title
+        document.title = this.i18n.get('appTitle');
+    }
+
+    initTabs() {
+        const tabs = document.querySelectorAll('.nav-item[data-tab]');
+        const textControls = document.getElementById('text-controls');
+        const imageControls = document.getElementById('image-controls');
+        const historyControls = document.getElementById('history-controls');
+        const batchControls = document.getElementById('batch-controls');
+        const pageTitle = document.getElementById('page-title');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const tabId = tab.dataset.tab;
+
+                if (tabId === 'text') {
+                    textControls.style.display = 'block';
+                    imageControls.style.display = 'none';
+                    historyControls.style.display = 'none';
+                    batchControls.style.display = 'none';
+                    pageTitle.dataset.i18n = 'text.title';
+                    // 确保优化按钮存在
+                    setTimeout(() => this.addOptimizeButtonsToLabels(), 0);
+                } else if (tabId === 'image') {
+                    textControls.style.display = 'none';
+                    imageControls.style.display = 'block';
+                    historyControls.style.display = 'none';
+                    batchControls.style.display = 'none';
+                    pageTitle.dataset.i18n = 'image.title';
+                    // 确保优化按钮存在
+                    setTimeout(() => this.addOptimizeButtonsToLabels(), 0);
+                } else if (tabId === 'history') {
+                    textControls.style.display = 'none';
+                    imageControls.style.display = 'none';
+                    historyControls.style.display = 'block';
+                    batchControls.style.display = 'none';
+                    pageTitle.dataset.i18n = 'history.title';
+                    this.loadHistory();
+                } else if (tabId === 'batch') {
+                    textControls.style.display = 'none';
+                    imageControls.style.display = 'none';
+                    historyControls.style.display = 'none';
+                    batchControls.style.display = 'block';
+                    pageTitle.dataset.i18n = 'batch.title';
+                    this.batchManager.loadUserBatches();
+                }
+
+                this.updateLanguage(); // Refresh title
+            });
         });
     }
 
     initTheme() {
-        const themeToggle = document.getElementById('theme-toggle');
-        const icon = themeToggle ? themeToggle.querySelector('.icon') : null;
+        const toggle = document.getElementById('theme-toggle');
+        const body = document.body;
 
-        // 检查本地存储的主题偏好
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            if (icon) icon.textContent = '☀️';
-        } else {
-            // 默认浅色
-            document.documentElement.removeAttribute('data-theme');
-            if (icon) icon.textContent = '🌙';
+        // Check saved theme
+        if (localStorage.getItem('veo_theme') === 'dark') {
+            body.setAttribute('data-theme', 'dark');
         }
 
-        if (themeToggle) {
-            themeToggle.addEventListener('click', () => {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                if (currentTheme === 'dark') {
-                    // 切换到浅色
-                    document.documentElement.removeAttribute('data-theme');
-                    localStorage.setItem('theme', 'light');
-                    if (icon) icon.textContent = '🌙';
-                    NotificationManager.show('已切换到晨曦微光模式', 'success');
-                } else {
-                    // 切换到深色
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    localStorage.setItem('theme', 'dark');
-                    if (icon) icon.textContent = '☀️';
-                    NotificationManager.show('已切换到深邃宇宙模式', 'success');
-                }
-            });
-        }
-    }
-
-    initTabs() {
-        const tabs = document.querySelectorAll('.nav-item');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const previewColumn = document.querySelector('.preview-column');
-        const contentGrid = document.querySelector('.content-area-grid');
-
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                // 移除所有active类
-                tabs.forEach(t => t.classList.remove('active'));
-                tabContents.forEach(tc => tc.classList.remove('active'));
-
-                // 添加active类到当前tab
-                tab.classList.add('active');
-                const tabId = tab.getAttribute('data-tab');
-                const targetContent = document.getElementById(`${tabId}-content`);
-                if (targetContent) {
-                    targetContent.classList.add('active');
-                }
-
-                // 更新标题
-                const titles = {
-                    'text': '文字转视频',
-                    'image': '图片转视频',
-                    'history': '创作历史',
-                    'api': 'API 文档'
-                };
-                const subtitles = {
-                    'text': '使用 Gemini Veo 模型将您的创意转化为精彩视频',
-                    'image': '让静态图片动起来，创造栩栩如生的视觉体验',
-                    'history': '查看您过去生成的精彩视频作品',
-                    'api': '了解如何通过 API 集成 VeoMuse 的强大功能'
-                };
-
-                const titleEl = document.getElementById('page-title-text');
-                const subtitleEl = document.getElementById('page-subtitle-text');
-
-                if (titleEl && titles[tabId]) titleEl.textContent = titles[tabId];
-                if (subtitleEl && subtitles[tabId]) subtitleEl.textContent = subtitles[tabId];
-
-                // Hide preview column for all tabs (now using two-column layout for text/image)
-                if (previewColumn) previewColumn.style.display = 'none';
-                if (contentGrid) contentGrid.style.gridTemplateColumns = '1fr';
-            });
+        toggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                localStorage.setItem('veo_theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                localStorage.setItem('veo_theme', 'dark');
+            }
         });
     }
 
-    initEventListeners() {
-        // 图片预览功能
-        this.initImagePreview();
+    // 表单验证
+    validateTextForm(prompt, model) {
+        const errors = [];
 
-        // 优化提示词功能
-        this.initPromptOptimization();
-
-        // 视频生成功能
-        this.initVideoGeneration();
-
-        // 视频转换功能
-        this.initVideoConversion();
-
-        // API密钥变化监听
-        const apiKeyInput = document.getElementById('api-key');
-        if (apiKeyInput) {
-            apiKeyInput.addEventListener('input', () => {
-                this.loadModels();
-            });
+        if (!prompt || prompt.trim().length === 0) {
+            errors.push(this.i18n.get('notifications.inputError'));
         }
 
-        // 模态框关闭
-        const closeBtn = document.getElementById('close-template-modal');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                document.getElementById('template-modal').style.display = 'none';
-            });
+        if (prompt && prompt.length > 2000) {
+            errors.push('提示词长度不能超过2000个字符');
+        }
+
+        if (!model) {
+            errors.push('请选择生成模型');
+        }
+
+        return errors;
+    }
+
+    validateImageForm(file, prompt) {
+        const errors = [];
+
+        if (!file) {
+            errors.push(this.i18n.get('notifications.uploadError'));
+        }
+
+        if (file && file.size > 10 * 1024 * 1024) { // 10MB
+            errors.push('图片大小不能超过10MB');
+        }
+
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (file && !validTypes.includes(file.type)) {
+            errors.push('只支持 JPG、PNG、WEBP 格式的图片');
+        }
+
+        if (prompt && prompt.length > 1000) {
+            errors.push('提示词长度不能超过1000个字符');
+        }
+
+        return errors;
+    }
+
+    initForms() {
+        // Text to Video
+        document.getElementById('generate-btn').addEventListener('click', async () => {
+            const prompt = document.getElementById('text-prompt').value;
+            const style = document.getElementById('style-select').value;
+            const model = document.getElementById('model-select').value;
+
+            const negativePrompt = document.getElementById('text-negative-prompt').value;
+
+            // Validate form
+            const errors = this.validateTextForm(prompt, model);
+            if (errors.length > 0) {
+                UI.showNotification(errors[0], 'warning');
+                return;
+            }
+
+            try {
+                UI.showLoading(true);
+                const initialResult = await API.generateTextToVideo(prompt, model, style, negativePrompt);
+
+                let videoUri;
+                if (initialResult.videoUri) {
+                    videoUri = initialResult.videoUri;
+                } else if (initialResult.operationName) {
+                    // Start polling
+                    UI.showNotification(this.i18n.get('status.generating'), 'info');
+                    const pollResult = await this.pollForVideo(initialResult.operationName, (progress) => {
+                        // Optional: update UI with progress
+                        console.log(`Progress: ${progress}%`);
+                    });
+                    videoUri = pollResult.videoUri;
+                } else {
+                    throw new Error('No operation name or video URI returned');
+                }
+
+                if (videoUri) {
+                    UI.showVideo(videoUri);
+                    UI.showNotification(this.i18n.get('notifications.genSuccess'), 'success');
+                    API.saveHistory({ type: 'text', prompt, videoUri: videoUri });
+
+                    // 添加视频处理菜单
+                    // We need videoPath for processing. If videoUri is a URL, we might need to extract filename
+                    // The backend returns downloadUrl as /generated/filename.mp4
+                    // The processor expects a path relative to public or absolute?
+                    // Let's assume videoUri is enough for download, but for transcode we need server path?
+                    // API.transcodeVideo takes inputPath.
+                    // If videoUri is /generated/foo.mp4, the server knows how to map it.
+                    // Actually, VideoController.transcodeVideo expects inputPath.
+                    // We should pass videoUri as inputPath if it's a local path.
+                    this.addVideoProcessorMenu(videoUri, videoUri);
+                }
+            } catch (error) {
+                UI.showLoading(false);
+                console.error(error);
+                const errorMessage = error.userMessage || error.message || this.i18n.get('notifications.genError');
+                UI.showNotification(errorMessage, 'error', {
+                    onRetry: () => document.getElementById('generate-btn').click()
+                });
+            }
+        });
+
+        // Image to Video
+        document.getElementById('generate-image-btn').addEventListener('click', async () => {
+            const prompt = document.getElementById('image-prompt').value;
+            const fileInput = document.getElementById('image-input');
+            const model = 'veo-3.1-generate-preview';
+
+            const negativePrompt = document.getElementById('image-negative-prompt').value;
+
+            // Validate form
+            const errors = this.validateImageForm(fileInput.files[0], prompt);
+            if (errors.length > 0) {
+                UI.showNotification(errors[0], 'warning');
+                return;
+            }
+
+            try {
+                UI.showLoading(true);
+                const initialResult = await API.generateImageToVideo(fileInput.files[0], prompt || 'Animate this image', model, negativePrompt);
+
+                let videoUri;
+                if (initialResult.videoUri) {
+                    videoUri = initialResult.videoUri;
+                } else if (initialResult.operationName) {
+                    // Start polling
+                    UI.showNotification(this.i18n.get('status.generating'), 'info');
+                    const pollResult = await this.pollForVideo(initialResult.operationName, (progress) => {
+                        console.log(`Progress: ${progress}%`);
+                    });
+                    videoUri = pollResult.videoUri;
+                } else {
+                    throw new Error('No operation name or video URI returned');
+                }
+
+                if (videoUri) {
+                    UI.showVideo(videoUri);
+                    UI.showNotification(this.i18n.get('notifications.genSuccess'), 'success');
+                    API.saveHistory({ type: 'image', prompt, videoUri: videoUri });
+
+                    // 添加视频处理菜单
+                    this.addVideoProcessorMenu(videoUri, videoUri);
+                }
+            } catch (error) {
+                UI.showLoading(false);
+                console.error(error);
+                const errorMessage = error.userMessage || error.message || this.i18n.get('notifications.genError');
+                UI.showNotification(errorMessage, 'error', {
+                    onRetry: () => document.getElementById('generate-image-btn').click()
+                });
+            }
+        });
+    }
+
+    // 初始化模板功能
+    async initTemplates() {
+        await this.templateManager.init();
+
+        // 为文字生成添加模板选择器
+        const textPromptGroup = document.querySelector('#text-controls .form-group');
+        const textTemplateSelector = this.templateManager.createTemplateSelector('text-prompt', 'text');
+        textPromptGroup.appendChild(textTemplateSelector);
+
+        // 为图片生成添加模板选择器
+        const imagePromptGroup = document.querySelector('#image-controls .form-group:nth-child(2)');
+        const imageTemplateSelector = this.templateManager.createTemplateSelector('image-prompt', 'image');
+        imagePromptGroup.appendChild(imageTemplateSelector);
+
+        // 添加优化按钮到 label 右侧
+        this.addOptimizeButtonsToLabels();
+    }
+
+    // 将优化按钮添加到 label 右侧
+    addOptimizeButtonsToLabels() {
+        // 为文字提示词的 label 添加优化按钮
+        const textLabel = document.querySelector('#text-controls .form-group label');
+        if (textLabel && !textLabel.querySelector('.optimize-btn')) {
+            const optimizeBtn = this.createOptimizeButton('text-prompt');
+            textLabel.classList.add('label-with-button');
+            textLabel.appendChild(optimizeBtn);
+        }
+
+        // 为图片提示词的 label 添加优化按钮
+        const imageLabel = document.querySelector('#image-controls .form-group:nth-child(2) label');
+        if (imageLabel && !imageLabel.querySelector('.optimize-btn')) {
+            const optimizeBtnImage = this.createOptimizeButton('image-prompt');
+            imageLabel.classList.add('label-with-button');
+            imageLabel.appendChild(optimizeBtnImage);
         }
     }
 
-    initImagePreview() {
-        const imageInput = document.getElementById('image-input');
-        const previewContainer = document.getElementById('image-preview-container');
-        const previewImg = document.getElementById('uploaded-image-preview');
-        const removeBtn = document.getElementById('remove-image-btn');
-        const uploadPlaceholder = document.querySelector('.upload-placeholder');
-        const uploadArea = document.getElementById('upload-area');
+    createOptimizeButton(inputId) {
+        const button = document.createElement('button');
+        button.className = 'optimize-btn';
+        button.type = 'button';
+        button.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+            </svg>
+            <span data-i18n="optimize.button">${this.i18n.get('optimize.button')}</span>
+        `;
 
-        if (!imageInput) return;
+        button.addEventListener('click', async () => {
+            const input = document.getElementById(inputId);
+            const originalPrompt = input.value;
 
-        imageInput.addEventListener('change', (e) => {
+            if (!originalPrompt) {
+                UI.showNotification(this.i18n.get('notifications.inputError'), 'error');
+                return;
+            }
+
+            button.disabled = true;
+            button.classList.add('loading');
+            const span = button.querySelector('span');
+            const originalText = span.textContent;
+            span.textContent = this.i18n.get('optimize.optimizing');
+
+            try {
+                const model = document.getElementById('model-select')?.value || 'veo-3.1-generate-preview';
+                const result = await API.optimizePrompt(originalPrompt, model);
+
+                if (result.success && result.optimizedPrompt) {
+                    input.value = result.optimizedPrompt;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    UI.showNotification(this.i18n.get('optimize.success'), 'success');
+                }
+            } catch (error) {
+                console.error('Optimize error:', error);
+                const errorMessage = error.userMessage || this.i18n.get('optimize.error');
+                UI.showNotification(errorMessage, 'error', {
+                    onRetry: () => button.click()
+                });
+            } finally {
+                button.disabled = false;
+                button.classList.remove('loading');
+                span.textContent = originalText;
+            }
+        });
+
+        return button;
+    }
+
+    // 动态加载模型列表
+    async initModels() {
+        try {
+            const result = await API.getAvailableModels();
+            if (result.success && result.models) {
+                const modelSelect = document.getElementById('model-select');
+                modelSelect.innerHTML = result.models.map(model => `
+                    <option value="${model.name}">${model.displayName || model.name}</option>
+                `).join('');
+            }
+        } catch (error) {
+            console.error('Failed to load models:', error);
+            // 保持默认的硬编码模型选项
+        }
+    }
+
+    // 添加视频处理菜单
+    addVideoProcessorMenu(videoPath, videoUri) {
+        const previewContainer = document.querySelector('.preview-video-wrapper');
+
+        // 移除旧的处理菜单
+        const oldMenu = previewContainer.querySelector('.video-processor-menu');
+        if (oldMenu) oldMenu.remove();
+
+        // 添加新的处理菜单
+        const menu = this.videoProcessor.createProcessorMenu(videoPath, videoUri);
+        previewContainer.appendChild(menu);
+    }
+
+    initImageUpload() {
+        const zone = document.getElementById('upload-zone');
+        const input = document.getElementById('image-input');
+        const preview = document.getElementById('image-preview');
+        const clearBtn = document.getElementById('clear-image');
+        const content = zone.querySelector('.upload-content');
+
+        zone.addEventListener('click', (e) => {
+            if (e.target !== clearBtn) input.click();
+        });
+
+        input.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    if (previewImg) previewImg.src = e.target.result;
-                    if (previewContainer) previewContainer.style.display = 'block';
-                    if (uploadPlaceholder) uploadPlaceholder.style.display = 'none';
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    content.style.display = 'none';
+                    clearBtn.style.display = 'block';
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        // Drag and drop functionality
-        if (uploadArea) {
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }, false);
-            });
+        clearBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            input.value = '';
+            preview.style.display = 'none';
+            content.style.display = 'block';
+            clearBtn.style.display = 'none';
+        });
+    }
 
-            ['dragenter', 'dragover'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, () => {
-                    uploadArea.classList.add('drag-over');
-                }, false);
-            });
+    initHistory() {
+        const clearBtn = document.getElementById('clear-history-btn');
+        clearBtn.addEventListener('click', () => {
+            if (confirm(this.i18n.get('history.title') + '?')) {
+                localStorage.removeItem('veo_history');
+                this.loadHistory();
+                UI.showNotification(this.i18n.get('history.clearAll') + ' ✓', 'success');
+            }
+        });
+    }
 
-            ['dragleave', 'drop'].forEach(eventName => {
-                uploadArea.addEventListener(eventName, () => {
-                    uploadArea.classList.remove('drag-over');
-                }, false);
-            });
+    loadHistory() {
+        const historyList = document.getElementById('history-list');
+        const history = API.getHistory();
 
-            uploadArea.addEventListener('drop', (e) => {
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    const file = files[0];
-                    // Check if it's an image
-                    if (file.type.startsWith('image/')) {
-                        // Update the input element
-                        const dataTransfer = new DataTransfer();
-                        dataTransfer.items.add(file);
-                        imageInput.files = dataTransfer.files;
+        if (history.length === 0) {
+            historyList.innerHTML = `
+                <div class="history-empty">
+                    <span class="icon">📝</span>
+                    <p data-i18n="history.empty">${this.i18n.get('history.empty')}</p>
+                </div>
+            `;
+            return;
+        }
 
-                        // Trigger the change event
-                        const event = new Event('change', { bubbles: true });
-                        imageInput.dispatchEvent(event);
+        historyList.innerHTML = history.map(item => {
+            const typeIcon = item.type === 'text' ? '✨' : '🖼️';
+            const typeText = this.i18n.get(item.type === 'text' ? 'history.textType' : 'history.imageType');
+            const date = new Date(item.timestamp);
+            const dateStr = date.toLocaleString(this.i18n.lang === 'zh' ? 'zh-CN' : 'en-US');
 
-                        NotificationManager.show('图片上传成功！', 'success');
+            return `
+                <div class="history-item" data-video-uri="${item.videoUri}">
+                    <span class="history-item-icon">${typeIcon}</span>
+                    <div class="history-item-content">
+                        <div class="history-item-prompt">${item.prompt || 'Generated Video'}</div>
+                        <div class="history-item-meta">
+                            <span class="history-item-type">${typeText}</span>
+                            <span>•</span>
+                            <span>${dateStr}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Add click handlers to history items
+        historyList.querySelectorAll('.history-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // If clicking the prompt text, reuse it
+                if (e.target.classList.contains('history-item-prompt')) {
+                    const prompt = e.target.textContent;
+                    const type = item.querySelector('.history-item-type').textContent;
+
+                    // Determine target tab based on type (simple heuristic or data attribute)
+                    // Since we localized the type text, we should rely on data attribute if possible, 
+                    // but we didn't save type in data attribute. 
+                    // Let's assume we stay on current tab or switch based on content?
+                    // Better: check if we are on text or image tab.
+
+                    const activeTab = document.querySelector('.nav-item.active').dataset.tab;
+                    if (activeTab === 'text') {
+                        const input = document.getElementById('text-prompt');
+                        input.value = prompt;
+                        UI.showNotification(this.i18n.get('notifications.promptCopied') || '提示词已填入', 'success');
+                    } else if (activeTab === 'image') {
+                        const input = document.getElementById('image-prompt');
+                        input.value = prompt;
+                        UI.showNotification(this.i18n.get('notifications.promptCopied') || '提示词已填入', 'success');
                     } else {
-                        NotificationManager.show('请上传图片文件（JPG、PNG、WebP）', 'error');
+                        // If on history tab, maybe switch to text tab?
+                        document.querySelector('.nav-item[data-tab="text"]').click();
+                        setTimeout(() => {
+                            document.getElementById('text-prompt').value = prompt;
+                            UI.showNotification(this.i18n.get('notifications.promptCopied') || '提示词已填入', 'success');
+                        }, 100);
                     }
+                    return;
                 }
-            }, false);
-        }
 
-        if (removeBtn) {
-            removeBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                imageInput.value = '';
-                if (previewImg) previewImg.src = '';
-                if (previewContainer) previewContainer.style.display = 'none';
-                if (uploadPlaceholder) uploadPlaceholder.style.display = 'block';
+                // Otherwise show video
+                const videoUri = item.dataset.videoUri;
+                if (videoUri) {
+                    UI.showVideo(videoUri);
+                }
             });
-        }
-
-        // 点击预览图片查看大图
-        if (previewImg) {
-            previewImg.addEventListener('click', () => {
-                if (previewImg.src) ImageModal.show(previewImg.src);
-            });
-        }
+        });
     }
 
-    initPromptOptimization() {
-        // 文字提示词优化
-        const optimizeTextBtn = document.getElementById('optimize-text-btn');
-        if (optimizeTextBtn) {
-            optimizeTextBtn.addEventListener('click', async () => {
-                const textInput = document.getElementById('text-input');
-                const text = textInput.value.trim();
-                const apiKey = this.getApiKey();
-                const model = document.getElementById('optimize-model-text').value;
+    // 初始化键盘快捷键
+    initKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Esc: Close modals/notifications
+            if (e.key === 'Escape') {
+                // Close all notifications
+                document.querySelectorAll('.notification').forEach(n => UI.dismissNotification(n));
 
-                if (!text) {
-                    NotificationManager.show('请输入文字描述', 'error');
-                    return;
+                // Close template modal if open
+                const templateModal = document.querySelector('.template-modal');
+                if (templateModal) {
+                    templateModal.remove();
                 }
 
-                if (!apiKey) {
-                    NotificationManager.show('请提供API密钥', 'error');
-                    return;
+                // Close transcode modal if open
+                const transcodeModal = document.querySelector('.transcode-modal');
+                if (transcodeModal) {
+                    transcodeModal.remove();
                 }
-
-                try {
-                    NotificationManager.show('正在优化提示词...');
-
-                    const optimizedPrompt = await APIClient.optimizePrompt(text, apiKey, model);
-                    this.optimizedTextPrompt = optimizedPrompt;
-                    this.showOptimizedPrompt(optimizedPrompt, false);
-                    NotificationManager.show('提示词优化完成!');
-                } catch (error) {
-                    NotificationManager.show('优化提示词时出错: ' + error.message, 'error');
-                }
-            });
-        }
-
-        // 图片提示词优化
-        const optimizeImageBtn = document.getElementById('optimize-image-btn');
-        if (optimizeImageBtn) {
-            optimizeImageBtn.addEventListener('click', async () => {
-                const imagePrompt = document.getElementById('image-prompt');
-                const prompt = imagePrompt.value.trim();
-                const apiKey = this.getApiKey();
-                const model = document.getElementById('optimize-model-image').value;
-
-                if (!prompt) {
-                    NotificationManager.show('请输入图片描述', 'error');
-                    return;
-                }
-
-                if (!apiKey) {
-                    NotificationManager.show('请提供API密钥', 'error');
-                    return;
-                }
-
-                try {
-                    NotificationManager.show('正在优化提示词...');
-
-                    const optimizedPrompt = await APIClient.optimizePrompt(prompt, apiKey, model);
-                    this.optimizedImagePrompt = optimizedPrompt;
-                    this.showOptimizedPrompt(optimizedPrompt, true);
-                    NotificationManager.show('提示词优化完成!');
-                } catch (error) {
-                    NotificationManager.show('优化提示词时出错: ' + error.message, 'error');
-                }
-            });
-        }
-    }
-
-    initVideoGeneration() {
-        // 文字生成视频
-        const generateTextBtn = document.getElementById('generate-text-btn');
-        if (generateTextBtn) {
-            generateTextBtn.addEventListener('click', async () => {
-                const textInput = document.getElementById('text-input');
-                const negativePromptInput = document.getElementById('negative-prompt-text');
-                const text = this.optimizedTextPrompt || textInput.value.trim();
-                const negativePrompt = negativePromptInput ? negativePromptInput.value.trim() : '';
-                const apiKey = this.getApiKey();
-                const model = document.getElementById('video-model-text').value;
-
-                if (!text) {
-                    NotificationManager.show('请输入文字描述', 'error');
-                    return;
-                }
-
-                if (!apiKey) {
-                    NotificationManager.show('请提供API密钥', 'error');
-                    return;
-                }
-
-                try {
-                    // Add loading state to button
-                    generateTextBtn.classList.add('loading');
-                    generateTextBtn.disabled = true;
-
-                    LoadingManager.show();
-
-                    const result = await APIClient.generateTextToVideo({
-                        text,
-                        negativePrompt,
-                        apiKey,
-                        model
-                    });
-
-                    // 开始轮询操作状态
-                    await this.pollOperationStatus(result.operationName, result.usedApiKey || apiKey);
-                } catch (error) {
-                    LoadingManager.hide();
-                    NotificationManager.show('生成视频时出错: ' + error.message, 'error');
-                } finally {
-                    // Remove loading state from button
-                    generateTextBtn.classList.remove('loading');
-                    generateTextBtn.disabled = false;
-                }
-            });
-        }
-
-        // 图片生成视频
-        const generateImageBtn = document.getElementById('generate-image-btn');
-        if (generateImageBtn) {
-            generateImageBtn.addEventListener('click', async () => {
-                const imageInput = document.getElementById('image-input');
-                const imagePrompt = document.getElementById('image-prompt');
-                const negativePromptInput = document.getElementById('negative-prompt-image');
-                const file = imageInput.files[0];
-                const prompt = this.optimizedImagePrompt || imagePrompt.value.trim();
-                const apiKey = this.getApiKey();
-                const model = document.getElementById('video-model-image').value;
-
-                if (!file) {
-                    NotificationManager.show('请上传一张图片', 'error');
-                    return;
-                }
-
-                const negativePrompt = negativePromptInput ? negativePromptInput.value.trim() : '';
-
-                if (!prompt) {
-                    NotificationManager.show('请输入图片描述', 'error');
-                    return;
-                }
-
-                if (!apiKey) {
-                    NotificationManager.show('请提供API密钥', 'error');
-                    return;
-                }
-
-                try {
-                    // Add loading state to button
-                    generateImageBtn.classList.add('loading');
-                    generateImageBtn.disabled = true;
-
-                    LoadingManager.show();
-
-                    const result = await APIClient.generateImageToVideo({
-                        file,
-                        prompt,
-                        negativePrompt,
-                        apiKey,
-                        model
-                    });
-
-                    // 开始轮询操作状态
-                    await this.pollOperationStatus(result.operationName, result.usedApiKey || apiKey);
-                } catch (error) {
-                    LoadingManager.hide();
-                    NotificationManager.show('生成视频时出错: ' + error.message, 'error');
-                } finally {
-                    // Remove loading state from button
-                    generateImageBtn.classList.remove('loading');
-                    generateImageBtn.disabled = false;
-                }
-            });
-        }
-    }
-
-    initVideoConversion() {
-        const convertBtn = document.getElementById('convert-btn');
-        if (convertBtn) {
-            convertBtn.addEventListener('click', async () => {
-                if (!this.currentVideoPath) {
-                    NotificationManager.show('没有可转换的视频', 'error');
-                    return;
-                }
-
-                const format = document.getElementById('convert-format').value;
-                const resolution = document.getElementById('convert-resolution').value;
-                // const fps = document.getElementById('convert-fps').value; // 暂时移除FPS选项
-
-                try {
-                    this.showTranscodeProgress();
-                    this.updateTranscodeProgress('正在开始视频转换...', 0);
-
-                    const result = await APIClient.transcodeVideo({
-                        inputPath: this.currentVideoPath.startsWith('/') ? this.currentVideoPath.substring(1) : this.currentVideoPath,
-                        format,
-                        resolution: resolution || null,
-                        // fps: fps ? parseInt(fps) : null
-                    });
-
-                    this.updateTranscodeProgress('转换完成', 100);
-                    setTimeout(() => {
-                        this.hideTranscodeProgress();
-                        this.showConvertedResult('/' + result.videoPath);
-                        NotificationManager.show('视频转换成功!');
-                    }, 500);
-                } catch (error) {
-                    this.hideTranscodeProgress();
-                    NotificationManager.show('转换视频时出错: ' + error.message, 'error');
-                }
-            });
-        }
-
-        // 下载按钮事件
-        const downloadBtn = document.getElementById('download-btn');
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', () => {
-                if (this.currentVideoPath) {
-                    this.downloadFile(this.currentVideoPath, 'generated-video.mp4');
-                }
-            });
-        }
-
-        // 复制链接按钮事件
-        const copyLinkBtn = document.getElementById('copy-link-btn');
-        if (copyLinkBtn) {
-            copyLinkBtn.addEventListener('click', async () => {
-                if (this.currentVideoPath) {
-                    const fullUrl = window.location.origin + this.currentVideoPath;
-                    try {
-                        await navigator.clipboard.writeText(fullUrl);
-                        NotificationManager.show('链接已复制到剪贴板！', 'success');
-                    } catch (error) {
-                        // Fallback for older browsers
-                        const textArea = document.createElement('textarea');
-                        textArea.value = fullUrl;
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        NotificationManager.show('链接已复制！', 'success');
-                    }
-                }
-            });
-        }
-
-        const downloadConvertedBtn = document.getElementById('download-converted-btn');
-        if (downloadConvertedBtn) {
-            downloadConvertedBtn.addEventListener('click', () => {
-                const convertedVideoPath = downloadConvertedBtn.dataset.videoUrl;
-                if (convertedVideoPath) {
-                    const format = document.getElementById('convert-format').value;
-                    const ext = format === 'webm' ? '.webm' : format === 'mov' ? '.mov' : '.mp4';
-                    this.downloadFile(convertedVideoPath, `converted-video${ext}`);
-                }
-            });
-        }
-    }
-
-    // 轮询操作状态
-    async pollOperationStatus(operationName, apiKey) {
-        try {
-            LoadingManager.updateProgress('视频生成已启动...', 10);
-
-            // 使用智能轮询
-            const data = await APIClient.intelligentPolling(
-                operationName,
-                apiKey,
-                (message, progress) => {
-                    LoadingManager.updateProgress(message, progress);
-                }
-            );
-
-            if (data.error) {
-                throw new Error('视频生成失败: ' + data.error.message);
             }
 
-            const videoUri = data.response.generateVideoResponse.generatedSamples[0].video.uri;
+            // Ctrl/Cmd + L: Toggle language
+            if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+                e.preventDefault();
+                document.getElementById('lang-toggle').click();
+            }
 
-            LoadingManager.updateProgress('正在下载视频...', 90);
+            // Ctrl/Cmd + D: Toggle theme
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                document.getElementById('theme-toggle').click();
+            }
 
-            const downloadResult = await APIClient.downloadVideo(videoUri, apiKey);
-            this.showResult('/' + downloadResult.videoPath);
-            NotificationManager.show('视频生成成功!');
+            // Ctrl/Cmd + 1-4: Switch tabs
+            if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '4') {
+                e.preventDefault();
+                const tabIndex = parseInt(e.key) - 1;
+                const tabs = document.querySelectorAll('.nav-item[data-tab]');
+                if (tabs[tabIndex]) {
+                    tabs[tabIndex].click();
+                }
+            }
 
-        } catch (error) {
-            LoadingManager.hide();
-            NotificationManager.show('检查视频生成状态时出错: ' + error.message, 'error');
+            // Enter in textarea: Submit if Ctrl/Cmd is pressed
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                const activeTab = document.querySelector('.nav-item.active')?.dataset.tab;
+
+                if (activeTab === 'text') {
+                    const prompt = document.getElementById('text-prompt');
+                    if (document.activeElement === prompt) {
+                        e.preventDefault();
+                        document.getElementById('generate-btn').click();
+                    }
+                } else if (activeTab === 'image') {
+                    const prompt = document.getElementById('image-prompt');
+                    if (document.activeElement === prompt) {
+                        e.preventDefault();
+                        document.getElementById('generate-image-btn').click();
+                    }
+                }
+            }
+        });
+
+        // Show keyboard shortcuts hint on first visit
+        if (!localStorage.getItem('shortcuts_shown')) {
+            setTimeout(() => {
+                UI.showNotification('💡 提示: 使用 Ctrl+Enter 快速生成，Ctrl+L 切换语言', 'info', {
+                    duration: 8000
+                });
+                localStorage.setItem('shortcuts_shown', 'true');
+            }, 2000);
         }
     }
+    // 轮询视频生成状态
+    async pollForVideo(operationName, onProgress) {
+        const maxAttempts = 120; // 10 minutes max (5s interval)
+        const interval = 5000;
 
-    // 加载模型列表
-    async loadModels() {
-        try {
-            const apiKey = this.getApiKey();
-            const models = await APIClient.getModels(apiKey);
+        for (let i = 0; i < maxAttempts; i++) {
+            try {
+                const status = await API.checkOperationStatus(operationName);
 
-            this.updateModelSelects(models);
-        } catch (error) {
-            console.error('Failed to load models:', error);
-            NotificationManager.show('加载模型列表失败: ' + error.message, 'error');
-        }
-    }
+                if (status.done) {
+                    if (status.error) {
+                        throw new Error(status.message || '生成失败');
+                    }
 
-    updateModelSelects(models) {
-        // 更新优化模型下拉列表
-        const optimizeModelText = document.getElementById('optimize-model-text');
-        const optimizeModelImage = document.getElementById('optimize-model-image');
+                    if (status.videoUrl) {
+                        return { videoUri: status.videoUrl };
+                    }
+                }
 
-        if (optimizeModelText && optimizeModelImage) {
-            // 清空现有选项
-            optimizeModelText.innerHTML = '';
-            optimizeModelImage.innerHTML = '';
+                // Update progress if callback provided
+                if (onProgress && status.progress) {
+                    onProgress(status.progress);
+                }
 
-            // 添加新选项
-            models.optimizationModels.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model.id;
-                option.textContent = model.name;
-                optimizeModelText.appendChild(option.cloneNode(true));
-                optimizeModelImage.appendChild(option.cloneNode(true));
-            });
+                await new Promise(resolve => setTimeout(resolve, interval));
+            } catch (error) {
+                console.warn('Poll error:', error);
+                // Continue polling on temporary errors
+                await new Promise(resolve => setTimeout(resolve, interval));
+            }
         }
 
-        // 更新视频模型下拉列表
-        const videoModelText = document.getElementById('video-model-text');
-        const videoModelImage = document.getElementById('video-model-image');
-
-        if (videoModelText && videoModelImage) {
-            // 清空现有选项
-            videoModelText.innerHTML = '';
-            videoModelImage.innerHTML = '';
-
-            // 添加新选项
-            models.videoModels.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model.id;
-                option.textContent = model.name;
-                videoModelText.appendChild(option.cloneNode(true));
-                videoModelImage.appendChild(option.cloneNode(true));
-            });
-        }
-    }
-
-    // 工具方法
-    getApiKey() {
-        const input = document.getElementById('api-key');
-        return input ? (input.value.trim() || null) : null;
-    }
-
-    showOptimizedPrompt(content, isImage = false) {
-        const promptElement = isImage ?
-            document.getElementById('optimized-image-prompt') :
-            document.getElementById('optimized-text-prompt');
-        const contentElement = isImage ?
-            document.getElementById('optimized-image-content') :
-            document.getElementById('optimized-text-content');
-
-        if (contentElement) contentElement.textContent = content;
-        if (promptElement) promptElement.style.display = 'block';
-    }
-
-    showResult(videoPath) {
-        LoadingManager.hide();
-
-        this.currentVideoPath = videoPath;
-
-        const videoContainer = document.getElementById('video-container');
-        if (videoContainer) {
-            videoContainer.innerHTML = `
-                <video controls>
-                    <source src="${videoPath}" type="video/mp4">
-                    您的浏览器不支持视频播放。
-                </video>
-            `;
-        }
-
-        // 隐藏转换预览和进度
-        const conversionPreview = document.getElementById('conversion-preview');
-        if (conversionPreview) conversionPreview.style.display = 'none';
-        this.hideTranscodeProgress();
-
-        const resultDiv = document.getElementById('result');
-        if (resultDiv) resultDiv.style.display = 'block';
-    }
-
-    showConvertedResult(videoPath) {
-        const videoContainer = document.getElementById('converted-video-container');
-        if (videoContainer) {
-            videoContainer.innerHTML = `
-                <video controls>
-                    <source src="${videoPath}" type="video/mp4">
-                    您的浏览器不支持视频播放。
-                </video>
-            `;
-        }
-
-        const downloadBtn = document.getElementById('download-converted-btn');
-        if (downloadBtn) downloadBtn.dataset.videoUrl = videoPath;
-
-        const previewDiv = document.getElementById('conversion-preview');
-        if (previewDiv) previewDiv.style.display = 'block';
-    }
-
-    showTranscodeProgress() {
-        const el = document.getElementById('transcode-progress');
-        if (el) el.style.display = 'block';
-    }
-
-    hideTranscodeProgress() {
-        const el = document.getElementById('transcode-progress');
-        if (el) el.style.display = 'none';
-    }
-
-    updateTranscodeProgress(text, percent) {
-        const textEl = document.getElementById('transcode-status-text');
-        const barEl = document.getElementById('transcode-progress-bar');
-        if (textEl) textEl.textContent = text;
-        if (barEl) barEl.style.width = percent + '%';
-    }
-
-    downloadFile(url, filename) {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        throw new Error('生成超时，请稍后在历史记录中查看');
     }
 }
 
-// 页面加载完成后初始化应用
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new VeoMuseApp();
+    new App();
 });

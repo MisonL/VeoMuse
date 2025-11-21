@@ -22,30 +22,6 @@ const uploadSecurity = [
   securityService.createUploadRateLimit()
 ];
 
-// API密钥验证中间件
-const validateApiKey = (req, res, next) => {
-  const apiKey = req.body.apiKey || req.query.apiKey || req.headers['x-api-key'];
-  
-  if (!apiKey) {
-    return res.status(400).json({
-      success: false,
-      error: '缺少API密钥'
-    });
-  }
-  
-  const validation = securityService.validateApiKeyFormat(apiKey);
-  if (!validation.valid) {
-    return res.status(400).json({
-      success: false,
-      error: validation.error
-    });
-  }
-  
-  // 将验证后的API密钥附加到请求对象
-  req.validatedApiKey = apiKey;
-  next();
-};
-
 // 输入验证中间件
 const validateInput = (req, res, next) => {
   // 检查请求体大小
@@ -55,7 +31,7 @@ const validateInput = (req, res, next) => {
       error: '请求体过大'
     });
   }
-  
+
   // 检查常见的恶意输入模式
   const suspiciousPatterns = [
     /<script/i,
@@ -65,14 +41,14 @@ const validateInput = (req, res, next) => {
     /document\./i,
     /eval\(/i
   ];
-  
+
   const checkString = (str) => {
     if (typeof str === 'string') {
       return suspiciousPatterns.some(pattern => pattern.test(str));
     }
     return false;
   };
-  
+
   const checkObject = (obj) => {
     if (typeof obj === 'object' && obj !== null) {
       for (const key in obj) {
@@ -83,14 +59,14 @@ const validateInput = (req, res, next) => {
     }
     return false;
   };
-  
+
   if (checkObject(req.body) || checkObject(req.query)) {
     return res.status(400).json({
       success: false,
       error: '检测到潜在的恶意输入'
     });
   }
-  
+
   next();
 };
 
@@ -98,17 +74,14 @@ const validateInput = (req, res, next) => {
 const corsOptions = {
   origin: function (origin, callback) {
     // 允许的域名列表
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'https://veomuse.com' // 生产域名
-    ];
-    
+    const config = require('../../config');
+    const allowedOrigins = config.cors.allowedOrigins;
+
     // 开发环境或无origin（本地文件、curl等）
     if (process.env.NODE_ENV === 'development' || !origin) {
       return callback(null, true);
     }
-    
+
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -124,7 +97,6 @@ module.exports = {
   basicSecurity,
   apiSecurity,
   uploadSecurity,
-  validateApiKey,
   validateInput,
   corsOptions,
   securityService

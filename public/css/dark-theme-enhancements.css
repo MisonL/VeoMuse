@@ -1,0 +1,80 @@
+/* Dark Theme Specific Optimizations */
+
+[data-theme="dark"] .nav-item {
+    background: rgba(79, 172, 254, 0.08);
+    border-color: rgba(79, 172, 254, 0.15);
+}
+
+[data-theme="dark"] .nav-item:hover {
+    background: rgba(79, 172, 254, 0.2);
+    border-color: rgba(79, 172, 254, 0.4);
+    color: #00f2fe;
+}
+
+[data-theme="dark"] .nav-item.active {
+    background: var(--accent-gradient);
+    box-shadow: 0 10px 25px rgba(79, 172, 254, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .logo-icon {
+    box-shadow: 0 10px 30px rgba(79, 172, 254, 0.45),
+        0 4px 12px rgba(79, 172, 254, 0.35),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="dark"] .logo-icon:hover {
+    box-shadow: 0 15px 40px rgba(79, 172, 254, 0.55),
+        0 6px 16px rgba(79, 172, 254, 0.4),
+        inset 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="dark"] .btn-liquid {
+    box-shadow: 0 10px 25px rgba(79, 172, 254, 0.4),
+        0 4px 12px rgba(79, 172, 254, 0.3);
+}
+
+[data-theme="dark"] .btn-liquid:hover {
+    box-shadow: 0 15px 35px rgba(79, 172, 254, 0.5),
+        0 6px 16px rgba(79, 172, 254, 0.35);
+}
+
+[data-theme="dark"] .btn-ghost {
+    background: rgba(79, 172, 254, 0.12);
+    border: 1px solid rgba(79, 172, 254, 0.3);
+    color: #00f2fe;
+}
+
+[data-theme="dark"] .btn-ghost .icon {
+    filter: drop-shadow(0 2px 4px rgba(79, 172, 254, 0.4));
+}
+
+[data-theme="dark"] .btn-ghost:hover {
+    background: rgba(79, 172, 254, 0.25);
+    border-color: rgba(79, 172, 254, 0.5);
+    box-shadow: 0 6px 16px rgba(79, 172, 254, 0.35);
+    color: #00f2fe;
+}
+
+[data-theme="dark"] .btn-primary {
+    box-shadow: 0 8px 20px rgba(79, 172, 254, 0.35);
+}
+
+[data-theme="dark"] .btn-primary:hover {
+    box-shadow: 0 12px 30px rgba(79, 172, 254, 0.5);
+}
+
+[data-theme="dark"] .status-pill {
+    background: rgba(79, 172, 254, 0.15);
+    border-color: rgba(79, 172, 254, 0.3);
+}
+
+/* Batch Header in Dark Mode */
+[data-theme="dark"] .batch-header {
+    border-bottom-color: rgba(79, 172, 254, 0.2);
+}
+
+[data-theme="dark"] .batch-header h3 {
+    color: #00f2fe;
+    text-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+}
