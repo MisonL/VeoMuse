@@ -106,8 +106,8 @@ class App {
   }
 
   async setupVite() {
-    // 仅在开发环境下集成 Vite
-    if (process.env.NODE_ENV !== 'production') {
+    // 仅在开发环境下集成 Vite（跳过测试环境）
+    if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
       console.log('正在初始化 Vite 中间件...');
       const { createServer } = require('vite');
 
@@ -123,7 +123,10 @@ class App {
         console.log('Vite 中间件已集成 - 单端口模式已激活');
       } catch (e) {
         console.error('Vite 初始化失败:', e);
+        throw e;
       }
+    } else if (process.env.NODE_ENV === 'test') {
+      console.log('测试环境，跳过 Vite 中间件初始化');
     } else {
       // 生产环境：服务构建后的静态文件
       this.app.use(express.static('dist'));
@@ -154,17 +157,23 @@ class App {
   }
 
   setupCleanup() {
+    // 测试环境跳过清理定时器
+    if (process.env.NODE_ENV === 'test') {
+      console.log('测试环境，跳过文件清理定时器');
+      return;
+    }
+
     const { securityService } = require('./middleware/security');
 
     // 定期清理过期文件
     const cleanupInterval = 60 * 60 * 1000; // 1小时
-    setInterval(() => {
+    this.cleanupIntervalId = setInterval(() => {
       this.cleanupOldFiles();
       securityService.cleanup(); // 清理安全服务数据
     }, cleanupInterval);
 
     // 启动时清理一次
-    setTimeout(() => {
+    this.cleanupTimeoutId = setTimeout(() => {
       this.cleanupOldFiles();
     }, 5000);
   }

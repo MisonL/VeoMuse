@@ -66,6 +66,17 @@
     "collectCoverageFrom": [
       "server.js",
       "config.js"
-    ]
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!(vite)/)"
+    ],
+    "moduleNameMapper": {
+      "^vite$": "<rootDir>/tests/__mocks__/vite.js"
+    },
+    "setupFiles": [
+      "<rootDir>/tests/setup.js"
+    ],
+    "forceExit": true,
+    "testTimeout": 10000
   }
 }

@@ -15,6 +15,17 @@ beforeAll(async () => {
     await appInstance.init(); // 确保应用已初始化
 });
 
+// 在所有测试结束后，清理应用资源
+afterAll(async () => {
+    if (appInstance && appInstance.server) {
+        await new Promise((resolve) => {
+            appInstance.server.close(resolve);
+        });
+    }
+    // 等待一小段时间确保所有连接都关闭
+    await new Promise(resolve => setTimeout(resolve, 500));
+});
+
 // Jest 会在所有测试后自动清理进程，对于 supertest(app) 模式，通常不需要手动关闭服务器
 
 describe('Video API Endpoints', () => {
@@ -97,15 +108,16 @@ describe('Video API Endpoints', () => {
         });
     });
 
-    describe('POST /api/optimize-prompt', () => {
+    describe('POST /api/prompts/optimize', () => {
 
         it('should return 400 Bad Request if prompt is missing', async () => {
             const response = await request(appInstance.app)
-                .post('/api/optimize-prompt')
+                .post('/api/prompts/optimize')
                 .send({}); // 发送空请求体
 
             expect(response.status).toBe(400);
-            expect(response.body.errors[0].msg).toBe('提示词不能为空');
+            expect(response.body.success).toBe(false);
+            expect(response.body.error).toBe('提示词不能为空');
         });
     });
 });
