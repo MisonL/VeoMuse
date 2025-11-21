@@ -1,267 +1,404 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VeoMuse 灵感工坊</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css?v=3">
-    <link rel="stylesheet" href="/css/features.css?v=1">
-    <link rel="stylesheet" href="/css/dark-theme-enhancements.css?v=1">
-    <link rel="stylesheet" href="/css/icon-animations.css?v=1">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💧</text></svg>">
-</head>
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css?v=3" />
+    <link rel="stylesheet" href="/css/features.css?v=1" />
+    <link rel="stylesheet" href="/css/dark-theme-enhancements.css?v=1" />
+    <link rel="stylesheet" href="/css/icon-animations.css?v=1" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💧</text></svg>"
+    />
+  </head>
 
-<body>
+  <body>
     <!-- Animated Background -->
     <div class="liquid-background">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-        <div class="glass-overlay"></div>
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <div class="glass-overlay"></div>
     </div>
 
     <div class="app-container">
-        <!-- Glass Sidebar -->
-        <nav class="glass-sidebar">
-            <div class="logo">
-                <div class="logo-icon">V</div>
-            </div>
-            <div class="nav-items">
-                <button class="nav-item active" data-tab="text" data-tooltip="nav.text">
-                    <span class="icon">✨</span>
-                </button>
-                <button class="nav-item" data-tab="image" data-tooltip="nav.image">
-                    <span class="icon">🖼️</span>
-                </button>
-                <button class="nav-item" data-tab="history" data-tooltip="nav.history">
-                    <span class="icon">🕒</span>
-                </button>
-                <button class="nav-item" data-tab="batch" data-tooltip="nav.batch">
-                    <span class="icon">📚</span>
-                </button>
-            </div>
-            <div class="nav-footer">
-                <button class="nav-item" id="lang-toggle" data-tooltip="nav.lang">
-                    <span class="icon">🌐</span>
-                </button>
-                <button class="nav-item" id="theme-toggle" data-tooltip="nav.theme">
-                    <span class="icon">☀️</span>
-                </button>
-            </div>
-        </nav>
+      <!-- Glass Sidebar -->
+      <nav class="glass-sidebar">
+        <div class="logo">
+          <div class="logo-icon">V</div>
+        </div>
+        <div class="nav-items">
+          <button
+            class="nav-item active"
+            data-tab="text"
+            data-tooltip="nav.text"
+          >
+            <span class="icon">✨</span>
+          </button>
+          <button class="nav-item" data-tab="image" data-tooltip="nav.image">
+            <span class="icon">🖼️</span>
+          </button>
+          <button
+            class="nav-item"
+            data-tab="history"
+            data-tooltip="nav.history"
+          >
+            <span class="icon">🕒</span>
+          </button>
+          <button class="nav-item" data-tab="batch" data-tooltip="nav.batch">
+            <span class="icon">📚</span>
+          </button>
+        </div>
+        <div class="nav-footer">
+          <button class="nav-item" id="lang-toggle" data-tooltip="nav.lang">
+            <span class="icon">🌐</span>
+          </button>
+          <button class="nav-item" id="theme-toggle" data-tooltip="nav.theme">
+            <span class="icon">☀️</span>
+          </button>
+        </div>
+      </nav>
 
-        <!-- Main Workspace -->
-        <main class="workspace">
-            <!-- Glass Header -->
-            <header class="glass-header">
-                <div class="header-left">
-                    <h1 class="brand-name">VeoMuse</h1>
-                    <span class="header-divider">|</span>
-                    <h2 id="page-title" data-i18n="text.title">文字转视频</h2>
+      <!-- Main Workspace -->
+      <main class="workspace">
+        <!-- Glass Header -->
+        <header class="glass-header">
+          <div class="header-left">
+            <h1 class="brand-name">VeoMuse</h1>
+            <span class="header-divider">|</span>
+            <h2 id="page-title" data-i18n="text.title">文字转视频</h2>
+          </div>
+          <div class="status-pill">
+            <span class="dot"></span>
+            <span class="status-text" data-i18n="status.ready">就绪</span>
+          </div>
+        </header>
+
+        <!-- Content Grid -->
+        <div class="liquid-grid">
+          <!-- Left: Controls (Glass Panel) -->
+          <aside class="glass-panel control-panel">
+            <div class="panel-content" id="text-controls">
+              <div class="form-group">
+                <label data-i18n="text.promptLabel">描述你的创意</label>
+                <textarea
+                  id="text-prompt"
+                  class="liquid-input"
+                  data-i18n-placeholder="text.promptPlaceholder"
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label data-i18n="text.negativePromptLabel"
+                  >负面提示词 (可选)</label
+                >
+                <textarea
+                  id="text-negative-prompt"
+                  class="liquid-input"
+                  rows="1"
+                  data-i18n-placeholder="text.negativePromptPlaceholder"
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label data-i18n="text.styleLabel">艺术风格</label>
+                <select id="style-select" class="liquid-select">
+                  <option value="" data-i18n="text.styles.default">
+                    电影质感 (默认)
+                  </option>
+                  <option value="Realistic" data-i18n="text.styles.realistic">
+                    超写实
+                  </option>
+                  <option value="Anime" data-i18n="text.styles.anime">
+                    日系动漫
+                  </option>
+                  <option value="3D Render" data-i18n="text.styles.render3d">
+                    3D 渲染
+                  </option>
+                  <option value="Cyberpunk" data-i18n="text.styles.cyberpunk">
+                    赛博朋克
+                  </option>
+                  <option value="Watercolor" data-i18n="text.styles.watercolor">
+                    水彩艺术
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label data-i18n="text.modelLabel">模型选择</label>
+                <select id="model-select" class="liquid-select">
+                  <option value="veo-3.1-generate-001">Veo 3.1</option>
+                  <option value="veo-3.1-fast-generate-preview">
+                    Veo 3.1 Fast
+                  </option>
+                </select>
+              </div>
+
+              <button id="generate-btn" class="btn btn-liquid btn-block">
+                <span class="icon">✨</span>
+                <span data-i18n="text.generateBtn">开始生成</span>
+              </button>
+            </div>
+
+            <div
+              class="panel-content"
+              id="image-controls"
+              style="display: none"
+            >
+              <div class="upload-zone" id="upload-zone">
+                <input type="file" id="image-input" hidden accept="image/*" />
+                <div class="upload-content">
+                  <svg
+                    class="upload-cloud-icon"
+                    viewBox="0 0 64 64"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M52 34C52 31.5 51 29.5 49.5 27.5C49.5 21 44.5 16 38 16C34.5 16 31.5 17.5 29 20C27.5 19 25.5 18.5 23.5 18.5C17.5 18.5 12.5 23.5 12.5 29.5C12.5 30.5 12.5 31.5 13 32.5C9.5 33.5 7 36.5 7 40.5C7 45 10.5 48.5 15 48.5H49C53.5 48.5 57 45 57 40.5C57 37 54.5 34 52 34Z"
+                      fill="currentColor"
+                      opacity="0.2"
+                    />
+                    <path
+                      d="M52 34C52 31.5 51 29.5 49.5 27.5C49.5 21 44.5 16 38 16C34.5 16 31.5 17.5 29 20C27.5 19 25.5 18.5 23.5 18.5C17.5 18.5 12.5 23.5 12.5 29.5C12.5 30.5 12.5 31.5 13 32.5C9.5 33.5 7 36.5 7 40.5C7 45 10.5 48.5 15 48.5H49C53.5 48.5 57 45 57 40.5C57 37 54.5 34 52 34Z"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <p data-i18n="image.dropText">拖拽图片到此处 或 点击上传</p>
                 </div>
-                <div class="status-pill">
-                    <span class="dot"></span>
-                    <span class="status-text" data-i18n="status.ready">就绪</span>
-                </div>
-            </header>
+                <img
+                  id="image-preview"
+                  class="image-preview"
+                  style="display: none"
+                />
+                <button id="clear-image" class="btn-icon" style="display: none">
+                  ×
+                </button>
+              </div>
 
-            <!-- Content Grid -->
-            <div class="liquid-grid">
-                <!-- Left: Controls (Glass Panel) -->
-                <aside class="glass-panel control-panel">
-                    <div class="panel-content" id="text-controls">
-                        <div class="form-group">
-                            <label data-i18n="text.promptLabel">描述你的创意</label>
-                            <textarea id="text-prompt" class="liquid-input"
-                                data-i18n-placeholder="text.promptPlaceholder"></textarea>
-                        </div>
+              <div class="form-group">
+                <label data-i18n="image.promptLabel">动态描述</label>
+                <textarea
+                  id="image-prompt"
+                  class="liquid-input"
+                  data-i18n-placeholder="image.promptPlaceholder"
+                ></textarea>
+              </div>
 
-                        <div class="form-group">
-                            <label data-i18n="text.negativePromptLabel">负面提示词 (可选)</label>
-                            <textarea id="text-negative-prompt" class="liquid-input" rows="1"
-                                data-i18n-placeholder="text.negativePromptPlaceholder"></textarea>
-                        </div>
+              <div class="form-group">
+                <label data-i18n="image.negativePromptLabel"
+                  >负面提示词 (可选)</label
+                >
+                <textarea
+                  id="image-negative-prompt"
+                  class="liquid-input"
+                  rows="1"
+                  data-i18n-placeholder="image.negativePromptPlaceholder"
+                ></textarea>
+              </div>
 
-                        <div class="form-group">
-                            <label data-i18n="text.styleLabel">艺术风格</label>
-                            <select id="style-select" class="liquid-select">
-                                <option value="" data-i18n="text.styles.default">电影质感 (默认)</option>
-                                <option value="Realistic" data-i18n="text.styles.realistic">超写实</option>
-                                <option value="Anime" data-i18n="text.styles.anime">日系动漫</option>
-                                <option value="3D Render" data-i18n="text.styles.render3d">3D 渲染</option>
-                                <option value="Cyberpunk" data-i18n="text.styles.cyberpunk">赛博朋克</option>
-                                <option value="Watercolor" data-i18n="text.styles.watercolor">水彩艺术</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label data-i18n="text.modelLabel">模型选择</label>
-                            <select id="model-select" class="liquid-select">
-                                <option value="veo-3.1-generate-preview">Veo 3.1 (Preview)</option>
-                                <option value="veo-3.1-fast-generate-preview">Veo 3.1 Fast</option>
-                            </select>
-                        </div>
-
-                        <button id="generate-btn" class="btn btn-liquid btn-block">
-                            <span class="icon">✨</span> <span data-i18n="text.generateBtn">开始生成</span>
-                        </button>
-                    </div>
-
-                    <div class="panel-content" id="image-controls" style="display: none;">
-                        <div class="upload-zone" id="upload-zone">
-                            <input type="file" id="image-input" hidden accept="image/*">
-                            <div class="upload-content">
-                                <svg class="upload-cloud-icon" viewBox="0 0 64 64" fill="none"
-                                    xmlns="http://www.w3.org/2000/svg">
-                                    <path
-                                        d="M52 34C52 31.5 51 29.5 49.5 27.5C49.5 21 44.5 16 38 16C34.5 16 31.5 17.5 29 20C27.5 19 25.5 18.5 23.5 18.5C17.5 18.5 12.5 23.5 12.5 29.5C12.5 30.5 12.5 31.5 13 32.5C9.5 33.5 7 36.5 7 40.5C7 45 10.5 48.5 15 48.5H49C53.5 48.5 57 45 57 40.5C57 37 54.5 34 52 34Z"
-                                        fill="currentColor" opacity="0.2" />
-                                    <path
-                                        d="M52 34C52 31.5 51 29.5 49.5 27.5C49.5 21 44.5 16 38 16C34.5 16 31.5 17.5 29 20C27.5 19 25.5 18.5 23.5 18.5C17.5 18.5 12.5 23.5 12.5 29.5C12.5 30.5 12.5 31.5 13 32.5C9.5 33.5 7 36.5 7 40.5C7 45 10.5 48.5 15 48.5H49C53.5 48.5 57 45 57 40.5C57 37 54.5 34 52 34Z"
-                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round" />
-                                </svg>
-                                <p data-i18n="image.dropText">拖拽图片到此处 或 点击上传</p>
-                            </div>
-                            <img id="image-preview" class="image-preview" style="display: none;">
-                            <button id="clear-image" class="btn-icon" style="display: none;">×</button>
-                        </div>
-
-                        <div class="form-group">
-                            <label data-i18n="image.promptLabel">动态描述</label>
-                            <textarea id="image-prompt" class="liquid-input"
-                                data-i18n-placeholder="image.promptPlaceholder"></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label data-i18n="image.negativePromptLabel">负面提示词 (可选)</label>
-                            <textarea id="image-negative-prompt" class="liquid-input" rows="1"
-                                data-i18n-placeholder="image.negativePromptPlaceholder"></textarea>
-                        </div>
-
-                        <button id="generate-image-btn" class="btn btn-liquid btn-block">
-                            <span class="icon">✨</span> <span data-i18n="image.generateBtn">生成动画</span>
-                        </button>
-                    </div>
-
-                    <div class="panel-content" id="history-controls" style="display: none;">
-                        <div class="history-header">
-                            <p class="history-subtitle" data-i18n="history.subtitle">你的创作记录</p>
-                            <button class="btn btn-ghost btn-sm" id="clear-history-btn"
-                                data-i18n="history.clearAll">清空历史</button>
-                        </div>
-                        <div id="history-list" class="history-list">
-                            <!-- History items will be injected here -->
-                        </div>
-                    </div>
-
-                    <div class="panel-content" id="batch-controls" style="display: none;">
-                        <div class="batch-header">
-                            <h3 data-i18n="batch.title">批量生成</h3>
-                            <div class="batch-actions">
-                                <button class="btn btn-sm btn-ghost" id="batch-stats-btn" title="查看统计">
-                                    <span class="icon">📊</span>
-                                </button>
-                                <button class="btn btn-sm btn-primary" id="create-batch-btn">
-                                    <span class="icon">➕</span> <span data-i18n="batch.create">新建任务</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Batch Stats Panel (Hidden by default) -->
-                        <div id="batch-stats-panel" class="glass-panel stats-panel" style="display: none;">
-                            <div class="stats-grid">
-                                <div class="stat-item">
-                                    <span class="stat-label" data-i18n="batch.stats.active">活跃任务</span>
-                                    <span class="stat-value" id="stat-active">0</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label" data-i18n="batch.stats.jobs">总作业数</span>
-                                    <span class="stat-value" id="stat-jobs">0</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label" data-i18n="batch.stats.completed">已完成作业</span>
-                                    <span class="stat-value" id="stat-completed">0</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-label" data-i18n="batch.stats.total">总任务数</span>
-                                    <span class="stat-value" id="stat-total">0</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="batch-create-form" style="display: none;" class="batch-form-container">
-                            <div class="form-group">
-                                <label data-i18n="batch.templateLabel">选择模板分类</label>
-                                <select id="batch-category-select" class="liquid-select">
-                                    <option value="" data-i18n="batch.selectCategory">请选择分类...</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label data-i18n="batch.countLabel">生成数量</label>
-                                <div class="range-input-container">
-                                    <input type="range" id="batch-count" min="1" max="10" value="3"
-                                        class="liquid-range">
-                                    <span id="batch-count-display">3</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label data-i18n="text.modelLabel">模型选择</label>
-                                <select id="batch-model-select" class="liquid-select">
-                                    <option value="veo-3.1-generate-preview">Veo 3.1 (Preview)</option>
-                                </select>
-                            </div>
-
-                            <div class="form-actions">
-                                <button class="btn btn-ghost" id="cancel-batch-btn"
-                                    data-i18n="common.cancel">取消</button>
-                                <button class="btn btn-liquid" id="submit-batch-btn"
-                                    data-i18n="batch.submit">开始生成</button>
-                            </div>
-                        </div>
-
-                        <div id="batch-list" class="batch-list">
-                            <!-- Batch items will be injected here -->
-                            <div class="empty-state-small">
-                                <p data-i18n="batch.empty">暂无批量任务</p>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-
-                <!-- Center: Stage/Preview (Glass Panel) -->
-                <section class="glass-panel stage">
-                    <div class="preview-container">
-                        <div class="empty-state" id="preview-empty">
-                            <span class="icon">💧</span>
-                            <p data-i18n="preview.empty">你的创意将在此呈现</p>
-                        </div>
-                        <div class="loading-state" id="preview-loading" style="display: none;">
-                            <div class="liquid-spinner"></div>
-                            <p data-i18n="status.generating">正在生成...</p>
-                        </div>
-                        <div class="preview-video-wrapper" id="preview-video" style="display: none;">
-                            <div class="video-wrapper">
-                                <!-- Video will be injected here -->
-                            </div>
-                        </div>
-                    </div>
-                    <div class="stage-actions" id="stage-actions" style="display: none;">
-                        <button class="btn btn-ghost" id="download-btn" data-i18n="preview.download">下载视频</button>
-                        <button class="btn btn-ghost" id="share-btn" data-i18n="preview.share">分享作品</button>
-                    </div>
-                </section>
+              <button id="generate-image-btn" class="btn btn-liquid btn-block">
+                <span class="icon">✨</span>
+                <span data-i18n="image.generateBtn">生成动画</span>
+              </button>
             </div>
-        </main>
+
+            <div
+              class="panel-content"
+              id="history-controls"
+              style="display: none"
+            >
+              <div class="history-header">
+                <p class="history-subtitle" data-i18n="history.subtitle">
+                  你的创作记录
+                </p>
+                <button
+                  class="btn btn-ghost btn-sm"
+                  id="clear-history-btn"
+                  data-i18n="history.clearAll"
+                >
+                  清空历史
+                </button>
+              </div>
+              <div id="history-list" class="history-list">
+                <!-- History items will be injected here -->
+              </div>
+            </div>
+
+            <div
+              class="panel-content"
+              id="batch-controls"
+              style="display: none"
+            >
+              <div class="batch-header">
+                <h3 data-i18n="batch.title">批量生成</h3>
+                <div class="batch-actions">
+                  <button
+                    class="btn btn-sm btn-ghost"
+                    id="batch-stats-btn"
+                    title="查看统计"
+                  >
+                    <span class="icon">📊</span>
+                  </button>
+                  <button class="btn btn-sm btn-primary" id="create-batch-btn">
+                    <span class="icon">➕</span>
+                    <span data-i18n="batch.create">新建任务</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Batch Stats Panel (Hidden by default) -->
+              <div
+                id="batch-stats-panel"
+                class="glass-panel stats-panel"
+                style="display: none"
+              >
+                <div class="stats-grid">
+                  <div class="stat-item">
+                    <span class="stat-label" data-i18n="batch.stats.active"
+                      >活跃任务</span
+                    >
+                    <span class="stat-value" id="stat-active">0</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label" data-i18n="batch.stats.jobs"
+                      >总作业数</span
+                    >
+                    <span class="stat-value" id="stat-jobs">0</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label" data-i18n="batch.stats.completed"
+                      >已完成作业</span
+                    >
+                    <span class="stat-value" id="stat-completed">0</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label" data-i18n="batch.stats.total"
+                      >总任务数</span
+                    >
+                    <span class="stat-value" id="stat-total">0</span>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                id="batch-create-form"
+                style="display: none"
+                class="batch-form-container"
+              >
+                <div class="form-group">
+                  <label data-i18n="batch.templateLabel">选择模板分类</label>
+                  <select id="batch-category-select" class="liquid-select">
+                    <option value="" data-i18n="batch.selectCategory">
+                      请选择分类...
+                    </option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label data-i18n="batch.countLabel">生成数量</label>
+                  <div class="range-input-container">
+                    <input
+                      type="range"
+                      id="batch-count"
+                      min="1"
+                      max="10"
+                      value="3"
+                      class="liquid-range"
+                    />
+                    <span id="batch-count-display">3</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label data-i18n="text.modelLabel">模型选择</label>
+                  <select id="batch-model-select" class="liquid-select">
+                    <option value="veo-3.1-generate-001">Veo 3.1</option>
+                  </select>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    class="btn btn-ghost"
+                    id="cancel-batch-btn"
+                    data-i18n="common.cancel"
+                  >
+                    取消
+                  </button>
+                  <button
+                    class="btn btn-liquid"
+                    id="submit-batch-btn"
+                    data-i18n="batch.submit"
+                  >
+                    开始生成
+                  </button>
+                </div>
+              </div>
+
+              <div id="batch-list" class="batch-list">
+                <!-- Batch items will be injected here -->
+                <div class="empty-state-small">
+                  <p data-i18n="batch.empty">暂无批量任务</p>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Center: Stage/Preview (Glass Panel) -->
+          <section class="glass-panel stage">
+            <div class="preview-container">
+              <div class="empty-state" id="preview-empty">
+                <span class="icon">💧</span>
+                <p data-i18n="preview.empty">你的创意将在此呈现</p>
+              </div>
+              <div
+                class="loading-state"
+                id="preview-loading"
+                style="display: none"
+              >
+                <div class="liquid-spinner"></div>
+                <p data-i18n="status.generating">正在生成...</p>
+              </div>
+              <div
+                class="preview-video-wrapper"
+                id="preview-video"
+                style="display: none"
+              >
+                <div class="video-wrapper">
+                  <!-- Video will be injected here -->
+                </div>
+              </div>
+            </div>
+            <div class="stage-actions" id="stage-actions" style="display: none">
+              <button
+                class="btn btn-ghost"
+                id="download-btn"
+                data-i18n="preview.download"
+              >
+                下载视频
+              </button>
+              <button
+                class="btn btn-ghost"
+                id="share-btn"
+                data-i18n="preview.share"
+              >
+                分享作品
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
     </div>
 
     <!-- Notifications -->
@@ -269,6 +406,5 @@
 
     <!-- Scripts -->
     <script type="module" src="/js/app.js"></script>
-</body>
-
+  </body>
 </html>

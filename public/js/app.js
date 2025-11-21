@@ -235,7 +235,7 @@ class App {
         document.getElementById('generate-image-btn').addEventListener('click', async () => {
             const prompt = document.getElementById('image-prompt').value;
             const fileInput = document.getElementById('image-input');
-            const model = 'veo-3.1-generate-preview';
+            const model = 'veo-3.1-generate-001';
 
             const negativePrompt = document.getElementById('image-negative-prompt').value;
 
@@ -347,7 +347,7 @@ class App {
             span.textContent = this.i18n.get('optimize.optimizing');
 
             try {
-                const model = document.getElementById('model-select')?.value || 'veo-3.1-generate-preview';
+                const model = document.getElementById('model-select')?.value || 'veo-3.1-generate-001';
                 const result = await API.optimizePrompt(originalPrompt, model);
 
                 if (result.success && result.optimizedPrompt) {
