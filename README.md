@@ -41,7 +41,7 @@
 
 ## 🌟 简介
 
-**VeoMuse** 是一款革命性的 AI 视频生成工具，基于 Google 最先进的 Gemini Veo 模型打造。v2.0 版本带来了全新的 **Liquid Glass (流体玻璃)** UI 设计，支持批量任务处理、提示词模板系统以及强大的视频后处理功能。
+**VeoMuse** 是一款革命性的 AI 视频生成工具，基于 Google 最先进的 **Veo 3.1** 模型打造。v3.0 版本带来了全新的 **Liquid Glass (流体玻璃)** UI 设计，支持批量任务处理、提示词模板系统以及强大的视频后处理功能。
 
 🎆 **为什么选择 VeoMuse？**
 
@@ -102,7 +102,22 @@
 - npm >= 6.0.0
 - 有效的 Google Gemini API 密钥（付费层级）
 
-### 安装步骤
+### 🐳 Docker 部署（推荐）
+
+我们提供了规范化的 Docker 部署支持，一键启动所有服务。
+
+1. 克隆项目并配置 `.env` 文件。
+2. 运行启动命令：
+
+   ```bash
+   npm run docker:compose
+   ```
+
+   此命令将自动构建镜像并启动名为 `veomuse` 的容器组。
+
+3. 访问 `http://localhost:5173`
+
+### 📦 本地安装步骤
 
 1. 克隆项目到本地：
 
@@ -137,7 +152,7 @@
    npm start
    ```
 
-5. 访问 `http://localhost:5173` (开发模式) 或 `http://localhost:3000` (生产模式)
+5. 访问 `http://localhost:5173` (开发模式) 或 `http://localhost:5173` (生产模式)
 
 ## 📁 项目结构
 
