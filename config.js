@@ -24,7 +24,7 @@ module.exports = {
 
   // 视频生成配置
   video: {
-    defaultModel: process.env.DEFAULT_VIDEO_MODEL || 'veo-3.0-generate-preview',
+    defaultModel: process.env.DEFAULT_VIDEO_MODEL || 'veo-3.1-generate-001',
     defaultOptimizationModel: process.env.DEFAULT_OPTIMIZATION_MODEL || 'gemini-2.5-flash',
     pollingInterval: parseInt(process.env.VIDEO_POLLING_INTERVAL) || 10000, // 默认10秒
     maxRetries: parseInt(process.env.MAX_API_RETRIES) || 3 // 默认最大重试次数

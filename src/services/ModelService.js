@@ -85,9 +85,29 @@ class ModelService {
     return {
       videoModels: [
         {
+          name: 'veo-3.1-generate-001',
+          displayName: 'Veo 3.1',
+          description: '最新一代高保真视频生成模型'
+        },
+        {
+          name: 'veo-3.1-fast-generate-001',
+          displayName: 'Veo 3.1 Fast',
+          description: '快速视频生成模型'
+        },
+        {
+          name: 'veo-3.0-generate-001',
+          displayName: 'Veo 3.0',
+          description: '高质量视频生成模型'
+        },
+        {
+          name: 'veo-3.0-fast-generate-001',
+          displayName: 'Veo 3.0 Fast',
+          description: '快速视频生成模型'
+        },
+        {
           name: config.video.defaultModel,
-          displayName: 'Veo 3.0 Generate Preview',
-          description: '默认视频生成模型'
+          displayName: 'Veo 3.0 Preview',
+          description: '预览版视频生成模型'
         }
       ],
       textModels: [
