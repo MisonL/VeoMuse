@@ -261,7 +261,7 @@ http://localhost:5173/api
 {
   "status": "ok",
   "timestamp": "2023-01-01T00:00:00.000Z",
-  "version": "2.0.0"
+  "version": "3.0.0"
 }
 ```
 
