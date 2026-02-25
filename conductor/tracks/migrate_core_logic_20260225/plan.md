@@ -1,13 +1,13 @@
 # Implementation Plan: 核心业务迁移与 AI 创意引擎
 
-## Phase 1: 后端重构与服务迁移
+## Phase 1: 后端重构与服务迁移 [checkpoint: d0ca9cc]
 - [x] **Task: 迁移并增强 VideoService** (28bce97)
     - [x] 整合旧的 `VideoService` 到 `apps/backend/src/services`。
     - [x] 引入 `ApiKeyService` 的多 Key 轮询逻辑。
 - [x] **Task: 实现 Elysia 视频路由** (b9a6e2a)
     - [x] 创建 `/api/video/generate` 接口。
     - [x] 配置 WebSocket 进度推送频道。
-    - [ ] **Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)**
+    - [x] **Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)** (Completed)
 
 ## Phase 2: AI 翻译层开发
 - [ ] **Task: 集成 Gemini 创意引擎**
