@@ -9,13 +9,13 @@
     - [x] 配置 WebSocket 进度推送频道。
     - [x] **Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)** (Completed)
 
-## Phase 2: AI 翻译层开发
-- [ ] **Task: 集成 Gemini 创意引擎**
-    - [ ] 开发 `PromptEnhanceService`。
-    - [ ] 实现“简单指令 -> 电影级分镜”的提示词自动扩充。
-- [ ] **Task: 暴露 AI 接口**
-    - [ ] 创建 `/api/ai/enhance-prompt` 接口。
-    - [ ] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)**
+## Phase 2: AI 翻译层开发 [checkpoint: 09d126c]
+- [x] **Task: 集成 Gemini 创意引擎** (09d126c)
+    - [x] 开发 `PromptEnhanceService`。
+    - [x] 实现“简单指令 -> 电影级分镜”的提示词自动扩充。
+- [x] **Task: 暴露 AI 接口** (09d126c)
+    - [x] 创建 `/api/ai/enhance-prompt` 接口。
+    - [x] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)** (Completed)
 
 ## Phase 3: 前端控制台对接
 - [ ] **Task: 实现 React 智能生成面板**
