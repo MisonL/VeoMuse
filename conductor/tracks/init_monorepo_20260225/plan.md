@@ -13,9 +13,9 @@
 - [x] **Task: 构建 React 前端脚手架** (5c78b55)
     - [x] 使用 Vite 在 `apps/frontend` 创建 React + TypeScript 应用。
     - [x] 配置基础 CSS 结构以支持玻璃拟态。
-- [ ] **Task: 实现 Eden Treaty 驱动的类型同步**
-    - [ ] 创建 `packages/shared` 用于存放公共 API 定义。
-    - [ ] 在前端集成 Eden Client。
+- [x] **Task: 实现 Eden Treaty 驱动的类型同步** (f66ca57)
+    - [x] 创建 `packages/shared` 用于存放公共 API 定义。
+    - [x] 在前端集成 Eden Client。
     - [ ] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)**
 
 ## Phase 3: 连通性测试与验证
