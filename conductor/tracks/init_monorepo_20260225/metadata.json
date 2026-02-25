@@ -1,0 +1,8 @@
+{
+  "track_id": "init_monorepo_20260225",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-02-25T10:00:00Z",
+  "updated_at": "2026-02-25T10:00:00Z",
+  "description": "构建 VeoMuse 旗舰版 Monorepo：初始化 Bun Workspaces 并搭建 Elysia 与 React 基础脚手架"
+}
