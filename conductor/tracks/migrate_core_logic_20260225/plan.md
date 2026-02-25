@@ -4,9 +4,9 @@
 - [x] **Task: 迁移并增强 VideoService** (28bce97)
     - [x] 整合旧的 `VideoService` 到 `apps/backend/src/services`。
     - [x] 引入 `ApiKeyService` 的多 Key 轮询逻辑。
-- [ ] **Task: 实现 Elysia 视频路由**
-    - [ ] 创建 `/api/video/generate` 接口。
-    - [ ] 配置 WebSocket 进度推送频道。
+- [x] **Task: 实现 Elysia 视频路由** (b9a6e2a)
+    - [x] 创建 `/api/video/generate` 接口。
+    - [x] 配置 WebSocket 进度推送频道。
     - [ ] **Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)**
 
 ## Phase 2: AI 翻译层开发
