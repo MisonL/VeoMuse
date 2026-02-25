@@ -3,6 +3,10 @@
   "version": "3.0.0",
   "description": "A web application for text-to-video and image-to-video generation using Gemini Veo model",
   "main": "server.js",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
