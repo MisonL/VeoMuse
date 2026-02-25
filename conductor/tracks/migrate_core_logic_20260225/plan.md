@@ -17,8 +17,8 @@
     - [x] 创建 `/api/ai/enhance-prompt` 接口。
     - [x] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)** (Completed)
 
-## Phase 3: 前端控制台对接
-- [ ] **Task: 实现 React 智能生成面板**
-    - [ ] 构建支持 AI 扩充的提示词输入组件。
-    - [ ] 通过 Eden Treaty 实时监听生成进度并展示。
-    - [ ] **Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)**
+## Phase 3: 前端控制台对接 [checkpoint: 44b03ed]
+- [x] **Task: 实现 React 智能生成面板** (44b03ed)
+    - [x] 构建支持 AI 扩充的提示词输入组件。
+    - [x] 通过 Eden Treaty 实时监听生成进度并展示。
+- [x] **Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)** (Completed)
