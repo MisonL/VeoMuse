@@ -1,5 +1,5 @@
 {
-  "name": "@veomuse/backend",
+  "name": "@veomuse/shared",
   "module": "src/index.ts",
   "type": "module",
   "private": true,
@@ -8,9 +8,5 @@
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "dependencies": {
-    "@sinclair/typebox": "^0.34.48",
-    "elysia": "^1.4.25"
   }
 }
