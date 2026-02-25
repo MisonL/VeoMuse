@@ -10,9 +10,9 @@
     - [x] **Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)** (Completed)
 
 ## Phase 2: 前端脚手架与跨端同步
-- [ ] **Task: 构建 React 前端脚手架**
-    - [ ] 使用 Vite 在 `apps/frontend` 创建 React + TypeScript 应用。
-    - [ ] 配置基础 CSS 结构以支持玻璃拟态。
+- [x] **Task: 构建 React 前端脚手架** (5c78b55)
+    - [x] 使用 Vite 在 `apps/frontend` 创建 React + TypeScript 应用。
+    - [x] 配置基础 CSS 结构以支持玻璃拟态。
 - [ ] **Task: 实现 Eden Treaty 驱动的类型同步**
     - [ ] 创建 `packages/shared` 用于存放公共 API 定义。
     - [ ] 在前端集成 Eden Client。
