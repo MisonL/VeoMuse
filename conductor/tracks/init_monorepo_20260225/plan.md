@@ -1,9 +1,9 @@
 # Implementation Plan: 初始化旗舰级 Monorepo 架构
 
 ## Phase 1: 基础设施与后端骨架
-- [ ] **Task: 初始化 Bun Workspace**
-    - [ ] 创建根目录 `package.json` 并配置 `workspaces`。
-    - [ ] 配置根目录 `tsconfig.json` 作为基础。
+- [x] **Task: 初始化 Bun Workspace** (676a201)
+    - [x] 创建根目录 `package.json` 并配置 `workspaces`。
+    - [x] 配置根目录 `tsconfig.json` 作为基础。
 - [ ] **Task: 构建 Elysia 后端脚手架**
     - [ ] 创建 `apps/backend` 目录并初始化。
     - [ ] 配置 Elysia 基础路由与 Eden Treaty 导出。
