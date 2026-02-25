@@ -19,6 +19,6 @@
     - [x] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)** (Completed)
 
 ## Phase 3: 连通性测试与验证
-- [ ] **Task: 编写连通性单元测试**
-    - [ ] 编写测试用例验证前端能够成功解析后端导出的 API 类型。
+- [x] **Task: 编写连通性单元测试** (2aec38f)
+    - [x] 编写测试用例验证前端能够成功解析后端导出的 API 类型。
     - [ ] **Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)**
