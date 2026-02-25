@@ -2,6 +2,7 @@ import { Elysia, t } from 'elysia'
 import { cors } from '@elysiajs/cors'
 import { VideoService } from './services/VideoService'
 import { ApiKeyService } from './services/ApiKeyService'
+import { PromptEnhanceService } from './services/PromptEnhanceService'
 
 // 初始化 API 密钥
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
@@ -26,6 +27,17 @@ const app = new Elysia()
           text: t.String(),
           negativePrompt: t.Optional(t.String()),
           model: t.Optional(t.String())
+        })
+      })
+      .post('/ai/enhance', async ({ body }) => {
+        try {
+          return await PromptEnhanceService.enhance(body.prompt);
+        } catch (e: any) {
+          return { success: false, error: e.message };
+        }
+      }, {
+        body: t.Object({
+          prompt: t.String()
         })
       })
   )
