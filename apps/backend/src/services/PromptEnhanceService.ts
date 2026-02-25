@@ -6,10 +6,12 @@ export interface EnhancedPrompt {
   enhanced: string;
   negative: string;
   styleSuggestion: string;
+  aiThoughtProcess?: string; // Gemini 3.1 支持导出思维链
 }
 
 export class PromptEnhanceService {
-  private static MODEL = 'gemini-2.0-flash';
+  // 升级到 2026 年最新的 Gemini 3.1 Pro 预览版
+  private static MODEL = 'gemini-3.1-pro-preview';
   private static API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
   private static SYSTEM_PROMPT = `
@@ -36,18 +38,19 @@ export class PromptEnhanceService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{
-            parts: [{ text: `${this.SYSTEM_PROMPT}
-
-用户输入：${userInput}` }]
+            parts: [{ text: `${this.SYSTEM_PROMPT}\n\n用户输入：${userInput}` }]
           }],
           generationConfig: {
-            response_mime_type: "application/json"
+            response_mime_type: "application/json",
+            // @ts-ignore - 2026 Gemini 3.1 New Feature: 推理等级
+            thinking_level: "HIGH" 
           }
         })
       });
 
       if (!response.ok) {
-        throw new Error(`AI 引擎响应失败: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Gemini 3.1 引擎响应失败 (${response.status}): ${errorText}`);
       }
 
       const data = await response.json() as any;
@@ -61,8 +64,8 @@ export class PromptEnhanceService {
       };
 
     } catch (error: any) {
-      console.error('❌ AI 提示词扩充失败:', error.message);
-      throw new Error(`AI 创意引擎暂时无法响应: ${error.message}`);
+      console.error('❌ Gemini 3.1 提示词扩充失败:', error.message);
+      throw new Error(`Gemini 3.1 创意引擎暂时无法响应: ${error.message}`);
     }
   }
 }
