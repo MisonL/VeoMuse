@@ -1,113 +1,140 @@
-:root {
-  --sf-bg: #F5F5F7;
-  --sf-card: rgba(255, 255, 255, 0.8);
-  --sf-text: #1D1D1F;
-  --sf-text-secondary: #86868B;
-  --sf-accent: #0071E3;
-  --sf-border: rgba(0, 0, 0, 0.1);
-  --sf-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-}
+/* VeoMuse Pro Mastery CSS */
 
-[data-theme='dark'] {
-  --sf-bg: #000000;
-  --sf-card: rgba(28, 28, 30, 0.8);
-  --sf-text: #F5F5F7;
-  --sf-text-secondary: #A1A1A6;
-  --sf-accent: #2997FF;
-  --sf-border: rgba(255, 255, 255, 0.15);
-  --sf-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
-  letter-spacing: -0.022em;
-}
-
-body {
-  background-color: var(--sf-bg);
-  color: var(--sf-text);
+.pro-workspace {
+  width: 100vw;
+  height: 100vh;
+  background: var(--pro-bg);
+  display: flex;
+  flex-direction: column;
+  color: var(--pro-text);
   overflow: hidden;
-  height: 100vh;
 }
 
-.app-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr 320px;
-  height: 100vh;
-  padding: 20px;
-  gap: 20px;
-}
-
-.sidebar-container {
-  display: flex;
-  flex-direction: column;
-  background: var(--sf-card);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  border: 1px solid var(--sf-border);
-  border-radius: 20px;
-  box-shadow: var(--sf-shadow);
-}
-
-.sidebar-header { padding: 24px; }
-.sidebar-header h1 { font-size: 22px; font-weight: 700; }
-
-.sidebar-nav {
-  padding: 0 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.nav-item {
+/* 顶部：极简专业导航 */
+.pro-header {
+  height: 48px;
+  background: #111;
+  border-bottom: 1px solid var(--pro-border);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: var(--sf-text);
-  font-size: 15px;
-  font-weight: 500;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  justify-content: space-between;
+  padding: 0 20px;
 }
 
-.nav-item:hover { background: rgba(0, 0, 0, 0.05); }
-.nav-item.active { background: var(--sf-accent); color: #FFFFFF; }
-
-.sidebar-content { flex: 1; padding: 20px; overflow-y: auto; }
-
-.pro-textarea {
-  width: 100%;
-  border-radius: 12px;
-  border: 1px solid var(--sf-border);
-  background: rgba(0, 0, 0, 0.02);
-  padding: 14px;
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--sf-text);
-  outline: none;
+.pro-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
 }
 
-.main-stage { display: flex; flex-direction: column; gap: 20px; }
+.pro-orb {
+  width: 12px; height: 12px;
+  background: var(--pro-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--pro-accent);
+}
 
-.stage-preview {
+.pro-logo small { font-size: 10px; color: var(--pro-text-dim); }
+
+.workspace-tabs { display: flex; gap: 20px; }
+.w-tab {
+  background: none; border: none; color: var(--pro-text-dim);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  padding: 4px 8px; border-radius: 4px; transition: 0.2s;
+}
+.w-tab.active { color: #fff; background: rgba(255,255,255,0.05); }
+
+.export-btn {
+  background: var(--pro-accent); color: #fff; border: none;
+  padding: 6px 16px; border-radius: 6px; font-size: 12px;
+  font-weight: 700; cursor: pointer;
+}
+
+/* 中部：专业生产力核心 */
+.pro-main {
   flex: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr 340px;
+  gap: 2px; /* 模拟软件分割线 */
   background: #000;
-  border-radius: 20px;
-  overflow: hidden;
-  border: 1px solid var(--sf-border);
+  min-height: 0;
 }
 
-.stage-timeline {
-  height: 340px;
-  background: var(--sf-card);
-  border-radius: 20px;
-  border: 1px solid var(--sf-border);
-  padding: 12px;
+.pro-main > section {
+  background: var(--pro-bg);
+  display: flex;
+  flex-direction: column;
 }
+
+/* 素材浏览器 */
+.browser-tabs {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--pro-border);
+  display: flex; gap: 12px;
+}
+.b-tab {
+  background: none; border: none; color: var(--pro-text-dim);
+  font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.b-tab.active { color: var(--pro-accent); }
+
+.browser-content { flex: 1; overflow-y: auto; padding: 12px; }
+
+/* 专业监视器 */
+.pro-monitor {
+  background: #080808 !important;
+  padding: 20px;
+}
+
+.monitor-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+
+.timecode {
+  font-family: 'SF Mono', monospace; font-size: 20px; font-weight: 700;
+  color: var(--pro-accent);
+}
+
+.res-tag {
+  font-size: 10px; background: rgba(255,255,255,0.05);
+  padding: 2px 6px; border-radius: 4px; color: var(--pro-text-dim);
+}
+
+.monitor-viewport {
+  flex: 1; background: #000; border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  overflow: hidden;
+  border: 1px solid var(--pro-border);
+}
+
+.monitor-controls {
+  margin-top: 16px; display: flex; justify-content: center; gap: 12px;
+}
+
+/* 底部：工业级时间轴 */
+.pro-footer {
+  height: 380px;
+  background: var(--pro-bg);
+  border-top: 4px solid #111;
+  display: flex; flex-direction: column;
+}
+
+.timeline-toolbar {
+  height: 40px; border-bottom: 1px solid var(--pro-border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+}
+
+.tool-group { display: flex; gap: 8px; }
+
+.timeline-meta {
+  display: flex; align-items: center; gap: 16px;
+  font-size: 10px; color: var(--pro-text-dim); font-weight: 600;
+}
+
+.timeline-meta .divider { width: 1px; height: 12px; background: var(--pro-border); }
+
+.timeline-engine { flex: 1; min-height: 0; padding: 8px; }

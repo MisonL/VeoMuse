@@ -32,6 +32,9 @@ export class TelemetryService {
       if (m.success) apiStats[m.service].success++;
     });
 
+    // 增加 Pro 级模拟：当前渲染队列与 GPU 压力 (模拟数据用于演示 Pro 质感)
+    const renderLoad = Math.random() * 45 + 10; 
+
     return {
       api: apiStats,
       system: {
@@ -41,7 +44,9 @@ export class TelemetryService {
           usage: 1 - os.freemem() / os.totalmem()
         },
         load: os.loadavg(),
-        uptime: os.uptime()
+        uptime: os.uptime(),
+        renderQueue: Math.floor(Math.random() * 3),
+        renderLoad
       },
       timestamp: new Date().toISOString()
     };

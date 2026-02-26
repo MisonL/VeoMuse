@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { api, getErrorMessage } from '../../utils/eden';
 import { useEditorStore, Clip } from '../../store/editorStore';
 import { useToastStore } from '../../store/toastStore';
-import { ProButton } from '../Common/Atoms';
+import { ToolButton } from '../Common/Atoms';
 import TelemetryDashboard from './TelemetryDashboard';
 import './PropertyInspector.css';
 
@@ -70,7 +70,7 @@ const PropertyInspector: React.FC = () => {
   const current = selectedClip as Clip | null;
 
   return (
-    <div className="inspector-panel glass-panel">
+    <div className="inspector-panel glass-panel pro-inspector-inner">
       <header className="inspector-header">
         <div className="inspector-tabs">
           <button className={activeTab === 'properties' ? 'active' : ''} onClick={() => setActiveTab('properties')}>属性</button>
@@ -88,25 +88,27 @@ const PropertyInspector: React.FC = () => {
           <>
             <section className="inspector-section">
               <label>片段名称</label>
-              <input type="text" value={current.name} onChange={(e) => handleUpdate({ name: e.target.value })} />
+              <input type="text" value={current.name} onChange={(e) => handleUpdate({ name: e.target.value })} className="pro-input-mini" />
             </section>
 
             {current.type === 'video' && (
               <section className="inspector-section">
-                <ProButton onClick={async () => {
+                <button className="pro-master-btn" onClick={async () => {
                   setIsProcessing(true);
                   const { data } = await api.api.ai.spatial.render.post({ clipId: current.id });
                   if (data?.success) showToast('✨ 3D 重构完成', 'success');
                   setIsProcessing(false);
-                }} isLoading={isProcessing} className="w-full">执行 NeRF 3D 重构</ProButton>
+                }} disabled={isProcessing}>
+                  {isProcessing ? '正在重构...' : '🧊 执行 NeRF 3D 重构'}
+                </button>
               </section>
             )}
 
             {current.type === 'text' && (
               <section className="inspector-section special">
                 <label>文字内容</label>
-                <textarea value={current.data?.content || ''} onChange={(e) => handleDataUpdate({ content: e.target.value })} />
-                <select onChange={(e) => handleTranslateAndVoice(e.target.value)} disabled={isProcessing} className="pro-select mt-4">
+                <textarea value={current.data?.content || ''} onChange={(e) => handleDataUpdate({ content: e.target.value })} className="pro-textarea-mini" />
+                <select onChange={(e) => handleTranslateAndVoice(e.target.value)} disabled={isProcessing} className="pro-select-mini mt-4">
                   <option value="none">多语种翻译...</option>
                   <option value="English">英语 (US)</option>
                   <option value="Japanese">日语 (JP)</option>

@@ -1,85 +1,65 @@
-/* 原子级 Pro 样式系统 */
+/* 旗舰版：黑曜石流光设计系统 */
 
-.premium-glass-card {
-  background: var(--panel-bg);
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  border: 1px solid var(--glass-border);
-  border-radius: 22px;
-  box-shadow: var(--glass-shadow);
-  overflow: hidden;
+:root {
+  --pro-bg: #050505;
+  --pro-panel: rgba(18, 18, 18, 0.85);
+  --pro-accent: #007AFF;
+  --pro-accent-vibrant: #00C2FF;
+  --pro-border: rgba(255, 255, 255, 0.08);
+  --pro-text: #E1E1E1;
+  --pro-text-dim: #888888;
 }
 
-/* 按钮系统重塑 */
-.pro-btn {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px 20px;
+.pro-glass-container {
+  background: var(--pro-panel);
+  border: 1px solid var(--pro-border);
   border-radius: 12px;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  color: #fff;
+  position: relative;
   overflow: hidden;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #0071e3 0%, #0056b3 100%);
-  box-shadow: 0 4px 15px rgba(0, 113, 227, 0.3);
+.glass-inner-glow {
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
 }
 
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-main);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--glass-border);
+/* 工具按钮组 */
+.tool-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--pro-border);
+  color: var(--pro-text-dim);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
 }
 
-.btn-danger {
-  background: linear-gradient(135deg, #ff3b30 0%, #d70015 100%);
+.tool-btn.active {
+  background: var(--pro-accent);
+  color: #fff;
+  border-color: var(--pro-accent-vibrant);
+  box-shadow: 0 0 15px rgba(0, 122, 255, 0.4);
 }
 
-.btn-success {
-  background: linear-gradient(135deg, #34c759 0%, #248a3d 100%);
+.tool-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.08);
+  color: var(--pro-text);
 }
 
-.pro-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+/* 专业滑块 */
+.pro-slider-group { margin-bottom: 16px; }
+.slider-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.slider-header label { font-size: 11px; font-weight: 700; color: var(--pro-text-dim); text-transform: uppercase; }
+.slider-value { font-family: 'SF Mono', monospace; font-size: 11px; color: var(--pro-accent); }
 
-/* 输入框重塑 */
-.pro-input-wrapper {
-  position: relative;
-  width: 100%;
+.pro-range {
+  width: 100%; -webkit-appearance: none; background: rgba(255,255,255,0.05);
+  height: 4px; border-radius: 2px; outline: none;
 }
-
-.pro-textarea {
-  width: 100%;
-  background: rgba(0, 0, 0, 0.05);
-  border: 1.5px solid transparent;
-  border-radius: 14px;
-  padding: 16px;
-  color: var(--text-main);
-  font-size: 15px;
-  line-height: 1.5;
-  resize: none;
-  transition: all 0.3s;
-  outline: none;
-}
-
-.pro-textarea:focus {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 4px var(--accent-glow);
-}
-
-/* 亮色模式微调 */
-:root[data-theme='light'] .pro-textarea {
-  background: rgba(0, 0, 0, 0.03);
+.pro-range::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px;
+  background: var(--pro-accent); border-radius: 50%; cursor: pointer;
+  box-shadow: 0 0 8px rgba(0, 122, 255, 0.6);
 }
