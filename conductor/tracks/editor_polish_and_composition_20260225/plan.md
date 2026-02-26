@@ -17,8 +17,8 @@
     - [x] 增加 `/api/video/compose` 接口。
     - [x] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)** (Completed)
 
-## Phase 3: 前后端打通与导出体验
+## Phase 3: 前后端打通与导出体验 [checkpoint: f0d6a72]
 - [x] **Task: 前端导出面板** (3f48caa)
     - [x] 在 UI 增加“导出视频”按钮。
     - [x] 对接合成接口，显示合并进度。
-    - [ ] **Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)**
+    - [x] **Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)** (Completed)
