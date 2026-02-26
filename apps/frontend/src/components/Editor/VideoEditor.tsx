@@ -5,7 +5,8 @@ import { useMeasure } from 'react-use';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEditorStore } from '../../store/editorStore';
 import { calculateSnap } from '../../utils/snapService';
-import { syncController } from '../../utils/SyncController'; // 引入控制器
+import { syncController } from '../../utils/SyncController';
+import { useShortcuts } from '../../hooks/useShortcuts'; // 引入钩子
 import ContextMenu from './ContextMenu';
 import './VideoEditor.css';
 
@@ -26,6 +27,32 @@ const VideoEditor: React.FC = () => {
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
 
+  // 1. 快捷键联动逻辑
+  useShortcuts({
+    'Space': togglePlay,
+    'Cmd+B': () => {
+      // 自动分割选中或播放头位置的片段
+      tracks.forEach(t => {
+        const clip = t.clips.find(c => (selectedClipId ? c.id === selectedClipId : (currentTime >= c.start && currentTime <= c.end)));
+        if (clip) splitClip(t.id, clip.id, currentTime);
+      });
+    },
+    'Delete': () => {
+      if (selectedClipId) {
+        tracks.forEach(t => {
+          if (t.clips.some(c => c.id === selectedClipId)) removeClip(t.id, selectedClipId);
+        });
+      }
+    },
+    'Left': () => setCurrentTime(Math.max(0, currentTime - 0.1)),
+    'Right': () => setCurrentTime(Math.min(duration, currentTime + 0.1)),
+    'Shift+Left': () => setCurrentTime(Math.max(0, currentTime - 1)),
+    'Shift+Right': () => setCurrentTime(Math.min(duration, currentTime + 1)),
+    'Cmd+Z': undo,
+    'Cmd+Shift+Z': redo,
+    'S': () => { /* 磁吸开关逻辑可在此联动 */ }
+  });
+
   useEffect(() => {
     if (width > 0) setIsReady(true);
   }, [width]);
@@ -40,7 +67,6 @@ const VideoEditor: React.FC = () => {
         const nextTime = useEditorStore.getState().currentTime + delta;
         
         setCurrentTime(nextTime);
-        // 关键：穿透 React 渲染，直接同步媒体
         syncController.sync(nextTime, true, tracks);
 
         if (nextTime >= duration) { togglePlay(); setCurrentTime(0); }
@@ -49,7 +75,6 @@ const VideoEditor: React.FC = () => {
       rafRef.current = requestAnimationFrame(loop);
     } else {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      // 停止播放时也要同步一次位置
       syncController.sync(useEditorStore.getState().currentTime, false, tracks);
     }
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
@@ -102,7 +127,6 @@ const VideoEditor: React.FC = () => {
                 });
               });
               if (!snapDetected) setSnapLine({ visible: false, time: 0, type: 'clip' });
-              // 交互时也同步预览
               syncController.sync(useEditorStore.getState().currentTime, false, tracks);
             }}
             // @ts-ignore
