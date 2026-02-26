@@ -7,6 +7,8 @@ export interface Clip {
   end: number;
   src: string;
   name: string;
+  type: 'video' | 'audio' | 'text';
+  data?: any;
 }
 
 export interface Marker {
@@ -26,6 +28,7 @@ export interface Asset {
 export interface Track {
   id: string;
   name: string;
+  type: 'video' | 'audio' | 'text';
   clips: Clip[];
 }
 
@@ -48,33 +51,16 @@ interface EditorState {
   removeClip: (trackId: string, clipId: string) => void;
 }
 
-// 开启 temporal 支持撤销重做
 export const useEditorStore = create<EditorState>()(
   temporal((set) => ({
     tracks: [
-      { 
-        id: 'track-1', 
-        name: '主视频轨道', 
-        clips: [
-          {
-            id: 'demo-initial',
-            start: 0,
-            end: 10,
-            src: 'https://www.w3schools.com/html/mov_bbb.mp4',
-            name: '欢迎使用 VeoMuse'
-          }
-        ] 
-      },
-      { id: 'track-2', name: '特效轨道', clips: [] }
+      { id: 'track-v1', name: '主视频轨道', type: 'video', clips: [] },
+      { id: 'track-a1', name: '背景音乐', type: 'audio', clips: [] },
+      { id: 'track-t1', name: '文字层', type: 'text', clips: [] }
     ],
     markers: [],
     assets: [
-      {
-        id: 'asset-1',
-        name: '大雄兔 (示例)',
-        src: 'https://www.w3schools.com/html/mov_bbb.mp4',
-        type: 'video'
-      }
+      { id: 'asset-1', name: '大雄兔 (示例)', src: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'video' }
     ],
     currentTime: 0,
     duration: 60,
@@ -87,13 +73,15 @@ export const useEditorStore = create<EditorState>()(
     addAsset: (asset) => set((state) => ({
       assets: state.assets.some(a => a.id === asset.id) ? state.assets : [...state.assets, asset]
     })),
-    addClip: (trackId, clip) => set((state) => ({
-      tracks: state.tracks.map(t => 
-        t.id === trackId 
-          ? { ...t, clips: t.clips.some(c => c.id === clip.id) ? t.clips : [...t.clips, clip] } 
-          : t
-      )
-    })),
+    addClip: (trackId, clip) => set((state) => {
+      const newTracks = state.tracks.map(t => {
+        if (t.id !== trackId) return t;
+        // 如果已存在则不重复添加
+        if (t.clips.some(c => c.id === clip.id)) return t;
+        return { ...t, clips: [...t.clips, clip] };
+      });
+      return { tracks: newTracks };
+    }),
     updateClip: (trackId, clipId, partialClip) => set((state) => ({
       tracks: state.tracks.map(t => 
         t.id === trackId

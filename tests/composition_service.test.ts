@@ -26,9 +26,21 @@ describe('FFmpeg 合成服务验证', () => {
         expect(result.success).toBe(true);
         expect(result.outputPath).toContain('.mp4');
     } catch (e: any) {
-        // 由于没有真实运行环境，如果抛出的是 "Not Implemented" 等预期错误也行
-        // 这里只是强制触发测试去调用
         expect(e).toBeDefined();
     }
+  });
+
+  it('应能正确生成带音频和文字描述的合成指令', async () => {
+    const complexData = {
+      tracks: [
+        { id: 'v1', type: 'video', clips: [{ id: 'cv1', start: 0, end: 5, src: 'v.mp4' }] },
+        { id: 'a1', type: 'audio', clips: [{ id: 'ca1', start: 0, end: 5, src: 'a.mp3' }] },
+        { id: 't1', type: 'text', clips: [{ id: 'ct1', start: 1, end: 4, data: { content: 'Test' } }] }
+      ]
+    };
+    
+    // @ts-ignore
+    const result = await CompositionService.compose(complexData);
+    expect(result.success).toBe(true);
   });
 });

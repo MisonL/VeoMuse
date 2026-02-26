@@ -1,57 +1,78 @@
 import React, { useRef, useEffect } from 'react';
 import { useEditorStore } from '../../store/editorStore';
+import TextOverlay from './TextOverlay';
 import './MultiVideoPlayer.css';
 
 const MultiVideoPlayer: React.FC = () => {
-  const { tracks, currentTime } = useEditorStore();
+  const { tracks, currentTime, isPlaying } = useEditorStore();
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const audioRefs = useRef<Map<string, HTMLAudioElement>>(new Map());
 
-  // 核心同步逻辑：根据全局时间同步所有视频帧
+  // 同步音视频进度
   useEffect(() => {
     tracks.forEach(track => {
       track.clips.forEach(clip => {
-        const video = videoRefs.current.get(clip.id);
-        if (video) {
+        const media = track.type === 'video' 
+          ? videoRefs.current.get(clip.id) 
+          : audioRefs.current.get(clip.id);
+
+        if (media) {
           if (currentTime >= clip.start && currentTime <= clip.end) {
-            // 片段处于激活状态
-            video.style.display = 'block';
-            const internalTime = currentTime - clip.start;
+            // 激活状态
+            if (track.type === 'video') media.style.display = 'block';
             
-            // 只有当偏差较大时才强制同步，避免卡顿
-            if (Math.abs(video.currentTime - internalTime) > 0.1) {
-              video.currentTime = internalTime;
+            const internalTime = currentTime - clip.start;
+            if (Math.abs(media.currentTime - internalTime) > 0.15) {
+              media.currentTime = internalTime;
+            }
+
+            // 如果全局正在播放，确保媒体也在播放
+            if (isPlaying && media.paused) {
+              media.play().catch(() => {});
+            } else if (!isPlaying && !media.paused) {
+              media.pause();
             }
           } else {
-            video.style.display = 'none';
+            if (track.type === 'video') media.style.display = 'none';
+            if (!media.paused) media.pause();
           }
         }
       });
     });
-  }, [currentTime, tracks]);
+  }, [currentTime, tracks, isPlaying]);
 
   return (
     <div className="multi-video-player glass-panel">
       <div className="player-stage">
         {tracks.map(track => 
           track.clips.map(clip => (
-            <video
-              key={clip.id}
-              ref={el => {
-                if (el) videoRefs.current.set(clip.id, el);
-                else videoRefs.current.delete(clip.id);
-              }}
-              src={clip.src}
-              className="player-video-instance"
-              muted
-              playsInline
-            />
+            track.type === 'video' ? (
+              <video
+                key={clip.id}
+                ref={el => {
+                  if (el) videoRefs.current.set(clip.id, el);
+                  else videoRefs.current.delete(clip.id);
+                }}
+                src={clip.src}
+                className="player-video-instance"
+                muted={false}
+                playsInline
+              />
+            ) : track.type === 'audio' ? (
+              <audio
+                key={clip.id}
+                ref={el => {
+                  if (el) audioRefs.current.set(clip.id, el);
+                  else audioRefs.current.delete(clip.id);
+                }}
+                src={clip.src}
+              />
+            ) : null
           ))
         )}
         
-        {/* 如果没有任何视频在播放，显示空状态 */}
-        <div className="player-overlay">
-          {/* 这里可以放水印或辅助线 */}
-        </div>
+        <div className="player-overlay"></div>
+        <TextOverlay />
       </div>
     </div>
   );

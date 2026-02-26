@@ -1,3 +1,5 @@
+/* ... (保留之前的基础样式) */
+
 .video-editor-container {
   width: 100%;
   height: 100%;
@@ -8,6 +10,28 @@
   position: relative;
 }
 
+/* 轨道背景色区分 */
+/* 注意：这里的选择器需要对应组件库渲染出的 HTML 结构 */
+/* 我们假设轨道 ID 或数据属性可以被识别，或者直接覆盖 action 样式 */
+
+/* 视频片段 (默认) */
+.react-timeline-editor-action {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 如果能通过属性识别类型，我们可以更精准。暂且通过 ID 规则模拟 */
+[data-action-id*="audio"] .react-timeline-editor-action,
+.audio-action {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+
+[data-action-id*="text"] .react-timeline-editor-action,
+.text-action {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+
+/* ... (保留之前的其他样式) */
 .editor-toolbar {
   height: 48px;
   background: rgba(255, 255, 255, 0.03);
@@ -45,11 +69,6 @@
   box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
 }
 
-.play-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
-}
-
 .history-btn {
   background: transparent;
   border: none;
@@ -58,11 +77,6 @@
   padding: 4px;
   opacity: 0.5;
   transition: all 0.2s;
-}
-
-.history-btn:hover {
-  opacity: 1;
-  transform: translateY(-1px);
 }
 
 .time-display {
@@ -87,7 +101,6 @@
   position: relative;
 }
 
-/* 磁吸引导线 */
 .snap-guide-line {
   position: absolute;
   top: 0;
@@ -99,7 +112,6 @@
   pointer-events: none;
 }
 
-/* 全局覆盖样式 */
 .react-timeline-editor {
   background: transparent !important;
 }
@@ -113,11 +125,4 @@
 .react-timeline-editor-cursor {
   background: #38bdf8 !important;
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
-}
-
-.react-timeline-editor-action {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 4px !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
 }
