@@ -39,16 +39,21 @@ interface EditorState {
   currentTime: number;
   duration: number;
   isPlaying: boolean;
+  selectedClipId: string | null;
+  zoomLevel: number;
   
   // Actions
   setTracks: (tracks: Track[]) => void;
   setMarkers: (markers: Marker[]) => void;
   setCurrentTime: (time: number) => void;
   togglePlay: () => void;
+  setSelectedClipId: (id: string | null) => void;
+  setZoomLevel: (level: number) => void;
   addAsset: (asset: Asset) => void;
   addClip: (trackId: string, clip: Clip) => void;
   updateClip: (trackId: string, clipId: string, partialClip: Partial<Clip>) => void;
   removeClip: (trackId: string, clipId: string) => void;
+  splitClip: (trackId: string, clipId: string, at: number) => void;
 }
 
 export const useEditorStore = create<EditorState>()(
@@ -65,18 +70,21 @@ export const useEditorStore = create<EditorState>()(
     currentTime: 0,
     duration: 60,
     isPlaying: false,
+    selectedClipId: null,
+    zoomLevel: 10,
 
     setTracks: (tracks) => set({ tracks }),
     setMarkers: (markers) => set({ markers }),
     setCurrentTime: (time) => set({ currentTime: time }),
     togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+    setSelectedClipId: (id) => set({ selectedClipId: id }),
+    setZoomLevel: (zoomLevel) => set({ zoomLevel }),
     addAsset: (asset) => set((state) => ({
       assets: state.assets.some(a => a.id === asset.id) ? state.assets : [...state.assets, asset]
     })),
     addClip: (trackId, clip) => set((state) => {
       const newTracks = state.tracks.map(t => {
         if (t.id !== trackId) return t;
-        // 如果已存在则不重复添加
         if (t.clips.some(c => c.id === clip.id)) return t;
         return { ...t, clips: [...t.clips, clip] };
       });
@@ -95,11 +103,27 @@ export const useEditorStore = create<EditorState>()(
       )
     })),
     removeClip: (trackId, clipId) => set((state) => ({
+      selectedClipId: state.selectedClipId === clipId ? null : state.selectedClipId,
       tracks: state.tracks.map(t =>
         t.id === trackId
           ? { ...t, clips: t.clips.filter(c => c.id !== clipId) }
           : t
       )
+    })),
+    splitClip: (trackId, clipId, at) => set((state) => ({
+      tracks: state.tracks.map(t => {
+        if (t.id !== trackId) return t;
+        const clip = t.clips.find(c => c.id === clipId);
+        if (!clip || at <= clip.start || at >= clip.end) return t;
+
+        const c1 = { ...clip, end: at };
+        const c2 = { ...clip, id: `${clip.id}-split-${Date.now()}`, start: at };
+        
+        return {
+          ...t,
+          clips: [...t.clips.filter(c => c.id !== clipId), c1, c2]
+        };
+      })
     }))
   }))
 )

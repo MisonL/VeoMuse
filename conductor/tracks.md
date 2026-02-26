@@ -21,3 +21,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: 视听叙事大师：动态文字、多音轨母带处理与转场特效引擎**
   *Link: [./tracks/visual_storytelling_20260225/](./tracks/visual_storytelling_20260225/)*
+
+- [x] **Track: 工匠之手：属性面板、精细化时间轴控制与专业右键菜单**
+  *Link: [./tracks/editor_precision_20260225/](./tracks/editor_precision_20260225/)*

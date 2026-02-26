@@ -1,0 +1,48 @@
+.pro-context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 160px;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  padding: 4px;
+  user-select: none;
+}
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.menu-item:hover {
+  background: #38bdf8;
+}
+
+.menu-item:hover .menu-label,
+.menu-item:hover .menu-shortcut {
+  color: #fff;
+}
+
+.menu-label {
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.menu-shortcut {
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.menu-item.danger .menu-label {
+  color: #ef4444;
+}
+
+.menu-item.danger:hover {
+  background: #ef4444;
+}

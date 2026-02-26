@@ -1,0 +1,101 @@
+.inspector-panel, .inspector-empty {
+  width: 100%;
+  height: 100%;
+  background: #161616 !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.inspector-empty {
+  align-items: center;
+  justify-content: center;
+  color: #444;
+}
+
+.inspector-header {
+  padding: 1rem;
+  border-bottom: 1px solid #2a2a2a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inspector-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.clip-type-badge {
+  font-size: 0.65rem;
+  background: #333;
+  color: #38bdf8;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.inspector-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inspector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inspector-section label {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.inspector-section input[type="text"],
+.inspector-section input[type="number"],
+.inspector-section textarea {
+  background: #000;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: #ccc;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.inspector-section input:focus,
+.inspector-section textarea:focus {
+  border-color: #38bdf8;
+}
+
+.range-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.range-inputs small {
+  display: block;
+  font-size: 0.6rem;
+  color: #444;
+  margin-bottom: 2px;
+}
+
+.inspector-section textarea {
+  height: 80px;
+  resize: none;
+}
+
+input[type="color"] {
+  width: 100%;
+  height: 30px;
+  background: transparent;
+  border: 1px solid #2a2a2a;
+  cursor: pointer;
+}
