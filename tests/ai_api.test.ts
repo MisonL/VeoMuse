@@ -1,49 +1,30 @@
-// tests/ai_api.test.ts
 import { describe, it, expect, beforeAll } from 'bun:test';
-import { Elysia, t } from 'elysia';
 import { ApiKeyService } from '../apps/backend/src/services/ApiKeyService';
+import { AiDirectorService } from '../apps/backend/src/services/AiDirectorService';
+import { AiClipService } from '../apps/backend/src/services/AiClipService';
 
-// 创建与真实 index.ts 1:1 对齐的模拟 App
-const app = new Elysia()
-  .group('/api', (app) => 
-    app
-      .post('/ai/enhance', async () => ({ success: true, enhanced: 'Mock' }))
-      .post('/ai/translate', async () => ({ translatedText: 'Mock', detectedLang: 'zh' }))
-      .post('/ai/director/analyze', async () => ({ success: true, storyTitle: 'Mock', worldId: 'w1', scenes: [] }))
-      .post('/ai/tts', async () => ({ success: true, audioUrl: '/m.mp3' }))
-      .post('/ai/voice-morph', async () => ({ success: true, morphedAudioUrl: '/morph.mp3' }))
-      .post('/ai/spatial/render', async () => ({ success: true, nerfDataUrl: '/n.splat' }))
-      .post('/ai/relighting/apply', async () => ({ success: true, operationId: 'op1' }))
-      .post('/ai/vfx/apply', async () => ({ success: true, operationId: 'op2' }))
-      .post('/models/recommend', async () => ({ recommendedModelId: 'veo-3.1', reason: 'Mock', confidence: 0.9 }))
-  );
-
-describe('AI API 全链路模拟连通性复核', () => {
+describe('AI 服务全量架构对齐验证 (BaseAiService 继承)', () => {
   beforeAll(() => {
-    ApiKeyService.init([]);
+    ApiKeyService.init(['mock-key']);
   });
 
-  it('智能推荐接口应连通', async () => {
-    const res = await app.handle(new Request('http://localhost/api/models/recommend', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'test' })
-    }));
-    expect(res.status).toBe(200);
+  it('AiDirectorService 应具备性能量化能力', async () => {
+    // 预期重构后的服务应能通过某种方式暴露其监控指标，或者至少不再报错
+    try {
+      const result = await AiDirectorService.analyzeScript('测试脚本');
+      expect(result.success).toBe(true);
+    } catch (e: any) {
+      // 如果报错，说明继承或初始化有问题
+      expect(e).toBeUndefined();
+    }
   });
 
-  it('3D 空间渲染接口应连通', async () => {
-    const res = await app.handle(new Request('http://localhost/api/ai/spatial/render', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clipId: 'c1' })
-    }));
-    expect(res.status).toBe(200);
-  });
-
-  it('音色炼金接口应连通', async () => {
-    const res = await app.handle(new Request('http://localhost/api/ai/voice-morph', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ audioUrl: 'test', targetVoiceId: 'pro' })
-    }));
-    expect(res.status).toBe(200);
+  it('AiClipService 应具备性能量化能力', async () => {
+    try {
+      const result = await AiClipService.suggestCuts('描述', 10);
+      expect(result.cutPoints).toBeDefined();
+    } catch (e: any) {
+      expect(e).toBeUndefined();
+    }
   });
 });

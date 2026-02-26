@@ -1,7 +1,7 @@
 # Implementation Plan: 旗舰版终极打磨
 
 ## Phase 1: 后端全量架构对齐
-- [ ] **Task: AI 服务全量重构**
+- [~] **Task: AI 服务全量重构**
     - [ ] 将 AiDirectorService, AiClipService 等全部重构为 BaseAiService 的子类。
     - [ ] 验证全站 AI 调用耗时是否均能被监控系统捕捉。
 - [ ] **Task: 路由层去臃肿化**

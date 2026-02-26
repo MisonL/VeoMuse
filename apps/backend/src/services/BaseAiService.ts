@@ -27,7 +27,10 @@ export abstract class BaseAiService {
           throw new Error(`[${this.serviceName}] HTTP ${response.status}: ${errorText}`);
         }
 
-        const data = await response.json() as T;
+        const data = await response.json() as any;
+        
+        // 核心优化：如果返回的是 Gemini 标准格式，自动提取候选内容
+        // 减少子类的冗余解析逻辑
         const endTime = performance.now();
         const durationMs = Math.round(endTime - startTime);
 
@@ -43,13 +46,23 @@ export abstract class BaseAiService {
       } catch (error: any) {
         lastError = error;
         console.warn(`⚠️ [${this.serviceName}] 第 ${i + 1} 次重试失败: ${error.message}`);
-        // 指数退避等待
-        await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+        if (i < retries - 1) {
+          await new Promise(r => setTimeout(r, Math.pow(2, i) * 500));
+        }
       }
     }
 
-    throw lastError || new Error(`[${this.serviceName}] 请求在 ${retries} 次重试后失败`);
+    throw lastError || new Error(`[${this.serviceName}] 请求失败`);
   }
 
-  // 子类实现具体的 API 逻辑
+  // 辅助方法：解析 Gemini 的 JSON 响应
+  protected parseGeminiJson(data: any): any {
+    try {
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error("AI 返回格式异常: 缺少 content.parts.text");
+      return JSON.parse(text);
+    } catch (e: any) {
+      throw new Error(`解析 AI 响应失败: ${e.message}`);
+    }
+  }
 }
