@@ -9,6 +9,7 @@ import PropertyInspector from './components/Editor/PropertyInspector'
 import ComparisonLab from './components/Editor/ComparisonLab'
 import ToastContainer from './components/Editor/ToastContainer'
 import { GlassCard, ProButton } from './components/Common/Atoms'
+import { MotionSyncManager } from './utils/motionSync'
 import './App.css'
 
 const MemoVideoEditor = memo(VideoEditor)
@@ -19,11 +20,15 @@ function App() {
   const [activeTab, setActiveTab] = useState<'generate' | 'assets' | 'director' | 'actors'>('generate')
   const [isCompareMode, setIsCompareMode] = useState(false)
   const [selectedModel, setSelectedModel] = useState('veo-3.1')
+  const [selectedActorId, setSelectedActorId] = useState<string | null>(null)
+  const [isMotionSyncing, setIsMotionSyncing] = useState(false)
   const [prompt, setPrompt] = useState('')
+  const [script, setScript] = useState('')
   const [isEnhancing, setIsEnhancing] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isDirecting, setIsDirecting] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const { addAsset, assets, tracks } = useEditorStore()
+  const { addAsset, assets, tracks, addClip } = useEditorStore()
 
   useEffect(() => {
     if (assets.length === 0) {
@@ -36,25 +41,44 @@ function App() {
     setIsEnhancing(true);
     try {
       const { data } = await api.api.ai.enhance.post({ prompt });
-      if (data && 'enhanced' in data) { setPrompt(data.enhanced); showToast('提示词已增强', 'success'); }
-    } finally { setIsEnhancing(false); }
+      if (data && 'enhanced' in data) { setPrompt(data.enhanced); showToast('提示词已智能增强', 'success'); }
+    } catch (e: any) { showToast(e.message, 'error'); } finally { setIsEnhancing(false); }
   }, [prompt, showToast]);
 
   const handleGenerate = useCallback(async () => {
     if (!prompt) return;
     setIsGenerating(true);
     try {
-      await api.api.video.generate.post({ text: prompt, modelId: selectedModel });
+      const params = selectedActorId ? { prompt, actorId: selectedActorId, modelId: selectedModel } : { text: prompt, modelId: selectedModel };
+      await (selectedActorId ? api.api.ai.actors.generate.post(params as any) : api.api.video.generate.post(params as any));
       showToast('任务已提交', 'info');
-    } finally { setIsGenerating(false); }
-  }, [prompt, selectedModel, showToast]);
+    } catch (e: any) { showToast(e.message, 'error'); } finally { setIsGenerating(false); }
+  }, [prompt, selectedActorId, selectedModel, showToast]);
+
+  const handleFullAutoDirector = async () => {
+    if (!script) return;
+    setIsDirecting(true);
+    showToast('🎬 AI 导演正在规划分镜...', 'info');
+    try {
+      const { data } = await api.api.ai.director.analyze.post({ script });
+      if (data?.success) {
+        let offset = 0;
+        data.scenes.forEach((s: any, i: number) => {
+          const d = s.duration || 5;
+          addClip('track-v1', { id: `auto-v-${i}`, start: offset, end: offset + d, src: '', name: s.title, type: 'video', data: { prompt: s.videoPrompt } });
+          offset += d;
+        });
+        showToast(`全自动编排完成：共 ${data.scenes.length} 个镜头`, 'success');
+      }
+    } catch (e: any) { showToast(e.message, 'error'); } finally { setIsDirecting(false); }
+  }
 
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
       const { data } = await api.api.video.compose.post({ timelineData: { tracks } });
       if (data?.success) showToast(`导出成功: ${data.outputPath}`, 'success');
-    } finally { setIsExporting(false); }
+    } catch (e: any) { showToast(e.message, 'error'); } finally { setIsExporting(false); }
   }, [tracks, showToast]);
 
   return (
@@ -62,11 +86,10 @@ function App() {
       <div className="liquid-bg" />
       <ToastContainer />
       <div className="app-layout">
-        {/* 精细调优的交错入场动画：0.1s -> 0.25s -> 0.4s */}
         <GlassCard className="sidebar" delay={0.1}>
           <header className="console-header">
             <h1>VeoMuse <span className="badge">V3.1 Pro</span></h1>
-            <p className="subtitle">旗舰版 · 极致卓越</p>
+            <p className="subtitle">旗舰版 · 交付审查中</p>
           </header>
           <div className="tab-header">
             {(['generate', 'actors', 'assets', 'director'] as const).map(tab => (
@@ -88,6 +111,12 @@ function App() {
                 </div>
               </div>
             )}
+            {activeTab === 'director' && (
+              <div className="editor-section">
+                <textarea className="premium-input" style={{ height: '200px' }} placeholder="输入脚本..." value={script} onChange={(e) => setScript(e.target.value)} />
+                <ProButton variant="danger" className="w-full mt-2" onClick={handleFullAutoDirector} isLoading={isDirecting}>启动一键导演</ProButton>
+              </div>
+            )}
             {activeTab === 'assets' && <AssetPanel />}
           </div>
           <div className="sidebar-footer">
@@ -99,12 +128,11 @@ function App() {
           <GlassCard className="preview-container" delay={0.25}>
             <div className="preview-content">
               <div className="lab-controls">
-                <label className="pro-toggle"><input type="checkbox" checked={isCompareMode} onChange={(e) => setIsCompareMode(e.target.checked)} /><span className="toggle-slider"></span> 🔬 对比模式</label>
+                <label className="pro-toggle"><input type="checkbox" checked={isCompareMode} onChange={(e) => setIsCompareMode(e.target.checked)} /><span className="toggle-slider"></span> 🔬 实验室模式</label>
               </div>
               {isCompareMode ? <ComparisonLab modelA={selectedModel} modelB="kling-v1" /> : <MemoMultiVideoPlayer />}
             </div>
           </GlassCard>
-          {/* 时间轴作为最重组件，最后入场以保证初始流速 */}
           <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, type: 'spring' }} className="timeline-container">
             <MemoVideoEditor />
           </motion.div>

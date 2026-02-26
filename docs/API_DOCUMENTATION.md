@@ -1,51 +1,43 @@
 # VeoMuse 旗舰版 API 接口文档 (V3.1 Pro)
 
-## 1. 视频模型总线 (Model Orchestrator)
-
-### GET `/api/models`
-返回当前系统支持的所有已注册模型驱动。
+## 1. 核心模型总线 (Model Bus)
 
 ### POST `/api/video/generate`
-向指定的 AI 模型提交视频生成任务。
-- **Body**: `{ text: string, modelId?: string, negativePrompt?: string }`
+向全球 AI 模型集群提交任务。
+- **Params**: `modelId` (optional), `text`, `negativePrompt`, `options` (intensity, etc.)
 
 ### POST `/api/models/recommend`
-利用 Gemini 3.1 Pro 根据提示词推荐最佳模型。
-- **Body**: `{ prompt: string }`
+利用 Gemini 3.1 自动决策最佳模型。
 
-## 2. 智能导演与创作 (AI Director)
+## 2. 导演与修复 (Director & Repair)
 
 ### POST `/api/ai/director/analyze`
-将长脚本拆解为分镜列表及排版指令。
-- **Body**: `{ script: string }`
-
-### POST `/api/ai/enhance`
-提示词深度推理增强（Thinking Level: HIGH）。
-- **Body**: `{ prompt: string }`
+故事脚本深度拆解与自动排版指令生成。
 
 ### POST `/api/ai/repair`
-画面逻辑诊断与修复建议。
-- **Body**: `{ description: string }`
+画面逻辑诊断与自愈 Prompt 建议。
 
-## 3. 音频与叙事 (Audio & Visual)
+## 3. 媒体炼金术 (Alchemy)
 
-### POST `/api/ai/tts`
-文字转语音合成。
-- **Body**: `{ text: string }`
+### POST `/api/ai/translate`
+多语种语义翻译。
 
 ### POST `/api/ai/voice-morph`
-音色克隆与迁移。
-- **Body**: `{ audioUrl: string, targetVoiceId: string }`
+跨音色克隆与迁移。
 
-### POST `/api/ai/analyze-audio`
-音频节奏与鼓点分析。
-- **Body**: `{ audioUrl: string }`
+### POST `/api/ai/spatial/render`
+神经辐射场 (NeRF) 3D 重构升维。
 
-## 4. 后台合成引擎 (Composition)
+### POST `/api/ai/sync-lip`
+高精度音画嘴型同步。
 
-### POST `/api/video/compose`
-将时间轴 JSON 数据物理合成为 MP4 文件。
-- **Body**: `{ timelineData: any }`
+## 4. 视觉特效 (VFX)
+
+### POST `/api/ai/relighting/apply`
+智能环境重光照渲染。
+
+### POST `/api/ai/vfx/apply`
+神经渲染特效叠加。
 
 ---
-**所有接口均受 Eden Treaty 强类型保护**
+**所有接口均受指数退避重试与性能监控保护**
