@@ -33,6 +33,7 @@ const VideoEditor: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        setSnapLine({ visible: false, time: 0, type: 'clip' }); // 强制清理引导线
         if (e.shiftKey) redo(); else undo();
       }
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedClipId) {

@@ -42,3 +42,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: 旗舰版全功能极致打磨与体验抛光：音量平衡、渲染动效与交互细节优化**
   *Link: [./tracks/final_polish_20260226/](./tracks/final_polish_20260226/)*
+
+- [x] **Track: 旗舰版全量 Bug 猎杀：前端渲染异常、状态同步边界与 API 健壮性深度加固**
+  *Link: [./tracks/bug_bash_final_20260226/](./tracks/bug_bash_final_20260226/)*

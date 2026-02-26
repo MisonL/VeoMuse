@@ -33,6 +33,26 @@ function App() {
     }
   }, [])
 
+  // 增强型自愈 WebSocket 连接
+  useEffect(() => {
+    let ws: WebSocket;
+    let reconnectTimer: any;
+    const connect = () => {
+      ws = new WebSocket('ws://localhost:3001/ws/generation')
+      ws.onmessage = (e) => {
+        try { const d = JSON.parse(e.data); if (d.message) setProgress(d.message); } 
+        catch { console.log('RAW WS:', e.data); }
+      };
+      ws.onopen = () => { console.log('📡 WS Connected'); clearTimeout(reconnectTimer); };
+      ws.onclose = () => { 
+        console.warn('📡 WS Lost. Reconnecting in 5s...'); 
+        reconnectTimer = setTimeout(connect, 5000); 
+      };
+    };
+    if (isGenerating || isDirecting) connect();
+    return () => { if (ws) ws.close(); clearTimeout(reconnectTimer); }
+  }, [isGenerating, isDirecting])
+
   const handleRecommend = async (text: string) => {
     if (!text || text.length < 5) return;
     try {
@@ -89,9 +109,7 @@ function App() {
         data.scenes.forEach((s: any, i: number) => {
           const d = s.duration || 5;
           addClip('track-v1', { id: `auto-v-${i}`, start: offset, end: offset + d, src: '', name: s.title, type: 'video', data: { prompt: s.videoPrompt } });
-          if (s.voiceoverText) {
-            addClip('track-t1', { id: `auto-t-${i}`, start: offset, end: offset + d, src: '', name: `字幕: ${s.title}`, type: 'text', data: { content: s.voiceoverText } });
-          }
+          if (s.voiceoverText) addClip('track-t1', { id: `auto-t-${i}`, start: offset, end: offset + d, src: '', name: `字幕: ${s.title}`, type: 'text', data: { content: s.voiceoverText } });
           offset += d;
         });
         showToast(`导演已就位：生成了 ${data.scenes.length} 个分镜`, 'success');
@@ -116,7 +134,7 @@ function App() {
         <aside className="glass-panel sidebar">
           <header className="console-header">
             <h1>VeoMuse <span className="badge">V3.1 Pro</span></h1>
-            <p className="subtitle">旗舰版 · 极致细节抛光</p>
+            <p className="subtitle">旗舰版 · 最终 Bug 猎杀</p>
           </header>
 
           <div className="tab-header">
@@ -172,7 +190,7 @@ function App() {
               <div className="lab-controls">
                 <label className="pro-toggle">
                   <input type="checkbox" checked={isCompareMode} onChange={(e) => setIsCompareMode(e.target.checked)} />
-                  <span className="toggle-slider"></span> 🔬 实验对比
+                  <span className="toggle-slider"></span> 🔬 实验模式
                 </label>
               </div>
               {isCompareMode ? <ComparisonLab modelA={selectedModel} modelB="kling-v1" /> : <MultiVideoPlayer />}

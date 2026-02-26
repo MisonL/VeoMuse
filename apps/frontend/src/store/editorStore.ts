@@ -72,7 +72,7 @@ export const useEditorStore = create<EditorState>()(
       { id: 'asset-1', name: '大雄兔 (示例)', src: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'video' }
     ],
     currentTime: 0,
-    duration: 60,
+    duration: 120, // 提升至 120s
     isPlaying: false,
     selectedClipId: null,
     zoomLevel: 10,
@@ -95,18 +95,26 @@ export const useEditorStore = create<EditorState>()(
       });
       return { tracks: newTracks };
     }),
-    updateClip: (trackId, clipId, partialClip) => set((state) => ({
-      tracks: state.tracks.map(t => 
-        t.id === trackId
-          ? {
-              ...t,
-              clips: t.clips.map(c => 
-                c.id === clipId ? { ...c, ...partialClip } : c
-              )
-            }
-          : t
-      )
-    })),
+    updateClip: (trackId, clipId, partialClip) => set((state) => {
+      // 边界加固：确保 end 不超过总时长
+      const safePartial = { ...partialClip };
+      if (safePartial.end !== undefined && safePartial.end > state.duration) {
+        safePartial.end = state.duration;
+      }
+      
+      return {
+        tracks: state.tracks.map(t => 
+          t.id === trackId
+            ? {
+                ...t,
+                clips: t.clips.map(c => 
+                  c.id === clipId ? { ...c, ...safePartial } : c
+                )
+              }
+            : t
+        )
+      };
+    }),
     removeClip: (trackId, clipId) => set((state) => ({
       selectedClipId: state.selectedClipId === clipId ? null : state.selectedClipId,
       tracks: state.tracks.map(t =>
