@@ -4,6 +4,7 @@ import { VideoService } from './services/VideoService'
 import { ApiKeyService } from './services/ApiKeyService'
 import { PromptEnhanceService } from './services/PromptEnhanceService'
 import { AiClipService } from './services/AiClipService'
+import { CompositionService } from './services/CompositionService'
 
 // 初始化 API 密钥
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
@@ -51,6 +52,17 @@ const app = new Elysia()
         body: t.Object({
           description: t.String(),
           duration: t.Number()
+        })
+      })
+      .post('/video/compose', async ({ body }) => {
+        try {
+          return await CompositionService.compose(body.timelineData);
+        } catch (e: any) {
+          return { success: false, error: e.message };
+        }
+      }, {
+        body: t.Object({
+          timelineData: t.Any() // 在实际项目中可定义更精细的 TypeBox 模型
         })
       })
   )
