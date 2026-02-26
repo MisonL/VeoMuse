@@ -152,11 +152,13 @@ function App() {
                     {recommendation && <span className="ai-rec-tag">🤖 建议: {recommendation.id}</span>}
                   </div>
                   <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
-                    <option value="veo-3.1">Gemini Veo 3.1</option>
-                    <option value="kling-v1">快手可灵 Kling</option>
-                    <option value="sora-preview">OpenAI Sora</option>
-                  </select>
-                </div>
+                                      <option value="veo-3.1">Gemini Veo 3.1</option>
+                                      <option value="kling-v1">快手可灵 Kling</option>
+                                      <option value="sora-preview">OpenAI Sora</option>
+                                      <option value="luma-dream">Luma Dream Machine</option>
+                                      <option value="runway-gen3">Runway Gen-3 Alpha</option>
+                                      <option value="pika-1.5">Pika Art 1.5</option>
+                                    </select>                </div>
                 <textarea className="premium-input" placeholder="输入创意..." value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={isEnhancing || isGenerating} />
                 <div className="action-bar">
                   <button className="btn-secondary" onClick={handleEnhance} disabled={isEnhancing}>✨ 增强</button>

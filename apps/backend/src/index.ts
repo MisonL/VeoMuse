@@ -11,6 +11,9 @@ import { VideoOrchestrator } from './services/VideoOrchestrator'
 import { GeminiDriver } from './services/drivers/GeminiDriver'
 import { KlingDriver } from './services/drivers/KlingDriver'
 import { SoraDriver } from './services/drivers/SoraDriver'
+import { LumaDriver } from './services/drivers/LumaDriver'
+import { RunwayDriver } from './services/drivers/RunwayDriver'
+import { PikaDriver } from './services/drivers/PikaDriver'
 import { ModelRouter } from './services/ModelRouter'
 import { AiDirectorService } from './services/AiDirectorService'
 import { InpaintService } from './services/InpaintService'
@@ -18,13 +21,18 @@ import { AudioAnalysisService } from './services/AudioAnalysisService'
 import { VoiceMorphService } from './services/VoiceMorphService'
 
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
+
+// 注册全球顶级模型驱动集群
 VideoOrchestrator.registerDriver(new GeminiDriver());
 VideoOrchestrator.registerDriver(new KlingDriver());
 VideoOrchestrator.registerDriver(new SoraDriver());
+VideoOrchestrator.registerDriver(new LumaDriver());
+VideoOrchestrator.registerDriver(new RunwayDriver());
+VideoOrchestrator.registerDriver(new PikaDriver());
 
 const app = new Elysia()
   .use(cors())
-  .get('/', () => 'VeoMuse 旗舰版后端 (Dimension X Active)')
+  .get('/', () => 'VeoMuse 旗舰版后端 (Global Bus Active)')
   .get('/health', () => ({ status: 'ok', timestamp: new Date().toISOString() }))
   .group('/api', (app) => 
     app
@@ -36,10 +44,17 @@ const app = new Elysia()
       .post('/video/generate', async ({ body }) => {
         try {
           return await VideoOrchestrator.generate(body.modelId || 'veo-3.1', {
-            text: body.text, negativePrompt: body.negativePrompt
+            text: body.text, negativePrompt: body.negativePrompt, options: body.options
           });
         } catch (e: any) { return { success: false, error: e.message }; }
-      }, { body: t.Object({ text: t.String(), modelId: t.Optional(t.String()), negativePrompt: t.Optional(t.String()) }) })
+      }, {
+        body: t.Object({
+          text: t.String(),
+          modelId: t.Optional(t.String()),
+          negativePrompt: t.Optional(t.String()),
+          options: t.Optional(t.Any())
+        })
+      })
       .post('/ai/enhance', async ({ body }) => {
         try { return await PromptEnhanceService.enhance(body.prompt); } 
         catch (e: any) { return { success: false, error: e.message }; }
@@ -78,10 +93,10 @@ const app = new Elysia()
       }, { body: t.Object({ timelineData: t.Any() }) })
   )
   .ws('/ws/generation', {
-    open(ws) { ws.send({ message: '已连接到 AI 维度突破进度频道' }); }
+    open(ws) { ws.send({ message: '已连接到模型总线进度频道' }); }
   })
   .listen(process.env.PORT || 3001)
 
-console.log(`🚀 VeoMuse 旗舰后端 (Dimension X) 已启动: ${app.server?.port}`)
+console.log(`🚀 VeoMuse 旗舰后端已启动，模型驱动数: 6`)
 
 export type App = typeof app
