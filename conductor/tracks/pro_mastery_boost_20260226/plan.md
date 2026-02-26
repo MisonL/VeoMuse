@@ -13,5 +13,5 @@
 - [x] **Task: 开放 /api/admin/metrics 接口**
 
 ## Phase 4: 前端性能仪表盘 (UX 终极打磨)
-- [ ] **Task: 实现可视化图表组件**
+- [x] **Task: 实现可视化图表组件**
 - [ ] **Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)**

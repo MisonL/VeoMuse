@@ -1,0 +1,52 @@
+.telemetry-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.metrics-section label, .api-metrics label {
+  display: block;
+  color: var(--text-sub);
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fps-chart {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  width: 100%;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-card .label { color: var(--text-sub); font-size: 10px; }
+.metric-card .value { font-size: 18px; font-weight: 700; color: var(--accent-color); }
+
+.api-stat-row {
+  display: grid;
+  grid-template-columns: 1fr 40px 60px;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.api-name { color: var(--text-main); }
+.api-success { color: var(--success-color); font-weight: 600; text-align: right; }
+.api-avg { color: var(--text-sub); text-align: right; }
