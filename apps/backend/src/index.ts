@@ -5,6 +5,8 @@ import { ApiKeyService } from './services/ApiKeyService'
 import { PromptEnhanceService } from './services/PromptEnhanceService'
 import { AiClipService } from './services/AiClipService'
 import { CompositionService } from './services/CompositionService'
+import { TtsService } from './services/TtsService'
+import { MusicAdviceService } from './services/MusicAdviceService'
 
 // 初始化 API 密钥
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
@@ -54,6 +56,28 @@ const app = new Elysia()
           duration: t.Number()
         })
       })
+      .post('/ai/tts', async ({ body }) => {
+        try {
+          return await TtsService.synthesize(body.text);
+        } catch (e: any) {
+          return { success: false, error: e.message };
+        }
+      }, {
+        body: t.Object({
+          text: t.String()
+        })
+      })
+      .post('/ai/music-advice', async ({ body }) => {
+        try {
+          return await MusicAdviceService.getAdvice(body.description);
+        } catch (e: any) {
+          return { success: false, error: e.message };
+        }
+      }, {
+        body: t.Object({
+          description: t.String()
+        })
+      })
       .post('/video/compose', async ({ body }) => {
         try {
           return await CompositionService.compose(body.timelineData);
@@ -62,7 +86,7 @@ const app = new Elysia()
         }
       }, {
         body: t.Object({
-          timelineData: t.Any() // 在实际项目中可定义更精细的 TypeBox 模型
+          timelineData: t.Any() 
         })
       })
   )

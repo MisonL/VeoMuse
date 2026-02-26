@@ -16,8 +16,34 @@ function App() {
   const [progress, setProgress] = useState('等待开始...')
   const [isExporting, setIsExporting] = useState(false)
   
-  const { addAsset, assets, markers, setMarkers, tracks } = useEditorStore()
+  const { addAsset, assets, markers, setMarkers, tracks, addClip } = useEditorStore()
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isMusicAnalyzing, setIsMusicAnalyzing] = useState(false)
+
+  const handleAiMusic = async () => {
+    if (!prompt) return;
+    setIsMusicAnalyzing(true);
+    try {
+      const { data, error } = await api.api.ai['music-advice'].post({ description: prompt });
+      if (error) throw error;
+      if (data && 'mood' in data) {
+        // 模拟根据风格匹配音乐库资产
+        addClip('track-a1', {
+          id: `bgm-${Date.now()}`,
+          start: 0,
+          end: 30, // 假设背景音乐 30s
+          src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // 注入一个公开测试 BGM
+          name: `BGM: ${data.mood} - ${data.genre}`,
+          type: 'audio'
+        });
+        alert(`AI 已为您匹配：${data.description}`);
+      }
+    } catch (e: any) {
+      alert(`配乐建议失败: ${e.message}`);
+    } finally {
+      setIsMusicAnalyzing(false);
+    }
+  }
 
   // 模拟一些初始资产
   useEffect(() => {
@@ -133,9 +159,21 @@ function App() {
                 <button className={`btn-secondary ${isEnhancing ? 'loading' : ''}`} onClick={handleEnhance} disabled={isEnhancing || isGenerating || !prompt}>
                   {isEnhancing ? '🧠 推理中' : '✨ 增强'}
                 </button>
-                <button className={`btn-primary ${isGenerating ? 'generating' : ''}`} onClick={handleGenerate} disabled={isGenerating || isEnhancing || !prompt}>📹 生成</button>
-              </div>
-              <div className="action-bar" style={{ marginTop: '1rem' }}>
+                                <button className={`btn-primary ${isGenerating ? 'generating' : ''}`} onClick={handleGenerate} disabled={isGenerating || isEnhancing || !prompt}>📹 生成</button>
+                              </div>
+                              
+                              <div className="action-bar" style={{ marginTop: '0.5rem' }}>
+                                <button 
+                                  className={`btn-music ${isMusicAnalyzing ? 'loading' : ''}`}
+                                  onClick={handleAiMusic}
+                                  disabled={isMusicAnalyzing || !prompt}
+                                  style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', width: '100%' }}
+                                >
+                                  {isMusicAnalyzing ? '🎵 音乐大师思考中...' : '🪄 AI 智能配乐'}
+                                </button>
+                              </div>
+                
+                              <div className="action-bar" style={{ marginTop: '0.5rem' }}>
                 <button className="btn-export" onClick={handleExport} disabled={isExporting} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', width: '100%' }}>
                   {isExporting ? '⏳ 合成中...' : '🎬 导出'}
                 </button>

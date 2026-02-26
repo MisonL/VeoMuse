@@ -19,7 +19,7 @@ export interface TimelineData {
 export class CompositionService {
   static async compose(timelineData: TimelineData): Promise<{ success: boolean; outputPath: string }> {
     const timestamp = Date.now();
-    const outputFileName = `final_render_${timestamp}.mp4`;
+    const outputFileName = `final_master_render_${timestamp}.mp4`;
     const outputDir = path.resolve(process.cwd(), '../../uploads/generated'); 
     
     try { await fs.mkdir(outputDir, { recursive: true }); } catch (e) {}
@@ -33,26 +33,37 @@ export class CompositionService {
       try {
         const command = ffmpeg();
         const videoFilters: string[] = [];
+        const audioFilters: string[] = [];
         
-        // 1. 处理视频与音频输入
+        // 1. 输入处理
+        let inputCount = 0;
         timelineData.tracks.forEach(track => {
           if (track.type !== 'text') {
             track.clips.forEach(clip => {
               if (clip.src) {
                 command.input(clip.src);
-                
-                // 色彩滤镜映射逻辑
-                if (clip.data?.filter) {
-                  if (clip.data.filter.includes('grayscale')) videoFilters.push('hue=s=0');
-                  if (clip.data.filter.includes('sepia')) videoFilters.push('colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131');
-                  if (clip.data.filter.includes('saturate')) videoFilters.push('eq=saturation=2');
-                }
+                inputCount++;
               }
             });
           }
         });
 
-        // 2. 处理文字
+        // 2. 音频混合逻辑 (amix)
+        // 假设我们要把所有音频输入混合在一起。
+        // 在更高级的实现中，我们会根据 track.id 或 type 分配音量比例
+        if (inputCount > 1) {
+          // 这里使用一个简单的混合策略：第一个输入通常是主视频，后续是配音或 BGM
+          // 我们后续可以根据 Clip.data.volume 来精细调节
+          command.complexFilter([
+            {
+              filter: 'amix',
+              options: { inputs: inputCount, duration: 'longest' },
+              outputs: 'mixed_audio'
+            }
+          ], 'mixed_audio');
+        }
+
+        // 3. 文字滤镜 (drawtext)
         const textClips = timelineData.tracks
           .filter(t => t.type === 'text')
           .flatMap(t => t.clips);
@@ -69,7 +80,7 @@ export class CompositionService {
         }
 
         command
-          .on('start', (cmd) => console.log('📽️ FFmpeg 开始全效渲染:', cmd))
+          .on('start', (cmd) => console.log('🎻 Master 渲染开始:', cmd))
           .on('end', () => resolve({ success: true, outputPath }))
           .on('error', (err) => reject(err))
           .save(outputPath);

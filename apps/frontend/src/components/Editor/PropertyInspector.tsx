@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { api } from '../../utils/eden';
 import { useEditorStore, Clip } from '../../store/editorStore';
 import './PropertyInspector.css';
 
 const PropertyInspector: React.FC = () => {
-  const { tracks, selectedClipId, updateClip } = useEditorStore();
+  const { tracks, selectedClipId, updateClip, addClip } = useEditorStore();
+  const [isTtsGenerating, setIsTtsGenerating] = useState(false);
 
-  // 寻找选中的片段及其所属轨道
   let selectedClip: Clip | null = null;
   let parentTrackId: string | null = null;
 
@@ -36,6 +37,30 @@ const PropertyInspector: React.FC = () => {
     handleUpdate({
       data: { ...(selectedClip?.data || {}), ...dataUpdates }
     });
+  };
+
+  const handleTtsGenerate = async () => {
+    if (!selectedClip || !selectedClip.data?.content) return;
+    setIsTtsGenerating(true);
+    try {
+      const { data, error } = await api.api.ai.tts.post({ text: selectedClip.data.content });
+      if (error) throw error;
+      if (data && data.success) {
+        addClip('track-a1', {
+          id: `voice-${Date.now()}`,
+          start: selectedClip.start,
+          end: selectedClip.end,
+          src: data.audioUrl,
+          name: `配音: ${selectedClip.name}`,
+          type: 'audio'
+        });
+        alert('AI 配音已生成并添加到音频轨道！');
+      }
+    } catch (e: any) {
+      alert(`配音生成失败: ${e.message}`);
+    } finally {
+      setIsTtsGenerating(false);
+    }
   };
 
   return (
@@ -122,6 +147,15 @@ const PropertyInspector: React.FC = () => {
               <option value="slideUp">滑入</option>
               <option value="zoom">缩放</option>
             </select>
+
+            <button 
+              className={`btn-tts ${isTtsGenerating ? 'loading' : ''}`}
+              onClick={handleTtsGenerate}
+              disabled={isTtsGenerating}
+              style={{ marginTop: '1.5rem', width: '100%', background: 'linear-gradient(135deg, #8b5cf6 0%, #d946ef 100%)', color: '#fff', border: 'none', padding: '0.8rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              {isTtsGenerating ? '🎙️ 合成中...' : '🎙️ 生成 AI 配音'}
+            </button>
           </section>
         )}
       </div>
