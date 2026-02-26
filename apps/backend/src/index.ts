@@ -24,6 +24,7 @@ import { TranslationService } from './services/TranslationService'
 import { SpatialRenderService } from './services/SpatialRenderService'
 import { VfxService } from './services/VfxService'
 import { LipSyncService } from './services/LipSyncService'
+import { TelemetryService } from './services/TelemetryService'
 
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
 VideoOrchestrator.registerDriver(new GeminiDriver());
@@ -43,6 +44,7 @@ const app = new Elysia()
   })
   .get('/', () => 'VeoMuse Backend Active')
   .get('/api/health', () => ({ status: 'ok' }))
+  .get('/api/admin/metrics', () => TelemetryService.getInstance().getSummary())
   
   .get('/api/models', () => VideoOrchestrator.getAvailableModels())
   .post('/api/models/recommend', async ({ body }) => await ModelRouter.recommend(body.prompt), { body: t.Object({ prompt: t.String() }) })

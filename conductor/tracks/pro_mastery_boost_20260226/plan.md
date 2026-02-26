@@ -9,8 +9,8 @@
 - [x] **Task: 零闪烁切换测试**
 
 ## Phase 3: 后端结构化遥测系统
-- [ ] **Task: 建立 TelemetryService**
-- [ ] **Task: 开放 /api/admin/metrics 接口**
+- [x] **Task: 建立 TelemetryService**
+- [x] **Task: 开放 /api/admin/metrics 接口**
 
 ## Phase 4: 前端性能仪表盘 (UX 终极打磨)
 - [ ] **Task: 实现可视化图表组件**

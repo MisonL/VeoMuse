@@ -1,5 +1,6 @@
 // apps/backend/src/services/BaseAiService.ts
 import { ApiKeyService } from './ApiKeyService';
+import { TelemetryService } from './TelemetryService';
 
 export interface PerformanceMetrics {
   durationMs: number;
@@ -17,6 +18,7 @@ export abstract class BaseAiService {
   ): Promise<{ data: T; metrics: PerformanceMetrics }> {
     const startTime = performance.now();
     let lastError: Error | null = null;
+    let success = false;
 
     for (let i = 0; i < retries; i++) {
       try {
@@ -30,12 +32,21 @@ export abstract class BaseAiService {
         const data = await response.json() as any;
         const endTime = performance.now();
         const durationMs = Math.round(endTime - startTime);
+        success = true;
 
         const metrics: PerformanceMetrics = {
           durationMs,
           timestamp: new Date().toISOString(),
-          endpoint: url.split('?')[0] || url // 修复：增加回退值处理 undefined
+          endpoint: url.split('?')[0] || url
         };
+
+        // 推送到遥测系统
+        TelemetryService.getInstance().recordApiCall({
+          service: this.serviceName,
+          durationMs,
+          success: true,
+          timestamp: metrics.timestamp
+        });
 
         console.log(`📊 [Metrics] ${this.serviceName}: ${durationMs}ms | ${metrics.endpoint}`);
         return { data, metrics };
@@ -48,6 +59,14 @@ export abstract class BaseAiService {
         }
       }
     }
+
+    // 失败也推送遥测
+    TelemetryService.getInstance().recordApiCall({
+      service: this.serviceName,
+      durationMs: Math.round(performance.now() - startTime),
+      success: false,
+      timestamp: new Date().toISOString()
+    });
 
     throw lastError || new Error(`[${this.serviceName}] 请求失败`);
   }
