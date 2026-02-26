@@ -24,6 +24,7 @@ import { ActorConsistencyService } from './services/ActorConsistencyService'
 import { LipSyncService } from './services/LipSyncService'
 import { RelightingService } from './services/RelightingService'
 import { VfxService } from './services/VfxService'
+import { SpatialRenderService } from './services/SpatialRenderService'
 
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
 VideoOrchestrator.registerDriver(new GeminiDriver());
@@ -118,6 +119,10 @@ const app = new Elysia()
         try { return await VfxService.applyVfx(body as any); }
         catch (e: any) { return { success: false, error: e.message }; }
       }, { body: t.Object({ clipId: t.String(), vfxType: t.String(), intensity: t.Optional(t.Number()) }) })
+      .post('/ai/spatial/render', async ({ body }) => {
+        try { return await SpatialRenderService.reconstruct(body.clipId, body.quality || 'ultra'); }
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ clipId: t.String(), quality: t.Optional(t.String()) }) })
       .post('/video/compose', async ({ body }) => {
         try { return await CompositionService.compose(body.timelineData); } 
         catch (e: any) { return { success: false, error: e.message }; }

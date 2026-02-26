@@ -48,3 +48,18 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: 旗舰版商业化上线：Docker 容器化、Nginx 高性能部署与全平台发布指南**
   *Link: [./tracks/launch_and_deployment_20260226/](./tracks/launch_and_deployment_20260226/)*
+
+- [x] **Track: AI 渠道大爆发：集成 Luma Dream Machine、Runway Gen-3 与 Pika 1.5 顶级模型集群**
+  *Link: [./tracks/ai_channels_explosion_20260226/](./tracks/ai_channels_explosion_20260226/)*
+
+- [x] **Track: AI 媒体炼金术：多语种配音同步翻译、视频实时风格迁移与智能素材增强**
+  *Link: [./tracks/ai_media_alchemy_20260226/](./tracks/ai_media_alchemy_20260226/)*
+
+- [x] **Track: 数字人永生：生成式虚拟演员、高精度对口型 (Lip-Sync) 与 4K HDR 极速渲染引擎**
+  *Link: [./tracks/ai_virtual_actors_20260226/](./tracks/ai_virtual_actors_20260226/)*
+
+- [x] **Track: AI 影棚级进化：智能重光照 (Relighting)、神经渲染特效与全场景一致性引擎**
+  *Link: [./tracks/ai_studio_evolution_20260226/](./tracks/ai_studio_evolution_20260226/)*
+
+- [~] **Track: 虚实共生：AI 实时动作捕捉同步、4K 神经辐射场 (NeRF) 渲染与沉浸式 VR 空间导出**
+  *Link: [./tracks/ai_mixed_reality_20260226/](./tracks/ai_mixed_reality_20260226/)*
