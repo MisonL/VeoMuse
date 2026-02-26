@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react'
+import { useState, useEffect } from 'react'
 import { api } from './utils/eden'
 import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
@@ -12,7 +12,6 @@ function App() {
   const { showToast } = useToastStore()
   const [activeTab, setActiveTab] = useState<'generate' | 'director' | 'assets'>('generate')
   const [prompt, setPrompt] = useState('')
-  const [script, setScript] = useState('')
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
 
   useEffect(() => {
@@ -31,7 +30,6 @@ function App() {
     <div className="app-layout">
       <ToastContainer />
       
-      {/* 侧边栏：Apple Pro 级侧边导航 */}
       <aside className="sidebar-container">
         <header className="sidebar-header">
           <h1>VeoMuse <span style={{ color: 'var(--sf-accent)' }}>Pro</span></h1>
@@ -51,30 +49,20 @@ function App() {
 
         <div className="sidebar-content">
           {activeTab === 'generate' && (
-            <div className="input-group">
-              <label>创意描述</label>
-              <textarea 
-                className="pro-textarea" 
-                rows={8} 
-                placeholder="描述你想要的画面..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-              />
-              <button className="nav-item active" style={{ width: '100%', marginTop: '20px', justifyContent: 'center' }} onClick={handleGenerate}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--sf-text-secondary)', marginBottom: '8px', display: 'block' }}>创意描述</label>
+                <textarea 
+                  className="pro-textarea" 
+                  rows={8} 
+                  placeholder="描述你想要的画面..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                />
+              </div>
+              <button className="nav-item active" style={{ width: '100%', justifyContent: 'center' }} onClick={handleGenerate}>
                 立即生成
               </button>
-            </div>
-          )}
-          {activeTab === 'director' && (
-            <div className="input-group">
-              <label>分镜剧本</label>
-              <textarea 
-                className="pro-textarea" 
-                rows={12} 
-                placeholder="粘贴你的脚本..."
-                value={script}
-                onChange={(e) => setScript(e.target.value)}
-              />
             </div>
           )}
         </div>
@@ -86,7 +74,6 @@ function App() {
         </footer>
       </aside>
 
-      {/* 主舞台 */}
       <main className="main-stage">
         <section className="stage-preview">
           <MultiVideoPlayer />
@@ -96,7 +83,6 @@ function App() {
         </section>
       </main>
 
-      {/* 属性检查器 */}
       <aside className="sidebar-container">
         <PropertyInspector />
       </aside>
