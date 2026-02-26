@@ -46,4 +46,15 @@ describe('AI API 全功能集群验证 (全量修复版)', () => {
       expect(response.status).toBe(200);
     }
   });
+
+  it('AI 翻译接口连通性', async () => {
+    const response = await app.handle(
+      new Request('http://localhost/api/ai/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: '你好，世界', targetLang: 'English' })
+      })
+    );
+    expect(response.status).toBe(200);
+  });
 });
