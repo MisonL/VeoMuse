@@ -54,8 +54,28 @@ function App() {
     } finally { setIsGenerating(false) }
   }
 
-  const { markers, setMarkers } = useEditorStore()
+  const { markers, setMarkers, tracks } = useEditorStore()
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const { data, error } = await api.api.video.compose.post({
+        timelineData: { tracks }
+      })
+      if (error) throw error
+      if (data && data.success) {
+        alert(`视频已开始合成！输出路径或任务ID: ${data.outputPath}`)
+      } else {
+        throw new Error('合成失败，请检查后端日志。')
+      }
+    } catch (e: any) {
+      alert(`导出失败: ${e.message}`)
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const handleAiSuggest = async () => {
     setIsAnalyzing(true)
@@ -115,6 +135,17 @@ function App() {
                 disabled={isGenerating || isEnhancing || !prompt}
               >
                 📹 生成
+              </button>
+            </div>
+            
+            <div className="action-bar" style={{ marginTop: '1rem' }}>
+              <button 
+                className={`btn-export ${isExporting ? 'generating' : ''}`}
+                onClick={handleExport}
+                disabled={isExporting}
+                style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', width: '100%' }}
+              >
+                {isExporting ? '⏳ 正在合成视频...' : '🎬 导出成片'}
               </button>
             </div>
           </div>
