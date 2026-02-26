@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from 'react'
+import { useState, useEffect, useCallback, memo, useActionState, useOptimistic, startTransition } from 'react'
 import { motion } from 'framer-motion'
 import { api, getErrorMessage } from './utils/eden'
 import { useEditorStore, Track, Clip } from './store/editorStore'
@@ -23,96 +23,68 @@ function App() {
   const [selectedActorId, setSelectedActorId] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
   const [script, setScript] = useState('')
-  const [isEnhancing, setIsEnhancing] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [isDirecting, setIsDirecting] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const { addAsset, assets, tracks, setTracks } = useEditorStore()
+  
+  const { addAsset, tracks, setTracks } = useEditorStore()
 
-  useEffect(() => {
-    if (assets.length === 0) {
-      addAsset({ id: 'asset-1', name: '大雄兔 (示例)', src: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'video' });
+  // 1. React 19 Action: 增强提示词
+  const [enhancedState, enhanceAction, isEnhancing] = useActionState(async (_prev: any, p: string) => {
+    if (!p) return null;
+    const { data, error } = await api.api.ai.enhance.post({ prompt: p });
+    if (error) { showToast(getErrorMessage(error), 'error'); return null; }
+    if (data && 'enhanced' in data) {
+      setPrompt(data.enhanced);
+      showToast('提示词已增强', 'success');
+      return data.enhanced;
     }
-  }, [])
+    return null;
+  }, null);
 
-  const handleFullAutoDirector = async () => {
-    if (!script) return;
-    setIsDirecting(true);
+  // 2. React 19 Action: AI 导演分析
+  const [directorState, directorAction, isDirecting] = useActionState(async (_prev: any, s: string) => {
+    if (!s) return null;
     showToast('🎬 AI 导演正在规划分镜...', 'info');
-    try {
-      const { data, error } = await api.api.ai.director.analyze.post({ script });
-      
-      if (error) {
-        showToast(getErrorMessage(error), 'error');
-        return;
-      }
-
-      if (data && 'scenes' in data) {
-        let offset = 0;
-        const newTracks: Track[] = JSON.parse(JSON.stringify(useEditorStore.getState().tracks));
-        const vTrack = newTracks.find(t => t.id === 'track-v1');
-        
-        if (vTrack) {
-          data.scenes.forEach((s: any, i: number) => {
-            const d = s.duration || 5;
-            const newClip: Clip = { 
-              id: `auto-v-${i}-${Date.now()}`, start: offset, end: offset + d, 
-              src: '', name: s.title, type: 'video', 
-              data: { prompt: s.videoPrompt, worldId: data.worldId } 
-            };
-            vTrack.clips.push(newClip);
-            offset += d;
+    const { data, error } = await api.api.ai.director.analyze.post({ script: s });
+    if (error) { showToast(getErrorMessage(error), 'error'); return null; }
+    
+    if (data && 'scenes' in data) {
+      let offset = 0;
+      const newTracks: Track[] = JSON.parse(JSON.stringify(useEditorStore.getState().tracks));
+      const vTrack = newTracks.find(t => t.id === 'track-v1');
+      if (vTrack) {
+        data.scenes.forEach((scene: any, i: number) => {
+          const d = scene.duration || 5;
+          vTrack.clips.push({ 
+            id: `auto-v-${i}-${Date.now()}`, start: offset, end: offset + d, 
+            src: '', name: scene.title, type: 'video', 
+            data: { prompt: scene.videoPrompt, worldId: data.worldId } 
           });
-          setTracks(newTracks);
-          showToast(`全自动编排完成：共 ${data.scenes.length} 个镜头`, 'success');
-        }
+          offset += d;
+        });
+        setTracks(newTracks);
+        showToast(`编排完成：共 ${data.scenes.length} 个镜头`, 'success');
       }
-    } catch (e: any) { 
-      showToast(e.message, 'error'); 
-    } finally { 
-      setIsDirecting(false); 
     }
-  }
-
-  const handleEnhance = useCallback(async () => {
-    if (!prompt) return;
-    setIsEnhancing(true);
-    try {
-      const { data, error } = await api.api.ai.enhance.post({ prompt });
-      if (error) {
-        showToast(getErrorMessage(error), 'error');
-      } else if (data && 'enhanced' in data) { 
-        setPrompt(data.enhanced); 
-        showToast('提示词已增强', 'success'); 
-      }
-    } finally { setIsEnhancing(false); }
-  }, [prompt, showToast]);
+    return data;
+  }, null);
 
   const handleGenerate = useCallback(async () => {
     if (!prompt) return;
-    setIsGenerating(true);
     try {
       const { error } = selectedActorId 
         ? await api.api.ai.actors.generate.post({ prompt, actorId: selectedActorId, modelId: selectedModel })
         : await api.api.video.generate.post({ text: prompt, modelId: selectedModel });
-      
-      if (error) {
-        showToast(getErrorMessage(error), 'error');
-      } else {
-        showToast('任务已提交', 'info');
-      }
-    } finally { setIsGenerating(false); }
+      if (error) showToast(getErrorMessage(error), 'error');
+      else showToast('任务已提交', 'info');
+    } catch (e: any) { showToast(e.message, 'error'); }
   }, [prompt, selectedActorId, selectedModel, showToast]);
 
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
       const { data, error } = await api.api.video.compose.post({ timelineData: { tracks } });
-      if (error) {
-        showToast(getErrorMessage(error), 'error');
-      } else if (data && 'outputPath' in data) {
-        showToast(`导出成功: ${data.outputPath}`, 'success');
-      }
+      if (error) showToast(getErrorMessage(error), 'error');
+      else if (data && 'outputPath' in data) showToast(`导出成功: ${data.outputPath}`, 'success');
     } finally { setIsExporting(false); }
   }, [tracks, showToast]);
 
@@ -124,7 +96,7 @@ function App() {
         <GlassCard className="sidebar" delay={0.1}>
           <header className="console-header">
             <h1>VeoMuse <span className="badge">V3.1 Pro</span></h1>
-            <p className="subtitle">旗舰版 · 极致卓越</p>
+            <p className="subtitle">旗舰版 · 2026 最佳实践</p>
           </header>
           <div className="tab-header">
             {(['generate', 'actors', 'assets', 'director'] as const).map(tab => (
@@ -141,15 +113,15 @@ function App() {
                 </select>
                 <textarea className="premium-input" placeholder="输入创意..." value={prompt} onChange={(e) => setPrompt(e.target.value)} />
                 <div className="action-bar">
-                  <ProButton variant="secondary" onClick={handleEnhance} isLoading={isEnhancing}>增强</ProButton>
-                  <ProButton onClick={handleGenerate} isLoading={isGenerating}>生成</ProButton>
+                  <ProButton variant="secondary" onClick={() => startTransition(() => enhanceAction(prompt))} isLoading={isEnhancing}>增强</ProButton>
+                  <ProButton onClick={handleGenerate}>生成</ProButton>
                 </div>
               </div>
             )}
             {activeTab === 'director' && (
               <div className="editor-section">
                 <textarea className="premium-input" style={{ height: '200px' }} placeholder="输入脚本..." value={script} onChange={(e) => setScript(e.target.value)} />
-                <ProButton variant="danger" className="w-full mt-2" onClick={handleFullAutoDirector} isLoading={isDirecting}>启动一键导演</ProButton>
+                <ProButton variant="danger" className="w-full mt-2" onClick={() => startTransition(() => directorAction(script))} isLoading={isDirecting}>启动一键导演</ProButton>
               </div>
             )}
             {activeTab === 'assets' && <AssetPanel />}

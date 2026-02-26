@@ -1,62 +1,72 @@
 :root {
-  /* 核心品牌色 - 旗舰蓝 */
-  --brand-primary: #38bdf8;
-  --brand-primary-rgb: 56, 189, 248;
-  --brand-secondary: #818cf8;
-  --brand-accent: #a855f7;
-  --brand-danger: #ef4444;
-  --brand-warning: #f59e0b;
-  --brand-success: #10b981;
+  /* 基础变量 - 默认亮色主题 (Premium Light) */
+  --bg-color: #f8f9fa;
+  --panel-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  --text-main: #1d1d1f;
+  --text-sub: #86868b;
+  --accent-color: #0071e3;
+  --accent-glow: rgba(0, 113, 227, 0.3);
+  --danger-color: #ff3b30;
+  --success-color: #34c759;
+  --sidebar-w: 320px;
+  --header-h: 64px;
+}
 
-  /* 基础背景与面板色 */
-  --bg-dark: #09090b;
-  --bg-panel: rgba(255, 255, 255, 0.05);
-  --bg-panel-inner: rgba(255, 255, 255, 0.03);
-  --border-light: rgba(255, 255, 255, 0.1);
-  --border-dim: rgba(255, 255, 255, 0.05);
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #000000;
+    --panel-bg: rgba(28, 28, 30, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    --text-main: #f5f5f7;
+    --text-sub: #a1a1a6;
+    --accent-color: #2997ff;
+    --accent-glow: rgba(41, 151, 255, 0.4);
+  }
+}
 
-  /* 文字颜色 */
-  --text-main: rgba(255, 255, 255, 0.9);
-  --text-dim: rgba(255, 255, 255, 0.5);
-  --text-muted: rgba(255, 255, 255, 0.3);
-
-  /* 阴影与模糊 */
-  --glass-blur: blur(12px);
-  --panel-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: dark;
-  color: var(--text-main);
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
 }
 
-.glass-panel {
-  background: var(--bg-panel);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--border-light);
-  border-radius: 24px;
-  box-shadow: var(--panel-shadow);
-}
-
+/* 渐变流体背景 */
 .liquid-bg {
   position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-  background: radial-gradient(circle at 20% 30%, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 40%),
-              radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 40%);
-  filter: blur(60px);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at 20% 20%, var(--accent-glow) 0%, transparent 40%),
+              radial-gradient(circle at 80% 80%, rgba(52, 199, 89, 0.1) 0%, transparent 40%);
+  filter: blur(80px);
+  z-index: -1;
+}
+
+/* 核心原子组件：玻璃卡片 */
+.glass-panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  box-shadow: var(--glass-shadow);
+}
+
+/* 动效：Spring 物理感 */
+.spring-interact {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.spring-interact:active {
+  transform: scale(0.96);
 }

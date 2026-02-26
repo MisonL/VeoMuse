@@ -7,7 +7,7 @@ export type { Clip, Track, Asset, Marker };
 interface EditorState {
   tracks: Track[];
   markers: Marker[];
-  beatPoints: number[]; // 节奏点 (s)
+  beatPoints: number[];
   assets: Asset[];
   currentTime: number;
   duration: number;
@@ -40,11 +40,9 @@ export const useEditorStore = create<EditorState>()(
     ],
     markers: [],
     beatPoints: [],
-    assets: [
-      { id: 'asset-1', name: '大雄兔 (示例)', src: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'video' }
-    ],
+    assets: [], // 已移除 Mock 数据，等待用户上传或生成
     currentTime: 0,
-    duration: 120, // 提升至 120s
+    duration: 120,
     isPlaying: false,
     selectedClipId: null,
     zoomLevel: 10,
@@ -68,31 +66,20 @@ export const useEditorStore = create<EditorState>()(
       return { tracks: newTracks };
     }),
     updateClip: (trackId, clipId, partialClip) => set((state) => {
-      // 边界加固：确保 end 不超过总时长
       const safePartial = { ...partialClip };
       if (safePartial.end !== undefined && safePartial.end > state.duration) {
         safePartial.end = state.duration;
       }
-      
       return {
         tracks: state.tracks.map(t => 
-          t.id === trackId
-            ? {
-                ...t,
-                clips: t.clips.map(c => 
-                  c.id === clipId ? { ...c, ...safePartial } : c
-                )
-              }
-            : t
+          t.id === trackId ? { ...t, clips: t.clips.map(c => c.id === clipId ? { ...c, ...safePartial } : c) } : t
         )
       };
     }),
     removeClip: (trackId, clipId) => set((state) => ({
       selectedClipId: state.selectedClipId === clipId ? null : state.selectedClipId,
       tracks: state.tracks.map(t =>
-        t.id === trackId
-          ? { ...t, clips: t.clips.filter(c => c.id !== clipId) }
-          : t
+        t.id === trackId ? { ...t, clips: t.clips.filter(c => c.id !== clipId) } : t
       )
     })),
     splitClip: (trackId, clipId, at) => set((state) => ({

@@ -4,9 +4,9 @@
 - [x] **Task: 建立 Shared Type Bridge** (4e14a8b)
     - [x] 在 `packages/shared` 中建立统一类型定义。
     - [x] 移除前端对后端源码的直接引用。
-- [~] **Task: 重构 Eden Treaty 集成**
-    - [ ] 按照 3.0 最佳实践重构导出模型。
-    - [ ] 实现强类型 Error 处理机制。
+- [x] **Task: 重构 Eden Treaty 集成** (47c40c3)
+    - [x] 按照 3.0 最佳实践重构导出模型。
+    - [x] 实现强类型 Error 处理机制。
 - [ ] **Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)**
 
 ## Phase 2: 极致性能与 React 19 最佳实践

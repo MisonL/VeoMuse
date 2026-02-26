@@ -1,18 +1,27 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@veomuse/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts')
+    }
+  },
+  build: {
+    minify: 'oxc', 
+    target: 'esnext'
+  },
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:3001'
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true
+      }
     }
-  },
-  // 启用 Vite 8 兼容性标志
-  // @ts-ignore
-  future: {
-    // 灵活处理实验性选项
   }
 })
