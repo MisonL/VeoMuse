@@ -33,4 +33,24 @@ describe('编辑器高级功能验证', () => {
     expect(c2.start).toBe(4);
     expect(c2.id).toContain('-split');
   });
+
+  it('Clip 应支持存储转场 (Transition) 配置', () => {
+    const { addClip } = useEditorStore.getState();
+    const clipWithTrans: any = {
+      id: 'clip-trans',
+      start: 0,
+      end: 5,
+      src: 'v.mp4',
+      name: '转场测试',
+      type: 'video',
+      data: {
+        transitionIn: { type: 'fade', duration: 1.0 },
+        transitionOut: { type: 'fade', duration: 0.5 }
+      }
+    };
+    addClip('track-v1', clipWithTrans);
+    const state = useEditorStore.getState();
+    const clip = state.tracks.find(t => t.id === 'track-v1')?.clips.find(c => c.id === 'clip-trans');
+    expect(clip?.data.transitionIn.type).toBe('fade');
+  });
 });

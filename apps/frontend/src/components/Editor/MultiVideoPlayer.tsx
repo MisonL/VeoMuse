@@ -8,7 +8,7 @@ const MultiVideoPlayer: React.FC = () => {
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const audioRefs = useRef<Map<string, HTMLAudioElement>>(new Map());
 
-  // 同步音视频进度
+  // 核心逻辑：计算并同步音视频进度及透明度（转场）
   useEffect(() => {
     tracks.forEach(track => {
       track.clips.forEach(clip => {
@@ -17,23 +17,45 @@ const MultiVideoPlayer: React.FC = () => {
           : audioRefs.current.get(clip.id);
 
         if (media) {
-          if (currentTime >= clip.start && currentTime <= clip.end) {
-            // 激活状态
-            if (track.type === 'video') media.style.display = 'block';
+          const isVideo = track.type === 'video';
+          const isInRange = currentTime >= clip.start && currentTime <= clip.end;
+
+          if (isInRange) {
+            if (isVideo) {
+              media.style.display = 'block';
+              
+              // 转场计算 (Fade In / Out)
+              let opacity = 1;
+              const transIn = clip.data?.transitionIn;
+              const transOut = clip.data?.transitionOut;
+
+              // 淡入
+              if (transIn?.type === 'fade' && currentTime < clip.start + transIn.duration) {
+                opacity = (currentTime - clip.start) / transIn.duration;
+              }
+              // 淡出
+              else if (transOut?.type === 'fade' && currentTime > clip.end - transOut.duration) {
+                opacity = (clip.end - currentTime) / transOut.duration;
+              }
+
+              media.style.opacity = opacity.toString();
+            }
             
             const internalTime = currentTime - clip.start;
             if (Math.abs(media.currentTime - internalTime) > 0.15) {
               media.currentTime = internalTime;
             }
 
-            // 如果全局正在播放，确保媒体也在播放
             if (isPlaying && media.paused) {
               media.play().catch(() => {});
             } else if (!isPlaying && !media.paused) {
               media.pause();
             }
           } else {
-            if (track.type === 'video') media.style.display = 'none';
+            if (isVideo) {
+              media.style.display = 'none';
+              media.style.opacity = '0';
+            }
             if (!media.paused) media.pause();
           }
         }
@@ -56,6 +78,7 @@ const MultiVideoPlayer: React.FC = () => {
                 src={clip.src}
                 className="player-video-instance"
                 muted={false}
+                style={{ transition: 'opacity 0.1s linear' }}
                 playsInline
               />
             ) : track.type === 'audio' ? (
