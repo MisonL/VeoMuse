@@ -1,3 +1,93 @@
+/* ... (保留之前的基础样式) */
+
+.model-selector-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.model-selector-mini label {
+  font-size: 0.7rem;
+  color: #666;
+  text-transform: uppercase;
+  margin-left: 4px;
+}
+
+.ai-rec-tag {
+  font-size: 0.65rem;
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  animation: pulse-ai 2s infinite;
+}
+
+.model-selector-mini select {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.lab-controls {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 0.5rem;
+}
+
+.pro-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.pro-toggle input {
+  display: none;
+}
+
+.toggle-slider {
+  width: 32px;
+  height: 18px;
+  background: #333;
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.3s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 2px;
+  top: 2px;
+  background: #888;
+  border-radius: 50%;
+  transition: transform 0.3s, background 0.3s;
+}
+
+.pro-toggle input:checked + .toggle-slider {
+  background: #38bdf8;
+}
+
+.pro-toggle input:checked + .toggle-slider::before {
+  transform: translateX(14px);
+  background: #fff;
+}
+
+/* ... (后续保留之前的布局样式) */
 #root {
   width: 100vw;
   height: 100vh;
@@ -7,23 +97,11 @@
 
 .app-layout {
   display: grid;
-  grid-template-columns: 300px 1fr 280px; /* 三栏布局 */
+  grid-template-columns: 300px 1fr 280px;
   height: 100vh;
   gap: 1rem;
   padding: 1rem;
   box-sizing: border-box;
-}
-
-.sidebar, .inspector-sidebar {
-  height: 100%;
-  overflow: hidden;
-}
-
-.inspector-sidebar {
-  border-radius: 16px;
-  background: rgba(22, 22, 22, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .main-workspace {
@@ -31,7 +109,7 @@
   flex-direction: column;
   gap: 1rem;
   height: 100%;
-  min-width: 0; /* 防止内容撑开 */
+  min-width: 0;
 }
 
 .preview-container {
@@ -44,69 +122,17 @@
   overflow: hidden;
 }
 
-/* ... (保留之前的样式) */
-.sidebar {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.tab-header {
-  display: flex;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 10px;
-  padding: 4px;
-  gap: 4px;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 0.5rem;
-  border: none;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.8rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.tab-btn.active {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
 .preview-content {
   width: 100%;
-  max-width: 900px;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
   padding: 1rem;
+  box-sizing: border-box;
 }
 
 .timeline-container {
   height: 320px;
   display: flex;
   flex-direction: column;
-}
-
-.btn-ai {
-  background: linear-gradient(135deg, #f59e0b 0%, #d946ef 100%);
-  border: none;
-  color: #fff;
-  padding: 0.5rem 1.2rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.badge {
-  font-size: 0.65rem;
-  padding: 0.1rem 0.4rem;
-  background: rgba(56, 189, 248, 0.2);
-  border: 1px solid rgba(56, 189, 248, 0.5);
-  border-radius: 20px;
-  color: #38bdf8;
 }

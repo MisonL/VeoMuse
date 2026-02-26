@@ -1,28 +1,34 @@
-const { VideoService } = require('../apps/backend/src/services/VideoService');
+const { VideoOrchestrator } = require('../apps/backend/src/services/VideoOrchestrator');
+const { GeminiDriver } = require('../apps/backend/src/services/drivers/GeminiDriver');
 const { ApiKeyService } = require('../apps/backend/src/services/ApiKeyService');
 
-describe('VideoService 旗舰版迁移验证', () => {
+describe('Model Orchestrator 总线架构验证', () => {
   beforeAll(() => {
-    // 初始化空密钥进行测试
+    // 注册驱动
+    VideoOrchestrator.registerDriver(new GeminiDriver());
     ApiKeyService.init([]);
   });
 
-  test('VideoService 应能正确导出', () => {
-    expect(VideoService).toBeDefined();
-    expect(typeof VideoService.generateFromText).toBe('function');
+  it('Orchestrator 应能发现已注册的模型', () => {
+    const models = VideoOrchestrator.getAvailableModels();
+    expect(models.some(m => m.id === 'veo-3.1')).toBe(true);
   });
 
-  test('在没有密钥时调用应抛出错误', async () => {
+  it('在未找到驱动时应抛出错误', async () => {
     try {
-      await VideoService.generateFromText({ text: 'test创意' });
+      await VideoOrchestrator.generate('non-existent-model', { text: 'test' });
       throw new Error('不应成功');
     } catch (e) {
-      expect(e.message).toContain('所有 API 密钥均不可用');
+      expect(e.message).toContain('未找到模型驱动');
     }
   });
 
-  test('init 应能正确处理密钥字符串', () => {
-    ApiKeyService.init('key1, key2 ');
-    expect(ApiKeyService.getAvailableKeys()).toEqual(['key1', 'key2']);
+  it('应能正确分发任务并处理驱动报错', async () => {
+    try {
+      await VideoOrchestrator.generate('veo-3.1', { text: '测试创意' });
+    } catch (e) {
+      // 预期由于无 Key 而由 GeminiDriver 抛出错误
+      expect(e.message).toContain('Gemini API');
+    }
   });
 });

@@ -8,34 +8,31 @@ import { CompositionService } from './services/CompositionService'
 import { TtsService } from './services/TtsService'
 import { MusicAdviceService } from './services/MusicAdviceService'
 
+// 导入模型总线与驱动
+import { VideoOrchestrator } from './services/VideoOrchestrator'
+import { GeminiDriver } from './services/drivers/GeminiDriver'
+import { KlingDriver } from './services/drivers/KlingDriver'
+import { SoraDriver } from './services/drivers/SoraDriver'
+import { ModelRouter } from './services/ModelRouter'
+
 // 初始化 API 密钥
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
 
+// 注册所有模型驱动
+VideoOrchestrator.registerDriver(new GeminiDriver());
+VideoOrchestrator.registerDriver(new KlingDriver());
+VideoOrchestrator.registerDriver(new SoraDriver());
+
 const app = new Elysia()
   .use(cors())
-  .get('/', () => 'VeoMuse 旗舰版后端已就绪')
-  .get('/health', () => ({
-    status: 'ok',
-    timestamp: new Date().toISOString()
-  }))
+  .get('/', () => 'VeoMuse 旗舰版后端 (Global Bus Active)')
+  .get('/health', () => ({ status: 'ok', timestamp: new Date().toISOString() }))
   .group('/api', (app) => 
     app
-      .post('/video/generate', async ({ body }) => {
+      .get('/models', () => VideoOrchestrator.getAvailableModels())
+      .post('/models/recommend', async ({ body }) => {
         try {
-          return await VideoService.generateFromText(body);
-        } catch (e: any) {
-          return { success: false, error: e.message };
-        }
-      }, {
-        body: t.Object({
-          text: t.String(),
-          negativePrompt: t.Optional(t.String()),
-          model: t.Optional(t.String())
-        })
-      })
-      .post('/ai/enhance', async ({ body }) => {
-        try {
-          return await PromptEnhanceService.enhance(body.prompt);
+          return await ModelRouter.recommend(body.prompt);
         } catch (e: any) {
           return { success: false, error: e.message };
         }
@@ -44,64 +41,49 @@ const app = new Elysia()
           prompt: t.String()
         })
       })
+      .post('/video/generate', async ({ body }) => {
+        try {
+          // 通过总线进行分发，默认使用 veo-3.1
+          return await VideoOrchestrator.generate(body.modelId || 'veo-3.1', {
+            text: body.text,
+            negativePrompt: body.negativePrompt
+          });
+        } catch (e: any) {
+          return { success: false, error: e.message };
+        }
+      }, {
+        body: t.Object({
+          text: t.String(),
+          modelId: t.Optional(t.String()),
+          negativePrompt: t.Optional(t.String())
+        })
+      })
+      .post('/ai/enhance', async ({ body }) => {
+        try { return await PromptEnhanceService.enhance(body.prompt); } 
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ prompt: t.String() }) })
       .post('/ai/suggest-cuts', async ({ body }) => {
-        try {
-          return await AiClipService.suggestCuts(body.description, body.duration);
-        } catch (e: any) {
-          return { success: false, error: e.message };
-        }
-      }, {
-        body: t.Object({
-          description: t.String(),
-          duration: t.Number()
-        })
-      })
+        try { return await AiClipService.suggestCuts(body.description, body.duration); } 
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ description: t.String(), duration: t.Number() }) })
       .post('/ai/tts', async ({ body }) => {
-        try {
-          return await TtsService.synthesize(body.text);
-        } catch (e: any) {
-          return { success: false, error: e.message };
-        }
-      }, {
-        body: t.Object({
-          text: t.String()
-        })
-      })
+        try { return await TtsService.synthesize(body.text); } 
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ text: t.String() }) })
       .post('/ai/music-advice', async ({ body }) => {
-        try {
-          return await MusicAdviceService.getAdvice(body.description);
-        } catch (e: any) {
-          return { success: false, error: e.message };
-        }
-      }, {
-        body: t.Object({
-          description: t.String()
-        })
-      })
+        try { return await MusicAdviceService.getAdvice(body.description); } 
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ description: t.String() }) })
       .post('/video/compose', async ({ body }) => {
-        try {
-          return await CompositionService.compose(body.timelineData);
-        } catch (e: any) {
-          return { success: false, error: e.message };
-        }
-      }, {
-        body: t.Object({
-          timelineData: t.Any() 
-        })
-      })
+        try { return await CompositionService.compose(body.timelineData); } 
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ timelineData: t.Any() }) })
   )
-  // WebSocket 用于实时进度推送
   .ws('/ws/generation', {
-    open(ws) {
-      console.log('🔌 WebSocket 连接已开启');
-      ws.send({ message: '已连接到生成进度频道' });
-    },
-    message(ws, message) {
-      console.log('📩 收到消息:', message);
-    }
+    open(ws) { ws.send({ message: '已连接到全球模型总线进度频道' }); }
   })
   .listen(process.env.PORT || 3001)
 
-console.log(`🚀 VeoMuse 旗舰后端已在 ${app.server?.hostname}:${app.server?.port} 启动`)
+console.log(`🚀 VeoMuse 旗舰后端 (Orchestrator) 已启动: ${app.server?.port}`)
 
 export type App = typeof app

@@ -5,10 +5,13 @@ import VideoEditor from './components/Editor/VideoEditor'
 import MultiVideoPlayer from './components/Editor/MultiVideoPlayer'
 import AssetPanel from './components/Editor/AssetPanel'
 import PropertyInspector from './components/Editor/PropertyInspector'
+import ComparisonLab from './components/Editor/ComparisonLab'
 import './App.css'
 
 function App() {
   const [activeTab, setActiveTab] = useState<'generate' | 'assets'>('generate')
+  const [isCompareMode, setIsCompareMode] = useState(false)
+  const [selectedModel, setSelectedModel] = useState('veo-3.1')
   const [prompt, setPrompt] = useState('')
   const [isEnhancing, setIsEnhancing] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -20,32 +23,6 @@ function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isMusicAnalyzing, setIsMusicAnalyzing] = useState(false)
 
-  const handleAiMusic = async () => {
-    if (!prompt) return;
-    setIsMusicAnalyzing(true);
-    try {
-      const { data, error } = await api.api.ai['music-advice'].post({ description: prompt });
-      if (error) throw error;
-      if (data && 'mood' in data) {
-        // 模拟根据风格匹配音乐库资产
-        addClip('track-a1', {
-          id: `bgm-${Date.now()}`,
-          start: 0,
-          end: 30, // 假设背景音乐 30s
-          src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // 注入一个公开测试 BGM
-          name: `BGM: ${data.mood} - ${data.genre}`,
-          type: 'audio'
-        });
-        alert(`AI 已为您匹配：${data.description}`);
-      }
-    } catch (e: any) {
-      alert(`配乐建议失败: ${e.message}`);
-    } finally {
-      setIsMusicAnalyzing(false);
-    }
-  }
-
-  // 模拟一些初始资产
   useEffect(() => {
     if (assets.length === 0) {
       addAsset({
@@ -57,94 +34,51 @@ function App() {
     }
   }, [])
 
-  // 建立 WebSocket 监听进度
-  useEffect(() => {
-    let ws: WebSocket;
-    if (isGenerating) {
-      ws = new WebSocket('ws://localhost:3001/ws/generation')
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          if (data.message) setProgress(data.message)
-        } catch (e) {
-          console.log('WS 消息:', event.data)
-        }
-      }
-    }
-    return () => { if (ws) ws.close() }
-  }, [isGenerating])
-
   const handleEnhance = async () => {
-    if (!prompt) return
-    setIsEnhancing(true)
+    if (!prompt) return;
+    setIsEnhancing(true);
     try {
-      const { data, error } = await api.api.ai.enhance.post({ prompt })
-      if (error) throw error
-      if (data && 'enhanced' in data) setPrompt(data.enhanced)
-    } catch (e: any) {
-      alert(`AI 增强失败: ${e.message}`)
-    } finally { setIsEnhancing(false) }
+      const { data, error } = await api.api.ai.enhance.post({ prompt });
+      if (data && 'enhanced' in data) setPrompt(data.enhanced);
+    } catch (e: any) { alert(e.message); } finally { setIsEnhancing(false); }
   }
 
   const handleGenerate = async () => {
-    if (!prompt) return
-    setIsGenerating(true)
-    setResult(null)
+    if (!prompt) return;
+    setIsGenerating(true);
+    setResult(null);
     try {
-      const { data, error } = await api.api.video.generate.post({ text: prompt })
-      if (error) throw error
-      setResult(data)
-    } catch (e: any) {
-      alert(`生成失败: ${e.message}`)
-    } finally { setIsGenerating(false) }
+      const { data, error } = await api.api.video.generate.post({ 
+        text: prompt,
+        modelId: selectedModel 
+      });
+      setResult(data);
+    } catch (e: any) { alert(e.message); } finally { setIsGenerating(false); }
   }
 
-  const handleExport = async () => {
-    setIsExporting(true)
+  const handleAiMusic = async () => {
+    if (!prompt) return;
+    setIsMusicAnalyzing(true);
     try {
-      const { data, error } = await api.api.video.compose.post({
-        timelineData: { tracks }
-      })
-      if (error) throw error
-      if (data && data.success) {
-        alert(`视频已开始合成！输出路径: ${data.outputPath}`)
+      const { data } = await api.api.ai['music-advice'].post({ description: prompt });
+      if (data && 'mood' in data) {
+        addClip('track-a1', {
+          id: `bgm-${Date.now()}`, start: 0, end: 30,
+          src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+          name: `BGM: ${data.mood}`, type: 'audio'
+        });
       }
-    } catch (e: any) {
-      alert(`导出失败: ${e.message}`)
-    } finally { setIsExporting(false) }
-  }
-
-  const handleAiSuggest = async () => {
-    setIsAnalyzing(true)
-    try {
-      const { data, error } = await api.api.ai['suggest-cuts'].post({
-        description: prompt || '默认视频',
-        duration: 10
-      })
-      if (error) throw error
-      if (data && 'cutPoints' in data) {
-        const newMarkers = data.cutPoints.map((p: any, i: number) => ({
-          id: `ai-marker-${i}`,
-          time: p.time,
-          label: p.reason
-        }))
-        setMarkers(newMarkers)
-      }
-    } catch (e: any) {
-      alert(`AI 分析失败: ${e.message}`)
-    } finally { setIsAnalyzing(false) }
+    } finally { setIsMusicAnalyzing(false); }
   }
 
   return (
     <>
       <div className="liquid-bg" />
-      
       <div className="app-layout">
-        {/* 左侧：控制台 */}
         <aside className="glass-panel sidebar">
           <header className="console-header">
             <h1>VeoMuse <span className="badge">V3.1 Pro</span></h1>
-            <p className="subtitle">灵感工坊 · 旗舰版</p>
+            <p className="subtitle">全球模型总线 · 已就绪</p>
           </header>
 
           <div className="tab-header">
@@ -154,58 +88,54 @@ function App() {
 
           {activeTab === 'generate' ? (
             <div className="editor-section">
-              <textarea className="premium-input" placeholder="输入创意..." value={prompt} onChange={(e) => setPrompt(e.target.value)} disabled={isEnhancing || isGenerating} />
-              <div className="action-bar">
-                <button className={`btn-secondary ${isEnhancing ? 'loading' : ''}`} onClick={handleEnhance} disabled={isEnhancing || isGenerating || !prompt}>
-                  {isEnhancing ? '🧠 推理中' : '✨ 增强'}
-                </button>
-                                <button className={`btn-primary ${isGenerating ? 'generating' : ''}`} onClick={handleGenerate} disabled={isGenerating || isEnhancing || !prompt}>📹 生成</button>
-                              </div>
-                              
-                              <div className="action-bar" style={{ marginTop: '0.5rem' }}>
-                                <button 
-                                  className={`btn-music ${isMusicAnalyzing ? 'loading' : ''}`}
-                                  onClick={handleAiMusic}
-                                  disabled={isMusicAnalyzing || !prompt}
-                                  style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', width: '100%' }}
-                                >
-                                  {isMusicAnalyzing ? '🎵 音乐大师思考中...' : '🪄 AI 智能配乐'}
-                                </button>
-                              </div>
-                
-                              <div className="action-bar" style={{ marginTop: '0.5rem' }}>
-                <button className="btn-export" onClick={handleExport} disabled={isExporting} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', width: '100%' }}>
-                  {isExporting ? '⏳ 合成中...' : '🎬 导出'}
-                </button>
+              <div className="model-selector-mini">
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label>选择引擎</label>
+                  {recommendation && <span className="ai-rec-tag" title={recommendation.reason}>🤖 建议: {recommendation.id}</span>}
+                </div>
+                <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
+                  <option value="veo-3.1">Gemini Veo 3.1</option>
+                  <option value="kling-v1">快手可灵 Kling</option>
+                  <option value="sora-preview">OpenAI Sora</option>
+                </select>
               </div>
+              <textarea 
+                className="premium-input" 
+                placeholder="输入创意..." 
+                value={prompt} 
+                onChange={(e) => setPrompt(e.target.value)} 
+                onBlur={() => handleRecommend(prompt)}
+                disabled={isEnhancing || isGenerating} 
+              />
+              <div className="action-bar">
+                <button className="btn-secondary" onClick={handleEnhance} disabled={isEnhancing}>✨ 增强</button>
+                <button className="btn-primary" onClick={handleGenerate} disabled={isGenerating}>📹 生成</button>
+              </div>
+              <button className="btn-music" onClick={handleAiMusic} disabled={isMusicAnalyzing} style={{ marginTop: '0.5rem', width: '100%', background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', border: 'none', padding: '0.6rem', borderRadius: '8px' }}>
+                🪄 AI 智能配乐
+              </button>
             </div>
           ) : <AssetPanel />}
         </aside>
 
-        {/* 中间：工作区 */}
         <main className="main-workspace">
           <div className="preview-container">
             <div className="preview-content">
-              <MultiVideoPlayer />
-              <div className="player-controls">
-                <button className={`btn-ai ${isAnalyzing ? 'pulsing' : ''}`} onClick={handleAiSuggest} disabled={isAnalyzing}>
-                  {isAnalyzing ? '🤖 思考中...' : '🪄 AI 建议剪辑'}
-                </button>
+              <div className="lab-controls">
+                <label className="pro-toggle">
+                  <input type="checkbox" checked={isCompareMode} onChange={(e) => setIsCompareMode(e.target.checked)} />
+                  <span className="toggle-slider"></span>
+                  🔬 实验室对比模式
+                </label>
               </div>
+              {isCompareMode ? <ComparisonLab modelA={selectedModel} modelB="kling-v1" /> : <MultiVideoPlayer />}
             </div>
           </div>
-          
           <div className="timeline-container">
-            {markers.length > 0 && (
-              <div className="ai-markers-bar">
-                {markers.map(m => <div key={m.id} className="ai-marker-tag" style={{ left: `${(m.time / 60) * 100}%` }}><span>📍</span><span className="marker-reason">{m.label}</span></div>)}
-              </div>
-            )}
             <VideoEditor />
           </div>
         </main>
 
-        {/* 右侧：检查器 */}
         <aside className="inspector-sidebar">
           <PropertyInspector />
         </aside>
