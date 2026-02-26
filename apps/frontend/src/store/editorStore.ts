@@ -7,7 +7,7 @@ export interface Clip {
   end: number;
   src: string;
   name: string;
-  type: 'video' | 'audio' | 'text' | 'mask'; // 加入蒙版类型
+  type: 'video' | 'audio' | 'text' | 'mask';
   data?: any;
 }
 
@@ -28,13 +28,14 @@ export interface Asset {
 export interface Track {
   id: string;
   name: string;
-  type: 'video' | 'audio' | 'text' | 'mask'; // 加入蒙版类型
+  type: 'video' | 'audio' | 'text' | 'mask';
   clips: Clip[];
 }
 
 interface EditorState {
   tracks: Track[];
   markers: Marker[];
+  beatPoints: number[]; // 节奏点 (s)
   assets: Asset[];
   currentTime: number;
   duration: number;
@@ -45,6 +46,7 @@ interface EditorState {
   // Actions
   setTracks: (tracks: Track[]) => void;
   setMarkers: (markers: Marker[]) => void;
+  setBeatPoints: (points: number[]) => void;
   setCurrentTime: (time: number) => void;
   togglePlay: () => void;
   setSelectedClipId: (id: string | null) => void;
@@ -59,12 +61,13 @@ interface EditorState {
 export const useEditorStore = create<EditorState>()(
   temporal((set) => ({
     tracks: [
-      { id: 'track-mask1', name: '智能蒙版', type: 'mask', clips: [] }, // 蒙版层最高优先级
+      { id: 'track-mask1', name: '智能蒙版', type: 'mask', clips: [] },
       { id: 'track-v1', name: '主视频轨道', type: 'video', clips: [] },
       { id: 'track-a1', name: '背景音乐', type: 'audio', clips: [] },
       { id: 'track-t1', name: '文字层', type: 'text', clips: [] }
     ],
     markers: [],
+    beatPoints: [],
     assets: [
       { id: 'asset-1', name: '大雄兔 (示例)', src: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'video' }
     ],
@@ -76,6 +79,7 @@ export const useEditorStore = create<EditorState>()(
 
     setTracks: (tracks) => set({ tracks }),
     setMarkers: (markers) => set({ markers }),
+    setBeatPoints: (beatPoints) => set({ beatPoints }),
     setCurrentTime: (time) => set({ currentTime: time }),
     togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
     setSelectedClipId: (id) => set({ selectedClipId: id }),

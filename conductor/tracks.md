@@ -36,3 +36,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: AI 创意巅峰：‘一键导演’自动化剪辑、语义级画面蒙版与智能叙事修复**
   *Link: [./tracks/ai_director_peak_20260225/](./tracks/ai_director_peak_20260225/)*
+
+- [x] **Track: AI 维度突破：3D 空间感知预览、AI 变声克隆与智能节奏对齐引擎**
+  *Link: [./tracks/ai_dimension_breakthrough_20260225/](./tracks/ai_dimension_breakthrough_20260225/)*

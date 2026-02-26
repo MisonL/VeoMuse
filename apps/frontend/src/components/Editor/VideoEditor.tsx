@@ -12,14 +12,14 @@ const VideoEditor: React.FC = () => {
   const { 
     tracks, currentTime, setCurrentTime, duration, isPlaying, 
     togglePlay, updateClip, selectedClipId, setSelectedClipId,
-    removeClip, splitClip, zoomLevel, setZoomLevel 
+    removeClip, splitClip, zoomLevel, setZoomLevel, beatPoints 
   } = useEditorStore();
   
   // @ts-ignore
   const { undo, redo } = useEditorStore.temporal.getState();
   const [containerRef, { width, height }] = useMeasure<HTMLDivElement>();
   const [isReady, setIsReady] = useState(false);
-  const [snapLine, setSnapLine] = useState<{ visible: boolean; time: number }>({ visible: false, time: 0 });
+  const [snapLine, setSnapLine] = useState<{ visible: boolean; time: number; type: string }>({ visible: false, time: 0, type: 'clip' });
   const [menuPos, setMenuPos] = useState<{ x: number, y: number, clipId: string, trackId: string } | null>(null);
   
   const rafRef = useRef<number | null>(null);
@@ -29,7 +29,7 @@ const VideoEditor: React.FC = () => {
     if (width > 0) setIsReady(true);
   }, [width]);
 
-  // 快捷键监听
+  // 快捷键
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
@@ -45,7 +45,7 @@ const VideoEditor: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo, selectedClipId, tracks, removeClip]);
 
-  // RAF 播放循环
+  // RAF
   useEffect(() => {
     if (isPlaying) {
       lastTimeRef.current = performance.now();
@@ -81,16 +81,20 @@ const VideoEditor: React.FC = () => {
         <div className="playback-group">
           <button className="play-btn" onClick={togglePlay}>{isPlaying ? '⏸ 暂停' : '▶️ 播放'}</button>
           <div className="divider-v"></div>
-          <button className="history-btn" onClick={() => undo()} title="撤销">↩️</button>
-          <button className="history-btn" onClick={() => redo()} title="重做">🔄</button>
+          <button className="history-btn" onClick={() => undo()}>↩️</button>
+          <button className="history-btn" onClick={() => redo()}>🔄</button>
         </div>
         <div className="zoom-control"><span>🔍</span><input type="range" min="1" max="50" value={zoomLevel} onChange={(e) => setZoomLevel(parseInt(e.target.value))} /></div>
         <div className="time-display"><span className="current-t">{currentTime.toFixed(2)}s</span><span className="duration-label"> / {duration}s</span></div>
       </motion.div>
       
       <div className="timeline-wrapper" ref={containerRef} onClick={() => { setSelectedClipId(null); setMenuPos(null); }}>
+        <div className="beats-overlay">
+          {beatPoints.map((bp, i) => <div key={i} className="beat-tick" style={{ left: `${(bp / duration) * 100}%` }} />)}
+        </div>
+
         <AnimatePresence>
-          {snapLine.visible && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="snap-guide-line" style={{ left: `${(snapLine.time / duration) * 100}%` }} />}
+          {snapLine.visible && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`snap-guide-line ${snapLine.type}`} style={{ left: `${(snapLine.time / duration) * 100}%` }} />}
         </AnimatePresence>
 
         {isReady && (
@@ -99,14 +103,14 @@ const VideoEditor: React.FC = () => {
               let snapDetected = false;
               data.forEach(track => {
                 track.actions.forEach(action => {
-                  const snapStart = calculateSnap(action.start, action.id);
-                  const finalStart = snapStart.snapped ? snapStart.time : action.start;
+                  const snap = calculateSnap(action.start, action.id);
+                  const finalStart = snap.snapped ? snap.time : action.start;
                   const finalEnd = finalStart + (action.end - action.start);
-                  if (snapStart.snapped) { snapDetected = true; setSnapLine({ visible: true, time: snapStart.time }); }
+                  if (snap.snapped) { snapDetected = true; setSnapLine({ visible: true, time: snap.time, type: snap.type || 'clip' }); }
                   updateClip(track.id, action.id, { start: finalStart, end: finalEnd });
                 });
               });
-              if (!snapDetected) setSnapLine({ visible: false, time: 0 });
+              if (!snapDetected) setSnapLine({ visible: false, time: 0, type: 'clip' });
             }}
             onActionClick={(action) => setSelectedClipId(action.id)}
             onActionContextMenu={(action, e) => {
@@ -114,7 +118,7 @@ const VideoEditor: React.FC = () => {
               setMenuPos({ x: e.clientX, y: e.clientY, clipId: action.id, trackId: action.data.trackId });
             }}
             editorData={timelineData}
-            effects={{ video: { id: 'video', name: '视频片段' } }}
+            effects={{ video: { id: 'video', name: '片段' } }}
             onTimeChange={(time) => setCurrentTime(time)}
             autoScroll={true}
             scale={zoomLevel}
@@ -124,13 +128,10 @@ const VideoEditor: React.FC = () => {
         )}
 
         {menuPos && (
-          <ContextMenu 
-            x={menuPos.x} 
-            y={menuPos.y} 
-            onClose={() => setMenuPos(null)}
+          <ContextMenu x={menuPos.x} y={menuPos.y} onClose={() => setMenuPos(null)}
             options={[
-              { label: '在指针处分割', onClick: () => splitClip(menuPos.trackId, menuPos.clipId, currentTime), shortcut: 'S' },
-              { label: '复制片段', onClick: () => { /* 实现逻辑 */ }, shortcut: 'D' },
+              { label: '在此分割', onClick: () => splitClip(menuPos.trackId, menuPos.clipId, currentTime), shortcut: 'S' },
+              { label: '复制', onClick: () => {}, shortcut: 'D' },
               { label: '删除', onClick: () => removeClip(menuPos.trackId, menuPos.clipId), shortcut: 'Del', type: 'danger' }
             ]}
           />

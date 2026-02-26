@@ -14,6 +14,8 @@ import { SoraDriver } from './services/drivers/SoraDriver'
 import { ModelRouter } from './services/ModelRouter'
 import { AiDirectorService } from './services/AiDirectorService'
 import { InpaintService } from './services/InpaintService'
+import { AudioAnalysisService } from './services/AudioAnalysisService'
+import { VoiceMorphService } from './services/VoiceMorphService'
 
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
 VideoOrchestrator.registerDriver(new GeminiDriver());
@@ -22,7 +24,7 @@ VideoOrchestrator.registerDriver(new SoraDriver());
 
 const app = new Elysia()
   .use(cors())
-  .get('/', () => 'VeoMuse 旗舰版后端 (Peak AI Active)')
+  .get('/', () => 'VeoMuse 旗舰版后端 (Dimension X Active)')
   .get('/health', () => ({ status: 'ok', timestamp: new Date().toISOString() }))
   .group('/api', (app) => 
     app
@@ -62,16 +64,24 @@ const app = new Elysia()
         try { return await InpaintService.getRepairAdvice(body.description); }
         catch (e: any) { return { success: false, error: e.message }; }
       }, { body: t.Object({ description: t.String() }) })
+      .post('/ai/analyze-audio', async ({ body }) => {
+        try { return await AudioAnalysisService.analyze(body.audioUrl); }
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ audioUrl: t.String() }) })
+      .post('/ai/voice-morph', async ({ body }) => {
+        try { return await VoiceMorphService.morph(body.audioUrl, body.targetVoiceId); }
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ audioUrl: t.String(), targetVoiceId: t.String() }) })
       .post('/video/compose', async ({ body }) => {
         try { return await CompositionService.compose(body.timelineData); } 
-        catch (exports: any) { return { success: false, error: exports.message }; }
+        catch (e: any) { return { success: false, error: e.message }; }
       }, { body: t.Object({ timelineData: t.Any() }) })
   )
   .ws('/ws/generation', {
-    open(ws) { ws.send({ message: '已连接到 AI 创意巅峰进度频道' }); }
+    open(ws) { ws.send({ message: '已连接到 AI 维度突破进度频道' }); }
   })
   .listen(process.env.PORT || 3001)
 
-console.log(`🚀 VeoMuse 旗舰后端 (Peak AI) 已启动: ${app.server?.port}`)
+console.log(`🚀 VeoMuse 旗舰后端 (Dimension X) 已启动: ${app.server?.port}`)
 
 export type App = typeof app

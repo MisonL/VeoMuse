@@ -47,4 +47,15 @@ describe('AI API 全功能集群验证', () => {
     const data = await response.json() as any;
     expect(data.success).toBe(true);
   });
+
+  it('音频节奏分析接口连通性', async () => {
+    const response = await app.handle(
+      new Request('http://localhost/api/ai/analyze-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audioUrl: 'test.mp3' })
+      })
+    );
+    expect(response.status).toBe(200);
+  });
 });
