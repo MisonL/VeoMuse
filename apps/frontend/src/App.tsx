@@ -3,16 +3,31 @@ import { api } from './utils/eden'
 import { useEditorStore } from './store/editorStore'
 import VideoEditor from './components/Editor/VideoEditor'
 import MultiVideoPlayer from './components/Editor/MultiVideoPlayer'
+import AssetPanel from './components/Editor/AssetPanel'
 import './App.css'
 
 function App() {
+  const [activeTab, setActiveTab] = useState<'generate' | 'assets'>('generate')
   const [prompt, setPrompt] = useState('')
   const [isEnhancing, setIsEnhancing] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [result, setResult] = useState<any>(null)
   const [progress, setProgress] = useState('等待开始...')
   
-  // 建立 WebSocket 监听进度
+  const { addAsset, assets } = useEditorStore()
+
+  // 模拟一些初始资产
+  useEffect(() => {
+    if (assets.length === 0) {
+      addAsset({
+        id: 'asset-1',
+        name: '大雄兔 (示例)',
+        src: 'https://www.w3schools.com/html/mov_bbb.mp4',
+        type: 'video'
+      });
+    }
+  }, [])
+
   useEffect(() => {
     let ws: WebSocket;
     if (isGenerating) {
@@ -111,46 +126,65 @@ function App() {
             <p className="subtitle">灵感工坊 · 旗舰版</p>
           </header>
 
-          <div className="editor-section">
-            <textarea 
-              className="premium-input"
-              placeholder="输入您的创意..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              disabled={isEnhancing || isGenerating}
-            />
-            
-            <div className="action-bar">
-              <button 
-                className={`btn-secondary ${isEnhancing ? 'loading' : ''}`}
-                onClick={handleEnhance}
-                disabled={isEnhancing || isGenerating || !prompt}
-              >
-                {isEnhancing ? '🧠 推理中' : '✨ AI 增强'}
-              </button>
-              
-              <button 
-                className={`btn-primary ${isGenerating ? 'generating' : ''}`}
-                onClick={handleGenerate}
-                disabled={isGenerating || isEnhancing || !prompt}
-              >
-                📹 生成
-              </button>
-            </div>
-            
-            <div className="action-bar" style={{ marginTop: '1rem' }}>
-              <button 
-                className={`btn-export ${isExporting ? 'generating' : ''}`}
-                onClick={handleExport}
-                disabled={isExporting}
-                style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', width: '100%' }}
-              >
-                {isExporting ? '⏳ 正在合成视频...' : '🎬 导出成片'}
-              </button>
-            </div>
+          <div className="tab-header">
+            <button 
+              className={`tab-btn ${activeTab === 'generate' ? 'active' : ''}`}
+              onClick={() => setActiveTab('generate')}
+            >
+              ✨ 灵感生成
+            </button>
+            <button 
+              className={`tab-btn ${activeTab === 'assets' ? 'active' : ''}`}
+              onClick={() => setActiveTab('assets')}
+            >
+              📚 素材库
+            </button>
           </div>
 
-          {isGenerating && (
+          {activeTab === 'generate' ? (
+            <div className="editor-section">
+              <textarea 
+                className="premium-input"
+                placeholder="输入您的创意..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                disabled={isEnhancing || isGenerating}
+              />
+              
+              <div className="action-bar">
+                <button 
+                  className={`btn-secondary ${isEnhancing ? 'loading' : ''}`}
+                  onClick={handleEnhance}
+                  disabled={isEnhancing || isGenerating || !prompt}
+                >
+                  {isEnhancing ? '🧠 推理中' : '✨ AI 增强'}
+                </button>
+                
+                <button 
+                  className={`btn-primary ${isGenerating ? 'generating' : ''}`}
+                  onClick={handleGenerate}
+                  disabled={isGenerating || isEnhancing || !prompt}
+                >
+                  📹 生成
+                </button>
+              </div>
+              
+              <div className="action-bar" style={{ marginTop: '1rem' }}>
+                <button 
+                  className={`btn-export ${isExporting ? 'generating' : ''}`}
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', width: '100%' }}
+                >
+                  {isExporting ? '⏳ 正在合成视频...' : '🎬 导出成片'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <AssetPanel />
+          )}
+
+          {activeTab === 'generate' && isGenerating && (
             <div className="progress-section glass-panel-inner">
               <div className="spinner"></div>
               <p>{progress}</p>
