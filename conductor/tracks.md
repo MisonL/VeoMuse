@@ -54,3 +54,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: 全部处理好！全方位性能量化、代码复用提升与 UX 深度打磨**
   *Link: [./tracks/ultimate_polish_20260226/](./tracks/ultimate_polish_20260226/)*
+
+---
+
+- [ ] **Track: 专业级增强：全局快捷键、智能预加载与全链路遥测看板**
+  *Link: [./tracks/pro_mastery_boost_20260226/](./tracks/pro_mastery_boost_20260226/)*
