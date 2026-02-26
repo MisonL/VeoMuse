@@ -1,14 +1,14 @@
 # Implementation Plan: 旗舰版终极打磨
 
-## Phase 1: 后端全量架构对齐
-- [~] **Task: AI 服务全量重构**
-    - [ ] 将 AiDirectorService, AiClipService 等全部重构为 BaseAiService 的子类。
-    - [ ] 验证全站 AI 调用耗时是否均能被监控系统捕捉。
-- [ ] **Task: 路由层去臃肿化**
-    - [ ] 移除 index.ts 中的冗余异常处理，同步升级全局错误拦截。
+## Phase 1: 后端全量架构对齐 [checkpoint: 6e242cc]
+- [x] **Task: AI 服务全量重构** (6e242cc)
+    - [x] 将 AiDirectorService, AiClipService 等全部重构为 BaseAiService 的子类。
+    - [x] 验证全站 AI 调用耗时是否均能被监控系统捕捉。
+- [x] **Task: 路由层去臃肿化** (6e242cc)
+    - [x] 移除 index.ts 中的冗余异常处理，同步升级全局错误拦截。
 
 ## Phase 2: 前端性能飞跃与美学抛光
-- [ ] **Task: 实现 SyncController (Native 预览)**
+- [~] **Task: 实现 SyncController (Native 预览)**
     - [ ] 剥离 MultiVideoPlayer 的 React Effect 逻辑。
     - [ ] 测试多轨道并发播放下的 CPU 负载变化。
 - [ ] **Task: 美学细节抛光**

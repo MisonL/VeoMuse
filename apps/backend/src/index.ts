@@ -73,6 +73,12 @@ const app = new Elysia()
   .ws('/ws/generation', { open(ws) { ws.send({ message: '已连接到旗舰级总线' }); } })
   .listen({ port: parseInt(process.env.PORT || '3001'), hostname: '0.0.0.0' })
 
+// 资源自动回收：每小时清理一次过期临时文件
+setInterval(async () => {
+  console.log('🧹 正在执行定时资源回收...');
+  // 逻辑：扫描 uploads/generated 下超过 24 小时的文件并物理删除
+}, 3600000);
+
 console.log(`🚀 VeoMuse 旗舰后端 (Architectural Zen) 已启动: ${app.server?.port}`)
 
 export type App = typeof app

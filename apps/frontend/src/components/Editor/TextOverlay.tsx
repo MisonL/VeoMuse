@@ -23,12 +23,12 @@ const TextOverlay: React.FC = () => {
     <div className="text-overlay-container" style={{
       position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
       pointerEvents: 'none', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', zIndex: 10
+      alignItems: 'center', justifyContent: 'center', zIndex: 10,
+      contain: 'strict' // 性能优化：限制重绘范围
     }}>
       <AnimatePresence>
         {activeTextClips.map(clip => {
           const anim = getAnimation(clip.data?.animation || 'fade');
-          // 3D 空间感知的核心：如果开启了 3D 模式，应用混合模式
           const is3D = clip.data?.use3D || false;
           
           return (
@@ -37,16 +37,16 @@ const TextOverlay: React.FC = () => {
               initial={anim.initial}
               animate={anim.animate}
               exit={anim.exit}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.4, type: 'spring', damping: 20 }}
               style={{
                 color: clip.data?.color || '#fff',
                 fontSize: `${clip.data?.fontSize || 32}px`,
                 fontWeight: 'bold',
-                textShadow: '0 2px 10px rgba(0,0,0,0.8)',
+                textShadow: '0 2px 15px rgba(0,0,0,0.8)',
                 textAlign: 'center',
-                // 空间感知混合模式
                 mixBlendMode: is3D ? 'screen' : 'normal',
-                transform: is3D ? 'perspective(500px) rotateX(10deg)' : 'none'
+                transform: is3D ? 'perspective(800px) rotateX(10deg) translate3d(0,0,0)' : 'translate3d(0,0,0)',
+                willChange: 'transform, opacity' // 强制 GPU 加速
               }}
             >
               {clip.data?.content || ''}

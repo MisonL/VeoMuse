@@ -5,6 +5,7 @@ import { useMeasure } from 'react-use';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEditorStore } from '../../store/editorStore';
 import { calculateSnap } from '../../utils/snapService';
+import { syncController } from '../../utils/SyncController'; // 引入控制器
 import ContextMenu from './ContextMenu';
 import './VideoEditor.css';
 
@@ -29,24 +30,7 @@ const VideoEditor: React.FC = () => {
     if (width > 0) setIsReady(true);
   }, [width]);
 
-  // 快捷键
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
-        setSnapLine({ visible: false, time: 0, type: 'clip' }); // 强制清理引导线
-        if (e.shiftKey) redo(); else undo();
-      }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedClipId) {
-        tracks.forEach(t => {
-          if (t.clips.some(c => c.id === selectedClipId)) removeClip(t.id, selectedClipId);
-        });
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [undo, redo, selectedClipId, tracks, removeClip]);
-
-  // RAF
+  // 高性能 Native 同步引擎
   useEffect(() => {
     if (isPlaying) {
       lastTimeRef.current = performance.now();
@@ -54,16 +38,22 @@ const VideoEditor: React.FC = () => {
         const delta = (time - lastTimeRef.current) / 1000;
         lastTimeRef.current = time;
         const nextTime = useEditorStore.getState().currentTime + delta;
+        
         setCurrentTime(nextTime);
+        // 关键：穿透 React 渲染，直接同步媒体
+        syncController.sync(nextTime, true, tracks);
+
         if (nextTime >= duration) { togglePlay(); setCurrentTime(0); }
         else { rafRef.current = requestAnimationFrame(loop); }
       };
       rafRef.current = requestAnimationFrame(loop);
     } else {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      // 停止播放时也要同步一次位置
+      syncController.sync(useEditorStore.getState().currentTime, false, tracks);
     }
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [isPlaying, duration, setCurrentTime, togglePlay]);
+  }, [isPlaying, duration, tracks]);
 
   const timelineData = tracks.map(track => ({
     id: track.id,
@@ -112,6 +102,12 @@ const VideoEditor: React.FC = () => {
                 });
               });
               if (!snapDetected) setSnapLine({ visible: false, time: 0, type: 'clip' });
+              // 交互时也同步预览
+              syncController.sync(useEditorStore.getState().currentTime, false, tracks);
+            }}
+            onTimeChange={(time) => {
+              setCurrentTime(time);
+              syncController.sync(time, false, tracks);
             }}
             onActionClick={(action) => setSelectedClipId(action.id)}
             onActionContextMenu={(action, e) => {
@@ -120,7 +116,6 @@ const VideoEditor: React.FC = () => {
             }}
             editorData={timelineData}
             effects={{ video: { id: 'video', name: '片段' } }}
-            onTimeChange={(time) => setCurrentTime(time)}
             autoScroll={true}
             scale={zoomLevel}
             width={width}
