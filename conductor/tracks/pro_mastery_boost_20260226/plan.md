@@ -5,8 +5,8 @@
 - [x] **Task: 联动 Editor Store**
 
 ## Phase 2: 预测性预加载引擎 (SyncController 升级)
-- [ ] **Task: 实现 5s 预测算法**
-- [ ] **Task: 零闪烁切换测试**
+- [x] **Task: 实现 5s 预测算法**
+- [x] **Task: 零闪烁切换测试**
 
 ## Phase 3: 后端结构化遥测系统
 - [ ] **Task: 建立 TelemetryService**
