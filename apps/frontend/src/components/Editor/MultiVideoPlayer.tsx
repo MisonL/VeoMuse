@@ -78,7 +78,10 @@ const MultiVideoPlayer: React.FC = () => {
                 src={clip.src}
                 className="player-video-instance"
                 muted={false}
-                style={{ transition: 'opacity 0.1s linear' }}
+                style={{ 
+                  transition: 'opacity 0.1s linear',
+                  filter: clip.data?.filter || 'none'
+                }}
                 playsInline
               />
             ) : track.type === 'audio' ? (

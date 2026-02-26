@@ -79,6 +79,23 @@ const PropertyInspector: React.FC = () => {
           </div>
         </section>
 
+        {(selectedClip.type === 'video' || selectedClip.type === 'image') && (
+          <section className="inspector-section">
+            <label>色彩滤镜</label>
+            <select 
+              value={selectedClip.data?.filter || 'none'}
+              onChange={(e) => handleDataUpdate({ filter: e.target.value })}
+              style={{ background: '#000', color: '#ccc', border: '1px solid #2a2a2a', borderRadius: '4px', padding: '4px' }}
+            >
+              <option value="none">无</option>
+              <option value="grayscale(100%)">黑白 (Classic)</option>
+              <option value="sepia(50%)">复古 (Retro)</option>
+              <option value="saturate(200%)">鲜艳 (Vivid)</option>
+              <option value="hue-rotate(90deg)">迷幻 (Trippy)</option>
+            </select>
+          </section>
+        )}
+
         {selectedClip.type === 'text' && (
           <section className="inspector-section special">
             <label>文字内容</label>
@@ -93,6 +110,18 @@ const PropertyInspector: React.FC = () => {
               value={selectedClip.data?.color || '#ffffff'} 
               onChange={(e) => handleDataUpdate({ color: e.target.value })}
             />
+
+            <label>动画效果</label>
+            <select 
+              value={selectedClip.data?.animation || 'none'}
+              onChange={(e) => handleDataUpdate({ animation: e.target.value })}
+              style={{ background: '#000', color: '#ccc', border: '1px solid #2a2a2a', borderRadius: '4px', padding: '4px' }}
+            >
+              <option value="none">无</option>
+              <option value="fade">渐显</option>
+              <option value="slideUp">滑入</option>
+              <option value="zoom">缩放</option>
+            </select>
           </section>
         )}
       </div>

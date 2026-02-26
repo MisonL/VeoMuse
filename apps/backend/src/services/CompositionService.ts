@@ -32,19 +32,27 @@ export class CompositionService {
     return new Promise((resolve, reject) => {
       try {
         const command = ffmpeg();
-        const complexFilters: string[] = [];
+        const videoFilters: string[] = [];
         
         // 1. 处理视频与音频输入
         timelineData.tracks.forEach(track => {
           if (track.type !== 'text') {
             track.clips.forEach(clip => {
-              if (clip.src) command.input(clip.src);
+              if (clip.src) {
+                command.input(clip.src);
+                
+                // 色彩滤镜映射逻辑
+                if (clip.data?.filter) {
+                  if (clip.data.filter.includes('grayscale')) videoFilters.push('hue=s=0');
+                  if (clip.data.filter.includes('sepia')) videoFilters.push('colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131');
+                  if (clip.data.filter.includes('saturate')) videoFilters.push('eq=saturation=2');
+                }
+              }
             });
           }
         });
 
-        // 2. 构造文字滤镜 (drawtext)
-        // 这里的逻辑比较复杂，需要计算 time Range
+        // 2. 处理文字
         const textClips = timelineData.tracks
           .filter(t => t.type === 'text')
           .flatMap(t => t.clips);
@@ -53,19 +61,15 @@ export class CompositionService {
           const text = clip.data?.content || '';
           const color = (clip.data?.color || '#ffffff').replace('#', '0x');
           const size = clip.data?.fontSize || 32;
-          
-          complexFilters.push(
-            `drawtext=text='${text}':fontcolor=${color}:fontsize=${size}:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${clip.start},${clip.end})'`
-          );
+          videoFilters.push(`drawtext=text='${text}':fontcolor=${color}:fontsize=${size}:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${clip.start},${clip.end})'`);
         });
 
-        // 应用滤镜链
-        if (complexFilters.length > 0) {
-          command.videoFilters(complexFilters);
+        if (videoFilters.length > 0) {
+          command.videoFilters(videoFilters);
         }
 
         command
-          .on('start', (cmd) => console.log('📽️ FFmpeg 开始渲染:', cmd))
+          .on('start', (cmd) => console.log('📽️ FFmpeg 开始全效渲染:', cmd))
           .on('end', () => resolve({ success: true, outputPath }))
           .on('error', (err) => reject(err))
           .save(outputPath);

@@ -24,3 +24,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: 工匠之手：属性面板、精细化时间轴控制与专业右键菜单**
   *Link: [./tracks/editor_precision_20260225/](./tracks/editor_precision_20260225/)*
+
+- [ ] **Track: 视觉艺术进阶：片段转场特效、文字动态预设与全局滤镜引擎**
+  *Link: [./tracks/editor_visual_fx_20260225/](./tracks/editor_visual_fx_20260225/)*
