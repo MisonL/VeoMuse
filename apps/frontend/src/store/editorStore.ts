@@ -88,7 +88,8 @@ export const useEditorStore = create<EditorState>()(
         const clip = t.clips.find(c => c.id === clipId);
         if (!clip || at <= clip.start || at >= clip.end) return t;
         const c1 = { ...clip, end: at };
-        const c2 = { ...clip, id: `${clip.id}-split-${Date.now()}`, start: at };
+        // 使用物理唯一 ID 避免 Key 冲突
+        const c2 = { ...clip, id: `${clip.id}-cut-${Math.random().toString(36).substring(7)}`, start: at };
         return { ...t, clips: [...t.clips.filter(c => c.id !== clipId), c1, c2] };
       })
     }))

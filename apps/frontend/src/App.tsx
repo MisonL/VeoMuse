@@ -26,7 +26,7 @@ function App() {
   }, [tracks, showToast]);
 
   return (
-    <div className="pro-workspace">
+    <div className="pro-workspace" onContextMenu={(e) => e.preventDefault()}>
       <ToastContainer />
       
       <header className="pro-header">
