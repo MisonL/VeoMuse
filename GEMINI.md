@@ -1,72 +1,52 @@
-# VeoMuse V3.1 Pro 指导手册 (Instructional Context)
+# VeoMuse V3.1 Pro 核心工程规范 (Instructional Context)
 
-欢迎来到 **VeoMuse 旗舰版** 工程宇宙。本项目是 2026 年 AI 视频创作领域的工业级标准实现，采用极致的性能模型与前卫的架构设计。
-
----
-
-## 🏗️ 架构总览 (Project Overview)
-
-本项目采用 **Bun Workspaces (Monorepo)** 结构，实现全栈 100% 强类型自动同步。
-
-- **`apps/backend` (ElysiaJS)**: 极速后端内核。
-  - **核心模式**: 所有 AI 相关 Service **必须继承 `BaseAiService`**，以获得统一的重试（Exponential Backoff）、性能量化监控。
-- **`apps/frontend` (React 19)**: 旗舰级编辑器。
-  - **核心模式**: 全量应用 **React 19 Actions** (`useActionState`) 处理交互；使用 **Native SyncController** (Vanilla JS) 直接驱动多轨道音视频同步，绕过 React Diff 以获得 60fps 体验。
-- **`packages/shared`**: 类型桥接层。
-  - **作用**: 定义 E2E 通讯的所有共享接口（Clip, Track, Scene 等），解决循环依赖。
+> [!IMPORTANT]
+> **环境标注说明**：
+> 所有的 `/conductor` 及其子命令（如 `:setup`, `:implement`, `:review` 等）以及 `/init` 指令，均为 **Gemini CLI** 环境专供的增强型指令。在标准 Shell 环境下，这些指令是不可用的。请始终在 Gemini 终端交互界面中使用它们以获取完整的规格驱动开发（Spec-Driven Development）体验。
 
 ---
 
-## 🛠️ 构建与运行 (Building and Running)
+## 🏗️ 架构总览 (Project Architecture)
 
-项目全量运行在 **Bun** 环境下。
+本项目采用 **Bun Workspaces (Monorepo)** 结构，旨在实现全栈 100% 的强类型同步。
 
-### 开发环境 (Local Dev)
+- **`apps/backend` (ElysiaJS)**: 工业级后端内核。
+  - **核心准则**: 任何 AI 业务 Service 必须继承 `BaseAiService`，以自动获得指数退避重试与耗时量化能力。
+- **`apps/frontend` (React 19)**: 旗舰级多轨道编辑器。
+  - **核心准则**: 交互逻辑优先采用 **React 19 Actions** (`useActionState`)；播放同步强制通过 **Native SyncController** 直接驱动，严禁通过 React State 驱动高频播放更新。
+- **`packages/shared`**: 逻辑桥接层。
+  - **核心准则**: 所有 E2E 通讯接口（Clip, Track, Scene）均在此统一定义，严禁前后端代码直接跨应用引用。
+
+---
+
+## 🛠️ 构建与运维 (Commands)
+
+### 1. 本地开发 (Local Development)
 ```bash
-# 安装所有依赖 (根目录)
-bun install
-
-# 启动全栈开发模式
-# 后端: http://localhost:3001
-# 前端: http://localhost:5173
+# 自动启动后端(3001)与前端(5173)
 bun run dev
 ```
 
-### 生产环境构建 (Build & Deploy)
+### 2. 生产构建 (Production Build)
 ```bash
-# 前端构建 (Vite 8 + Oxc 混淆)
-cd apps/frontend && bun run build
+# 执行 Vite 8 + Oxc 极速混淆构建
+bun run build
+```
 
-# Docker 一键部署 (全量构建)
-docker-compose -f config/docker/docker-compose.yml up -d --build
+### 3. Docker 部署 (Containerization)
+```bash
+# 一键拉起全栈镜像 (Debian-based Bun)
+bun run docker:up
 ```
 
 ---
 
-## ⚖️ 开发规范 (Engineering Standards)
+## ⚖️ 开发红线 (Engineering Standards)
 
-### 1. 类型安全 (Type Integrity)
-- **Eden Treaty**: 前端必须使用 `treaty<App>(...)` 进行通讯。
-- **Error Handling**: 禁止在 UI 层裸写 `try...catch`，必须使用 `getErrorMessage` 辅助函数。
-
-### 2. 性能标准 (Performance)
-- **LCP 目标**: < 1.2s。
-- **帧率控制**: 120s 巨型时间轴操作时 FPS 不得低于 55。
-- **静态资源**: Nginx 必须配置 CSP 与强缓存。
-
-### 3. UI/UX 调性 (Aesthetics)
-- **主题**: 默认提供 **Premium Light** (极简白 + 旗舰蓝) 与 暗色玻璃拟态。
-- **动效**: 强制使用 **Spring Physics** (Framer Motion `type: 'spring'`)，杜绝简单的线性补间。
-
-### 4. 资源自愈 (Maintenance)
-- 后端必须具备 **24 小时自动物理清理** 机制，清理 `uploads/generated` 目录。
-
----
-
-## 📜 常用命令 (Cheat Sheet)
-- **重跑审计**: `bun test tests/*.test.ts`
-- **物理路径检查**: `docker exec docker-veomuse-backend-1 ls /app/uploads`
-- **全栈重构对齐**: 执行 `/conductor:review 复核所有代码`
+1. **类型安全**: 通讯层必须通过 `treaty<App>(...)` 桥接，禁止任何 `any` 类型的透传。
+2. **错误处理**: 严禁在 UI 裸写 `try...catch`，必须调用共享的 `getErrorMessage` 辅助函数。
+3. **资源管理**: 后端必须保留 `setInterval` 自动巡检任务，确保 `uploads/generated` 目录 24 小时自愈。
+4. **视觉一致性**: 严格遵循 **Premium Light** 亮色主题与物理弹性动效规范。
 
 ---
 **VeoMuse - 以工匠之心，铸 AI 之魂。**
