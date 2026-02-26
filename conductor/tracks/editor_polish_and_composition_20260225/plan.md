@@ -4,9 +4,9 @@
 - [x] **Task: 完善 Store 的更新逻辑** (59ef18f)
     - [x] 增加 `updateClip` 和 `removeClip` Action。
     - [x] 确保拖拽和缩放操作能双向绑定到状态中。
-- [ ] **Task: 播放器控制条 (Playback Controls)**
-    - [ ] 实现播放/暂停状态管理。
-    - [ ] 使用 RAF (requestAnimationFrame) 平滑驱动时间轴运行。
+- [x] **Task: 播放器控制条 (Playback Controls)** (b741e12)
+    - [x] 实现播放/暂停状态管理。
+    - [x] 使用 RAF (requestAnimationFrame) 平滑驱动时间轴运行。
     - [ ] **Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)**
 
 ## Phase 2: 后端合成引擎
