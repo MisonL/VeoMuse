@@ -57,4 +57,15 @@ describe('AI API 全功能集群验证 (全量修复版)', () => {
     );
     expect(response.status).toBe(200);
   });
+
+  it('虚拟演员一致性驱动验证', async () => {
+    const response = await app.handle(
+      new Request('http://localhost/api/ai/actors/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: '在海边散步', actorId: 'hero-man' })
+      })
+    );
+    expect(response.status).toBe(200);
+  });
 });

@@ -20,6 +20,8 @@ import { InpaintService } from './services/InpaintService'
 import { AudioAnalysisService } from './services/AudioAnalysisService'
 import { VoiceMorphService } from './services/VoiceMorphService'
 import { TranslationService } from './services/TranslationService'
+import { ActorConsistencyService } from './services/ActorConsistencyService'
+import { LipSyncService } from './services/LipSyncService'
 
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
 VideoOrchestrator.registerDriver(new GeminiDriver());
@@ -95,6 +97,17 @@ const app = new Elysia()
         try { return await VoiceMorphService.morph(body.audioUrl, body.targetVoiceId); }
         catch (e: any) { return { success: false, error: e.message }; }
       }, { body: t.Object({ audioUrl: t.String(), targetVoiceId: t.String() }) })
+      .get('/ai/actors', () => ActorConsistencyService.getAllActors())
+      .post('/ai/actors/generate', async ({ body }) => {
+        try {
+          const params = ActorConsistencyService.buildCharacterParams(body.actorId, body.prompt, body.strength);
+          return await VideoOrchestrator.generate(body.modelId || 'veo-3.1', params);
+        } catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ prompt: t.String(), actorId: t.String(), strength: t.Optional(t.Number()), modelId: t.Optional(t.String()) }) })
+      .post('/ai/sync-lip', async ({ body }) => {
+        try { return await LipSyncService.sync(body.videoUrl, body.audioUrl, body.precision || 'high'); }
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ videoUrl: t.String(), audioUrl: t.String(), precision: t.Optional(t.String()) }) })
       .post('/video/compose', async ({ body }) => {
         try { return await CompositionService.compose(body.timelineData); } 
         catch (e: any) { return { success: false, error: e.message }; }

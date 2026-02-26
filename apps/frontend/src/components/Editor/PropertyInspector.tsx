@@ -18,7 +18,7 @@ const PropertyInspector: React.FC = () => {
   });
 
   if (!selectedClip || !parentTrackId) {
-    return <div className="inspector-empty glass-panel"><p>未选中任何片段</p><small>在时间轴上点击片段进行编辑</small></div>;
+    return <div className="inspector-empty glass-panel"><p>未选中片段</p></div>;
   }
 
   const handleUpdate = (updates: Partial<Clip>) => {
@@ -29,87 +29,57 @@ const PropertyInspector: React.FC = () => {
     handleUpdate({ data: { ...(selectedClip?.data || {}), ...dataUpdates } });
   };
 
-  const handleTranslateAndVoice = async (targetLang: string) => {
-    if (!selectedClip || !selectedClip.data?.content || targetLang === 'none') return;
-    setIsProcessing(true);
-    showToast(`🌍 正在炼金：重塑语言灵魂...`, 'info');
-    try {
-      const { data: trans } = await api.api.ai.translate.post({ text: selectedClip.data.content, targetLang });
-      if (trans && 'translatedText' in trans) {
-        handleDataUpdate({ content: trans.translatedText });
-        const { data: voice } = await api.api.ai.tts.post({ text: trans.translatedText });
-        if (voice?.success) {
-          addClip('track-a1', { id: `alc-v-${Date.now()}`, start: selectedClip.start, end: selectedClip.end, src: voice.audioUrl, name: `[${targetLang}] 配音`, type: 'audio' });
-          showToast(`✨ 炼金成功`, 'success');
-        }
-      }
-    } finally { setIsProcessing(false); }
-  };
+  const handleSyncLip = async () => {
+    if (!selectedClip || !selectedClip.src) return;
+    // 寻找同一时间段的音频作为音源
+    const audioClip = tracks.find(t => t.type === 'audio')?.clips.find(c => c.start >= selectedClip!.start - 1 && c.start <= selectedClip!.start + 1);
+    
+    if (!audioClip) {
+      showToast('未找到对应的配音片段', 'warning');
+      return;
+    }
 
-  // 视觉炼金：风格迁移
-  const handleStyleAlchemy = async (style: string) => {
-    if (!selectedClip || style === 'none') return;
     setIsProcessing(true);
-    showToast(`🎨 正在视觉炼金：应用 [${style}] 艺术风格...`, 'info');
+    showToast('👄 正在进行 AI 对口型同步...', 'info');
     try {
-      const { data } = await api.api.ai.alchemy['style-transfer'].post({ clipId: selectedClip.id, style });
+      const { data } = await api.api.ai['sync-lip'].post({
+        videoUrl: selectedClip.src,
+        audioUrl: audioClip.src
+      });
       if (data?.success) {
-        showToast(`✨ 视觉重塑任务已提交，完成后将自动替换。`, 'success');
+        updateClip(parentTrackId!, selectedClipId!, { src: data.syncedVideoUrl, name: `${selectedClip.name} (已同步)` });
+        showToast('对口型同步完成！', 'success');
       }
-    } finally { setIsProcessing(false); }
-  };
-
-  const handleAiRepair = async () => {
-    if (!selectedClip) return;
-    const problem = window.prompt('描述问题:');
-    if (!problem) return;
-    setIsProcessing(true);
-    try {
-      const { data } = await api.api.ai.repair.post({ description: problem });
-      if (data && 'fixPrompt' in data) { alert(data.fixPrompt); handleDataUpdate({ repairPrompt: data.fixPrompt }); }
     } finally { setIsProcessing(false); }
   };
 
   return (
     <div className="inspector-panel glass-panel">
-      <header className="inspector-header"><h3>属性检查器</h3><span className="clip-type-badge">{selectedClip.type}</span></header>
+      <header className="inspector-header"><h3>属性</h3><span className="clip-type-badge">{selectedClip.type}</span></header>
       <div className="inspector-body">
         <section className="inspector-section">
-          <label>名称</label>
+          <label>片段名称</label>
           <input type="text" value={selectedClip.name} onChange={(e) => handleUpdate({ name: e.target.value })} />
         </section>
 
         {selectedClip.type === 'video' && (
           <section className="inspector-section">
-            <div className="alchemy-tools">
-              <label style={{ fontSize: '0.7rem', color: '#38bdf8' }}>💎 视觉炼金：风格重塑</label>
-              <div className="style-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginTop: '4px' }}>
-                <button onClick={() => handleStyleAlchemy('van-gogh')} style={{ fontSize: '0.7rem', padding: '4px', background: '#333' }}>🌻 梵高油画</button>
-                <button onClick={() => handleStyleAlchemy('cyberpunk')} style={{ fontSize: '0.7rem', padding: '4px', background: '#333' }}>🌃 赛博朋克</button>
-                <button onClick={() => handleStyleAlchemy('ghibli')} style={{ fontSize: '0.7rem', padding: '4px', background: '#333' }}>☁️ 吉卜力</button>
-                <button onClick={() => handleStyleAlchemy('sketch')} style={{ fontSize: '0.7rem', padding: '4px', background: '#333' }}>✏️ 素描</button>
-              </div>
-            </div>
+            <label>一致性强度</label>
+            <input type="range" min="0" max="1" step="0.1" value={selectedClip.data?.strength || 1} onChange={(e) => handleDataUpdate({ strength: parseFloat(e.target.value) })} />
             
-            <label style={{ marginTop: '1rem' }}>色彩滤镜</label>
-            <select value={selectedClip.data?.filter || 'none'} onChange={(e) => handleDataUpdate({ filter: e.target.value })} style={{ background: '#000', color: '#ccc', border: '1px solid #2a2a2a', padding: '4px' }}>
-              <option value="none">无</option><option value="grayscale(100%)">黑白</option><option value="sepia(50%)">复古</option>
-            </select>
-            <button className="btn-repair" onClick={handleAiRepair} disabled={isProcessing} style={{ marginTop: '1rem', width: '100%', background: 'rgba(255,255,255,0.05)', color: '#aaa', border: '1px solid #333', padding: '0.6rem', borderRadius: '8px' }}>{isProcessing ? '🔍 诊断中...' : '🛠️ AI 画面修复'}</button>
+            <button className="btn-sync-lip" onClick={handleSyncLip} disabled={isProcessing} style={{ marginTop: '1rem', width: '100%', background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)', color: '#fff', border: 'none', padding: '0.8rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+              {isProcessing ? '⏳ 同步中...' : '👄 执行 AI 对口型'}
+            </button>
           </section>
         )}
 
         {selectedClip.type === 'text' && (
           <section className="inspector-section special">
-            <textarea value={selectedClip.data?.content || ''} onChange={(e) => handleDataUpdate({ content: e.target.value })} style={{ height: '100px' }} />
-            <div className="alchemy-tools" style={{ marginTop: '1rem' }}>
-              <label style={{ fontSize: '0.7rem', color: '#a855f7' }}>🧬 炼金：语种转换</label>
-              <select onChange={(e) => handleTranslateAndVoice(e.target.value)} disabled={isProcessing} style={{ width: '100%', background: '#000', color: '#ccc', border: '1px solid #333', padding: '6px', borderRadius: '4px', marginTop: '4px' }}>
-                <option value="none">选择语言...</option>
-                <option value="English">英语 (US)</option>
-                <option value="Japanese">日语 (JP)</option>
-              </select>
-            </div>
+            <textarea value={selectedClip.data?.content || ''} onChange={(e) => handleDataUpdate({ content: e.target.value })} style={{ height: '80px' }} />
+            <select onChange={(e) => {}} style={{ width: '100%', background: '#000', color: '#ccc', border: '1px solid #333', padding: '6px', borderRadius: '4px' }}>
+              <option value="none">多语种重塑...</option>
+              <option value="English">英语 (西海岸)</option>
+            </select>
           </section>
         )}
       </div>
