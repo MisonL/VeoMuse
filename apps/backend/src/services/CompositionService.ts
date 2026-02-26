@@ -49,18 +49,25 @@ export class CompositionService {
         });
 
         // 2. 音频混合逻辑 (amix)
-        // 假设我们要把所有音频输入混合在一起。
-        // 在更高级的实现中，我们会根据 track.id 或 type 分配音量比例
+        // 旗舰版优化：为不同类型的轨道分配不同的音量权重
         if (inputCount > 1) {
-          // 这里使用一个简单的混合策略：第一个输入通常是主视频，后续是配音或 BGM
-          // 我们后续可以根据 Clip.data.volume 来精细调节
-          command.complexFilter([
-            {
-              filter: 'amix',
-              options: { inputs: inputCount, duration: 'longest' },
-              outputs: 'mixed_audio'
+          const filterInputs = [];
+          let audioIdx = 0;
+          
+          // 遍历轨道生成带有 volume 调节的输入流
+          timelineData.tracks.forEach(track => {
+            if (track.type === 'video' || track.type === 'audio') {
+              track.clips.forEach(() => {
+                const weight = track.name.includes('背景音乐') || track.id.includes('bgm') ? 0.3 : 1.0;
+                filterInputs.push(`[${audioIdx}:a]volume=${weight}[a${audioIdx}]`);
+                audioIdx++;
+              });
             }
-          ], 'mixed_audio');
+          });
+
+          const mixStr = filterInputs.map((_, i) => `[a${i}]`).join('');
+          complexFilters.push(`${filterInputs.join(';')};${mixStr}amix=inputs=${inputCount}:duration=longest[mixed_audio]`);
+          command.complexFilter(complexFilters, 'mixed_audio');
         }
 
         // 3. 文字滤镜 (drawtext)

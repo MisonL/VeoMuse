@@ -1,12 +1,35 @@
 :root {
+  /* 核心品牌色 - 旗舰蓝 */
+  --brand-primary: #38bdf8;
+  --brand-primary-rgb: 56, 189, 248;
+  --brand-secondary: #818cf8;
+  --brand-accent: #a855f7;
+  --brand-danger: #ef4444;
+  --brand-warning: #f59e0b;
+  --brand-success: #10b981;
+
+  /* 基础背景与面板色 */
+  --bg-dark: #09090b;
+  --bg-panel: rgba(255, 255, 255, 0.05);
+  --bg-panel-inner: rgba(255, 255, 255, 0.03);
+  --border-light: rgba(255, 255, 255, 0.1);
+  --border-dim: rgba(255, 255, 255, 0.05);
+
+  /* 文字颜色 */
+  --text-main: rgba(255, 255, 255, 0.9);
+  --text-dim: rgba(255, 255, 255, 0.5);
+  --text-muted: rgba(255, 255, 255, 0.3);
+
+  /* 阴影与模糊 */
+  --glass-blur: blur(12px);
+  --panel-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
+  color-scheme: dark;
+  color: var(--text-main);
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -21,136 +44,19 @@ body {
   min-height: 100vh;
 }
 
-/* 玻璃拟态基础类 */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-panel);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-light);
   border-radius: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: var(--panel-shadow);
 }
 
 .liquid-bg {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  background: radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.15) 0%, transparent 40%),
+  top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+  background: radial-gradient(circle at 20% 30%, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 40%),
               radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 40%);
   filter: blur(60px);
-}
-.video-editor-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: rgba(15, 23, 42, 0.9) !important;
-}
-
-.editor-toolbar {
-  height: 40px;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  padding: 0 1.5rem;
-}
-
-.time-display {
-  font-family: 'JetBrains Mono', monospace;
-  color: #38bdf8;
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.duration-label {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 0.9rem;
-}
-
-.timeline-wrapper {
-  flex: 1;
-  width: 100%;
-  position: relative;
-  /* 确保 Timeline 能够填满容器 */
-}
-
-.editor-loading {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-/* 深度覆盖样式，解决 Vite 8 编译下的样式优先级问题 */
-:deep(.react-timeline-editor) {
-  background: transparent !important;
-}
-
-/* 标尺样式修复 */
-:deep(.react-timeline-editor-ruler) {
-  background: rgba(255, 255, 255, 0.02) !important;
-  color: rgba(255, 255, 255, 0.5) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-:deep(.react-timeline-editor-cursor) {
-  background: #38bdf8 !important;
-  box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);
-}
-
-:deep(.react-timeline-editor-action) {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-}
-/* 旗舰版编辑器全局覆盖样式 */
-.video-editor-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #0f172a !important;
-}
-
-/* 时间轴主体容器高度 */
-.timeline-wrapper {
-  height: 260px !important;
-  min-height: 260px !important;
-}
-
-.react-timeline-editor {
-  background: transparent !important;
-  color: #fff !important;
-}
-
-/* 标尺 */
-.react-timeline-editor-ruler {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-/* 指针 */
-.react-timeline-editor-cursor {
-  background: #38bdf8 !important;
-  z-index: 10 !important;
-}
-
-/* 轨道 */
-.react-timeline-editor-track {
-  background: rgba(255, 255, 255, 0.02) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-
-/* 片段动作 */
-.react-timeline-editor-action {
-  background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 4px !important;
 }

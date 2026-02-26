@@ -4,14 +4,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #09090b !important;
+  background: var(--bg-dark) !important;
   position: relative;
 }
 
 .editor-toolbar {
   height: 48px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -28,12 +28,12 @@
 .divider-v {
   width: 1px;
   height: 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-light);
   margin: 0 0.2rem;
 }
 
 .play-btn {
-  background: #38bdf8;
+  background: var(--brand-primary);
   border: none;
   color: #000;
   border-radius: 6px;
@@ -42,7 +42,12 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 15px rgba(var(--brand-primary-rgb), 0.3);
+}
+
+.play-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(var(--brand-primary-rgb), 0.5);
 }
 
 .history-btn {
@@ -55,94 +60,39 @@
   transition: all 0.2s;
 }
 
-.zoom-control {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+.history-btn:hover { opacity: 1; transform: translateY(-1px); }
 
-.time-display {
-  font-family: 'JetBrains Mono', monospace;
-}
+.time-display { font-family: 'JetBrains Mono', monospace; }
+.current-t { color: var(--brand-primary); font-weight: 700; font-size: 1.2rem; }
+.duration-label { color: var(--text-muted); font-size: 0.9rem; }
 
-.current-t {
-  color: #38bdf8;
-  font-weight: 700;
-  font-size: 1.2rem;
-}
+.timeline-wrapper { flex: 1; width: 100%; position: relative; }
 
-.duration-label {
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 0.9rem;
-}
-
-.timeline-wrapper {
-  flex: 1;
-  width: 100%;
-  position: relative;
-}
-
-.beats-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.beat-tick {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: rgba(168, 85, 247, 0.15);
-  border-left: 1px dashed rgba(168, 85, 247, 0.3);
-}
-
+/* 磁吸引导线 */
 .snap-guide-line {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  z-index: 100;
-  pointer-events: none;
+  top: 0; bottom: 0; width: 2px; z-index: 100; pointer-events: none;
+}
+.snap-guide-line.clip { background: var(--brand-primary); box-shadow: 0 0 15px var(--brand-primary); }
+.snap-guide-line.beat { background: var(--brand-accent); box-shadow: 0 0 15px var(--brand-accent), 0 0 30px rgba(168, 85, 247, 0.5); }
+
+/* 渲染占位呼吸灯 */
+.react-timeline-editor-action[data-action-id*="auto-v-"] {
+  background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%) !important;
+  background-size: 200% 100% !important;
+  animation: shimmer 2s infinite linear !important;
 }
 
-.snap-guide-line.clip {
-  background: #38bdf8;
-  box-shadow: 0 0 15px #38bdf8;
-}
-
-.snap-guide-line.beat {
-  background: #a855f7;
-  box-shadow: 0 0 15px #a855f7;
-}
-
-/* 全局覆盖样式，不再使用 :deep */
-.react-timeline-editor {
-  background: transparent !important;
-}
-
+/* 全局覆盖样式 */
+.react-timeline-editor { background: transparent !important; }
 .react-timeline-editor-ruler {
   background: transparent !important;
-  color: rgba(255, 255, 255, 0.4) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-dim) !important;
+  border-bottom: 1px solid var(--border-dim) !important;
 }
-
-.react-timeline-editor-cursor {
-  background: #38bdf8 !important;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
-}
-
+.react-timeline-editor-cursor { background: var(--brand-primary) !important; box-shadow: 0 0 10px rgba(var(--brand-primary-rgb), 0.8); }
 .react-timeline-editor-action {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: linear-gradient(135deg, #6366f1 0%, var(--brand-accent) 100%) !important;
+  border: 1px solid var(--border-light) !important;
   border-radius: 4px !important;
-}
-
-.react-timeline-editor-action-selected {
-  outline: 2px solid #fbbf24 !important;
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4) !important;
 }
