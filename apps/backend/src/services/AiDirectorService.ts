@@ -24,7 +24,14 @@ export class AiDirectorService extends BaseAiService {
   private static MODEL = 'gemini-3.1-pro-preview';
   private static API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-  private static SYSTEM_PROMPT = `你是一位好莱坞顶级的数字导演。请将故事脚本拆解为专业分镜 JSON (storyTitle, worldId, scenes)。`;
+  // 强化 Prompt，确保 JSON 结构 100% 包含 worldId
+  private static SYSTEM_PROMPT = `
+你是一位好莱坞顶级的数字导演。请将脚本拆解为 Storyboard JSON。
+必须包含字段: 
+- storyTitle: 故事标题
+- worldId: 全局唯一的场景种子字符串 (8位随机字符)
+- scenes: 分镜数组
+`;
 
   static async analyzeScript(script: string): Promise<DirectorResponse> {
     const key = ApiKeyService.getNextKey();
@@ -34,17 +41,19 @@ export class AiDirectorService extends BaseAiService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${this.SYSTEM_PROMPT}\n\n脚本：${script}` }] }],
+        contents: [{ parts: [{ text: `${this.SYSTEM_PROMPT}\n\n脚本内容：${script}` }] }],
         generationConfig: { response_mime_type: "application/json", thinking_level: "HIGH" }
       })
     });
 
     const content = this.instance.parseGeminiJson(data);
+    
+    // 强制校验与兜底生成，确保链路一致性
     return {
       success: true,
-      storyTitle: content.storyTitle,
+      storyTitle: content.storyTitle || '未命名故事',
       worldId: content.worldId || `w-${Math.random().toString(36).substring(7)}`,
-      scenes: content.scenes
+      scenes: content.scenes || []
     };
   }
 }

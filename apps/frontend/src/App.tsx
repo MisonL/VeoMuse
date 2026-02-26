@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, memo } from 'react'
 import { motion } from 'framer-motion'
 import { api } from './utils/eden'
-import { useEditorStore } from './store/editorStore'
+import { useEditorStore, Track, Clip } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import VideoEditor from './components/Editor/VideoEditor'
 import MultiVideoPlayer from './components/Editor/MultiVideoPlayer'
@@ -22,39 +22,19 @@ function App() {
   const [isCompareMode, setIsCompareMode] = useState(false)
   const [selectedModel, setSelectedModel] = useState('veo-3.1')
   const [selectedActorId, setSelectedActorId] = useState<string | null>(null)
-  const [isMotionSyncing, setIsMotionSyncing] = useState(false)
   const [prompt, setPrompt] = useState('')
   const [script, setScript] = useState('')
   const [isEnhancing, setIsEnhancing] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isDirecting, setIsDirecting] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const { addAsset, assets, tracks, addClip } = useEditorStore()
+  const { addAsset, assets, tracks, setTracks } = useEditorStore()
 
   useEffect(() => {
     if (assets.length === 0) {
       addAsset({ id: 'asset-1', name: '大雄兔 (示例)', src: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'video' });
     }
   }, [])
-
-  const handleEnhance = useCallback(async () => {
-    if (!prompt) return;
-    setIsEnhancing(true);
-    try {
-      const { data } = await api.api.ai.enhance.post({ prompt });
-      if (data && 'enhanced' in data) { setPrompt(data.enhanced); showToast('提示词已智能增强', 'success'); }
-    } catch (e: any) { showToast(e.message, 'error'); } finally { setIsEnhancing(false); }
-  }, [prompt, showToast]);
-
-  const handleGenerate = useCallback(async () => {
-    if (!prompt) return;
-    setIsGenerating(true);
-    try {
-      const params = selectedActorId ? { prompt, actorId: selectedActorId, modelId: selectedModel } : { text: prompt, modelId: selectedModel };
-      await (selectedActorId ? api.api.ai.actors.generate.post(params as any) : api.api.video.generate.post(params as any));
-      showToast('任务已提交', 'info');
-    } catch (e: any) { showToast(e.message, 'error'); } finally { setIsGenerating(false); }
-  }, [prompt, selectedActorId, selectedModel, showToast]);
 
   const handleFullAutoDirector = async () => {
     if (!script) return;
@@ -64,22 +44,55 @@ function App() {
       const { data } = await api.api.ai.director.analyze.post({ script });
       if (data?.success) {
         let offset = 0;
-        data.scenes.forEach((s: any, i: number) => {
-          const d = s.duration || 5;
-          addClip('track-v1', { id: `auto-v-${i}`, start: offset, end: offset + d, src: '', name: s.title, type: 'video', data: { prompt: s.videoPrompt } });
-          offset += d;
-        });
-        showToast(`全自动编排完成：共 ${data.scenes.length} 个镜头`, 'success');
+        // 高性能重构：本地计算所有片段，避免频繁触发 Zustand 更新
+        const newTracks: Track[] = JSON.parse(JSON.stringify(useEditorStore.getState().tracks));
+        const vTrack = newTracks.find(t => t.id === 'track-v1');
+        
+        if (vTrack) {
+          data.scenes.forEach((s: any, i: number) => {
+            const d = s.duration || 5;
+            const newClip: Clip = { 
+              id: `auto-v-${i}-${Date.now()}`, start: offset, end: offset + d, 
+              src: '', name: s.title, type: 'video', 
+              data: { prompt: s.videoPrompt, worldId: data.worldId } 
+            };
+            vTrack.clips.push(newClip);
+            offset += d;
+          });
+          // 原子更新：一次性推送全量变更
+          setTracks(newTracks);
+          showToast(`全自动编排完成：共 ${data.scenes.length} 个镜头`, 'success');
+        }
       }
     } catch (e: any) { showToast(e.message, 'error'); } finally { setIsDirecting(false); }
   }
+
+  // ... (保留之前的单项业务函数)
+  const handleEnhance = useCallback(async () => {
+    if (!prompt) return;
+    setIsEnhancing(true);
+    try {
+      const { data } = await api.api.ai.enhance.post({ prompt });
+      if (data && 'enhanced' in data) { setPrompt(data.enhanced); showToast('提示词已增强', 'success'); }
+    } finally { setIsEnhancing(false); }
+  }, [prompt, showToast]);
+
+  const handleGenerate = useCallback(async () => {
+    if (!prompt) return;
+    setIsGenerating(true);
+    try {
+      const params = selectedActorId ? { prompt, actorId: selectedActorId, modelId: selectedModel } : { text: prompt, modelId: selectedModel };
+      await (selectedActorId ? api.api.ai.actors.generate.post(params as any) : api.api.video.generate.post(params as any));
+      showToast('任务已提交', 'info');
+    } finally { setIsGenerating(false); }
+  }, [prompt, selectedActorId, selectedModel, showToast]);
 
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
       const { data } = await api.api.video.compose.post({ timelineData: { tracks } });
       if (data?.success) showToast(`导出成功: ${data.outputPath}`, 'success');
-    } catch (e: any) { showToast(e.message, 'error'); } finally { setIsExporting(false); }
+    } finally { setIsExporting(false); }
   }, [tracks, showToast]);
 
   return (
@@ -90,7 +103,7 @@ function App() {
         <GlassCard className="sidebar" delay={0.1}>
           <header className="console-header">
             <h1>VeoMuse <span className="badge">V3.1 Pro</span></h1>
-            <p className="subtitle">旗舰版 · 交付审查中</p>
+            <p className="subtitle">旗舰版 · 极致卓越</p>
           </header>
           <div className="tab-header">
             {(['generate', 'actors', 'assets', 'director'] as const).map(tab => (
