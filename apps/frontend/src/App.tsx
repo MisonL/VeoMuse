@@ -1,5 +1,6 @@
 import { useState, memo } from 'react'
 import { useEditorStore } from './store/editorStore'
+import { useToastStore } from './store/toastStore'
 import VideoEditor from './components/Editor/VideoEditor'
 import MultiVideoPlayer from './components/Editor/MultiVideoPlayer'
 import PropertyInspector from './components/Editor/PropertyInspector'
@@ -7,203 +8,152 @@ import AssetPanel from './components/Editor/AssetPanel'
 import ToastContainer from './components/Editor/ToastContainer'
 
 function App() {
-  const { tracks } = useEditorStore()
+  const { showToast } = useToastStore()
+  const [activeMode, setActiveMode] = useState('edit')
+  const [activeTool, setActiveTool] = useState('select')
+  const [activeSidebar, setActiveSidebar] = useState('assets')
 
   return (
-    <div className="veomuse-pro-os">
+    <div className="pro-master-shell" onContextMenu={e => e.preventDefault()}>
       <style>{`
         :root {
-          --os-bg: #000000;
-          --os-accent: #007AFF;
-          --os-accent-glow: rgba(0, 122, 255, 0.5);
-          --os-surface: rgba(22, 22, 23, 0.8);
-          --os-border: rgba(255, 255, 255, 0.1);
-          --os-text: #F5F5F7;
-          --os-text-dim: #86868B;
+          --pro-bg: #000000;
+          --pro-surface: #121212;
+          --pro-panel: #1A1A1B;
+          --pro-accent: #007AFF;
+          --pro-accent-glow: rgba(0, 122, 255, 0.4);
+          --pro-border: rgba(255, 255, 255, 0.08);
+          --pro-text: #E5E5E5;
+          --pro-text-dim: #888888;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-        
-        body { 
-          background: var(--os-bg); 
-          color: var(--os-text); 
-          font-family: -apple-system, "SF Pro Display", sans-serif;
-          height: 100vh;
-          overflow: hidden;
-        }
+        body { background: #000; color: var(--pro-text); font-family: -apple-system, "SF Pro Display", sans-serif; overflow: hidden; }
 
-        .veomuse-pro-os {
-          display: flex;
-          flex-direction: column;
+        .pro-master-shell {
           height: 100vh;
           width: 100vw;
-          padding: 12px;
-          gap: 12px;
-          background: radial-gradient(circle at 50% -20%, #1a1a1a 0%, #000 100%);
+          display: grid;
+          grid-template-rows: 48px 1fr 380px;
+          gap: 2px;
+          background: #000;
+          padding: 2px;
         }
 
         .os-header {
-          height: 52px;
-          background: var(--os-surface);
-          backdrop-filter: blur(30px) saturate(180%);
-          border: 1px solid var(--os-border);
-          border-radius: 14px;
+          background: var(--pro-surface);
           display: flex;
           align-items: center;
-          padding: 0 24px;
+          padding: 0 20px;
           justify-content: space-between;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+          border-bottom: 1px solid var(--pro-border);
         }
-
-        .os-logo { font-size: 16px; font-weight: 800; letter-spacing: -0.5px; }
-        .os-logo span { color: var(--os-accent); }
-
-        .os-nav { display: flex; gap: 32px; }
-        .os-nav-item { color: var(--os-text-dim); font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: none; transition: 0.2s; }
-        .os-nav-item.active { color: #fff; }
-
-        .os-btn-primary {
-          background: var(--os-accent);
-          color: #fff;
-          border: none;
-          padding: 6px 20px;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 700;
-          cursor: pointer;
-          box-shadow: 0 4px 12px var(--os-accent-glow);
+        .os-logo { font-weight: 900; font-size: 14px; letter-spacing: 1px; color: #fff; }
+        .os-logo span { color: var(--pro-accent); }
+        
+        .os-nav-group { display: flex; gap: 32px; }
+        .os-nav-tab { 
+          color: var(--pro-text-dim); font-size: 12px; font-weight: 700; cursor: pointer; border: none; background: none; 
+          padding: 4px 12px; border-radius: 4px; transition: 0.2s;
         }
+        .os-nav-tab.active { color: #fff; background: rgba(255,255,255,0.05); }
 
-        .os-workspace {
-          flex: 1;
+        .os-btn-export { background: var(--pro-accent); color: #fff; border: none; padding: 6px 16px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; }
+
+        .os-main {
           display: grid;
           grid-template-columns: 320px 1fr 340px;
-          gap: 12px;
+          gap: 2px;
           min-height: 0;
         }
+        .os-panel { background: var(--pro-surface); display: flex; flex-direction: column; overflow: hidden; }
+        .os-panel-header { 
+          padding: 12px 16px; border-bottom: 1px solid var(--pro-border); 
+          display: flex; gap: 16px; background: rgba(255,255,255,0.02);
+        }
+        .panel-tab { background: none; border: none; font-size: 11px; font-weight: 800; color: var(--pro-text-dim); cursor: pointer; }
+        .panel-tab.active { color: var(--pro-accent); }
 
-        .os-card {
-          background: var(--os-surface);
-          backdrop-filter: blur(30px) saturate(180%);
-          border: 1px solid var(--os-border);
-          border-radius: 18px;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
+        .os-monitor { background: #080808 !important; padding: 20px; display: flex; flex-direction: column; }
+        .monitor-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .monitor-timecode { font-family: "SF Mono", monospace; color: var(--pro-accent); font-size: 22px; font-weight: 700; letter-spacing: -1px; }
+        .monitor-stage-box { flex: 1; background: #000; border-radius: 8px; border: 1px solid var(--pro-border); box-shadow: 0 30px 80px rgba(0,0,0,0.8); overflow: hidden; }
+        
+        .monitor-transport { display: flex; justify-content: center; gap: 24px; padding-top: 16px; align-items: center; }
+        .transport-btn { background: none; border: none; color: #fff; cursor: pointer; opacity: 0.6; font-size: 18px; transition: 0.2s; }
+        .transport-btn.play { color: var(--pro-accent); font-size: 28px; opacity: 1; }
 
-        .os-card-header {
-          padding: 16px 20px;
-          border-bottom: 1px solid var(--os-border);
-          font-size: 11px;
-          font-weight: 800;
-          color: var(--os-text-dim);
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
+        /* 属性面板物理穿透 */
+        .pro-inspector-outer { background: var(--pro-surface) !important; }
+        .inspector-panel.glass-panel { background: transparent !important; border: none !important; box-shadow: none !important; }
 
-        .os-monitor {
-          position: relative;
-          padding: 24px;
-          background: radial-gradient(circle at center, #111 0%, #000 100%);
+        .os-footer { background: var(--pro-surface); display: flex; flex-direction: column; }
+        .footer-tools { height: 40px; border-bottom: 1px solid var(--pro-border); display: flex; align-items: center; padding: 0 16px; justify-content: space-between; }
+        .tool-icons { display: flex; gap: 12px; }
+        .tool-icon-btn { 
+          width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; 
+          border-radius: 6px; border: 1px solid transparent; background: transparent; cursor: pointer; color: var(--pro-text-dim); font-size: 18px; 
         }
-        .os-monitor-view {
-          flex: 1;
-          background: #000;
-          border-radius: 10px;
-          overflow: hidden;
-          box-shadow: 0 30px 80px rgba(0,0,0,0.8);
-          border: 1px solid #222;
-        }
-        .os-monitor-controls {
-          display: flex;
-          justify-content: center;
-          gap: 32px;
-          margin-top: 20px;
-        }
-        .os-icon-btn { font-size: 20px; color: #fff; background: none; border: none; cursor: pointer; opacity: 0.6; }
-        .os-icon-btn.active { color: var(--os-accent); opacity: 1; }
-
-        .os-footer {
-          height: 360px;
-          background: var(--os-surface);
-          backdrop-filter: blur(30px);
-          border: 1px solid var(--os-border);
-          border-radius: 18px;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-        }
-        .os-timeline-toolbar {
-          height: 44px;
-          padding: 0 20px;
-          border-bottom: 1px solid var(--os-border);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .os-tool-btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: none; background: transparent; cursor: pointer; color: var(--os-text-dim); }
-        .os-tool-btn.active { background: rgba(255,255,255,0.05); color: #fff; }
+        .tool-icon-btn.active { background: rgba(0, 122, 255, 0.15); color: var(--pro-accent); border-color: var(--pro-accent); }
       `}</style>
 
       <ToastContainer />
       
       <header className="os-header">
         <div className="os-logo">VEOMUSE <span>PRO</span></div>
-        <nav className="os-nav">
-          <button className="os-nav-item active">编辑器</button>
-          <button className="os-nav-item">实验室</button>
-          <button className="os-nav-item">音频</button>
+        <nav className="os-nav-group">
+          <button className={`os-nav-tab ${activeMode === 'edit' ? 'active' : ''}`} onClick={() => setActiveMode('edit')}>编辑器</button>
+          <button className={`os-nav-tab ${activeMode === 'color' ? 'active' : ''}`} onClick={() => setActiveMode('color')}>调色</button>
+          <button className={`os-nav-tab ${activeMode === 'audio' ? 'active' : ''}`} onClick={() => setActiveMode('audio')}>音频</button>
         </nav>
-        <button className="os-btn-primary">导出</button>
+        <button className="os-btn-export">导出作品</button>
       </header>
 
-      <div className="os-workspace">
-        <aside className="os-card">
-          <div className="os-card-header">资源</div>
-          <div style={{ flex: 1, padding: '16px' }}>
+      <main className="os-main">
+        <aside className="os-panel">
+          <div className="os-panel-header">
+            <button className={`panel-tab ${activeSidebar === 'assets' ? 'active' : ''}`} onClick={() => setActiveSidebar('assets')}>资产</button>
+            <button className={`panel-tab ${activeSidebar === 'director' ? 'active' : ''}`} onClick={() => setActiveSidebar('director')}>导演</button>
+          </div>
+          <div style={{ flex: 1, padding: '12px' }}>
             <AssetPanel />
           </div>
         </aside>
 
-        <section className="os-card os-monitor">
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'flex-end' }}>
+        <section className="os-panel os-monitor">
+          <div className="monitor-top">
             <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900 }}>● LIVE</div>
-            <div style={{ fontSize: '24px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--os-accent)' }}>00:00:00:00</div>
-            <div style={{ fontSize: '10px', color: 'var(--os-text-dim)', fontWeight: 700 }}>PRORes 4444</div>
+            <div className="monitor-timecode">00:00:00:00</div>
+            <div style={{ fontSize: '10px', color: '#888' }}>4K HDR</div>
           </div>
-          <div className="os-monitor-view">
+          <div className="monitor-stage-box">
             <MultiVideoPlayer />
           </div>
-          <div className="os-monitor-controls">
-            <button className="os-icon-btn">⏮</button>
-            <button className="os-icon-btn active" style={{ fontSize: '32px' }}>▶</button>
-            <button className="os-icon-btn">⏭</button>
+          <div className="monitor-transport">
+            <button className="transport-btn">⏮</button>
+            <button className="transport-btn play">▶</button>
+            <button className="transport-btn">⏭</button>
           </div>
         </section>
 
-        <aside className="os-card">
-          <div className="os-card-header">属性</div>
-          <div style={{ flex: 1, padding: '16px' }}>
-            <PropertyInspector />
-          </div>
+        <aside className="os-panel pro-inspector-outer">
+          <PropertyInspector />
         </aside>
-      </div>
+      </main>
 
       <footer className="os-footer">
-        <div className="os-timeline-toolbar">
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="os-tool-btn active">↖</button>
-            <button className="os-tool-btn">✂</button>
-            <button className="os-tool-btn">✋</button>
+        <div className="footer-tools">
+          <div className="tool-icons">
+            <button className={`tool-icon-btn ${activeTool === 'select' ? 'active' : ''}`} onClick={() => setActiveTool('select')}>↖</button>
+            <button className={`tool-icon-btn ${activeTool === 'cut' ? 'active' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
+            <button className={`tool-icon-btn ${activeTool === 'hand' ? 'active' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
           </div>
-          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--os-text-dim)' }}>
-            FPS: 60 | 自动吸附: ON | 引擎: ROL DOWN 8.0
+          <div style={{ fontSize: '10px', color: '#888' }}>
+            FPS: 60 | ENGINE: ROL DOWN 8.0
           </div>
         </div>
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <VideoEditor />
+          <VideoEditor activeTool={activeTool as any} />
         </div>
       </footer>
     </div>
