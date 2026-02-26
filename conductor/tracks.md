@@ -54,3 +54,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: 全部处理好！全方位性能量化、代码复用提升与 UX 深度打磨**
   *Link: [./tracks/ultimate_polish_20260226/](./tracks/ultimate_polish_20260226/)*
+
+---
+
+- [ ] **Track: 全部优化好！全方位对齐 2026 最佳实践**
+  *Link: [./tracks/ultimate_optimize_20260226/](./tracks/ultimate_optimize_20260226/)*
