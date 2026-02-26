@@ -12,3 +12,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: 次世代多轨道视频编辑器：构建时间轴、预览引擎与 AI 自动剪辑基础**
   *Link: [./tracks/video_editor_core_20260225/](./tracks/video_editor_core_20260225/)*
+
+- [x] **Track: 编辑器深度打磨：高级交互、多片段拖拽与后台合成引擎**
+  *Link: [./tracks/editor_polish_and_composition_20260225/](./tracks/editor_polish_and_composition_20260225/)*
