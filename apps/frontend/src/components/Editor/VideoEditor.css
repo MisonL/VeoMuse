@@ -16,6 +16,24 @@
   padding: 0 1.5rem;
 }
 
+.play-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .time-display {
   font-family: 'JetBrains Mono', monospace;
   color: #38bdf8;

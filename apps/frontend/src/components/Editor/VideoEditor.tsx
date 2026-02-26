@@ -32,7 +32,10 @@ const VideoEditor: React.FC = () => {
   return (
     <div className="video-editor-container glass-panel">
       <div className="editor-toolbar">
-        <div className="time-display">
+        <button className="play-btn" onClick={togglePlay}>
+          {isPlaying ? '⏸ 暂停' : '▶️ 播放'}
+        </button>
+        <div className="time-display" style={{ marginLeft: '1rem' }}>
           <span>{currentTime.toFixed(2)}s</span>
           <span className="duration-label"> / {duration}s</span>
         </div>

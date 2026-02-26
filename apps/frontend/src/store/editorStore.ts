@@ -25,11 +25,13 @@ interface EditorState {
   markers: Marker[];
   currentTime: number;
   duration: number;
+  isPlaying: boolean;
   
   // Actions
   setTracks: (tracks: Track[]) => void;
   setMarkers: (markers: Marker[]) => void;
   setCurrentTime: (time: number) => void;
+  togglePlay: () => void;
   addClip: (trackId: string, clip: Clip) => void;
   updateClip: (trackId: string, clipId: string, partialClip: Partial<Clip>) => void;
   removeClip: (trackId: string, clipId: string) => void;
@@ -55,10 +57,12 @@ export const useEditorStore = create<EditorState>((set) => ({
   markers: [],
   currentTime: 0,
   duration: 60,
+  isPlaying: false,
 
   setTracks: (tracks) => set({ tracks }),
   setMarkers: (markers) => set({ markers }),
   setCurrentTime: (time) => set({ currentTime: time }),
+  togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
   addClip: (trackId, clip) => set((state) => ({
     tracks: state.tracks.map(t => 
       t.id === trackId 
