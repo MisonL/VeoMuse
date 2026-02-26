@@ -13,6 +13,17 @@ export default defineConfig({
   },
   build: {
     minify: 'oxc', 
+    rollupOptions: {
+      output: {
+        // 采用更稳健的函数式分包，完美支持 Vite 8
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('framer-motion')) return 'vendor-core';
+            return 'vendor-libs';
+          }
+        }
+      }
+    },
     target: 'esnext'
   },
   server: {
