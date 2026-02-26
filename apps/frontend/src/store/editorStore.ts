@@ -1,36 +1,8 @@
 import { create } from 'zustand'
 import { temporal } from 'zundo'
+import { Clip, Track, Asset, Marker } from '@veomuse/shared'
 
-export interface Clip {
-  id: string;
-  start: number;
-  end: number;
-  src: string;
-  name: string;
-  type: 'video' | 'audio' | 'text' | 'mask';
-  data?: any;
-}
-
-export interface Marker {
-  id: string;
-  time: number;
-  label: string;
-}
-
-export interface Asset {
-  id: string;
-  name: string;
-  src: string;
-  type: 'video' | 'audio' | 'image';
-  thumbnail?: string;
-}
-
-export interface Track {
-  id: string;
-  name: string;
-  type: 'video' | 'audio' | 'text' | 'mask';
-  clips: Clip[];
-}
+export type { Clip, Track, Asset, Marker };
 
 interface EditorState {
   tracks: Track[];

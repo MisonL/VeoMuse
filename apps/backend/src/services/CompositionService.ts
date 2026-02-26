@@ -1,23 +1,7 @@
 import ffmpeg from 'fluent-ffmpeg';
 import path from 'path';
 import fs from 'fs/promises';
-
-export interface TimelineData {
-  tracks: {
-    id: string;
-    type: 'video' | 'audio' | 'text' | 'mask';
-    clips: {
-      id: string;
-      start: number;
-      end: number;
-      src: string;
-      data?: any;
-    }[];
-  }[];
-  exportConfig?: {
-    quality: 'standard' | '4k-hdr' | 'spatial-vr'; // 增加 VR 选项
-  };
-}
+import type { TimelineData } from '@veomuse/shared';
 
 export class CompositionService {
   static async compose(timelineData: TimelineData): Promise<{ success: boolean; outputPath: string }> {

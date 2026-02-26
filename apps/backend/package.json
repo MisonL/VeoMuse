@@ -8,6 +8,7 @@
     "fluent-ffmpeg": "latest"
   },
   "devDependencies": {
-    "@types/fluent-ffmpeg": "latest"
+    "@types/fluent-ffmpeg": "latest",
+    "@veomuse/shared": "workspace:*"
   }
 }

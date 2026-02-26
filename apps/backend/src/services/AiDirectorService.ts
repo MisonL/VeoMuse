@@ -1,21 +1,7 @@
 // apps/backend/src/services/AiDirectorService.ts
 import { BaseAiService } from './BaseAiService';
 import { ApiKeyService } from './ApiKeyService';
-
-export interface Scene {
-  title: string;
-  videoPrompt: string;
-  audioPrompt: string;
-  voiceoverText: string;
-  duration: number;
-}
-
-export interface DirectorResponse {
-  success: boolean;
-  storyTitle: string;
-  worldId: string;
-  scenes: Scene[];
-}
+import type { DirectorResponse } from '@veomuse/shared';
 
 export class AiDirectorService extends BaseAiService {
   protected serviceName = 'AI-Director';

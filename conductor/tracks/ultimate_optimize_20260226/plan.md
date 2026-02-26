@@ -1,7 +1,7 @@
 # Implementation Plan: VeoMuse 旗舰版终极优化
 
 ## Phase 1: 架构地基与类型安全重塑
-- [ ] **Task: 建立 Shared Type Bridge**
+- [~] **Task: 建立 Shared Type Bridge**
     - [ ] 在 `packages/shared` 中建立统一类型定义。
     - [ ] 移除前端对后端源码的直接引用。
 - [ ] **Task: 重构 Eden Treaty 集成**
