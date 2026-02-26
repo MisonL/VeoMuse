@@ -31,6 +31,8 @@ interface EditorState {
   setMarkers: (markers: Marker[]) => void;
   setCurrentTime: (time: number) => void;
   addClip: (trackId: string, clip: Clip) => void;
+  updateClip: (trackId: string, clipId: string, partialClip: Partial<Clip>) => void;
+  removeClip: (trackId: string, clipId: string) => void;
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -61,6 +63,25 @@ export const useEditorStore = create<EditorState>((set) => ({
     tracks: state.tracks.map(t => 
       t.id === trackId 
         ? { ...t, clips: t.clips.some(c => c.id === clip.id) ? t.clips : [...t.clips, clip] } 
+        : t
+    )
+  })),
+  updateClip: (trackId, clipId, partialClip) => set((state) => ({
+    tracks: state.tracks.map(t => 
+      t.id === trackId
+        ? {
+            ...t,
+            clips: t.clips.map(c => 
+              c.id === clipId ? { ...c, ...partialClip } : c
+            )
+          }
+        : t
+    )
+  })),
+  removeClip: (trackId, clipId) => set((state) => ({
+    tracks: state.tracks.map(t =>
+      t.id === trackId
+        ? { ...t, clips: t.clips.filter(c => c.id !== clipId) }
         : t
     )
   }))
