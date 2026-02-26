@@ -1,24 +1,34 @@
-import { useState, memo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, memo, useCallback } from 'react'
+import { api } from './utils/eden'
+import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import VideoEditor from './components/Editor/VideoEditor'
 import MultiVideoPlayer from './components/Editor/MultiVideoPlayer'
 import PropertyInspector from './components/Editor/PropertyInspector'
 import AssetPanel from './components/Editor/AssetPanel'
 import ToastContainer from './components/Editor/ToastContainer'
-import { GlassCard, ToolButton, ProSlider } from './components/Common/Atoms'
+import { ToolButton } from './components/Common/Atoms'
 import './App.css'
 
 function App() {
-  const [activeTool, setActiveTab] = useState<'select' | 'cut' | 'hand'>('select')
-  const [monitorRes, setMonitorRes] = useState('4K HDR')
-  const [fps, setFps] = useState(60)
+  const { showToast } = useToastStore()
+  const [activeTool, setActiveTool] = useState<'select' | 'cut' | 'hand'>('select')
+  const [monitorRes] = useState('4K HDR | 10-bit')
+  const { tracks } = useEditorStore()
+
+  const handleExport = useCallback(async () => {
+    showToast('正在准备渲染引擎...', 'info');
+    try {
+      const { data, error } = await api.api.video.compose.post({ timelineData: { tracks } });
+      if (error) showToast('渲染任务提交失败', 'error');
+      else if (data && 'outputPath' in data) showToast(`渲染成功: ${data.outputPath}`, 'success');
+    } catch (e: any) { showToast(e.message, 'error'); }
+  }, [tracks, showToast]);
 
   return (
     <div className="pro-workspace">
       <ToastContainer />
       
-      {/* 顶部：全球控制栏 */}
       <header className="pro-header">
         <div className="pro-logo">
           <div className="pro-orb" />
@@ -26,66 +36,71 @@ function App() {
         </div>
         <div className="workspace-tabs">
           <button className="w-tab active">编辑</button>
-          <button className="w-tab">调色</button>
-          <button className="w-tab">音频</button>
-          <button className="w-tab">交付</button>
+          <button className="w-tab">视觉效果</button>
+          <button className="w-tab">音频混合</button>
+          <button className="w-tab">导出</button>
         </div>
         <div className="header-actions">
-          <button className="export-btn">导出作品</button>
+          <button className="export-btn" onClick={handleExport}>导出作品</button>
         </div>
       </header>
 
-      {/* 中部：核心创作区 */}
       <main className="pro-main">
-        {/* 左侧：素材与导演 */}
         <section className="pro-browser">
           <div className="browser-tabs">
-            <button className="b-tab active">素材项目</button>
-            <button className="b-tab">AI 导演</button>
+            <button className="b-tab active">项目资产</button>
+            <button className="b-tab">AI 导演中心</button>
           </div>
           <div className="browser-content">
             <AssetPanel />
           </div>
         </section>
 
-        {/* 中间：主监视器 */}
         <section className="pro-monitor">
           <div className="monitor-header">
+            <div className="status-indicator">● LIVE</div>
             <span className="timecode">00:00:00:00</span>
             <span className="res-tag">{monitorRes}</span>
           </div>
           <div className="monitor-viewport">
             <MultiVideoPlayer />
           </div>
-          <div className="monitor-controls">
-            <ToolButton icon="◀" />
-            <ToolButton icon="▶" active />
-            <ToolButton icon="▶▶" />
+          <div className="monitor-controls-pro">
+            <div className="audio-peak-meter">
+              <div className="audio-meter"><div className="meter-fill" style={{ height: '40%' }} /></div>
+              <div className="audio-meter"><div className="meter-fill" style={{ height: '35%' }} /></div>
+            </div>
+            <div className="transport-controls">
+              <ToolButton icon="⏮" />
+              <ToolButton icon="▶" active />
+              <ToolButton icon="⏭" />
+            </div>
+            <div className="monitor-extras">
+              <span className="fps-label">60 FPS</span>
+            </div>
           </div>
         </section>
 
-        {/* 右侧：精细化属性面板 */}
         <section className="pro-inspector">
           <PropertyInspector />
         </section>
       </main>
 
-      {/* 底部：工业级时间轴 */}
       <footer className="pro-footer">
         <div className="timeline-toolbar">
           <div className="tool-group">
-            <ToolButton icon="↖" active={activeTool === 'select'} onClick={() => setActiveTab('select')} label="选择工具 (V)" />
-            <ToolButton icon="✂" active={activeTool === 'cut'} onClick={() => setActiveTab('cut')} label="剃刀工具 (C)" />
-            <ToolButton icon="✋" active={activeTool === 'hand'} onClick={() => setActiveTab('hand')} label="抓手工具 (H)" />
+            <ToolButton icon="↖" active={activeTool === 'select'} onClick={() => setActiveTool('select')} label="选择工具 (V)" />
+            <ToolButton icon="✂" active={activeTool === 'cut'} onClick={() => setActiveTool('cut')} label="剃刀工具 (C)" />
+            <ToolButton icon="✋" active={activeTool === 'hand'} onClick={() => setActiveTool('hand')} label="抓手工具 (H)" />
           </div>
           <div className="timeline-meta">
-            <span>FPS: {fps}</span>
+            <span className="meta-item">已开启磁吸对齐</span>
             <div className="divider" />
-            <span>自动吸附: 开启</span>
+            <span className="meta-item">渲染缓存: 85%</span>
           </div>
         </div>
-        <div className="timeline-engine">
-          <VideoEditor />
+        <div className="timeline-engine-pro">
+          <VideoEditor activeTool={activeTool} />
         </div>
       </footer>
     </div>
