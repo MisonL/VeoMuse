@@ -42,3 +42,115 @@ body {
               radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.15) 0%, transparent 40%);
   filter: blur(60px);
 }
+.video-editor-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.9) !important;
+}
+
+.editor-toolbar {
+  height: 40px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+}
+
+.time-display {
+  font-family: 'JetBrains Mono', monospace;
+  color: #38bdf8;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.duration-label {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.9rem;
+}
+
+.timeline-wrapper {
+  flex: 1;
+  width: 100%;
+  position: relative;
+  /* 确保 Timeline 能够填满容器 */
+}
+
+.editor-loading {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 深度覆盖样式，解决 Vite 8 编译下的样式优先级问题 */
+:deep(.react-timeline-editor) {
+  background: transparent !important;
+}
+
+/* 标尺样式修复 */
+:deep(.react-timeline-editor-ruler) {
+  background: rgba(255, 255, 255, 0.02) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+:deep(.react-timeline-editor-cursor) {
+  background: #38bdf8 !important;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);
+}
+
+:deep(.react-timeline-editor-action) {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+/* 旗舰版编辑器全局覆盖样式 */
+.video-editor-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0f172a !important;
+}
+
+/* 时间轴主体容器高度 */
+.timeline-wrapper {
+  height: 260px !important;
+  min-height: 260px !important;
+}
+
+.react-timeline-editor {
+  background: transparent !important;
+  color: #fff !important;
+}
+
+/* 标尺 */
+.react-timeline-editor-ruler {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 指针 */
+.react-timeline-editor-cursor {
+  background: #38bdf8 !important;
+  z-index: 10 !important;
+}
+
+/* 轨道 */
+.react-timeline-editor-track {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 片段动作 */
+.react-timeline-editor-action {
+  background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 4px !important;
+}

@@ -1,0 +1,44 @@
+/* 旗舰版编辑器全局覆盖样式 */
+.video-editor-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0f172a !important;
+}
+
+/* 时间轴主体容器高度 */
+.timeline-wrapper {
+  height: 260px !important;
+  min-height: 260px !important;
+}
+
+.react-timeline-editor {
+  background: transparent !important;
+  color: #fff !important;
+}
+
+/* 标尺 */
+.react-timeline-editor-ruler {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 指针 */
+.react-timeline-editor-cursor {
+  background: #38bdf8 !important;
+  z-index: 10 !important;
+}
+
+/* 轨道 */
+.react-timeline-editor-track {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 片段动作 */
+.react-timeline-editor-action {
+  background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 4px !important;
+}

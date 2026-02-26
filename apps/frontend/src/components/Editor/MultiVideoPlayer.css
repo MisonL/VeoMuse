@@ -1,0 +1,35 @@
+.multi-video-player {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.player-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-video-instance {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: none; /* 默认隐藏，由 JS 控制显示 */
+}
+
+.player-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
