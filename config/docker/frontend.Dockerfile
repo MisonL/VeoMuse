@@ -1,20 +1,8 @@
 # config/docker/frontend.Dockerfile
-# Stage 1: Build
-FROM oven/bun:1.1-alpine AS builder
-WORKDIR /app
+FROM nginx:alpine
 
-COPY package.json bun.lock ./
-COPY apps/frontend ./apps/frontend
-COPY packages ./packages
-
-RUN bun install --frozen-lockfile
-WORKDIR /app/apps/frontend
-RUN bun run vite build
-
-# Stage 2: Serve
-FROM nginx:alpine AS runner
-COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html
-# 拷贝自定义 Nginx 配置
+# 直接拷贝宿主机已编译好的产物
+COPY apps/frontend/dist /usr/share/nginx/html
 COPY config/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

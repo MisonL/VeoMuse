@@ -1,17 +1,13 @@
 {
   "name": "@veomuse/backend",
-  "module": "src/index.ts",
-  "type": "module",
-  "private": true,
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/fluent-ffmpeg": "^2.1.28"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
+  "version": "1.0.0",
+  "main": "src/index.ts",
   "dependencies": {
-    "@sinclair/typebox": "^0.34.48",
-    "elysia": "^1.4.25"
+    "elysia": "latest",
+    "@elysiajs/cors": "latest",
+    "fluent-ffmpeg": "latest"
+  },
+  "devDependencies": {
+    "@types/fluent-ffmpeg": "latest"
   }
 }

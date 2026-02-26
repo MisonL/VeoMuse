@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, memo } from 'react'
+import { motion } from 'framer-motion'
 import { api } from './utils/eden'
 import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'

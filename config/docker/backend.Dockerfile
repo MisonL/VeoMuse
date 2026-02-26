@@ -1,32 +1,21 @@
 # config/docker/backend.Dockerfile
-# Stage 1: Build
-FROM oven/bun:1.1-alpine AS builder
+FROM oven/bun:1.3.9
 WORKDIR /app
 
-# 拷贝根目录依赖定义
+# 1. 安装系统级依赖
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
+# 2. 拷贝后端及共享包
 COPY package.json bun.lock ./
-COPY tsconfig.json ./
-
-# 拷贝后端代码
 COPY apps/backend ./apps/backend
-COPY packages ./packages
+COPY packages/shared ./packages/shared
 
-# 安装依赖并构建
-RUN bun install --frozen-lockfile
+# 3. 在后端目录显式安装，强制生成本地 node_modules 消除路径偏差
 WORKDIR /app/apps/backend
-# 确保类型安全检查通过或执行构建逻辑（若有）
-
-# Stage 2: Runtime
-FROM oven/bun:1.1-alpine AS runner
-WORKDIR /app
-
-# 安装 FFmpeg (生产环境必备)
-RUN apk add --no-cache ffmpeg
-
-# 从 Build 阶段拷贝产物
-COPY --from=builder /app /app
+RUN bun install
 
 EXPOSE 3001
 ENV NODE_ENV=production
 
-CMD ["bun", "run", "apps/backend/src/index.ts"]
+# 4. 直接启动
+CMD ["bun", "run", "src/index.ts"]
