@@ -10,9 +10,9 @@
     - [x] **Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)** (Completed)
 
 ## Phase 2: 后端合成引擎
-- [ ] **Task: 构建 FFmpeg 合成服务**
-    - [ ] 在后端创建 `CompositionService.ts`。
-    - [ ] 解析时间轴数据，生成 `filter_complex` 命令将片段按时间拼接。
+- [x] **Task: 构建 FFmpeg 合成服务** (aca8ae6)
+    - [x] 在后端创建 `CompositionService.ts`。
+    - [x] 解析时间轴数据，生成 `filter_complex` 命令将片段按时间拼接。
 - [ ] **Task: 暴露合成 API**
     - [ ] 增加 `/api/video/compose` 接口。
     - [ ] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)**
