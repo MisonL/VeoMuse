@@ -7,7 +7,7 @@ export interface Clip {
   end: number;
   src: string;
   name: string;
-  type: 'video' | 'audio' | 'text';
+  type: 'video' | 'audio' | 'text' | 'mask'; // 加入蒙版类型
   data?: any;
 }
 
@@ -28,7 +28,7 @@ export interface Asset {
 export interface Track {
   id: string;
   name: string;
-  type: 'video' | 'audio' | 'text';
+  type: 'video' | 'audio' | 'text' | 'mask'; // 加入蒙版类型
   clips: Clip[];
 }
 
@@ -59,6 +59,7 @@ interface EditorState {
 export const useEditorStore = create<EditorState>()(
   temporal((set) => ({
     tracks: [
+      { id: 'track-mask1', name: '智能蒙版', type: 'mask', clips: [] }, // 蒙版层最高优先级
       { id: 'track-v1', name: '主视频轨道', type: 'video', clips: [] },
       { id: 'track-a1', name: '背景音乐', type: 'audio', clips: [] },
       { id: 'track-t1', name: '文字层', type: 'text', clips: [] }
@@ -115,14 +116,9 @@ export const useEditorStore = create<EditorState>()(
         if (t.id !== trackId) return t;
         const clip = t.clips.find(c => c.id === clipId);
         if (!clip || at <= clip.start || at >= clip.end) return t;
-
         const c1 = { ...clip, end: at };
         const c2 = { ...clip, id: `${clip.id}-split-${Date.now()}`, start: at };
-        
-        return {
-          ...t,
-          clips: [...t.clips.filter(c => c.id !== clipId), c1, c2]
-        };
+        return { ...t, clips: [...t.clips.filter(c => c.id !== clipId), c1, c2] };
       })
     }))
   }))

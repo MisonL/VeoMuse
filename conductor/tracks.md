@@ -28,5 +28,11 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: 视觉艺术进阶：片段转场特效、文字动态预设与全局滤镜引擎**
   *Link: [./tracks/editor_visual_fx_20260225/](./tracks/editor_visual_fx_20260225/)*
 
-- [ ] **Track: AI 音频革命：智能配音 (TTS) 与创意背景音乐合成**
+- [x] **Track: AI 音频革命：智能配音 (TTS) 与创意背景音乐合成**
   *Link: [./tracks/ai_audio_revolution_20260225/](./tracks/ai_audio_revolution_20260225/)*
+
+- [x] **Track: 全球模型总线：多模型架构抽象、Sora/Kling 对接与智能对比实验室**
+  *Link: [./tracks/multi_model_orchestrator_20260225/](./tracks/multi_model_orchestrator_20260225/)*
+
+- [x] **Track: AI 创意巅峰：‘一键导演’自动化剪辑、语义级画面蒙版与智能叙事修复**
+  *Link: [./tracks/ai_director_peak_20260225/](./tracks/ai_director_peak_20260225/)*
