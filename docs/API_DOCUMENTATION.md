@@ -1,266 +1,51 @@
-# VeoMuse API 接口文档
+# VeoMuse 旗舰版 API 接口文档 (V3.1 Pro)
 
-## 基础 URL
+## 1. 视频模型总线 (Model Orchestrator)
 
-```
-http://localhost:5173/api
-```
+### GET `/api/models`
+返回当前系统支持的所有已注册模型驱动。
 
-## 身份验证
+### POST `/api/video/generate`
+向指定的 AI 模型提交视频生成任务。
+- **Body**: `{ text: string, modelId?: string, negativePrompt?: string }`
 
-所有 API 接口都需要有效的 Gemini API 密钥。您可以在请求体中提供，或通过`.env`文件配置。
+### POST `/api/models/recommend`
+利用 Gemini 3.1 Pro 根据提示词推荐最佳模型。
+- **Body**: `{ prompt: string }`
 
-## 模型管理
+## 2. 智能导演与创作 (AI Director)
 
-### 获取可用模型
+### POST `/api/ai/director/analyze`
+将长脚本拆解为分镜列表及排版指令。
+- **Body**: `{ script: string }`
 
-获取可用于视频生成和提示词优化的模型列表。
+### POST `/api/ai/enhance`
+提示词深度推理增强（Thinking Level: HIGH）。
+- **Body**: `{ prompt: string }`
 
-**接口地址：** `GET /models`  
-**查询参数：**
+### POST `/api/ai/repair`
+画面逻辑诊断与修复建议。
+- **Body**: `{ description: string }`
 
-- `apiKey` (可选)：您的 Gemini API 密钥
+## 3. 音频与叙事 (Audio & Visual)
 
-**响应示例：**
+### POST `/api/ai/tts`
+文字转语音合成。
+- **Body**: `{ text: string }`
 
-```json
-{
-  "videoModels": [
-    {
-      "id": "veo-3.1-generate-001",
-      "name": "Veo 3.1"
-    }
-  ],
-  "optimizationModels": [
-    {
-      "id": "gemini-2.5-pro",
-      "name": "Gemini 2.5 Pro"
-    }
-  ]
-}
-```
+### POST `/api/ai/voice-morph`
+音色克隆与迁移。
+- **Body**: `{ audioUrl: string, targetVoiceId: string }`
 
-## 文字生成视频
+### POST `/api/ai/analyze-audio`
+音频节奏与鼓点分析。
+- **Body**: `{ audioUrl: string }`
 
-### 根据文字描述生成视频
+## 4. 后台合成引擎 (Composition)
 
-基于文字描述创建视频内容。
+### POST `/api/video/compose`
+将时间轴 JSON 数据物理合成为 MP4 文件。
+- **Body**: `{ timelineData: any }`
 
-**接口地址：** `POST /text-to-video`  
-**请求体：**
-
-```json
-{
-  "text": "海洋上美丽的日落景色",
-  "negativePrompt": "模糊，低质量",
-  "apiKey": "your-api-key",
-  "model": "veo-3.0-generate-preview",
-  "optimize": true,
-  "socketId": "实时更新的socket-id"
-}
-```
-
-**响应示例：**
-
-```json
-{
-  "success": true,
-  "message": "视频生成已开始",
-  "operationName": "operations/...",
-  "usedApiKey": "使用的API密钥",
-  "usedModel": "veo-3.0-generate-preview"
-}
-```
-
-## 图片生成视频
-
-### 根据图片生成视频
-
-基于上传的图片和描述创建视频内容。
-
-**接口地址：** `POST /image-to-video`  
-**表单数据：**
-
-- `image`：要上传的图片文件
-- `prompt`：如何生成视频的描述
-- `negativePrompt`：视频中要避免的元素
-- `apiKey`：您的 Gemini API 密钥
-- `model`：用于生成的模型
-- `optimize`：是否优化提示词
-- `socketId`：实时更新的 Socket ID
-
-**响应示例：**
-
-```json
-{
-  "success": true,
-  "message": "视频生成已开始",
-  "operationName": "operations/...",
-  "usedApiKey": "使用的API密钥",
-  "usedModel": "veo-3.0-generate-preview"
-}
-```
-
-## 批量任务管理
-
-### 创建批量任务
-
-创建一个包含多个生成请求的批量任务。
-
-**接口地址：** `POST /batch`
-**请求体：**
-
-```json
-{
-  "name": "社交媒体视频批量",
-  "inputs": [{ "text": "场景1描述..." }, { "text": "场景2描述..." }],
-  "template": "social_media", // 可选模板ID
-  "settings": {
-    "resolution": "1080p"
-  },
-  "optimizePrompts": true,
-  "maxConcurrent": 3
-}
-```
-
-### 获取批量任务列表
-
-获取当前用户的批量任务列表。
-
-**接口地址：** `GET /batches`
-**响应示例：**
-
-```json
-{
-  "success": true,
-  "batches": [
-    {
-      "id": "batch_123...",
-      "name": "社交媒体视频批量",
-      "status": "processing",
-      "progress": 50,
-      "totalJobs": 10,
-      "completedJobs": 5
-    }
-  ]
-}
-```
-
-### 获取批量任务详情
-
-获取特定批量任务的详细状态和结果。
-
-**接口地址：** `GET /batch/:batchId`
-
-## 提示词模板
-
-### 获取所有模板
-
-获取系统预设和自定义的提示词模板。
-
-**接口地址：** `GET /prompts`
-**响应示例：**
-
-```json
-{
-  "success": true,
-  "templates": [
-    {
-      "id": "social_media",
-      "name": "社交媒体短视频",
-      "category": "social",
-      "basePrompt": "..."
-    }
-  ]
-}
-```
-
-### 优化提示词
-
-使用 AI 优化原始提示词。
-
-**接口地址：** `POST /prompts/optimize`
-**请求体：**
-
-```json
-{
-  "prompt": "一只猫",
-  "model": "gemini-2.5-pro"
-}
-```
-
-## 视频后处理
-
-### 视频转码
-
-将视频转换为不同的格式、分辨率或帧率。
-
-**接口地址：** `POST /transcode-video`  
-**请求体：**
-
-```json
-{
-  "inputPath": "generated/video-12345.mp4",
-  "format": "webm",
-  "resolution": "720p",
-  "fps": 30,
-  "socketId": "实时更新的socket-id"
-}
-```
-
-### 生成 GIF
-
-将视频转换为 GIF 动图。
-
-**接口地址：** `POST /generate-gif`
-**请求体：**
-
-```json
-{
-  "inputPath": "generated/video-12345.mp4"
-}
-```
-
-### 截取封面
-
-截取视频指定时间点的封面图。
-
-**接口地址：** `POST /capture-thumbnail`
-**请求体：**
-
-```json
-{
-  "inputPath": "generated/video-12345.mp4",
-  "time": "00:00:01"
-}
-```
-
-## 实时更新
-
-应用程序使用 Socket.IO 在视频生成和转码过程中提供实时进度更新。
-
-### 事件列表
-
-- `generationProgress`：视频生成过程中触发
-- `batchUpdate`：批量任务状态更新
-- `jobUpdate`：批量任务中单个作业状态更新
-- `transcodeProgress`：视频转码过程中触发
-- `transcodeComplete`：转码完成时触发
-- `transcodeError`：转码失败时触发
-
-## 健康检查
-
-### 应用程序健康状态
-
-检查应用程序是否正常运行。
-
-**接口地址：** `GET /health`  
-**响应示例：**
-
-```json
-{
-  "status": "ok",
-  "timestamp": "2023-01-01T00:00:00.000Z",
-  "version": "3.0.0"
-}
-```
+---
+**所有接口均受 Eden Treaty 强类型保护**

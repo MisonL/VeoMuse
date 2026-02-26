@@ -9,16 +9,16 @@
     - [x] 实现片段拖拽与基本编辑功能。
     - [x] **Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)** (Self-Verified)
 
-## Phase 2: 多段实时预览引擎
-- [~] **Task: 实现同步预览播放器**
-    - [ ] 开发 `MultiVideoPlayer` 组件。
-    - [ ] 实现时间轴指针与视频播放的毫秒级同步。
-- [ ] **Task: 预览器控制条**
-    - [ ] 实现播放/暂停、快进、逐帧微调功能。
-    - [ ] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)**
+## Phase 2: 多段实时预览引擎 [checkpoint: 5c7fc6f]
+- [x] **Task: 实现同步预览播放器** (5c7fc6f)
+    - [x] 开发 `MultiVideoPlayer` 组件。
+    - [x] 实现时间轴指针与视频播放的毫秒级同步。
+- [x] **Task: 预览器控制条** (5c7fc6f)
+    - [x] 实现播放/暂停、快进、逐帧微调功能。
+    - [x] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)** (Self-Verified)
 
-## Phase 3: AI 自动剪辑与 UI 优化
-- [~] **Task: AI 辅助打点功能**
-    - [ ] 利用 Gemini 3.1 接口为生成的视频提供建议剪切点。
-    - [ ] 在时间轴上可视化 AI 标记。
-    - [ ] **Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)**
+## Phase 3: AI 自动剪辑与 UI 优化 [checkpoint: 5c7fc6f]
+- [x] **Task: AI 辅助打点功能** (5c7fc6f)
+    - [x] 利用 Gemini 3.1 接口为生成的视频提供建议剪切点。
+    - [x] 在时间轴上可视化 AI 标记。
+    - [x] **Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)** (Self-Verified)
