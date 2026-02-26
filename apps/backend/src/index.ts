@@ -20,11 +20,6 @@ import { InpaintService } from './services/InpaintService'
 import { AudioAnalysisService } from './services/AudioAnalysisService'
 import { VoiceMorphService } from './services/VoiceMorphService'
 import { TranslationService } from './services/TranslationService'
-import { ActorConsistencyService } from './services/ActorConsistencyService'
-import { LipSyncService } from './services/LipSyncService'
-import { RelightingService } from './services/RelightingService'
-import { VfxService } from './services/VfxService'
-import { SpatialRenderService } from './services/SpatialRenderService'
 
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
 VideoOrchestrator.registerDriver(new GeminiDriver());
@@ -36,7 +31,12 @@ VideoOrchestrator.registerDriver(new PikaDriver());
 
 const app = new Elysia()
   .use(cors())
-  .get('/', () => 'VeoMuse 旗舰版后端 (Alchemy Peak Active)')
+  .onError(({ code, error, set }) => {
+    console.error(`🚨 [API Error] ${code}: ${error.message}`);
+    set.status = 500;
+    return { success: false, error: error.message, code };
+  })
+  .get('/', () => 'VeoMuse 旗舰版后端 (Peak Stability)')
   .get('/health', () => ({ status: 'ok', timestamp: new Date().toISOString() }))
   .group('/api', (app) => 
     app
@@ -60,8 +60,6 @@ const app = new Elysia()
         })
       })
       .post('/ai/alchemy/style-transfer', async ({ body }) => {
-        console.log(`🧪 正在执行视觉炼金: 风格 [${body.style}]`);
-        // 逻辑：调用支持风格引导的模型（如 Kling/Luma）进行视频重绘
         return { success: true, operationName: `alchemy_vfx_${Date.now()}` };
       }, { body: t.Object({ clipId: t.String(), style: t.String() }) })
       .post('/ai/enhance', async ({ body }) => {
@@ -100,25 +98,6 @@ const app = new Elysia()
         try { return await VoiceMorphService.morph(body.audioUrl, body.targetVoiceId); }
         catch (e: any) { return { success: false, error: e.message }; }
       }, { body: t.Object({ audioUrl: t.String(), targetVoiceId: t.String() }) })
-      .get('/ai/actors', () => ActorConsistencyService.getAllActors())
-      .post('/ai/actors/generate', async ({ body }) => {
-        try {
-          const params = ActorConsistencyService.buildCharacterParams(body.actorId, body.prompt, body.strength);
-          return await VideoOrchestrator.generate(body.modelId || 'veo-3.1', params);
-        } catch (e: any) { return { success: false, error: e.message }; }
-      }, { body: t.Object({ prompt: t.String(), actorId: t.String(), strength: t.Optional(t.Number()), modelId: t.Optional(t.String()) }) })
-      .post('/ai/sync-lip', async ({ body }) => {
-        try { return await LipSyncService.sync(body.videoUrl, body.audioUrl, body.precision || 'high'); }
-        catch (e: any) { return { success: false, error: e.message }; }
-      }, { body: t.Object({ videoUrl: t.String(), audioUrl: t.String(), precision: t.Optional(t.String()) }) })
-      .post('/ai/relighting/apply', async ({ body }) => {
-        try { return await RelightingService.applyRelighting(body as any); }
-        catch (e: any) { return { success: false, error: e.message }; }
-      }, { body: t.Object({ clipId: t.String(), lightStyle: t.String(), intensity: t.Optional(t.Number()) }) })
-      .post('/ai/vfx/apply', async ({ body }) => {
-        try { return await VfxService.applyVfx(body as any); }
-        catch (e: any) { return { success: false, error: e.message }; }
-      }, { body: t.Object({ clipId: t.String(), vfxType: t.String(), intensity: t.Optional(t.Number()) }) })
       .post('/ai/spatial/render', async ({ body }) => {
         try { return await SpatialRenderService.reconstruct(body.clipId, body.quality || 'ultra'); }
         catch (e: any) { return { success: false, error: e.message }; }
@@ -129,10 +108,10 @@ const app = new Elysia()
       }, { body: t.Object({ timelineData: t.Any() }) })
   )
   .ws('/ws/generation', {
-    open(ws) { ws.send({ message: '已连接到媒体炼金术终极频道' }); }
+    open(ws) { ws.send({ message: '已连接到旗舰级总线' }); }
   })
   .listen(process.env.PORT || 3001)
 
-console.log(`🚀 VeoMuse 旗舰后端 (Ultimate Alchemy) 已启动`)
+console.log(`🚀 VeoMuse 旗舰后端 (Peak Stability) 已启动: ${app.server?.port}`)
 
 export type App = typeof app
