@@ -1,44 +1,3 @@
-/* ... (保留之前的样式) */
-
-.beats-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.beat-tick {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: rgba(168, 85, 247, 0.15); /* 暗紫色 */
-  border-left: 1px dashed rgba(168, 85, 247, 0.3);
-}
-
-.snap-guide-line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.snap-guide-line.clip {
-  background: #38bdf8;
-  box-shadow: 0 0 15px #38bdf8;
-}
-
-.snap-guide-line.beat {
-  background: #a855f7;
-  box-shadow: 0 0 15px #a855f7, 0 0 30px rgba(168, 85, 247, 0.5);
-}
-
-/* ... (后续保持之前的样式定义) */
 .video-editor-container {
   width: 100%;
   height: 100%;
@@ -83,6 +42,23 @@
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+}
+
+.history-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+.zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .time-display {
@@ -106,6 +82,45 @@
   position: relative;
 }
 
+.beats-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.beat-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(168, 85, 247, 0.15);
+  border-left: 1px dashed rgba(168, 85, 247, 0.3);
+}
+
+.snap-guide-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.snap-guide-line.clip {
+  background: #38bdf8;
+  box-shadow: 0 0 15px #38bdf8;
+}
+
+.snap-guide-line.beat {
+  background: #a855f7;
+  box-shadow: 0 0 15px #a855f7;
+}
+
+/* 全局覆盖样式，不再使用 :deep */
 .react-timeline-editor {
   background: transparent !important;
 }
@@ -125,4 +140,9 @@
   background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 4px !important;
+}
+
+.react-timeline-editor-action-selected {
+  outline: 2px solid #fbbf24 !important;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4) !important;
 }
