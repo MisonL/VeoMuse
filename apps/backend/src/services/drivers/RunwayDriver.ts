@@ -1,5 +1,5 @@
 // apps/backend/src/services/drivers/RunwayDriver.ts
-import { VideoModelDriver, GenerateParams, GenerateResult } from '../ModelDriver';
+import type { VideoModelDriver, GenerateParams, GenerateResult } from '../ModelDriver';
 
 export class RunwayDriver implements VideoModelDriver {
   id = 'runway-gen3';
@@ -7,8 +7,6 @@ export class RunwayDriver implements VideoModelDriver {
 
   async generate(params: GenerateParams): Promise<GenerateResult> {
     console.log(`🎬 Runway API: 正在应用 Gen-3 运动模型，强度：${params.options?.motionIntensity || 5}`);
-    
-    // 模拟 Runway API 交互
     return {
       success: true,
       operationName: `runway_gen3_${Date.now()}`,

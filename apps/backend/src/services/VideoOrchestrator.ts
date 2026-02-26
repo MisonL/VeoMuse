@@ -1,5 +1,5 @@
 // apps/backend/src/services/VideoOrchestrator.ts
-import { VideoModelDriver, GenerateParams, GenerateResult } from './ModelDriver';
+import type { VideoModelDriver, GenerateParams, GenerateResult } from './ModelDriver';
 
 export class VideoOrchestrator {
   private static drivers: Map<string, VideoModelDriver> = new Map();

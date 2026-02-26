@@ -4,12 +4,12 @@ export interface GenerateParams {
   text: string;
   negativePrompt?: string;
   aspectRatio?: string;
-  // 模型特有参数映射
   options?: {
-    motionIntensity?: number; // 运镜强度 (0-10)
-    quality?: 'standard' | 'high' | 'ultra'; // 渲染质量
-    thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH'; // 推理等级
-    creativeScale?: number; // 创意权重
+    motionIntensity?: number;
+    quality?: 'standard' | 'high' | 'ultra';
+    thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+    creativeScale?: number;
+    creativeEffect?: string; // 补齐 Pika 特效属性
   };
 }
 

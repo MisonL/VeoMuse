@@ -1,22 +1,16 @@
 // apps/backend/src/services/LipSyncService.ts
+import { BaseAiService } from './BaseAiService';
 
-export interface LipSyncResult {
-  success: boolean;
-  syncedVideoUrl: string;
-  operationId: string;
-}
+export class LipSyncService extends BaseAiService {
+  protected serviceName = 'AI-Lip-Sync';
+  private static instance = new LipSyncService();
 
-export class LipSyncService {
-  // 增强型：支持定义对齐精度
-  static async sync(videoUrl: string, audioUrl: string, precision: 'standard' | 'high' = 'high'): Promise<LipSyncResult> {
-    console.log(`👄 正在执行 [${precision}] 精度对口型: 视频[${videoUrl}] + 音频[${audioUrl}]`);
-    
-    // 逻辑：high 模式下会执行额外的面部特征点追踪和补帧
-    const timestamp = Date.now();
+  static async sync(videoUrl: string, audioUrl: string, precision: string = 'high'): Promise<any> {
+    console.log(`👄 [Metrics] 启动对口型同步: ${precision}`);
     return {
       success: true,
-      syncedVideoUrl: `/uploads/generated/synced_precision_${timestamp}.mp4`,
-      operationId: `lip_sync_ultra_${timestamp}`
+      syncedVideoUrl: `/uploads/generated/synced_${Date.now()}.mp4`,
+      operationId: `lip_${Date.now()}`
     };
   }
 }

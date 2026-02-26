@@ -28,16 +28,13 @@ export abstract class BaseAiService {
         }
 
         const data = await response.json() as any;
-        
-        // 核心优化：如果返回的是 Gemini 标准格式，自动提取候选内容
-        // 减少子类的冗余解析逻辑
         const endTime = performance.now();
         const durationMs = Math.round(endTime - startTime);
 
         const metrics: PerformanceMetrics = {
           durationMs,
           timestamp: new Date().toISOString(),
-          endpoint: url.split('?')[0]
+          endpoint: url.split('?')[0] || url // 修复：增加回退值处理 undefined
         };
 
         console.log(`📊 [Metrics] ${this.serviceName}: ${durationMs}ms | ${metrics.endpoint}`);
@@ -55,7 +52,6 @@ export abstract class BaseAiService {
     throw lastError || new Error(`[${this.serviceName}] 请求失败`);
   }
 
-  // 辅助方法：解析 Gemini 的 JSON 响应
   protected parseGeminiJson(data: any): any {
     try {
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;

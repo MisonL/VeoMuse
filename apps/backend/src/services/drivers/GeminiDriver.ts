@@ -1,5 +1,5 @@
 // apps/backend/src/services/drivers/GeminiDriver.ts
-import { VideoModelDriver, GenerateParams, GenerateResult } from '../ModelDriver';
+import type { VideoModelDriver, GenerateParams, GenerateResult } from '../ModelDriver';
 import { ApiKeyService } from '../ApiKeyService';
 
 export class GeminiDriver implements VideoModelDriver {
@@ -22,9 +22,7 @@ export class GeminiDriver implements VideoModelDriver {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: params.negativePrompt ? `${params.text}
-
-Negative: ${params.negativePrompt}` : params.text
+                text: params.negativePrompt ? `${params.text}\n\nNegative: ${params.negativePrompt}` : params.text
               }]
             }]
           })

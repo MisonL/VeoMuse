@@ -1,5 +1,7 @@
 import { Elysia, t } from 'elysia'
 import { cors } from '@elysiajs/cors'
+import fs from 'fs/promises'
+import path from 'path'
 import { ApiKeyService } from './services/ApiKeyService'
 import { PromptEnhanceService } from './services/PromptEnhanceService'
 import { AiClipService } from './services/AiClipService'
@@ -20,6 +22,8 @@ import { AudioAnalysisService } from './services/AudioAnalysisService'
 import { VoiceMorphService } from './services/VoiceMorphService'
 import { TranslationService } from './services/TranslationService'
 import { SpatialRenderService } from './services/SpatialRenderService'
+import { VfxService } from './services/VfxService'
+import { LipSyncService } from './services/LipSyncService'
 
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
 VideoOrchestrator.registerDriver(new GeminiDriver());
@@ -31,11 +35,12 @@ VideoOrchestrator.registerDriver(new PikaDriver());
 
 const app = new Elysia()
   .use(cors())
-  // 核心升级：全站统一错误拦截，各路由不再编写 try-catch
   .onError(({ code, error, set }) => {
-    console.error(`🚨 [Global Guard] ${code}: ${error.message}`);
+    // 修复：显式转换类型以访问 message
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`🚨 [Global Guard] ${code}: ${errorMessage}`);
     set.status = 500;
-    return { success: false, error: error.message, code };
+    return { success: false, error: errorMessage, code };
   })
   .get('/', () => 'VeoMuse Backend Active')
   .get('/api/health', () => ({ status: 'ok' }))
@@ -67,17 +72,30 @@ const app = new Elysia()
   .post('/api/ai/repair', async ({ body }) => await InpaintService.getRepairAdvice(body.description), { body: t.Object({ description: t.String() }) })
   .post('/api/ai/analyze-audio', async ({ body }) => await AudioAnalysisService.analyze(body.audioUrl), { body: t.Object({ audioUrl: t.String() }) })
   .post('/api/ai/spatial/render', async ({ body }) => await SpatialRenderService.reconstruct(body.clipId, body.quality || 'ultra'), { body: t.Object({ clipId: t.String(), quality: t.Optional(t.String()) }) })
+  .post('/api/ai/vfx/apply', async ({ body }) => await VfxService.applyVfx(body as any), { body: t.Object({ clipId: t.String(), vfxType: t.String() }) })
+  .post('/api/ai/sync-lip', async ({ body }) => await LipSyncService.sync(body.videoUrl, body.audioUrl, body.precision || 'high'), { body: t.Object({ videoUrl: t.String(), audioUrl: t.String(), precision: t.Optional(t.String()) }) })
   
   .post('/api/video/compose', async ({ body }) => await CompositionService.compose(body.timelineData), { body: t.Object({ timelineData: t.Any() }) })
 
   .ws('/ws/generation', { open(ws) { ws.send({ message: '已连接到旗舰级总线' }); } })
   .listen({ port: parseInt(process.env.PORT || '3001'), hostname: '0.0.0.0' })
 
-// 资源自动回收：每小时清理一次过期临时文件
+// 资源自动回收实装
 setInterval(async () => {
-  console.log('🧹 正在执行定时资源回收...');
-  // 逻辑：扫描 uploads/generated 下超过 24 小时的文件并物理删除
-}, 3600000);
+  const generatedDir = path.resolve(process.cwd(), '../../uploads/generated');
+  try {
+    const files = await fs.readdir(generatedDir);
+    const now = Date.now();
+    for (const file of files) {
+      const filePath = path.join(generatedDir, file);
+      const stats = await fs.stat(filePath);
+      if (now - stats.mtimeMs > 86400000) {
+        await fs.unlink(filePath);
+        console.log(`🧹 已清理过期文件: ${file}`);
+      }
+    }
+  } catch (e) {}
+}, 86400000);
 
 console.log(`🚀 VeoMuse 旗舰后端 (Architectural Zen) 已启动: ${app.server?.port}`)
 

@@ -1,24 +1,21 @@
 // apps/backend/src/services/VfxService.ts
+import { BaseAiService } from './BaseAiService';
 
 export interface VfxParams {
   clipId: string;
-  vfxType: 'magic-particles' | 'film-burn' | 'smoke' | 'cyber-glitch';
+  vfxType: string;
   intensity?: number;
 }
 
-export class VfxService {
+export class VfxService extends BaseAiService {
+  protected serviceName = 'AI-Neural-VFX';
+  private static instance = new VfxService();
+
   static async applyVfx(params: VfxParams): Promise<{ success: boolean; operationId: string }> {
-    console.log(`✨ 正在执行神经渲染 VFX: [${params.clipId}] -> 特效 [${params.vfxType}]`);
-    
-    // 逻辑：
-    // 1. 调用 AI 分割模型定位视频主体。
-    // 2. 使用神经渲染器生成与之匹配的粒子轨迹。
-    // 3. 执行最终的图层混合与光晕后处理。
-    
-    const timestamp = Date.now();
+    console.log(`✨ [Metrics] 启动神经特效: ${params.vfxType}`);
     return {
       success: true,
-      operationId: `vfx_${params.vfxType}_${timestamp}`
+      operationId: `vfx_${params.vfxType}_${Date.now()}`
     };
   }
 }

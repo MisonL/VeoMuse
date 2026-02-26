@@ -14,10 +14,10 @@ export class ApiKeyService {
   }
 
   static getNextKey(): string {
-    if (this.keys.length === 0) {
-      throw new Error('未配置 Gemini API 密钥。请检查环境变量。');
-    }
     const key = this.keys[this.currentIndex];
+    if (!key) {
+      throw new Error('未配置 Gemini API 密钥，请在环境变量中设置 GEMINI_API_KEYS');
+    }
     this.currentIndex = (this.currentIndex + 1) % this.keys.length;
     return key;
   }
