@@ -36,7 +36,6 @@ VideoOrchestrator.registerDriver(new PikaDriver());
 const app = new Elysia()
   .use(cors())
   .onError(({ code, error, set }) => {
-    // 修复：显式转换类型以访问 message
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(`🚨 [Global Guard] ${code}: ${errorMessage}`);
     set.status = 500;
@@ -61,26 +60,31 @@ const app = new Elysia()
     })
   })
   
-  .post('/api/ai/alchemy/style-transfer', async () => ({ success: true, operationName: `alc_${Date.now()}` }), { body: t.Object({ clipId: t.String(), style: t.String() }) })
-  .post('/api/ai/enhance', async ({ body }) => await PromptEnhanceService.enhance(body.prompt), { body: t.Object({ prompt: t.String() }) })
-  .post('/api/ai/translate', async ({ body }) => await TranslationService.translate(body.text, body.targetLang), { body: t.Object({ text: t.String(), targetLang: t.String() }) })
-  .post('/api/ai/director/analyze', async ({ body }) => await AiDirectorService.analyzeScript(body.script), { body: t.Object({ script: t.String() }) })
-  .post('/api/ai/suggest-cuts', async ({ body }) => await AiClipService.suggestCuts(body.description, body.duration), { body: t.Object({ description: t.String(), duration: t.Number() }) })
-  .post('/api/ai/tts', async ({ body }) => await TtsService.synthesize(body.text), { body: t.Object({ text: t.String() }) })
-  .post('/api/ai/voice-morph', async ({ body }) => await VoiceMorphService.morph(body.audioUrl, body.targetVoiceId), { body: t.Object({ audioUrl: t.String(), targetVoiceId: t.String() }) })
-  .post('/api/ai/music-advice', async ({ body }) => await MusicAdviceService.getAdvice(body.description), { body: t.Object({ description: t.String() }) })
-  .post('/api/ai/repair', async ({ body }) => await InpaintService.getRepairAdvice(body.description), { body: t.Object({ description: t.String() }) })
-  .post('/api/ai/analyze-audio', async ({ body }) => await AudioAnalysisService.analyze(body.audioUrl), { body: t.Object({ audioUrl: t.String() }) })
-  .post('/api/ai/spatial/render', async ({ body }) => await SpatialRenderService.reconstruct(body.clipId, body.quality || 'ultra'), { body: t.Object({ clipId: t.String(), quality: t.Optional(t.String()) }) })
-  .post('/api/ai/vfx/apply', async ({ body }) => await VfxService.applyVfx(body as any), { body: t.Object({ clipId: t.String(), vfxType: t.String() }) })
-  .post('/api/ai/sync-lip', async ({ body }) => await LipSyncService.sync(body.videoUrl, body.audioUrl, body.precision || 'high'), { body: t.Object({ videoUrl: t.String(), audioUrl: t.String(), precision: t.Optional(t.String()) }) })
+  .group('/api/ai', (app) => app
+    .post('/alchemy/style-transfer', async () => ({ success: true, operationName: `alc_${Date.now()}` }), { body: t.Object({ clipId: t.String(), style: t.String() }) })
+    .post('/enhance', async ({ body }) => await PromptEnhanceService.enhance(body.prompt), { body: t.Object({ prompt: t.String() }) })
+    .post('/translate', async ({ body }) => await TranslationService.translate(body.text, body.targetLang), { body: t.Object({ text: t.String(), targetLang: t.String() }) })
+    .post('/director/analyze', async ({ body }) => await AiDirectorService.analyzeScript(body.script), { body: t.Object({ script: t.String() }) })
+    .post('/suggest-cuts', async ({ body }) => await AiClipService.suggestCuts(body.description, body.duration), { body: t.Object({ description: t.String(), duration: t.Number() }) })
+    .post('/tts', async ({ body }) => await TtsService.synthesize(body.text), { body: t.Object({ text: t.String() }) })
+    .post('/voice-morph', async ({ body }) => await VoiceMorphService.morph(body.audioUrl, body.targetVoiceId), { body: t.Object({ audioUrl: t.String(), targetVoiceId: t.String() }) })
+    .post('/music-advice', async ({ body }) => await MusicAdviceService.getAdvice(body.description), { body: t.Object({ description: t.String() }) })
+    .post('/repair', async ({ body }) => await InpaintService.getRepairAdvice(body.description), { body: t.Object({ description: t.String() }) })
+    .post('/analyze-audio', async ({ body }) => await AudioAnalysisService.analyze(body.audioUrl), { body: t.Object({ audioUrl: t.String() }) })
+    .post('/spatial/render', async ({ body }) => await SpatialRenderService.reconstruct(body.clipId, body.quality || 'ultra'), { body: t.Object({ clipId: t.String(), quality: t.Optional(t.String()) }) })
+    .post('/vfx/apply', async ({ body }) => await VfxService.applyVfx(body as any), { body: t.Object({ clipId: t.String(), vfxType: t.String() }) })
+    .post('/sync-lip', async ({ body }) => await LipSyncService.sync(body.videoUrl, body.audioUrl, body.precision || 'high'), { body: t.Object({ videoUrl: t.String(), audioUrl: t.String(), precision: t.Optional(t.String()) }) })
+    // 添加 actors 路由以对齐前端调用
+    .group('/actors', (app) => app
+      .post('/generate', async ({ body }) => ({ success: true, message: 'Actor generation started' }), { body: t.Object({ prompt: t.String(), actorId: t.String(), modelId: t.Optional(t.String()) }) })
+    )
+  )
   
   .post('/api/video/compose', async ({ body }) => await CompositionService.compose(body.timelineData), { body: t.Object({ timelineData: t.Any() }) })
 
   .ws('/ws/generation', { open(ws) { ws.send({ message: '已连接到旗舰级总线' }); } })
   .listen({ port: parseInt(process.env.PORT || '3001'), hostname: '0.0.0.0' })
 
-// 资源自动回收实装
 setInterval(async () => {
   const generatedDir = path.resolve(process.cwd(), '../../uploads/generated');
   try {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, memo } from 'react'
 import { motion } from 'framer-motion'
-import { api } from './utils/eden'
+import { api, getErrorMessage } from './utils/eden'
 import { useEditorStore, Track, Clip } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import VideoEditor from './components/Editor/VideoEditor'
@@ -10,7 +10,6 @@ import PropertyInspector from './components/Editor/PropertyInspector'
 import ComparisonLab from './components/Editor/ComparisonLab'
 import ToastContainer from './components/Editor/ToastContainer'
 import { GlassCard, ProButton } from './components/Common/Atoms'
-import { MotionSyncManager } from './utils/motionSync'
 import './App.css'
 
 const MemoVideoEditor = memo(VideoEditor)
@@ -41,10 +40,15 @@ function App() {
     setIsDirecting(true);
     showToast('🎬 AI 导演正在规划分镜...', 'info');
     try {
-      const { data } = await api.api.ai.director.analyze.post({ script });
-      if (data?.success) {
+      const { data, error } = await api.api.ai.director.analyze.post({ script });
+      
+      if (error) {
+        showToast(getErrorMessage(error), 'error');
+        return;
+      }
+
+      if (data && 'scenes' in data) {
         let offset = 0;
-        // 高性能重构：本地计算所有片段，避免频繁触发 Zustand 更新
         const newTracks: Track[] = JSON.parse(JSON.stringify(useEditorStore.getState().tracks));
         const vTrack = newTracks.find(t => t.id === 'track-v1');
         
@@ -59,21 +63,28 @@ function App() {
             vTrack.clips.push(newClip);
             offset += d;
           });
-          // 原子更新：一次性推送全量变更
           setTracks(newTracks);
           showToast(`全自动编排完成：共 ${data.scenes.length} 个镜头`, 'success');
         }
       }
-    } catch (e: any) { showToast(e.message, 'error'); } finally { setIsDirecting(false); }
+    } catch (e: any) { 
+      showToast(e.message, 'error'); 
+    } finally { 
+      setIsDirecting(false); 
+    }
   }
 
-  // ... (保留之前的单项业务函数)
   const handleEnhance = useCallback(async () => {
     if (!prompt) return;
     setIsEnhancing(true);
     try {
-      const { data } = await api.api.ai.enhance.post({ prompt });
-      if (data && 'enhanced' in data) { setPrompt(data.enhanced); showToast('提示词已增强', 'success'); }
+      const { data, error } = await api.api.ai.enhance.post({ prompt });
+      if (error) {
+        showToast(getErrorMessage(error), 'error');
+      } else if (data && 'enhanced' in data) { 
+        setPrompt(data.enhanced); 
+        showToast('提示词已增强', 'success'); 
+      }
     } finally { setIsEnhancing(false); }
   }, [prompt, showToast]);
 
@@ -81,17 +92,27 @@ function App() {
     if (!prompt) return;
     setIsGenerating(true);
     try {
-      const params = selectedActorId ? { prompt, actorId: selectedActorId, modelId: selectedModel } : { text: prompt, modelId: selectedModel };
-      await (selectedActorId ? api.api.ai.actors.generate.post(params as any) : api.api.video.generate.post(params as any));
-      showToast('任务已提交', 'info');
+      const { error } = selectedActorId 
+        ? await api.api.ai.actors.generate.post({ prompt, actorId: selectedActorId, modelId: selectedModel })
+        : await api.api.video.generate.post({ text: prompt, modelId: selectedModel });
+      
+      if (error) {
+        showToast(getErrorMessage(error), 'error');
+      } else {
+        showToast('任务已提交', 'info');
+      }
     } finally { setIsGenerating(false); }
   }, [prompt, selectedActorId, selectedModel, showToast]);
 
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
-      const { data } = await api.api.video.compose.post({ timelineData: { tracks } });
-      if (data?.success) showToast(`导出成功: ${data.outputPath}`, 'success');
+      const { data, error } = await api.api.video.compose.post({ timelineData: { tracks } });
+      if (error) {
+        showToast(getErrorMessage(error), 'error');
+      } else if (data && 'outputPath' in data) {
+        showToast(`导出成功: ${data.outputPath}`, 'success');
+      }
     } finally { setIsExporting(false); }
   }, [tracks, showToast]);
 

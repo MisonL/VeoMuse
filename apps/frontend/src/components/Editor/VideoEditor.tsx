@@ -90,10 +90,10 @@ const VideoEditor: React.FC = () => {
 
         {isReady && (
           <Timeline
-            onChange={(data) => {
+            onChange={(data: any) => {
               let snapDetected = false;
-              data.forEach(track => {
-                track.actions.forEach(action => {
+              data.forEach((track: any) => {
+                track.actions.forEach((action: any) => {
                   const snap = calculateSnap(action.start, action.id);
                   const finalStart = snap.snapped ? snap.time : action.start;
                   const finalEnd = finalStart + (action.end - action.start);
@@ -105,12 +105,15 @@ const VideoEditor: React.FC = () => {
               // 交互时也同步预览
               syncController.sync(useEditorStore.getState().currentTime, false, tracks);
             }}
-            onTimeChange={(time) => {
+            // @ts-ignore
+            onTimeChange={(time: number) => {
               setCurrentTime(time);
               syncController.sync(time, false, tracks);
             }}
-            onActionClick={(action) => setSelectedClipId(action.id)}
-            onActionContextMenu={(action, e) => {
+            // @ts-ignore
+            onActionClick={(action: any) => setSelectedClipId(action.id)}
+            // @ts-ignore
+            onActionContextMenu={(action: any, e: React.MouseEvent) => {
               e.preventDefault();
               setMenuPos({ x: e.clientX, y: e.clientY, clipId: action.id, trackId: action.data.trackId });
             }}
