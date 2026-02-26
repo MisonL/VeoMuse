@@ -37,6 +37,7 @@
       },
       "devDependencies": {
         "@types/bun": "latest",
+        "@types/fluent-ffmpeg": "^2.1.28",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -434,6 +435,8 @@
     "@types/cors": ["@types/cors@2.8.19", "https://registry.npmmirror.com/@types/cors/-/cors-2.8.19.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-mFNylyeyqN93lfe/9CSxOGREz8cpzAhH+E93xJ4xWQf62V8sQ/24reV2nyzUWM6H6Xji+GGHpkbLe7pVoUEskg=="],
 
     "@types/estree": ["@types/estree@1.0.8", "https://registry.npmmirror.com/@types/estree/-/estree-1.0.8.tgz", {}, "sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w=="],
+
+    "@types/fluent-ffmpeg": ["@types/fluent-ffmpeg@2.1.28", "", { "dependencies": { "@types/node": "*" } }, "sha512-5ovxsDwBcPfJ+eYs1I/ZpcYCnkce7pvH9AHSvrZllAp1ZPpTRDZAFjF3TRFbukxSgIYTTNYePbS0rKUmaxVbXw=="],
 
     "@types/graceful-fs": ["@types/graceful-fs@4.1.9", "https://registry.npmmirror.com/@types/graceful-fs/-/graceful-fs-4.1.9.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ=="],
 
