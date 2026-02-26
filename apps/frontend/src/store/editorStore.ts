@@ -2,10 +2,16 @@ import { create } from 'zustand'
 
 export interface Clip {
   id: string;
-  start: number; // 在时间轴上的起始时间 (s)
-  end: number;   // 在时间轴上的结束时间 (s)
-  src: string;   // 视频源地址
+  start: number;
+  end: number;
+  src: string;
   name: string;
+}
+
+export interface Marker {
+  id: string;
+  time: number;
+  label: string;
 }
 
 export interface Track {
@@ -16,11 +22,13 @@ export interface Track {
 
 interface EditorState {
   tracks: Track[];
+  markers: Marker[];
   currentTime: number;
   duration: number;
   
   // Actions
   setTracks: (tracks: Track[]) => void;
+  setMarkers: (markers: Marker[]) => void;
   setCurrentTime: (time: number) => void;
   addClip: (trackId: string, clip: Clip) => void;
 }
@@ -42,10 +50,12 @@ export const useEditorStore = create<EditorState>((set) => ({
     },
     { id: 'track-2', name: '特效轨道', clips: [] }
   ],
+  markers: [],
   currentTime: 0,
   duration: 60,
 
   setTracks: (tracks) => set({ tracks }),
+  setMarkers: (markers) => set({ markers }),
   setCurrentTime: (time) => set({ currentTime: time }),
   addClip: (trackId, clip) => set((state) => ({
     tracks: state.tracks.map(t => 

@@ -6,13 +6,17 @@ import { useEditorStore } from '../../store/editorStore';
 import './VideoEditor.css';
 
 const VideoEditor: React.FC = () => {
-  const { tracks, currentTime, setCurrentTime, duration } = useEditorStore();
+  const { tracks, markers, currentTime, setCurrentTime, duration } = useEditorStore();
   const [containerRef, { width, height }] = useMeasure<HTMLDivElement>();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (width > 0) setIsReady(true);
   }, [width]);
+
+  // 将标记映射为时间轴支持的格式（如果组件库支持直接渲染标记）
+  // 暂且我们将标记信息打印或通过其他 UI 呈现，因为核心库对自定义标记的支持较复杂
+  // 我们可以在标尺上方通过绝对定位绘制一些“AI”小图标
 
   const timelineData = tracks.map(track => ({
     id: track.id,

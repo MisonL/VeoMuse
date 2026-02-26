@@ -10,5 +10,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: 核心业务迁移与 AI 创意引擎实现：重构 Video 逻辑并实现 AI 智能翻译层**
   *Link: [./tracks/migrate_core_logic_20260225/](./tracks/migrate_core_logic_20260225/)*
 
-- [ ] **Track: 次世代多轨道视频编辑器：构建时间轴、预览引擎与 AI 自动剪辑基础**
+- [x] **Track: 次世代多轨道视频编辑器：构建时间轴、预览引擎与 AI 自动剪辑基础**
   *Link: [./tracks/video_editor_core_20260225/](./tracks/video_editor_core_20260225/)*

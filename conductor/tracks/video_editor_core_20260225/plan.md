@@ -18,7 +18,7 @@
     - [ ] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)**
 
 ## Phase 3: AI 自动剪辑与 UI 优化
-- [ ] **Task: AI 辅助打点功能**
+- [~] **Task: AI 辅助打点功能**
     - [ ] 利用 Gemini 3.1 接口为生成的视频提供建议剪切点。
     - [ ] 在时间轴上可视化 AI 标记。
     - [ ] **Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)**

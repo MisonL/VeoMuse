@@ -3,6 +3,7 @@ import { cors } from '@elysiajs/cors'
 import { VideoService } from './services/VideoService'
 import { ApiKeyService } from './services/ApiKeyService'
 import { PromptEnhanceService } from './services/PromptEnhanceService'
+import { AiClipService } from './services/AiClipService'
 
 // 初始化 API 密钥
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
@@ -38,6 +39,18 @@ const app = new Elysia()
       }, {
         body: t.Object({
           prompt: t.String()
+        })
+      })
+      .post('/ai/suggest-cuts', async ({ body }) => {
+        try {
+          return await AiClipService.suggestCuts(body.description, body.duration);
+        } catch (e: any) {
+          return { success: false, error: e.message };
+        }
+      }, {
+        body: t.Object({
+          description: t.String(),
+          duration: t.Number()
         })
       })
   )

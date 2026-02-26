@@ -54,6 +54,32 @@ function App() {
     } finally { setIsGenerating(false) }
   }
 
+  const { markers, setMarkers } = useEditorStore()
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+
+  const handleAiSuggest = async () => {
+    setIsAnalyzing(true)
+    try {
+      const { data, error } = await api.api.ai['suggest-cuts'].post({
+        description: prompt || '默认视频',
+        duration: 10
+      })
+      if (error) throw error
+      if (data && 'cutPoints' in data) {
+        const newMarkers = data.cutPoints.map((p: any, i: number) => ({
+          id: `ai-marker-${i}`,
+          time: p.time,
+          label: p.reason
+        }))
+        setMarkers(newMarkers)
+      }
+    } catch (e: any) {
+      alert(`AI 分析失败: ${e.message}`)
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
   return (
     <>
       <div className="liquid-bg" />
@@ -103,10 +129,31 @@ function App() {
 
         <main className="main-workspace">
           <div className="preview-container">
-            <MultiVideoPlayer />
+            <div className="preview-content">
+              <MultiVideoPlayer />
+              <div className="player-controls">
+                <button 
+                  className={`btn-ai ${isAnalyzing ? 'pulsing' : ''}`}
+                  onClick={handleAiSuggest}
+                  disabled={isAnalyzing}
+                >
+                  {isAnalyzing ? '🤖 AI 分析中...' : '🪄 AI 智能打点'}
+                </button>
+              </div>
+            </div>
           </div>
           
           <div className="timeline-container">
+            {markers.length > 0 && (
+              <div className="ai-markers-bar">
+                {markers.map(m => (
+                  <div key={m.id} className="ai-marker-tag" style={{ left: `${(m.time / 60) * 100}%` }}>
+                    <span>📍</span>
+                    <span className="marker-reason">{m.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <VideoEditor />
           </div>
         </main>
