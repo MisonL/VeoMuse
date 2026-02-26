@@ -1,251 +1,39 @@
-# VeoMuse 部署指南
+# VeoMuse 旗舰版 (V3.1 Pro) 生产部署手册
 
-## 🚀 快速部署
+## 1. 架构架构概览 (Topology)
+系统采用云原生微服务架构：
+- **前端容器 (Nginx)**: 托管 Vite 8 编译后的 React 19 应用，提供反向代理与静态加速。
+- **后端容器 (Bun/Elysia)**: 执行 AI 核心逻辑、模型调度与 FFmpeg 合成。
+- **缓存层 (Redis)**: 管理任务状态与高频数据。
+- **持久化卷**: 存储用户上传素材与生成的视频产物。
 
-### Docker 部署（推荐）
+## 2. 快速启动 (Quick Start)
+确保宿主机已安装 Docker 和 Docker Compose。
 
 ```bash
-# 克隆项目
-git clone https://github.com/MisonL/VeoMuse.git
-cd VeoMuse
-
-# 配置环境变量
+# 1. 拷贝环境变量模板并配置
 cp .env.example .env
-# 编辑 .env 文件，填入您的API密钥
 
-# 启动服务
-npm run docker:compose
+# 2. 启动全栈服务
+cd config/docker
+docker-compose up -d --build
 ```
 
-### 本地部署
-
-```bash
-# 安装依赖
-npm install
-
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件
-
-# 构建前端
-npm run build
-
-# 启动服务
-npm start
-```
-
-### 生产环境部署
-
-```bash
-# 构建前端
-npm run build
-
-# 使用PM2
-npm install -g pm2
-npm run pm2:start
-
-# 查看状态
-pm2 status
-```
-
-## ⚙️ 环境变量配置
-
-关键配置项：
-
-| 变量名           | 说明                   | 必需           |
-| ---------------- | ---------------------- | -------------- |
-| `GEMINI_API_KEY` | Google Gemini API 密钥 | ✅             |
-| `JWT_SECRET`     | JWT 签名密钥           | ✅             |
-| `PORT`           | 应用端口               | ❌ (默认 5173) |
-| `NODE_ENV`       | 环境模式               | ❌             |
-
-## 🔍 健康检查
-
-部署完成后验证：
-
-```bash
-# 健康检查
-curl http://localhost:5173/health
-
-# 访问应用
-curl http://localhost:5173
-```
-
-## ❓ 常见问题
-
-**Q: Docker 启动失败**
-A: 检查端口占用和环境变量配置
-
-**Q: API 调用失败**
-A: 确认 API 密钥有效且为付费账户
-
-**Q: 视频生成失败**
-A: 检查 FFmpeg 安装和磁盘空间
-
-## 🐳 Docker 部署
-
-### 单容器部署
-
-1. **构建镜像**
-
-   ```bash
-   npm run docker:build
-   ```
-
-2. **运行容器**
-   ```bash
-   npm run docker:run
-   ```
-
-### Docker Compose 部署
-
-1. **生产环境**
-
-   ```bash
-   npm run docker:compose
-   ```
-
-2. **开发环境**
-   ```bash
-   npm run docker:compose:dev
-   ```
-
-### 配置说明
-
-- **主应用**: 端口 5173
-- **Redis 缓存**: 端口 6379
-- **Nginx 代理**: 端口 80/443
-
-## 🔧 手动部署
-
-### 1. 环境准备
-
-```bash
-# 安装Node.js 18+
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# 安装FFmpeg
-sudo apt update
-sudo apt install ffmpeg
-
-# 安装PM2（可选）
-npm install -g pm2
-```
-
-### 2. 项目部署
-
-```bash
-# 克隆项目
-git clone https://github.com/MisonL/VeoMuse.git
-cd VeoMuse
-
-# 安装依赖
-npm ci --only=production
-
-# 配置环境变量
-cp .env.example .env
-# 编辑.env文件，填入实际配置
-
-# 启动应用
-npm start
-
-# 或使用PM2
-pm2 start config/pm2/ecosystem.config.js
-```
-
-## ⚙️ 环境变量配置详解
-
-### 必需配置
-
-| 变量名           | 说明                   | 示例                    |
-| ---------------- | ---------------------- | ----------------------- |
-| `GEMINI_API_KEY` | Google Gemini API 密钥 | `AIza...`               |
-| `JWT_SECRET`     | JWT 签名密钥           | `random_32_char_string` |
-
-### 可选配置
-
-| 变量名          | 默认值        | 说明                   |
-| --------------- | ------------- | ---------------------- |
-| `PORT`          | `5173`        | 应用端口               |
-| `NODE_ENV`      | `development` | 环境模式               |
-| `MAX_FILE_SIZE` | `10485760`    | 最大上传文件大小(字节) |
-
-### 配置文件
-
-- **开发环境**: `.env`
-- **生产环境**: `.env.production`
-- **示例配置**: `.env.example`
-
-## 🔍 部署验证
-
-### 健康检查
-
-部署完成后，访问以下端点验证服务状态：
-
-```bash
-# 应用健康检查
-curl http://localhost:5173/health
-
-# API状态检查
-curl http://localhost:5173/api/models
-```
-
-### 功能测试
-
-1. **访问主页**: `http://localhost:5173`
-2. **测试 API**: 使用 API 文档中的示例请求
-3. **查看日志**: 检查 `logs/` 目录下的日志文件
-
-## ❓ 常见问题详解
-
-### Docker 相关
-
-**Q: Docker 构建失败**
-A: 常见原因：
-
-- 确保 Docker 已正确安装
-- 检查网络连接
-- 清理 Docker 缓存：`docker system prune`
-
-**Q: 容器启动失败**
-A: 检查以下项目：
-
-- 环境变量配置是否正确
-- 端口是否被占用
-- 查看容器日志：`docker logs veomuse-app`
-
-### API 相关
-
-**Q: Gemini API 调用失败**
-A: 检查：
-
-- API 密钥是否有效
-- API 配额是否用完
-- 网络连接是否正常
-
-**Q: 视频生成失败**
-A: 可能原因：
-
-- FFmpeg 未正确安装
-- 上传文件格式不支持
-- 磁盘空间不足
-
-## 📞 技术支持
-
-如遇到部署问题，请：
-
-1. 查看项目日志文件
-2. 检查 GitHub Actions 执行日志
-3. 参考 API 文档和错误代码
-4. 在 GitHub Issues 中提交问题
-
-## 📝 更新日志
-
-- `v3.0.0`: 更新至 Veo 3.1 模型，统一端口为 5173
-- `v2.0.0`: 添加批量任务和视频后处理功能
-- `v1.0.0`: 初始版本发布
+## 3. 环境变量配置 (.env)
+| 变量名 | 必填 | 描述 |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEYS` | 是 | 多个 API Key 请用逗号分隔，系统将自动轮询。 |
+| `PORT` | 否 | 后端服务端口，默认为 3001。 |
+| `REDIS_HOST` | 否 | Docker 环境下默认为 `veomuse-redis`。 |
+
+## 4. 目录挂载与持久化
+生产环境下，请确保 `uploads/` 目录已被正确挂载，以防止容器重启导致视频丢失：
+- `/app/uploads` -> 宿主机 `./uploads`
+
+## 5. 运维与监控
+- **查看日志**: `docker-compose logs -f veomuse-backend`
+- **健康检查**: `GET http://<domain>/api/health`
+- **更新版本**: `git pull && docker-compose up -d --build`
 
 ---
-
-📧 如有问题，欢迎提交 Issue 或联系维护团队。
+**VeoMuse 首席架构师签发**
