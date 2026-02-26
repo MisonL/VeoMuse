@@ -9,13 +9,13 @@
     - [x] 使用 RAF (requestAnimationFrame) 平滑驱动时间轴运行。
     - [x] **Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)** (Completed)
 
-## Phase 2: 后端合成引擎
+## Phase 2: 后端合成引擎 [checkpoint: 545964b]
 - [x] **Task: 构建 FFmpeg 合成服务** (aca8ae6)
     - [x] 在后端创建 `CompositionService.ts`。
     - [x] 解析时间轴数据，生成 `filter_complex` 命令将片段按时间拼接。
 - [x] **Task: 暴露合成 API** (e3ebad5)
     - [x] 增加 `/api/video/compose` 接口。
-    - [ ] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)**
+    - [x] **Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)** (Completed)
 
 ## Phase 3: 前后端打通与导出体验
 - [ ] **Task: 前端导出面板**
