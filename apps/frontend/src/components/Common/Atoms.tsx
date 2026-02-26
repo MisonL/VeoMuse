@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import './Atoms.css';
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -8,33 +9,44 @@ interface GlassCardProps {
 }
 
 export const GlassCard: React.FC<GlassCardProps> = ({ children, className = '', delay = 0 }) => (
-  <motion.div 
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay }}
-    className={`glass-panel ${className}`}
+  <motion.div
+    initial={{ opacity: 0, y: 20, scale: 0.98 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ duration: 0.6, delay, type: 'spring', damping: 20 }}
+    className={`premium-glass-card ${className}`}
   >
     {children}
   </motion.div>
 );
 
 interface ProButtonProps {
-  onClick: () => void;
   children: React.ReactNode;
+  onClick?: () => void;
   variant?: 'primary' | 'secondary' | 'danger' | 'success';
-  disabled?: boolean;
-  isLoading?: boolean;
   className?: string;
+  isLoading?: boolean;
+  icon?: string;
 }
 
 export const ProButton: React.FC<ProButtonProps> = ({ 
-  onClick, children, variant = 'primary', disabled, isLoading, className = '' 
+  children, onClick, variant = 'primary', className = '', isLoading, icon 
 }) => (
-  <button 
-    onClick={onClick} 
-    disabled={disabled || isLoading}
-    className={`btn-${variant} ${isLoading ? 'loading' : ''} ${className}`}
+  <motion.button
+    whileHover={{ scale: 1.02, translateY: -1 }}
+    whileTap={{ scale: 0.97 }}
+    onClick={onClick}
+    disabled={isLoading}
+    className={`pro-btn btn-${variant} ${className} ${isLoading ? 'btn-loading' : ''}`}
   >
-    {isLoading ? '⏳ 处理中...' : children}
-  </button>
+    {icon && <span className="btn-icon">{icon}</span>}
+    <span className="btn-text">{children}</span>
+    {isLoading && <div className="btn-spinner" />}
+  </motion.button>
+);
+
+export const ProInput: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = (props) => (
+  <div className="pro-input-wrapper">
+    <textarea {...props} className={`pro-textarea ${props.className || ''}`} />
+    <div className="pro-input-glow" />
+  </div>
 );

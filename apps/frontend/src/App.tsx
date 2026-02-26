@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, memo, useActionState, useOptimistic, startTransition } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useCallback, memo, useActionState, startTransition } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { api, getErrorMessage } from './utils/eden'
-import { useEditorStore, Track, Clip } from './store/editorStore'
+import { useEditorStore, Track } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import VideoEditor from './components/Editor/VideoEditor'
 import MultiVideoPlayer from './components/Editor/MultiVideoPlayer'
@@ -9,7 +9,7 @@ import AssetPanel from './components/Editor/AssetPanel'
 import PropertyInspector from './components/Editor/PropertyInspector'
 import ComparisonLab from './components/Editor/ComparisonLab'
 import ToastContainer from './components/Editor/ToastContainer'
-import { GlassCard, ProButton } from './components/Common/Atoms'
+import { GlassCard, ProButton, ProInput } from './components/Common/Atoms'
 import './App.css'
 
 const MemoVideoEditor = memo(VideoEditor)
@@ -20,14 +20,18 @@ function App() {
   const [activeTab, setActiveTab] = useState<'generate' | 'assets' | 'director' | 'actors'>('generate')
   const [isCompareMode, setIsCompareMode] = useState(false)
   const [selectedModel, setSelectedModel] = useState('veo-3.1')
-  const [selectedActorId, setSelectedActorId] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
   const [script, setScript] = useState('')
   const [isExporting, setIsExporting] = useState(false)
   
-  const { addAsset, tracks, setTracks } = useEditorStore()
+  const { assets, addAsset, tracks, setTracks } = useEditorStore()
 
-  // 1. React 19 Action: 增强提示词
+  useEffect(() => {
+    if (assets.length === 0) {
+      addAsset({ id: 'asset-1', name: '示例素材', src: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'video' });
+    }
+  }, [])
+
   const [enhancedState, enhanceAction, isEnhancing] = useActionState(async (_prev: any, p: string) => {
     if (!p) return null;
     const { data, error } = await api.api.ai.enhance.post({ prompt: p });
@@ -40,13 +44,11 @@ function App() {
     return null;
   }, null);
 
-  // 2. React 19 Action: AI 导演分析
   const [directorState, directorAction, isDirecting] = useActionState(async (_prev: any, s: string) => {
     if (!s) return null;
     showToast('🎬 AI 导演正在规划分镜...', 'info');
     const { data, error } = await api.api.ai.director.analyze.post({ script: s });
     if (error) { showToast(getErrorMessage(error), 'error'); return null; }
-    
     if (data && 'scenes' in data) {
       let offset = 0;
       const newTracks: Track[] = JSON.parse(JSON.stringify(useEditorStore.getState().tracks));
@@ -62,94 +64,122 @@ function App() {
           offset += d;
         });
         setTracks(newTracks);
-        showToast(`编排完成：共 ${data.scenes.length} 个镜头`, 'success');
+        showToast('全自动编排完成', 'success');
       }
     }
     return data;
   }, null);
-
-  const handleGenerate = useCallback(async () => {
-    if (!prompt) return;
-    try {
-      const { error } = selectedActorId 
-        ? await api.api.ai.actors.generate.post({ prompt, actorId: selectedActorId, modelId: selectedModel })
-        : await api.api.video.generate.post({ text: prompt, modelId: selectedModel });
-      if (error) showToast(getErrorMessage(error), 'error');
-      else showToast('任务已提交', 'info');
-    } catch (e: any) { showToast(e.message, 'error'); }
-  }, [prompt, selectedActorId, selectedModel, showToast]);
 
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
       const { data, error } = await api.api.video.compose.post({ timelineData: { tracks } });
       if (error) showToast(getErrorMessage(error), 'error');
-      else if (data && 'outputPath' in data) showToast(`导出成功: ${data.outputPath}`, 'success');
+      else if (data && 'outputPath' in data) showToast(`导出成功`, 'success');
     } finally { setIsExporting(false); }
   }, [tracks, showToast]);
 
   return (
-    <>
+    <div className="app-container pro-theme">
       <div className="liquid-bg" />
       <ToastContainer />
+      
       <div className="app-layout">
-        <GlassCard className="sidebar" delay={0.1}>
-          <header className="console-header">
-            <h1>VeoMuse <span className="badge">V3.1 Pro</span></h1>
-            <p className="subtitle">旗舰版 · 2026 最佳实践</p>
+        <GlassCard className="sidebar-container" delay={0.1}>
+          <header className="sidebar-header">
+            <div className="logo-section">
+              <div className="logo-orb" />
+              <h1>VeoMuse <span className="pro-tag">PRO</span></h1>
+            </div>
           </header>
-          <div className="tab-header">
-            {(['generate', 'actors', 'assets', 'director'] as const).map(tab => (
-              <button key={tab} className={`tab-btn ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
-                {tab === 'generate' ? '✨' : tab === 'actors' ? '👤' : tab === 'assets' ? '📚' : '🎬'}
+
+          <nav className="sidebar-nav">
+            {[
+              { id: 'generate', label: '智能生成', icon: '✨' },
+              { id: 'director', label: 'AI 导演', icon: '🎬' },
+              { id: 'assets', label: '资产库', icon: '📚' },
+              { id: 'actors', label: '虚拟角色', icon: '👤' }
+            ].map(item => (
+              <button 
+                key={item.id} 
+                className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(item.id as any)}
+              >
+                <span className="nav-icon">{item.icon}</span>
+                <span className="nav-label">{item.label}</span>
               </button>
             ))}
+          </nav>
+
+          <div className="sidebar-content">
+            <AnimatePresence mode="wait">
+              {activeTab === 'generate' && (
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="tab-pane">
+                  <div className="input-group">
+                    <label>创意提示词</label>
+                    <ProInput 
+                      placeholder="描述你脑海中的画面..." 
+                      value={prompt} 
+                      onChange={(e) => setPrompt(e.target.value)} 
+                      rows={6}
+                    />
+                  </div>
+                  <div className="action-row">
+                    <ProButton variant="secondary" onClick={() => startTransition(() => enhanceAction(prompt))} isLoading={isEnhancing}>AI 增强</ProButton>
+                    <ProButton className="flex-1">立即生成</ProButton>
+                  </div>
+                </motion.div>
+              )}
+              {activeTab === 'director' && (
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="tab-pane">
+                  <div className="input-group">
+                    <label>剧本脚本</label>
+                    <ProInput 
+                      placeholder="粘贴完整的分镜剧本..." 
+                      value={script} 
+                      onChange={(e) => setScript(e.target.value)} 
+                      rows={10}
+                    />
+                  </div>
+                  <ProButton variant="danger" className="w-full" onClick={() => startTransition(() => directorAction(script))} isLoading={isDirecting}>启动一键导演</ProButton>
+                </motion.div>
+              )}
+              {activeTab === 'assets' && <AssetPanel />}
+            </AnimatePresence>
           </div>
-          <div className="tab-content" style={{ flex: 1, overflowY: 'auto' }}>
-            {activeTab === 'generate' && (
-              <div className="editor-section">
-                <select className="premium-select" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
-                  <option value="veo-3.1">Gemini Veo 3.1</option><option value="kling-v1">Kling</option><option value="sora-preview">Sora</option>
-                </select>
-                <textarea className="premium-input" placeholder="输入创意..." value={prompt} onChange={(e) => setPrompt(e.target.value)} />
-                <div className="action-bar">
-                  <ProButton variant="secondary" onClick={() => startTransition(() => enhanceAction(prompt))} isLoading={isEnhancing}>增强</ProButton>
-                  <ProButton onClick={handleGenerate}>生成</ProButton>
-                </div>
-              </div>
-            )}
-            {activeTab === 'director' && (
-              <div className="editor-section">
-                <textarea className="premium-input" style={{ height: '200px' }} placeholder="输入脚本..." value={script} onChange={(e) => setScript(e.target.value)} />
-                <ProButton variant="danger" className="w-full mt-2" onClick={() => startTransition(() => directorAction(script))} isLoading={isDirecting}>启动一键导演</ProButton>
-              </div>
-            )}
-            {activeTab === 'assets' && <AssetPanel />}
-          </div>
-          <div className="sidebar-footer">
-            <ProButton variant="success" className="w-full" onClick={handleExport} isLoading={isExporting}>🎬 导出作品</ProButton>
-          </div>
+
+          <footer className="sidebar-footer">
+            <ProButton variant="success" className="w-full" onClick={handleExport} isLoading={isExporting} icon="🚀">导出作品</ProButton>
+          </footer>
         </GlassCard>
 
-        <main className="main-workspace">
-          <GlassCard className="preview-container" delay={0.25}>
-            <div className="preview-content">
-              <div className="lab-controls">
-                <label className="pro-toggle"><input type="checkbox" checked={isCompareMode} onChange={(e) => setIsCompareMode(e.target.checked)} /><span className="toggle-slider"></span> 🔬 实验室模式</label>
+        <main className="main-stage">
+          <GlassCard className="stage-preview" delay={0.2}>
+            <div className="stage-header">
+              <div className="mode-toggle">
+                <span className={!isCompareMode ? 'active' : ''}>标准预览</span>
+                <div className="pro-switch">
+                  <input type="checkbox" checked={isCompareMode} onChange={(e) => setIsCompareMode(e.target.checked)} />
+                  <span className="slider" />
+                </div>
+                <span className={isCompareMode ? 'active' : ''}>实验室对比</span>
               </div>
+            </div>
+            <div className="stage-content">
               {isCompareMode ? <ComparisonLab modelA={selectedModel} modelB="kling-v1" /> : <MemoMultiVideoPlayer />}
             </div>
           </GlassCard>
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, type: 'spring' }} className="timeline-container">
+
+          <div className="stage-timeline">
             <MemoVideoEditor />
-          </motion.div>
+          </div>
         </main>
 
-        <GlassCard className="inspector-sidebar" delay={0.5}>
+        <GlassCard className="inspector-container" delay={0.3}>
           <PropertyInspector />
         </GlassCard>
       </div>
-    </>
+    </div>
   )
 }
 
