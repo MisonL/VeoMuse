@@ -23,8 +23,14 @@ function App() {
   const [prompt, setPrompt] = useState('')
   const [script, setScript] = useState('')
   const [isExporting, setIsExporting] = useState(false)
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark') // 主题状态
   
   const { assets, addAsset, tracks, setTracks } = useEditorStore()
+
+  // 同步物理主题
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     if (assets.length === 0) {
@@ -91,6 +97,9 @@ function App() {
               <div className="logo-orb" />
               <h1>VeoMuse <span className="pro-tag">PRO</span></h1>
             </div>
+            <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
           </header>
 
           <nav className="sidebar-nav">

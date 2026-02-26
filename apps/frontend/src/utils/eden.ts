@@ -2,7 +2,7 @@ import { treaty } from '@elysiajs/eden'
 import type { App } from '@veomuse/backend'
 
 // 创建类型安全的 Eden Client (Treaty 2.0+ 模式)
-// 在开发环境下指向 localhost:3001
+// 显式指向后端开发端口 3001
 export const api = treaty<App>('http://localhost:3001')
 
 /**
