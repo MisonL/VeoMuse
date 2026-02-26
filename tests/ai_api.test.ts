@@ -68,4 +68,15 @@ describe('AI API 全功能集群验证 (全量修复版)', () => {
     );
     expect(response.status).toBe(200);
   });
+
+  it('AI 智能重光照渲染验证', async () => {
+    const response = await app.handle(
+      new Request('http://localhost/api/ai/relighting/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clipId: 'test-v1', lightStyle: 'cyberpunk' })
+      })
+    );
+    expect(response.status).toBe(200);
+  });
 });

@@ -6,12 +6,13 @@ export interface Scene {
   videoPrompt: string;
   audioPrompt: string;
   voiceoverText: string;
-  duration: number; // 建议时长 (s)
+  duration: number;
 }
 
 export interface DirectorResponse {
   success: boolean;
   storyTitle: string;
+  worldId: string; // 旗舰版新增：全局场景标识
   scenes: Scene[];
 }
 
@@ -20,21 +21,14 @@ export class AiDirectorService {
   private static API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
   private static SYSTEM_PROMPT = `
-你是一位好莱坞顶级的数字导演和编剧。
-你的任务是将用户提供的一个故事脚本，拆解为适合 AI 生成的专业分镜列表（Storyboard）。
+你是一位好莱坞顶级的数字导演。
+你的任务是将用户提供的故事脚本，拆解为专业分镜列表。
 
-请以 JSON 格式返回，包含:
-- storyTitle (字符串): 故事标题。
-- scenes (数组): 包含以下字段:
-    - title (字符串): 该镜头的简短名称。
-    - videoPrompt (字符串): 该镜头的详细视频生成提示词。
-    - audioPrompt (字符串): 推荐的配乐风格描述。
-    - voiceoverText (字符串): 该镜头对应的配音文案（若有）。
-    - duration (数字): 该镜头的时长（秒），通常为 3-10 秒。
+关键要求：
+1. 全场景一致性：你必须为整个故事生成一个唯一的 worldId (一个 8 位随机字符串) 和一段全局环境描述。
+2. 镜头连续性：确保每个分镜的视觉风格严格统一。
 
-逻辑要求：
-1. 连贯性：镜头间的衔接要自然。
-2. 完整性：从脚本的开始到结束都要覆盖。
+请以 JSON 格式返回，包含字段: storyTitle, worldId, scenes。
 `;
 
   static async analyzeScript(script: string): Promise<DirectorResponse> {
@@ -46,19 +40,10 @@ export class AiDirectorService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{
-            parts: [{ text: `${this.SYSTEM_PROMPT}
-
-故事脚本：${script}` }]
-          }],
-          generationConfig: {
-            response_mime_type: "application/json",
-            thinking_level: "HIGH" // 导演任务需要极高的逻辑推理
-          }
+          contents: [{ parts: [{ text: `${this.SYSTEM_PROMPT}\n\n脚本：${script}` }] }],
+          generationConfig: { response_mime_type: "application/json", thinking_level: "HIGH" }
         })
       });
-
-      if (!response.ok) throw new Error(`导演服务响应失败: ${response.status}`);
 
       const data = await response.json() as any;
       const content = JSON.parse(data.candidates[0].content.parts[0].text);
@@ -66,12 +51,11 @@ export class AiDirectorService {
       return {
         success: true,
         storyTitle: content.storyTitle,
+        worldId: content.worldId || `w-${Math.random().toString(36).substring(7)}`,
         scenes: content.scenes
       };
-
     } catch (error: any) {
-      console.error('❌ AI 导演分析失败:', error.message);
-      throw new Error(`AI 导演引擎暂时无法响应: ${error.message}`);
+      throw new Error(`导演分析失败: ${error.message}`);
     }
   }
 }

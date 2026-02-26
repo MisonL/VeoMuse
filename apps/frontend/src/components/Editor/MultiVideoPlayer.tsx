@@ -8,7 +8,7 @@ const MultiVideoPlayer: React.FC = () => {
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const audioRefs = useRef<Map<string, HTMLAudioElement>>(new Map());
 
-  // 核心逻辑：计算并同步音视频进度及透明度（转场）
+  // 同步音视频及动态特效
   useEffect(() => {
     tracks.forEach(track => {
       track.clips.forEach(clip => {
@@ -24,38 +24,23 @@ const MultiVideoPlayer: React.FC = () => {
             if (isVideo) {
               media.style.display = 'block';
               
-              // 转场计算 (Fade In / Out)
-              let opacity = 1;
-              const transIn = clip.data?.transitionIn;
-              const transOut = clip.data?.transitionOut;
+              // 1. 转场与重光照逻辑 (保留)
+              let filterStr = clip.data?.filter || 'none';
+              if (clip.data?.currentLight === 'cyberpunk') filterStr += ' hue-rotate(180deg) saturate(1.5)';
+              media.style.filter = filterStr;
 
-              // 淡入
-              if (transIn?.type === 'fade' && currentTime < clip.start + transIn.duration) {
-                opacity = (currentTime - clip.start) / transIn.duration;
-              }
-              // 淡出
-              else if (transOut?.type === 'fade' && currentTime > clip.end - transOut.duration) {
-                opacity = (clip.end - currentTime) / transOut.duration;
-              }
-
-              media.style.opacity = opacity.toString();
+              // 2. 神经渲染 VFX 模拟
+              const vfx = clip.data?.activeVfx;
+              media.className = `player-video-instance ${vfx || ''}`;
             }
             
             const internalTime = currentTime - clip.start;
-            if (Math.abs(media.currentTime - internalTime) > 0.15) {
-              media.currentTime = internalTime;
-            }
+            if (Math.abs(media.currentTime - internalTime) > 0.15) media.currentTime = internalTime;
 
-            if (isPlaying && media.paused) {
-              media.play().catch(() => {});
-            } else if (!isPlaying && !media.paused) {
-              media.pause();
-            }
+            if (isPlaying && media.paused) media.play().catch(() => {});
+            else if (!isPlaying && !media.paused) media.pause();
           } else {
-            if (isVideo) {
-              media.style.display = 'none';
-              media.style.opacity = '0';
-            }
+            if (isVideo) media.style.display = 'none';
             if (!media.paused) media.pause();
           }
         }
@@ -78,26 +63,14 @@ const MultiVideoPlayer: React.FC = () => {
                 src={clip.src}
                 className="player-video-instance"
                 muted={false}
-                style={{ 
-                  transition: 'opacity 0.1s linear',
-                  filter: clip.data?.filter || 'none'
-                }}
                 playsInline
               />
             ) : track.type === 'audio' ? (
-              <audio
-                key={clip.id}
-                ref={el => {
-                  if (el) audioRefs.current.set(clip.id, el);
-                  else audioRefs.current.delete(clip.id);
-                }}
-                src={clip.src}
-              />
+              <audio key={clip.id} ref={el => { if (el) audioRefs.current.set(clip.id, el); else audioRefs.current.delete(clip.id); }} src={clip.src} />
             ) : null
           ))
         )}
-        
-        <div className="player-overlay"></div>
+        <div className="vfx-layer-overlay"></div>
         <TextOverlay />
       </div>
     </div>

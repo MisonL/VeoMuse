@@ -22,6 +22,8 @@ import { VoiceMorphService } from './services/VoiceMorphService'
 import { TranslationService } from './services/TranslationService'
 import { ActorConsistencyService } from './services/ActorConsistencyService'
 import { LipSyncService } from './services/LipSyncService'
+import { RelightingService } from './services/RelightingService'
+import { VfxService } from './services/VfxService'
 
 ApiKeyService.init(process.env.GEMINI_API_KEYS || '');
 VideoOrchestrator.registerDriver(new GeminiDriver());
@@ -108,6 +110,14 @@ const app = new Elysia()
         try { return await LipSyncService.sync(body.videoUrl, body.audioUrl, body.precision || 'high'); }
         catch (e: any) { return { success: false, error: e.message }; }
       }, { body: t.Object({ videoUrl: t.String(), audioUrl: t.String(), precision: t.Optional(t.String()) }) })
+      .post('/ai/relighting/apply', async ({ body }) => {
+        try { return await RelightingService.applyRelighting(body as any); }
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ clipId: t.String(), lightStyle: t.String(), intensity: t.Optional(t.Number()) }) })
+      .post('/ai/vfx/apply', async ({ body }) => {
+        try { return await VfxService.applyVfx(body as any); }
+        catch (e: any) { return { success: false, error: e.message }; }
+      }, { body: t.Object({ clipId: t.String(), vfxType: t.String(), intensity: t.Optional(t.Number()) }) })
       .post('/video/compose', async ({ body }) => {
         try { return await CompositionService.compose(body.timelineData); } 
         catch (e: any) { return { success: false, error: e.message }; }

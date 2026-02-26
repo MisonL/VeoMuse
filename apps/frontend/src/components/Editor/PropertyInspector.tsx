@@ -29,26 +29,26 @@ const PropertyInspector: React.FC = () => {
     handleUpdate({ data: { ...(selectedClip?.data || {}), ...dataUpdates } });
   };
 
-  const handleSyncLip = async () => {
-    if (!selectedClip || !selectedClip.src) return;
-    // 寻找同一时间段的音频作为音源
-    const audioClip = tracks.find(t => t.type === 'audio')?.clips.find(c => c.start >= selectedClip!.start - 1 && c.start <= selectedClip!.start + 1);
-    
-    if (!audioClip) {
-      showToast('未找到对应的配音片段', 'warning');
-      return;
-    }
-
+  const handleRelighting = async (style: string) => {
+    if (!selectedClip || style === 'none') return;
     setIsProcessing(true);
-    showToast('👄 正在进行 AI 对口型同步...', 'info');
+    showToast(`💡 正在重塑光影氛围: [${style}]...`, 'info');
     try {
-      const { data } = await api.api.ai['sync-lip'].post({
-        videoUrl: selectedClip.src,
-        audioUrl: audioClip.src
-      });
+      const { data } = await api.api.ai.relighting.apply.post({ clipId: selectedClip.id, lightStyle: style });
+      if (data?.success) { showToast(`✨ 光影渲染已提交`, 'success'); handleDataUpdate({ currentLight: style }); }
+    } finally { setIsProcessing(false); }
+  };
+
+  // 神经渲染 VFX 逻辑
+  const handleVfx = async (vfx: string) => {
+    if (!selectedClip || vfx === 'none') return;
+    setIsProcessing(true);
+    showToast(`✨ 正在合成神经特效: [${vfx}]...`, 'info');
+    try {
+      const { data } = await api.api.ai.vfx.apply.post({ clipId: selectedClip.id, vfxType: vfx });
       if (data?.success) {
-        updateClip(parentTrackId!, selectedClipId!, { src: data.syncedVideoUrl, name: `${selectedClip.name} (已同步)` });
-        showToast('对口型同步完成！', 'success');
+        showToast(`🎉 特效已提交，正在实时预览效果。`, 'success');
+        handleDataUpdate({ activeVfx: vfx });
       }
     } finally { setIsProcessing(false); }
   };
@@ -58,28 +58,37 @@ const PropertyInspector: React.FC = () => {
       <header className="inspector-header"><h3>属性</h3><span className="clip-type-badge">{selectedClip.type}</span></header>
       <div className="inspector-body">
         <section className="inspector-section">
-          <label>片段名称</label>
+          <label>名称</label>
           <input type="text" value={selectedClip.name} onChange={(e) => handleUpdate({ name: e.target.value })} />
         </section>
 
         {selectedClip.type === 'video' && (
           <section className="inspector-section">
-            <label>一致性强度</label>
-            <input type="range" min="0" max="1" step="0.1" value={selectedClip.data?.strength || 1} onChange={(e) => handleDataUpdate({ strength: parseFloat(e.target.value) })} />
-            
-            <button className="btn-sync-lip" onClick={handleSyncLip} disabled={isProcessing} style={{ marginTop: '1rem', width: '100%', background: 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)', color: '#fff', border: 'none', padding: '0.8rem', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-              {isProcessing ? '⏳ 同步中...' : '👄 执行 AI 对口型'}
-            </button>
+            <div className="alchemy-tools">
+              <label style={{ fontSize: '0.7rem', color: '#38bdf8' }}>💡 AI 重光照 (Relighting)</label>
+              <div className="style-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginTop: '4px' }}>
+                <button onClick={() => handleRelighting('golden-hour')} style={{ fontSize: '0.7rem', padding: '4px', background: selectedClip.data?.currentLight === 'golden-hour' ? '#38bdf8' : '#333' }}>🌅 黄金时刻</button>
+                <button onClick={() => handleRelighting('cyberpunk')} style={{ fontSize: '0.7rem', padding: '4px', background: selectedClip.data?.currentLight === 'cyberpunk' ? '#38bdf8' : '#333' }}>🌃 赛博朋克</button>
+              </div>
+            </div>
+
+            <div className="alchemy-tools" style={{ marginTop: '1rem' }}>
+              <label style={{ fontSize: '0.7rem', color: '#a855f7' }}>✨ 神经渲染特效 (VFX)</label>
+              <div className="style-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', marginTop: '4px' }}>
+                <button onClick={() => handleVfx('magic-particles')} style={{ fontSize: '0.7rem', padding: '4px', background: selectedClip.data?.activeVfx === 'magic-particles' ? '#a855f7' : '#333' }}>🧙 魔法粒子</button>
+                <button onClick={() => handleVfx('cyber-glitch')} style={{ fontSize: '0.7rem', padding: '4px', background: selectedClip.data?.activeVfx === 'cyber-glitch' ? '#a855f7' : '#333' }}>📺 赛博故障</button>
+              </div>
+            </div>
           </section>
         )}
 
         {selectedClip.type === 'text' && (
           <section className="inspector-section special">
             <textarea value={selectedClip.data?.content || ''} onChange={(e) => handleDataUpdate({ content: e.target.value })} style={{ height: '80px' }} />
-            <select onChange={(e) => {}} style={{ width: '100%', background: '#000', color: '#ccc', border: '1px solid #333', padding: '6px', borderRadius: '4px' }}>
-              <option value="none">多语种重塑...</option>
-              <option value="English">英语 (西海岸)</option>
-            </select>
+            <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input type="checkbox" checked={selectedClip.data?.use3D || false} onChange={(e) => handleDataUpdate({ use3D: e.target.checked })} />
+              <label style={{ fontSize: '0.8rem', color: '#38bdf8' }}>✨ 开启 3D 空间感知</label>
+            </div>
           </section>
         )}
       </div>

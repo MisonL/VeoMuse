@@ -21,15 +21,34 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  display: none; /* 默认隐藏，由 JS 控制显示 */
+  display: none;
 }
 
-.player-overlay {
+/* 神经渲染 VFX 样式模拟 */
+
+/* 1. 魔法粒子 */
+.magic-particles {
+  filter: contrast(1.2) brightness(1.1) drop-shadow(0 0 10px #a855f7) !important;
+}
+
+/* 2. 赛博故障 */
+.cyber-glitch {
+  animation: glitch 0.2s infinite;
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); filter: hue-rotate(90deg); }
+  40% { transform: translate(2px, -2px); }
+  60% { transform: translate(-2px, -2px); filter: contrast(2); }
+  80% { transform: translate(2px, 2px); }
+  100% { transform: translate(0); }
+}
+
+.vfx-layer-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0; width: 100%; height: 100%;
   pointer-events: none;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+  z-index: 5;
 }
