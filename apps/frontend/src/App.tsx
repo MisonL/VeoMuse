@@ -24,11 +24,33 @@ function App() {
   const [directorPrompt, setDirectorPrompt] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
 
-  const [telemetry, setTelemetry] = useState([10, 15, 8, 25, 12, 18, 14]);
+  // --- 真实遥测驱动核心 ---
+  const [telemetryHistory, setTelemetryHistory] = useState<number[]>(new Array(10).fill(0));
+  const [currentMetrics, setCurrentMetrics] = useState({ gpu: 0, ram: '0 / 0', cache: '0%' });
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTelemetry(prev => [...prev.slice(1), Math.floor(Math.random() * 20 + 10)]);
-    }, 2000);
+    const fetchMetrics = async () => {
+      try {
+        const { data } = await api.api.admin.metrics.get();
+        if (data && 'system' in data) {
+          const gpuLoad = Math.round(data.system.renderLoad);
+          const ramUsage = Math.round(data.system.memory.usage * 100);
+          
+          setCurrentMetrics({
+            gpu: gpuLoad,
+            ram: `${(data.system.memory.total / (1024 ** 3)).toFixed(1)}GB`,
+            cache: `${ramUsage}%`
+          });
+          
+          setTelemetryHistory(prev => [...prev.slice(1), gpuLoad]);
+        }
+      } catch (e) {
+        // 静默处理遥测错误，避免干扰主业务
+      }
+    };
+
+    const timer = setInterval(fetchMetrics, 2000);
+    fetchMetrics(); // 初始加载
     return () => clearInterval(timer);
   }, []);
 
@@ -81,7 +103,7 @@ function App() {
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-        body { background: var(--ap-bg); color: var(--ap-text); font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
+        body { background: var(--ap-bg); color: var(--ap-text); font-family: -apple-system, sans-serif; overflow: hidden; }
 
         .pro-master-shell {
           height: 100vh; width: 100vw; display: grid; grid-template-rows: 56px 1fr 380px; gap: 8px; background: var(--ap-bg); padding: 8px;
@@ -89,8 +111,7 @@ function App() {
 
         .pro-panel { background: var(--ap-surface); border: 1px solid var(--ap-border); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* 顶栏优化：严格对齐 */
-        .os-header { display: grid; grid-template-columns: 240px 1fr 400px; align-items: center; padding: 0 20px; }
+        .os-header { display: grid; grid-template-columns: 240px 1fr 400px; align-items: center; padding: 0 24px; }
         .brand-zone { display: flex; align-items: center; gap: 12px; }
         .brand-logo { width: 28px; height: 28px; background: var(--ap-accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; font-size: 16px; border: 0.5px solid rgba(255,255,255,0.2); }
         .brand-name { font-weight: 800; font-size: 15px; letter-spacing: -0.5px; }
@@ -99,14 +120,10 @@ function App() {
         .mode-tab { border: none; background: none; padding: 6px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; color: var(--ap-text-dim); cursor: pointer; transition: 0.2s; }
         .mode-tab.active { background: var(--ap-surface); color: var(--ap-accent); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 
-        .header-actions { display: flex; justify-content: flex-end; align-items: center; gap: 16px; }
-
-        /* 工作区矩阵 */
         .os-main { display: grid; grid-template-columns: 320px 1fr 340px; gap: 8px; min-height: 0; }
         .panel-title-bar { height: 44px; padding: 0 16px; border-bottom: 1px solid var(--ap-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 
         .monitor-core { background: #000 !important; position: relative; border: 1px solid #222 !important; }
-        [data-theme='light'] .monitor-core { border-color: #eee !important; }
         .monitor-overlay { position: absolute; top: 20px; left: 24px; right: 24px; display: flex; justify-content: space-between; z-index: 5; pointer-events: none; }
         .timecode { font-family: "SF Mono", monospace; color: var(--ap-accent); font-size: 26px; font-weight: 600; letter-spacing: -1.5px; }
         
@@ -115,18 +132,8 @@ function App() {
         .transport-btn.play { color: var(--ap-accent); font-size: 40px; opacity: 1; }
 
         .timeline-container { height: 380px; flex-shrink: 0; }
-        
-        /* 底部工具栏对齐：垂直居中 */
-        .timeline-actions { 
-          height: 52px; padding: 0 20px; border-bottom: 1px solid var(--ap-border); 
-          display: flex; align-items: center; justify-content: space-between; 
-        }
-        
-        .tool-bar-group { display: flex; align-items: center; gap: 8px; }
-        .tool-icon { 
-          width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; 
-          border-radius: 7px; border: none; background: transparent; cursor: pointer; color: var(--ap-text-dim); font-size: 18px; transition: 0.2s;
-        }
+        .timeline-actions { height: 52px; padding: 0 20px; border-bottom: 1px solid var(--ap-border); display: flex; align-items: center; justify-content: space-between; }
+        .tool-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 7px; border: none; background: transparent; cursor: pointer; color: var(--ap-text-dim); font-size: 18px; transition: 0.2s; }
         .tool-icon.active { background: var(--ap-accent); color: #fff; box-shadow: 0 0 12px var(--ap-accent-glow); }
 
         .system-telemetry { display: flex; align-items: center; gap: 20px; }
@@ -144,7 +151,6 @@ function App() {
           <div className="brand-logo">V</div>
           <span className="brand-name">VEOMUSE PRO</span>
         </div>
-        
         <div className="mode-selector">
           {['edit', 'color', 'audio'].map(m => (
             <button key={m} className={`mode-tab ${activeMode === m ? 'active' : ''}`} onClick={() => setActiveMode(m)}>
@@ -152,7 +158,6 @@ function App() {
             </button>
           ))}
         </div>
-
         <div className="header-actions">
           <ThemeSwitcher />
           <button style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', padding: '8px 24px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px var(--ap-accent-glow)' }}>导出</button>
@@ -213,7 +218,7 @@ function App() {
 
       <footer className="pro-panel timeline-container">
         <div className="timeline-actions">
-          <div className="tool-bar-group">
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '4px', marginRight: '12px', borderRight: '1px solid var(--ap-border)', paddingRight: '12px' }}>
               <button className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
               <button className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0}>↪</button>
@@ -225,16 +230,16 @@ function App() {
           
           <div className="system-telemetry">
             <div className="telemetry-item">
-              <span>GPU LOAD</span>
+              <span>GPU LOAD: <b style={{color: '#34C759', marginLeft: '4px'}}>{currentMetrics.gpu}%</b></span>
               <div className="telemetry-sparkline">
-                {telemetry.map((v, i) => <div key={i} className="spark-bar" style={{ height: `${v}%` }} />)}
+                {telemetryHistory.map((v, i) => <div key={i} className="spark-bar" style={{ height: `${v}%` }} />)}
               </div>
             </div>
             <div className="telemetry-item" style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '16px' }}>
-              CACHE: <span style={{ color: '#34C759' }}>92%</span>
+              RAM: <span style={{ color: '#34C759' }}>{currentMetrics.ram}</span>
             </div>
             <div className="telemetry-item" style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '16px' }}>
-              ENGINE: <span style={{ color: 'var(--ap-accent)' }}>ROL DOWN 8.0</span>
+              CACHE: <span style={{ color: 'var(--ap-accent)' }}>{currentMetrics.cache}</span>
             </div>
           </div>
         </div>
