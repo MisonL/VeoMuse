@@ -21,117 +21,156 @@ function App() {
       <style>{`
         :root {
           --pro-bg: #000000;
-          --pro-surface: #121212;
-          --pro-panel: #1A1A1B;
-          --pro-border: rgba(255, 255, 255, 0.08);
+          --pro-surface: #161617;
+          --pro-panel: #1C1C1E;
+          --pro-border: rgba(255, 255, 255, 0.1);
           --pro-accent: #007AFF;
           --pro-accent-glow: rgba(0, 122, 255, 0.4);
-          --pro-text: #E5E5E5;
-          --pro-text-dim: #888888;
+          --pro-text: #F5F5F7;
+          --pro-text-dim: #8E8E93;
+          --pro-radius: 10px;
         }
 
         [data-theme='light'] {
-          --pro-bg: #F2F2F7;
+          --pro-bg: #E5E5EA;
           --pro-surface: #FFFFFF;
-          --pro-border: rgba(0, 0, 0, 0.1);
-          --pro-text: #1D1D1F;
-          --pro-text-dim: #86868B;
+          --pro-panel: #F2F2F7;
+          --pro-border: rgba(0, 0, 0, 0.08);
+          --pro-text: #1C1C1E;
+          --pro-text-dim: #8E8E93;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-        body { background: var(--pro-bg); color: var(--pro-text); font-family: -apple-system, sans-serif; overflow: hidden; transition: all 0.3s ease; }
+        body { background: var(--pro-bg); color: var(--pro-text); font-family: "SF Pro Text", -apple-system, sans-serif; overflow: hidden; }
 
+        /* 主架构：四象限布局 */
         .pro-master-shell {
-          height: 100vh; width: 100vw; display: grid; grid-template-rows: 48px 1fr 380px; gap: 2px; background: #000; padding: 2px;
+          height: 100vh; width: 100vw; display: flex; flex-direction: column; background: var(--pro-bg); padding: 6px; gap: 6px;
         }
 
-        .os-header { background: var(--pro-surface); display: flex; align-items: center; padding: 0 24px; justify-content: space-between; border-bottom: 1px solid var(--pro-border); }
-        .os-logo { font-weight: 900; font-size: 14px; letter-spacing: 1px; color: #fff; }
-        .os-logo span { color: var(--pro-accent); }
-        
-        .os-nav-tab { color: var(--pro-text-dim); font-size: 12px; font-weight: 700; cursor: pointer; border: none; background: none; padding: 4px 12px; border-radius: 4px; }
-        .os-nav-tab.active { color: #fff; background: rgba(255,255,255,0.05); }
+        /* 统一卡片质感 */
+        .pro-card {
+          background: var(--pro-surface);
+          border: 1px solid var(--pro-border);
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+          display: flex;
+          flex-direction: column;
+        }
 
-        .os-main { display: grid; grid-template-columns: 320px 1fr 340px; gap: 2px; min-height: 0; }
-        .os-panel { background: var(--pro-surface); display: flex; flex-direction: column; overflow: hidden; }
+        /* 顶部导航 */
+        .os-header {
+          height: 52px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .os-logo { font-weight: 800; font-size: 16px; letter-spacing: -0.5px; color: var(--pro-text); }
+        .os-logo span { color: var(--pro-accent); margin-left: 2px; }
         
-        .os-monitor { background: #080808 !important; padding: 20px; display: flex; flex-direction: column; }
-        .monitor-stage-box { flex: 1; background: #000; border-radius: 8px; border: 1px solid var(--pro-border); box-shadow: 0 30px 80px rgba(0,0,0,0.8); overflow: hidden; }
+        .os-nav-group { display: flex; gap: 8px; background: rgba(128,128,128,0.08); padding: 4px; border-radius: 10px; }
+        .os-nav-tab { 
+          color: var(--pro-text-dim); font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: none; 
+          padding: 6px 16px; border-radius: 7px; transition: 0.2s; 
+        }
+        .os-nav-tab.active { color: var(--pro-text); background: var(--pro-surface); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
-        .pro-inspector-outer { background: var(--pro-surface) !important; }
-        .inspector-panel.glass-panel { background: transparent !important; border: none !important; }
-
-        .os-footer { background: var(--pro-surface); display: flex; flex-direction: column; }
-        .footer-tools { height: 40px; border-bottom: 1px solid var(--pro-border); display: flex; align-items: center; padding: 0 16px; justify-content: space-between; }
+        /* 中部核心 */
+        .os-main { flex: 1; display: grid; grid-template-columns: 320px 1fr 340px; gap: 6px; min-height: 0; }
         
-        .tool-icon-btn { 
+        .panel-header {
+          height: 44px; padding: 0 16px; border-bottom: 1px solid var(--pro-border); display: flex; align-items: center; gap: 16px;
+        }
+        .header-tab { background: none; border: none; font-size: 11px; font-weight: 700; color: var(--pro-text-dim); cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+        .header-tab.active { color: var(--pro-accent); }
+
+        /* 监视器：电影级氛围 */
+        .os-monitor { background: #000 !important; border: 1px solid #222 !important; position: relative; }
+        .monitor-meta { position: absolute; top: 20px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center; z-index: 10; pointer-events: none; }
+        .monitor-timecode { font-family: "SF Mono", monospace; color: var(--pro-accent); font-size: 24px; font-weight: 600; }
+        .monitor-live { color: #FF3B30; font-size: 10px; font-weight: 900; background: rgba(255,59,48,0.15); padding: 2px 8px; border-radius: 4px; }
+
+        .monitor-stage { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .monitor-controls { height: 60px; display: flex; justify-content: center; gap: 32px; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); }
+        .ctrl-btn { background: none; border: none; color: #fff; cursor: pointer; transition: 0.2s; opacity: 0.7; }
+        .ctrl-btn:hover { opacity: 1; transform: scale(1.1); }
+        .ctrl-btn.play { color: var(--pro-accent); font-size: 32px; opacity: 1; }
+
+        /* 底部时间轴 */
+        .os-footer { height: 380px; }
+        .timeline-toolbar { height: 44px; border-bottom: 1px solid var(--pro-border); display: flex; align-items: center; padding: 0 16px; justify-content: space-between; }
+        .tool-group { display: flex; gap: 8px; }
+        .tool-btn { 
           width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; 
-          border-radius: 6px; border: 1px solid transparent; background: transparent; cursor: pointer; color: var(--pro-text-dim); font-size: 18px; 
+          border-radius: 6px; border: none; background: transparent; cursor: pointer; color: var(--pro-text-dim); font-size: 18px; 
         }
-        .tool-icon-btn.active-tool { background: var(--pro-accent) !important; color: #fff !important; }
+        .tool-btn.active { background: var(--pro-accent); color: #fff; box-shadow: 0 0 12px var(--pro-accent-glow); }
+
+        .engine-meta { font-size: 10px; font-weight: 700; color: var(--pro-text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* 统一导出按钮 */
+        .btn-export { background: var(--pro-accent); color: #fff; border: none; padding: 8px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px var(--pro-accent-glow); }
       `}</style>
 
       <ToastContainer />
       
-      <header className="os-header">
-        <div className="os-logo">VEOMUSE <span>PRO</span></div>
-        <nav style={{ display: 'flex', gap: '32px' }}>
-          <button id="btn-mode-edit" className={`os-nav-tab ${activeMode === 'edit' ? 'active' : ''}`} onClick={() => setActiveMode('edit')}>编辑器</button>
-          <button id="btn-mode-color" className={`os-nav-tab ${activeMode === 'color' ? 'active' : ''}`} onClick={() => setActiveMode('color')}>调色</button>
-          <button id="btn-mode-audio" className={`os-nav-tab ${activeMode === 'audio' ? 'active' : ''}`} onClick={() => setActiveMode('audio')}>音频</button>
-        </nav>
+      <header className="pro-card os-header">
+        <div className="os-logo">VEOMUSE<span>PRO</span></div>
+        <div className="os-nav-group">
+          <button className={`os-nav-tab ${activeMode === 'edit' ? 'active' : ''}`} onClick={() => setActiveMode('edit')}>编辑器</button>
+          <button className={`os-nav-tab ${activeMode === 'color' ? 'active' : ''}`} onClick={() => setActiveMode('color')}>调色</button>
+          <button className={`os-nav-tab ${activeMode === 'audio' ? 'active' : ''}`} onClick={() => setActiveMode('audio')}>音频</button>
+        </div>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <ThemeSwitcher />
-          <button className="os-btn-export" style={{ background: 'var(--pro-accent)', color: '#fff', border: 'none', padding: '6px 16px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>导出</button>
+          <button className="btn-export">导出作品</button>
         </div>
       </header>
 
-      <main className="os-main">
-        <aside className="os-panel">
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--pro-border)', display: 'flex', gap: '16px' }}>
-            <button id="btn-side-assets" style={{ background: 'none', border: 'none', color: activeSidebar === 'assets' ? 'var(--pro-accent)' : '#888', fontWeight: 800, fontSize: '11px' }} onClick={() => setActiveSidebar('assets')}>资产</button>
-            <button id="btn-side-director" style={{ background: 'none', border: 'none', color: activeSidebar === 'director' ? 'var(--pro-accent)' : '#888', fontWeight: 800, fontSize: '11px' }} onClick={() => setActiveSidebar('director')}>导演</button>
+      <div className="os-main">
+        <aside className="pro-card">
+          <div className="panel-header">
+            <button className={`header-tab ${activeSidebar === 'assets' ? 'active' : ''}`} onClick={() => setActiveSidebar('assets')}>项目资产</button>
+            <button className={`header-tab ${activeSidebar === 'director' ? 'active' : ''}`} onClick={() => setActiveSidebar('director')}>AI 导演</button>
           </div>
-          <div style={{ flex: 1, padding: '12px' }}>
+          <div style={{ flex: 1, padding: '16px', overflow: 'hidden' }}>
             {activeSidebar === 'assets' ? <AssetPanel /> : (
-              <div>
-                <textarea placeholder="输入电影梦..." style={{ width: '100%', height: '100px', background: 'rgba(128,128,128,0.05)', border: '1px solid var(--pro-border)', borderRadius: '8px', padding: '12px', color: '#fff', resize: 'none' }} />
-                <button style={{ width: '100%', marginTop: '12px', background: 'var(--pro-accent)', color: '#fff', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 800 }}>生成分镜</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%' }}>
+                <textarea placeholder="描述你的视觉愿景..." style={{ flex: 1, background: 'rgba(128,128,128,0.05)', border: '1px solid var(--pro-border)', borderRadius: '10px', padding: '16px', color: 'var(--pro-text)', resize: 'none', outline: 'none', fontSize: '14px' }} />
+                <button style={{ background: 'var(--pro-accent)', color: '#fff', border: 'none', height: '44px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}>启动全自动导演</button>
               </div>
             )}
           </div>
         </aside>
 
-        <section className="os-panel os-monitor">
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900 }}>● LIVE</div>
-            <div style={{ fontFamily: 'monospace', color: 'var(--pro-accent)', fontSize: '22px', fontWeight: 700 }}>00:00:00:00</div>
-            <div style={{ fontSize: '10px', color: '#888' }}>4K HDR</div>
+        <section className="pro-card os-monitor">
+          <div className="monitor-meta">
+            <div className="monitor-live">● LIVE</div>
+            <div className="monitor-timecode">00:00:00:00</div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#888' }}>4K HDR | REC.709</div>
           </div>
-          <div className="monitor-stage-box">
+          <div className="monitor-stage">
             <MultiVideoPlayer />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', paddingTop: '16px' }}>
-            <button style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px' }}>⏮</button>
-            <button style={{ background: 'none', border: 'none', color: 'var(--pro-accent)', fontSize: '28px' }}>▶</button>
-            <button style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px' }}>⏭</button>
+          <div className="monitor-controls">
+            <button className="ctrl-btn">⏮</button>
+            <button className="ctrl-btn play">▶</button>
+            <button className="ctrl-btn">⏭</button>
           </div>
         </section>
 
-        <aside className="os-panel pro-inspector-outer">
+        <aside className="pro-card">
           <PropertyInspector />
         </aside>
-      </main>
+      </div>
 
-      <footer className="os-footer">
-        <div className="footer-tools">
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button id="tool-select" className={`tool-icon-btn ${activeTool === 'select' ? 'active-tool' : ''}`} onClick={() => setActiveTool('select')}>↖</button>
-            <button id="tool-cut" className={`tool-icon-btn ${activeTool === 'cut' ? 'active-tool' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
-            <button id="tool-hand" className={`tool-icon-btn ${activeTool === 'hand' ? 'active-tool' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
+      <footer className="pro-card os-footer">
+        <div className="timeline-toolbar">
+          <div className="tool-group">
+            <button className={`tool-btn ${activeTool === 'select' ? 'active' : ''}`} onClick={() => setActiveTool('select')}>↖</button>
+            <button className={`tool-btn ${activeTool === 'cut' ? 'active' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
+            <button className={`tool-btn ${activeTool === 'hand' ? 'active' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
           </div>
-          <div style={{ fontSize: '10px', color: '#888' }}>
-            FPS: 60 | ENGINE: ROL DOWN 8.0
+          <div className="engine-meta">
+            FPS: 60 | ENGINE: ROL DOWN 8.0 | SNAP: ON
           </div>
         </div>
         <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -142,4 +181,4 @@ function App() {
   )
 }
 
-export default memo(App)
+export default App
