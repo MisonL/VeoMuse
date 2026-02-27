@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useEditorStore, Asset } from '../../store/editorStore';
+import { useToastStore } from '../../store/toastStore';
 import './AssetPanel.css';
 
 interface AssetPanelProps {
@@ -7,13 +8,15 @@ interface AssetPanelProps {
 }
 
 const AssetPanel: React.FC<AssetPanelProps> = ({ mode = 'assets' }) => {
-  const { assets } = useEditorStore();
+  const { assets, tracks, setTracks } = useEditorStore();
+  const { showToast } = useToastStore();
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'video' | 'audio'>('all');
 
   // 模拟 AI 导演分镜数据
   const mockScenes = [
-    { id: 's1', title: '全景：霓虹都市', duration: '5s', prompt: 'Cinematic wide shot of neon city' },
-    { id: 's2', title: '特写：武士头盔', duration: '3s', prompt: 'Cyberpunk samurai helmet close up' }
+    { id: 's1', title: '全景：霓虹都市', duration: 5, prompt: 'Cinematic wide shot of neon city' },
+    { id: 's2', title: '特写：武士头盔', duration: 3, prompt: 'Cyberpunk samurai helmet close up' }
   ];
 
   const handleDragStart = (e: React.DragEvent, asset: Asset) => {
@@ -21,9 +24,28 @@ const AssetPanel: React.FC<AssetPanelProps> = ({ mode = 'assets' }) => {
     e.dataTransfer.effectAllowed = 'copy';
   };
 
-  const filteredAssets = assets.filter(a => 
-    a.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleAddToTimeline = (name: string, duration: number) => {
+    const newTracks = JSON.parse(JSON.stringify(tracks));
+    const vTrack = newTracks.find((t: any) => t.id === 'track-v1');
+    if (vTrack) {
+      vTrack.clips.push({
+        id: `clip-${Date.now()}`,
+        start: vTrack.clips.length > 0 ? vTrack.clips[vTrack.clips.length-1].end : 0,
+        end: (vTrack.clips.length > 0 ? vTrack.clips[vTrack.clips.length-1].end : 0) + duration,
+        src: '',
+        name: name,
+        type: 'video'
+      });
+      setTracks(newTracks);
+      showToast(`已将 ${name} 编排至时间轴`, 'success');
+    }
+  };
+
+  const filteredAssets = assets.filter(a => {
+    const matchesSearch = a.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = activeCategory === 'all' || a.type === activeCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="pro-asset-panel">
@@ -40,9 +62,18 @@ const AssetPanel: React.FC<AssetPanelProps> = ({ mode = 'assets' }) => {
           </div>
 
           <div className="asset-categories">
-            <button className="cat-btn active">全部</button>
-            <button className="cat-btn">视频</button>
-            <button className="cat-btn">音频</button>
+            <button 
+              className={`cat-btn ${activeCategory === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('all')}
+            >全部</button>
+            <button 
+              className={`cat-btn ${activeCategory === 'video' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('video')}
+            >视频</button>
+            <button 
+              className={`cat-btn ${activeCategory === 'audio' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('audio')}
+            >音频</button>
           </div>
 
           <div className="pro-asset-grid">
@@ -55,10 +86,10 @@ const AssetPanel: React.FC<AssetPanelProps> = ({ mode = 'assets' }) => {
               >
                 <div className="tile-preview">
                   <span className="type-indicator"></span>
-                  {asset.type === 'video' ? '🎬' : '🖼️'}
+                  {asset.type === 'video' ? '🎬' : '🎵'}
                   <div className="tile-actions">
-                    <button title="预览">👁️</button>
-                    <button title="添加">➕</button>
+                    <button onClick={() => showToast('预览模块加载中...', 'info')}>👁️</button>
+                    <button onClick={() => handleAddToTimeline(asset.name, 10)}>➕</button>
                   </div>
                 </div>
                 <div className="tile-footer">
@@ -87,9 +118,12 @@ const AssetPanel: React.FC<AssetPanelProps> = ({ mode = 'assets' }) => {
                   <div className="scene-index">{scene.id.replace('s', '')}</div>
                   <div className="scene-info">
                     <div className="scene-title">{scene.title}</div>
-                    <div className="scene-meta">{scene.duration} | AI 增强</div>
+                    <div className="scene-meta">{scene.duration}s | AI 增强</div>
                   </div>
-                  <button className="scene-add-btn">编排</button>
+                  <button 
+                    className="scene-add-btn"
+                    onClick={() => handleAddToTimeline(scene.title, scene.duration)}
+                  >编排</button>
                 </div>
               ))}
             </div>
