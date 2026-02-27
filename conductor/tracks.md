@@ -62,5 +62,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: 开发主题系统**
+- [x] **Track: 开发主题系统**
   *Link: [./tracks/theme_system_20260227/](./tracks/theme_system_20260227/)*

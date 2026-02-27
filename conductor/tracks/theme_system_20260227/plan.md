@@ -14,15 +14,15 @@
 - [x] 任务：为 `themeStore` 实现 LocalStorage 持久化中间件。 [14a9b04]
 - [x] 任务：Conductor - 用户手册验证 '阶段 2：状态管理 (Zustand)' (协议见 workflow.md) [beba5c1]
 
-## 阶段 3：React Hooks 与系统同步
-- [ ] 任务：为 `useThemeSync` Hook 编写单元测试。
-- [ ] 任务：实现 `useThemeSync` Hook，监听 `window.matchMedia('(prefers-color-scheme: dark)')`。
-- [ ] 任务：实现根据激活的主题状态动态更新文档 `data-theme` 属性和 CSS 自定义属性的逻辑。
-- [ ] 任务：Conductor - 用户手册验证 '阶段 3：React Hooks 与系统同步' (协议见 workflow.md)
+## 阶段 3：React Hooks 与系统同步 [checkpoint: 07cc16c]
+- [x] 任务：为 `useThemeSync` Hook 编写单元测试。 [07cc16c]
+- [x] 任务：实现 `useThemeSync` Hook，监听 `window.matchMedia('(prefers-color-scheme: dark)')`。 [07cc16c]
+- [x] 任务：实现根据激活的主题状态动态更新文档 `data-theme` 属性和 CSS 自定义属性的逻辑。 [07cc16c]
+- [x] 任务：Conductor - 用户手册验证 '阶段 3：React Hooks 与系统同步' (协议见 workflow.md) [07cc16c]
 
-## 阶段 4：UI 集成与控件
-- [ ] 任务：为主题切换器 UI 组件编写单元测试。
-- [ ] 任务：构建主题切换器组件（在亮色、暗色、系统模式间切换）。
-- [ ] 任务：将主题切换器集成到主应用布局中（例如顶栏或设置面板）。
-- [ ] 任务：重构 `App.tsx` 和 `Atoms.tsx` 中现有的内联颜色，改为使用 CSS 变量。
-- [ ] 任务：Conductor - 用户手册验证 '阶段 4：UI 集成与控件' (协议见 workflow.md)
+## 阶段 4：UI 集成与控件 [checkpoint: 07cc16c]
+- [x] 任务：为主题切换器 UI 组件编写单元测试。 [07cc16c]
+- [x] 任务：构建主题切换器组件（在亮色、暗色、系统模式间切换）。 [07cc16c]
+- [x] 任务：将主题切换器集成到主应用布局中（例如顶栏或设置面板）。 [07cc16c]
+- [x] 任务：重构 `App.tsx` 和 `Atoms.tsx` 中现有的内联颜色，改为使用 CSS 变量。 [07cc16c]
+- [x] 任务：Conductor - 用户手册验证 '阶段 4：UI 集成与控件' (协议见 workflow.md) [07cc16c]
