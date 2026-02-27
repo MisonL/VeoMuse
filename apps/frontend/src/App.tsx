@@ -57,7 +57,7 @@ function App() {
   };
 
   return (
-    <div className="veomuse-industrial-shell" onContextMenu={e => e.preventDefault()}>
+    <div className="pro-master-shell" onContextMenu={e => e.preventDefault()}>
       <style>{`
         :root {
           --ap-bg: #000000;
@@ -68,8 +68,7 @@ function App() {
           --ap-accent-glow: rgba(0, 122, 255, 0.3);
           --ap-text: #F5F5F7;
           --ap-text-dim: #8E8E93;
-          --ap-radius: 14px;
-          --ap-gap: 10px;
+          --ap-radius: 12px;
         }
 
         [data-theme='light'] {
@@ -82,46 +81,65 @@ function App() {
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-        body { background: var(--ap-bg); color: var(--ap-text); font-family: -apple-system, sans-serif; overflow: hidden; }
+        body { background: var(--ap-bg); color: var(--ap-text); font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
 
-        .veomuse-industrial-shell {
-          height: 100vh; width: 100vw; display: flex; flex-direction: column; background: var(--ap-bg); padding: 8px; gap: 8px;
+        .pro-master-shell {
+          height: 100vh; width: 100vw; display: grid; grid-template-rows: 56px 1fr 380px; gap: 8px; background: var(--ap-bg); padding: 8px;
         }
 
-        .pro-panel { background: var(--ap-surface); border: 1px solid var(--ap-border); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
-        .header-bar { height: 56px; padding: 0 24px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; background: var(--ap-surface); }
-        .brand-zone { display: flex; align-items: center; gap: 12px; }
-        .brand-logo { width: 30px; height: 30px; background: var(--ap-accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; font-size: 16px; border: 0.5px solid rgba(255,255,255,0.2); }
-        .brand-name { font-weight: 800; font-size: 15px; letter-spacing: -0.5px; opacity: 0.9; }
+        .pro-panel { background: var(--ap-surface); border: 1px solid var(--ap-border); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; }
 
-        .mode-selector { display: flex; background: rgba(128,128,128,0.08); padding: 4px; border-radius: 12px; gap: 4px; border: 0.5px solid var(--ap-border); }
-        .mode-tab { border: none; background: none; padding: 6px 24px; border-radius: 9px; font-size: 13px; font-weight: 700; color: var(--ap-text-dim); cursor: pointer; transition: 0.2s; }
+        /* 顶栏优化：严格对齐 */
+        .os-header { display: grid; grid-template-columns: 240px 1fr 400px; align-items: center; padding: 0 20px; }
+        .brand-zone { display: flex; align-items: center; gap: 12px; }
+        .brand-logo { width: 28px; height: 28px; background: var(--ap-accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; font-size: 16px; border: 0.5px solid rgba(255,255,255,0.2); }
+        .brand-name { font-weight: 800; font-size: 15px; letter-spacing: -0.5px; }
+
+        .mode-selector { display: flex; background: rgba(128,128,128,0.08); padding: 3px; border-radius: 10px; gap: 2px; border: 0.5px solid var(--ap-border); justify-self: center; }
+        .mode-tab { border: none; background: none; padding: 6px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; color: var(--ap-text-dim); cursor: pointer; transition: 0.2s; }
         .mode-tab.active { background: var(--ap-surface); color: var(--ap-accent); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 
-        .main-layout { flex: 1; display: grid; grid-template-columns: 320px 1fr 340px; gap: 8px; min-height: 0; }
-        .panel-title-bar { height: 48px; padding: 0 20px; border-bottom: 1px solid var(--ap-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+        .header-actions { display: flex; justify-content: flex-end; align-items: center; gap: 16px; }
+
+        /* 工作区矩阵 */
+        .os-main { display: grid; grid-template-columns: 320px 1fr 340px; gap: 8px; min-height: 0; }
+        .panel-title-bar { height: 44px; padding: 0 16px; border-bottom: 1px solid var(--ap-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 
         .monitor-core { background: #000 !important; position: relative; border: 1px solid #222 !important; }
-        .monitor-overlay { position: absolute; top: 24px; left: 24px; right: 24px; display: flex; justify-content: space-between; z-index: 5; pointer-events: none; }
+        [data-theme='light'] .monitor-core { border-color: #eee !important; }
+        .monitor-overlay { position: absolute; top: 20px; left: 24px; right: 24px; display: flex; justify-content: space-between; z-index: 5; pointer-events: none; }
         .timecode { font-family: "SF Mono", monospace; color: var(--ap-accent); font-size: 26px; font-weight: 600; letter-spacing: -1.5px; }
         
-        .transport-controls { height: 80px; display: flex; justify-content: center; gap: 48px; align-items: center; border-top: 1px solid rgba(255,255,255,0.03); flex-shrink: 0; }
+        .transport-controls { height: 74px; display: flex; justify-content: center; gap: 48px; align-items: center; border-top: 1px solid rgba(255,255,255,0.03); flex-shrink: 0; }
         .transport-btn { background: none; border: none; color: #fff; cursor: pointer; transition: 0.2s; font-size: 24px; }
-        .transport-btn.play { color: var(--ap-accent); font-size: 44px; opacity: 1; }
+        .transport-btn.play { color: var(--ap-accent); font-size: 40px; opacity: 1; }
 
-        .timeline-container { height: 400px; flex-shrink: 0; }
-        .tool-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: none; background: transparent; cursor: pointer; color: var(--ap-text-dim); font-size: 20px; transition: 0.2s; }
-        .tool-icon.active { background: var(--ap-accent); color: #fff; box-shadow: 0 0 15px var(--ap-accent-glow); }
+        .timeline-container { height: 380px; flex-shrink: 0; }
+        
+        /* 底部工具栏对齐：垂直居中 */
+        .timeline-actions { 
+          height: 52px; padding: 0 20px; border-bottom: 1px solid var(--ap-border); 
+          display: flex; align-items: center; justify-content: space-between; 
+        }
+        
+        .tool-bar-group { display: flex; align-items: center; gap: 8px; }
+        .tool-icon { 
+          width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; 
+          border-radius: 7px; border: none; background: transparent; cursor: pointer; color: var(--ap-text-dim); font-size: 18px; transition: 0.2s;
+        }
+        .tool-icon.active { background: var(--ap-accent); color: #fff; box-shadow: 0 0 12px var(--ap-accent-glow); }
 
-        .telemetry-sparkline { display: flex; align-items: flex-end; gap: 2px; height: 16px; width: 40px; }
+        .system-telemetry { display: flex; align-items: center; gap: 20px; }
+        .telemetry-item { display: flex; align-items: center; gap: 10px; font-size: 10px; font-weight: 800; color: var(--ap-text-dim); text-transform: uppercase; }
+        .telemetry-sparkline { display: flex; align-items: flex-end; gap: 2px; height: 14px; width: 40px; }
         .spark-bar { width: 3px; background: #34C759; border-radius: 1px; transition: height 0.5s ease; }
 
-        .pro-inspector-outer div, .pro-inspector-outer section { background-color: transparent !important; color: inherit !important; border-color: var(--ap-border) !important; }
+        .pro-inspector-outer div, .pro-inspector-outer section { background-color: transparent !important; color: inherit !important; }
       `}</style>
 
       <ToastContainer />
       
-      <header className="pro-panel header-bar">
+      <header className="pro-panel os-header">
         <div className="brand-zone">
           <div className="brand-logo">V</div>
           <span className="brand-name">VEOMUSE PRO</span>
@@ -135,26 +153,28 @@ function App() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div className="header-actions">
           <ThemeSwitcher />
-          <button style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}>导出</button>
+          <button style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', padding: '8px 24px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px var(--ap-accent-glow)' }}>导出</button>
         </div>
       </header>
 
       <div className="os-main main-layout">
         <aside className="pro-panel">
           <div className="panel-title-bar">
-            <div style={{ display: 'flex', gap: '20px' }}>
+            <div style={{ display: 'flex', gap: '16px' }}>
               <button style={{ background: 'none', border: 'none', color: activeSidebar === 'assets' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('assets')}>媒体资源</button>
               <button style={{ background: 'none', border: 'none', color: activeSidebar === 'director' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('director')}>AI 导演</button>
             </div>
           </div>
-          <div style={{ flex: 1, padding: '20px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, padding: '20px', overflow: 'hidden' }}>
             <AssetPanel mode={activeSidebar as any} />
             {activeSidebar === 'director' && (
               <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--ap-border)', paddingTop: '20px' }}>
                 <textarea placeholder="输入电影脚本..." value={directorPrompt} onChange={(e) => setDirectorPrompt(e.target.value)} style={{ height: '80px', background: 'rgba(128,128,128,0.05)', border: '1px solid var(--ap-border)', borderRadius: '10px', padding: '12px', color: 'var(--ap-text)', resize: 'none', outline: 'none', fontSize: '13px' }} />
-                <button onClick={handleDirector} disabled={isProcessing} style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', height: '44px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}>一键分镜</button>
+                <button onClick={handleDirector} disabled={isProcessing} style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', height: '44px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}>
+                  {isProcessing ? '分析中...' : '一键导演'}
+                </button>
               </div>
             )}
           </div>
@@ -193,7 +213,7 @@ function App() {
 
       <footer className="pro-panel timeline-container">
         <div className="timeline-actions">
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="tool-bar-group">
             <div style={{ display: 'flex', gap: '4px', marginRight: '12px', borderRight: '1px solid var(--ap-border)', paddingRight: '12px' }}>
               <button className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
               <button className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0}>↪</button>
@@ -202,15 +222,19 @@ function App() {
             <button className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
             <button className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
           </div>
-          <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>GPU LOAD</span>
+          
+          <div className="system-telemetry">
+            <div className="telemetry-item">
+              <span>GPU LOAD</span>
               <div className="telemetry-sparkline">
                 {telemetry.map((v, i) => <div key={i} className="spark-bar" style={{ height: `${v}%` }} />)}
               </div>
             </div>
-            <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)', borderLeft: '1px solid var(--ap-border)', paddingLeft: '12px' }}>
-              CACHE: <span style={{ color: '#34C759' }}>92%</span> | <span style={{ color: 'var(--ap-accent)' }}>ROL DOWN 8.0</span>
+            <div className="telemetry-item" style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '16px' }}>
+              CACHE: <span style={{ color: '#34C759' }}>92%</span>
+            </div>
+            <div className="telemetry-item" style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '16px' }}>
+              ENGINE: <span style={{ color: 'var(--ap-accent)' }}>ROL DOWN 8.0</span>
             </div>
           </div>
         </div>
@@ -222,4 +246,4 @@ function App() {
   )
 }
 
-export default memo(App)
+export default App
