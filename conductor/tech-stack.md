@@ -15,6 +15,7 @@
 - **样式**: **原生 CSS / CSS Modules** (极致的玻璃拟态定制)
 - **动画**: **Framer Motion** (Premium 级别的交互动画)
 - **状态管理**: **Zustand** (轻量且高性能)
+- **主题系统**: **Zustand + CSS Variables** (支持持久化 Light/Dark/System 模式切换)
 
 ## 3. 基础设施 (Infrastructure)
 - **数据库**: **PostgreSQL** (主存储) + **Redis** (缓存与任务队列)
