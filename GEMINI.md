@@ -1,35 +1,32 @@
-# 仓库准则 (Repository Guidelines)
+# 仓库准则 (Repository Guidelines) - V3.1 旗舰版
 
-## 🏗️ 项目架构与模块组织
-本项目采用 **Bun Workspaces (Monorepo)** 旗舰级架构，确保全栈 100% 类型同步。
-- **`apps/backend` (ElysiaJS)**: 工业级 AI 总线。所有 AI Service 必须继承 `BaseAiService` 以获取遥测与重试能力。
-- **`apps/frontend` (React 19)**: 顶级多轨编辑器。采用 **Native SyncController** 驱动播放，严禁 React State 驱动高频更新。
-- **`packages/shared`**: 类型桥接层。统一定义 Clip, Track, Scene 等通讯接口。
-- **`conductor/`**: Conductor 框架核心。包含所有规格说明 (`spec.md`) 与执行计划 (`plan.md`)。
-- **`tests/`**: 全链路自动化测试套件。
+> **以工匠之心，铸 AI 之魂。本项目已于 2026-02-27 完成全蓝图总装交付。**
 
-## 🛠️ 构建、测试与开发命令
+## 🏗️ 架构与模块组织
+本项目采用 **Bun Workspaces (Monorepo)** 旗舰级架构，确保全栈 100% 类型安全与 API 对齐。
+- **`apps/backend` (ElysiaJS)**: 工业级 AI 路由总线。集成了 Telemetry 实时遥测、Multi-Driver 视频生成及 FFmpeg 异步合成引擎。
+- **`apps/frontend` (React 19)**: 顶级多轨编辑器。采用 **Native SyncController** 驱动播放，强制使用 **useShallow** 拦截渲染熵值，主布局遵循 **Apple Pro Master Grid** 规范。
+- **`packages/shared`**: 强类型契约层。统一定义 Clip, Track, Asset 等 E2E 接口。
+- **`conductor/archive/`**: 全量开发审计档案。包含 21 个核心功能的规格说明 (`spec.md`) 与执行记录 (`plan.md`)。
+
+## 🛠️ 构建、部署与运维
 | 命令 | 说明 |
 | :--- | :--- |
 | `bun run dev` | 物理拉起全栈开发环境 (Backend: 3001, Frontend: 5173) |
-| `bun run build` | 执行 Vite 8 + Oxc 极速混淆构建 |
-| `bun test` | 运行全量单元与集成测试 |
-| `bun run docker:up` | 一键部署生产容器 (Nginx 80 + Bun Backend) |
+| `bun run build` | 执行 Vite 8 + Oxc 极速生产混淆构建 |
+| `bun test` | 运行全量 35 项原子级回归测试套件 |
+| `bun run docker:up` | **结项推荐**: 一键部署 Nginx 80 + Bun 生产容器总线 |
 
-## ⚖️ 编码风格与命名规范
-- **类型安全**: 必须通过 `treaty<App>(...)` 桥接，禁止使用 `any`。
-- **视觉一致性**: 严格遵循 **Apple Pro (Obsidian)** 视觉规范。使用内联主题变量 (`--ap-`) 驱动 UI。
-- **UI 准则**: 强制 12px 间距与 16px 圆角布局。
-- **交互逻辑**: 必须为关键按钮绑定 **物理 ID** 以确保自动化审计。
+## ⚖️ 工程红线 (Strict Guidelines)
+- **视觉一致性**: 严格遵循 **Obsidian Pro** 视觉规范。使用 16px 圆角、12px 间距及内联变量 (`--ap-`) 驱动 UI。
+- **物理 ID 锁定**: 核心交互按钮必须绑定 `id="tool-*"` 或 `id="btn-*"`，确保自动化审计 100% 连通。
+- **效能规范**: 严禁在播放状态下触发 React 全量重绘；硬件遥测指标必须每 2 秒物理轮询一次后端 API。
+- **错误闭环**: 所有 API 异常必须通过 `getErrorMessage` 辅助函数转化为用户可理解的专业 Toast。
 
-## 🧪 测试准则
-- **框架**: 使用 `bun:test`。
-- **规范**: 采用 TDD 流程。每个 Track 必须配套 `tests/*.test.ts`。
-- **Mock**: 严禁在测试中发起真实外部网络请求，必须 Mock `fetch` 响应。
-
-## 🚀 提交与 Conductor 准则
-- **提交规范**: `feat(scope): description` 或 `chore(conductor): ...`。
-- **自动化流**: 所有代码变更必须物理对齐 `spec.md`。完成 Track 后需执行同步与清理协议。
+## 🧪 交付验证
+- **测试框架**: `bun:test`。
+- **回归要求**: 任何二次开发必须保持 `tests/*.test.ts` 100% 绿灯。
+- **Mock 策略**: 严禁在测试环境中发起真实 AI 请求，必须使用 `mock(fetch)` 模拟层。
 
 ---
-**VeoMuse V3.1 Pro - 以工匠之心，铸 AI 之魂。**
+**VeoMuse V3.1 Pro - 已圆满交付。**
