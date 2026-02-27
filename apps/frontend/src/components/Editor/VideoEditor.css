@@ -1,29 +1,31 @@
-/* Pro NLE Timeline - Absolute Control */
+/* 时间轴：彻底去硬编码化 */
 
 .pro-nle-container {
-  /* 确保整个容器在剪切模式下统一光标 */
-  cursor: inherit !important;
+  height: 100%;
+  background: transparent !important;
 }
 
-.pro-nle-container * {
-  /* 强力穿透第三方组件的内部样式 */
-  cursor: inherit !important;
+/* 强力覆盖第三方库内部所有深色背景 */
+.pro-nle-container .react-timeline-editor,
+.pro-nle-container .react-timeline-editor-row-area,
+.pro-nle-container .react-timeline-editor-row {
+  background: transparent !important;
+  border-color: var(--pro-border) !important;
+}
+
+.pro-nle-container .react-timeline-editor-time-area {
+  background: rgba(128, 128, 128, 0.05) !important;
+  border-bottom: 1px solid var(--pro-border) !important;
+  color: var(--pro-text-dim) !important;
+}
+
+.pro-nle-container .react-timeline-editor-cursor {
+  background: var(--pro-accent) !important;
+  box-shadow: 0 0 10px var(--pro-accent-glow);
 }
 
 .pro-nle-container .react-timeline-editor-action-unit {
   background: linear-gradient(180deg, var(--pro-accent) 0%, #005bbd 100%) !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
   border-radius: 4px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.3) !important;
-}
-
-.pro-nle-container .react-timeline-editor-action-unit-selected {
-  border: 2px solid #fff !important;
-  box-shadow: 0 0 15px var(--pro-accent) !important;
-}
-
-.pro-nle-container .react-timeline-editor-cursor {
-  background: #fff !important;
-  width: 1.5px !important;
-  box-shadow: 0 0 10px var(--pro-accent);
 }
