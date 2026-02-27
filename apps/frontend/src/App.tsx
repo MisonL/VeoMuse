@@ -1,4 +1,5 @@
 import { useState, memo, useEffect, useMemo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import { useThemeSync } from './hooks/useThemeSync'
@@ -14,7 +15,18 @@ import ThemeSwitcher from './components/Common/ThemeSwitcher'
 function App() {
   useThemeSync(); 
   const { showToast } = useToastStore()
-  const { isPlaying, togglePlay, setCurrentTime, tracks, setTracks } = useEditorStore()
+  
+  // 最佳实践 1：使用 useShallow 实现渲染剪枝
+  const { isPlaying, togglePlay, setCurrentTime, tracks, setTracks } = useEditorStore(
+    useShallow(state => ({
+      isPlaying: state.isPlaying,
+      togglePlay: state.togglePlay,
+      setCurrentTime: state.setCurrentTime,
+      tracks: state.tracks,
+      setTracks: state.setTracks
+    }))
+  )
+
   // @ts-ignore
   const { undo, redo, pastStates, futureStates } = useEditorStore.temporal.getState()
   
@@ -24,33 +36,27 @@ function App() {
   const [directorPrompt, setDirectorPrompt] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
 
-  // --- 真实遥测驱动核心 ---
   const [telemetryHistory, setTelemetryHistory] = useState<number[]>(new Array(10).fill(0));
   const [currentMetrics, setCurrentMetrics] = useState({ gpu: 0, ram: '0 / 0', cache: '0%' });
 
+  // 最佳实践 2：物理驱动的遥测轮询
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
         const { data } = await api.api.admin.metrics.get();
         if (data && 'system' in data) {
           const gpuLoad = Math.round(data.system.renderLoad);
-          const ramUsage = Math.round(data.system.memory.usage * 100);
-          
           setCurrentMetrics({
             gpu: gpuLoad,
             ram: `${(data.system.memory.total / (1024 ** 3)).toFixed(1)}GB`,
-            cache: `${ramUsage}%`
+            cache: `${Math.round(data.system.memory.usage * 100)}%`
           });
-          
           setTelemetryHistory(prev => [...prev.slice(1), gpuLoad]);
         }
-      } catch (e) {
-        // 静默处理遥测错误，避免干扰主业务
-      }
+      } catch (e) {}
     };
-
     const timer = setInterval(fetchMetrics, 2000);
-    fetchMetrics(); // 初始加载
+    fetchMetrics();
     return () => clearInterval(timer);
   }, []);
 
@@ -81,6 +87,7 @@ function App() {
   return (
     <div className="pro-master-shell" onContextMenu={e => e.preventDefault()}>
       <style>{`
+        /* 最佳实践 3：全局变量集权 */
         :root {
           --ap-bg: #000000;
           --ap-surface: #161617;
@@ -103,7 +110,7 @@ function App() {
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-        body { background: var(--ap-bg); color: var(--ap-text); font-family: -apple-system, sans-serif; overflow: hidden; }
+        body { background: var(--ap-bg); color: var(--ap-text); font-family: -apple-system, system-ui, sans-serif; overflow: hidden; transition: background 0.3s ease; }
 
         .pro-master-shell {
           height: 100vh; width: 100vw; display: grid; grid-template-rows: 56px 1fr 380px; gap: 8px; background: var(--ap-bg); padding: 8px;
@@ -158,16 +165,16 @@ function App() {
             </button>
           ))}
         </div>
-        <div className="header-actions">
+        <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', alignItems: 'center' }}>
           <ThemeSwitcher />
-          <button style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', padding: '8px 24px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px var(--ap-accent-glow)' }}>导出</button>
+          <button style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>导出</button>
         </div>
       </header>
 
       <div className="os-main main-layout">
         <aside className="pro-panel">
           <div className="panel-title-bar">
-            <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ display: 'flex', gap: '20px' }}>
               <button style={{ background: 'none', border: 'none', color: activeSidebar === 'assets' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('assets')}>媒体资源</button>
               <button style={{ background: 'none', border: 'none', color: activeSidebar === 'director' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('director')}>AI 导演</button>
             </div>
@@ -177,9 +184,7 @@ function App() {
             {activeSidebar === 'director' && (
               <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--ap-border)', paddingTop: '20px' }}>
                 <textarea placeholder="输入电影脚本..." value={directorPrompt} onChange={(e) => setDirectorPrompt(e.target.value)} style={{ height: '80px', background: 'rgba(128,128,128,0.05)', border: '1px solid var(--ap-border)', borderRadius: '10px', padding: '12px', color: 'var(--ap-text)', resize: 'none', outline: 'none', fontSize: '13px' }} />
-                <button onClick={handleDirector} disabled={isProcessing} style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', height: '44px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}>
-                  {isProcessing ? '分析中...' : '一键导演'}
-                </button>
+                <button onClick={handleDirector} disabled={isProcessing} style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', height: '44px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}>一键分镜</button>
               </div>
             )}
           </div>
@@ -189,7 +194,7 @@ function App() {
           {activeMode === 'edit' ? (
             <>
               <div className="monitor-overlay">
-                <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900, background: 'rgba(255,59,48,0.1)', padding: '3px 8px', borderRadius: '4px' }}>● 实时</div>
+                <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900, background: 'rgba(255,59,48,0.1)', padding: '2px 6px', borderRadius: '4px' }}>● 实时</div>
                 <div className="timecode">00:00:00:00</div>
                 <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>4K | HDR</div>
               </div>
@@ -217,7 +222,7 @@ function App() {
       </div>
 
       <footer className="pro-panel timeline-container">
-        <div className="timeline-actions">
+        <div className="timeline-actions" style={{ height: '52px' }}>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '4px', marginRight: '12px', borderRight: '1px solid var(--ap-border)', paddingRight: '12px' }}>
               <button className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
@@ -251,4 +256,4 @@ function App() {
   )
 }
 
-export default App
+export default memo(App)

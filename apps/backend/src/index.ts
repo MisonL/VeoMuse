@@ -36,6 +36,13 @@ VideoOrchestrator.registerDriver(new PikaDriver());
 
 const app = new Elysia()
   .use(cors())
+  .trace(async ({ onHandle, set }) => {
+    onHandle(({ begin, onStop }) => {
+      onStop(({ end }) => {
+        set.headers['Server-Timing'] = `handle;dur=${end - begin};desc="Execution"`
+      })
+    })
+  })
   .onError(({ code, error, set }) => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(`🚨 [Global Guard] ${code}: ${errorMessage}`);
