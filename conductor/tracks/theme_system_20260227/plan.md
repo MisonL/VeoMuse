@@ -8,11 +8,11 @@
 - [x] 任务：添加 CSS 过渡规则，确保主题切换平滑。 [526db5f]
 - [x] 任务：Conductor - 用户手册验证 '阶段 1：CSS 架构与主题变量' (协议见 workflow.md) [c7e3048]
 
-## 阶段 2：状态管理 (Zustand)
+## 阶段 2：状态管理 (Zustand) [checkpoint: beba5c1]
 - [x] 任务：为主题 Store 逻辑编写单元测试（默认系统、更新主题、自定义色板）。 [14a9b04]
 - [x] 任务：使用 Zustand 创建 `themeStore.ts`，管理当前主题模式和自定义色板状态。 [14a9b04]
 - [x] 任务：为 `themeStore` 实现 LocalStorage 持久化中间件。 [14a9b04]
-- [ ] 任务：Conductor - 用户手册验证 '阶段 2：状态管理 (Zustand)' (协议见 workflow.md)
+- [x] 任务：Conductor - 用户手册验证 '阶段 2：状态管理 (Zustand)' (协议见 workflow.md) [beba5c1]
 
 ## 阶段 3：React Hooks 与系统同步
 - [ ] 任务：为 `useThemeSync` Hook 编写单元测试。
