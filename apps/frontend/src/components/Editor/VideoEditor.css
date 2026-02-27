@@ -1,15 +1,26 @@
-/* Pro NLE Timeline - Master Refinement */
+/* Pro NLE Timeline - Absolute Control */
 
 .pro-nle-container {
   cursor: inherit !important;
   height: 100%;
+  width: 100% !important; /* 物理锁定：强制撑满父容器宽度 */
   display: flex;
   flex-direction: column;
+  flex: 1;
+}
+
+.timeline-wrapper {
+  flex: 1;
+  width: 100% !important;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
 }
 
 /* 强力覆盖第三方库：建立物理层级感 */
 .pro-nle-container .timeline-editor {
   background: transparent !important;
+  width: 100% !important; /* 强制拉伸 */
 }
 
 /* 顶部刻度区：强化层级 */
@@ -24,6 +35,7 @@
 /* 轨道区：建立物理行感 */
 .pro-nle-container .timeline-editor-edit-area {
   background: rgba(0, 0, 0, 0.02) !important;
+  width: 100% !important;
 }
 
 /* 亮色模式：为轨道注入“苹果灰”深度 */
@@ -31,11 +43,12 @@
   background: #F2F2F7 !important;
 }
 
-/* 物理行样式：确保每一条轨道都可见 */
+/* 物理行样式：确保每一条轨道都可见并横向拉通 */
 .pro-nle-container .timeline-editor-edit-row {
   border-bottom: 1px solid var(--ap-border) !important;
   background: transparent !important;
-  transition: background 0.2s;
+  width: 100% !important;
+  min-width: 100% !important;
 }
 
 .pro-nle-container .timeline-editor-edit-row:hover {
@@ -55,16 +68,4 @@
   background: linear-gradient(180deg, var(--ap-accent) 0%, #005bbd 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 4px !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
-  overflow: hidden;
-}
-
-.pro-nle-container .timeline-editor-action-unit-selected {
-  border: 2.5px solid #fff !important;
-  box-shadow: 0 0 20px var(--ap-accent) !important;
-}
-
-/* 调整画布渲染精度 */
-.pro-nle-container canvas {
-  opacity: 0.8;
 }

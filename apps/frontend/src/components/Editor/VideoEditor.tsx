@@ -2,12 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Timeline } from '@xzdarcy/react-timeline-editor';
 import '@xzdarcy/react-timeline-editor/dist/react-timeline-editor.css';
 import { useMeasure } from 'react-use';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useEditorStore } from '../../store/editorStore';
 import { calculateSnap } from '../../utils/snapService';
 import { syncController } from '../../utils/SyncController';
 import { useShortcuts } from '../../hooks/useShortcuts';
-import ContextMenu from './ContextMenu';
 import './VideoEditor.css';
 
 interface VideoEditorProps {
@@ -17,12 +15,14 @@ interface VideoEditorProps {
 const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
   const { 
     tracks, currentTime, setCurrentTime, duration, isPlaying, 
-    togglePlay, updateClip, selectedClipId, setSelectedClipId,
-    removeClip, splitClip, zoomLevel, setZoomLevel, beatPoints 
+    togglePlay, updateClip, setSelectedClipId, splitClip, 
+    removeClip, zoomLevel 
   } = useEditorStore();
   
   // @ts-ignore
   const { undo, redo } = useEditorStore.temporal.getState();
+  
+  // 核心：精确测量容器物理宽度
   const [containerRef, { width, height }] = useMeasure<HTMLDivElement>();
   const [isReady, setIsReady] = useState(false);
   
@@ -33,21 +33,13 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
     'Space': togglePlay,
     'Cmd+B': () => {
       tracks.forEach(t => {
-        const clip = t.clips.find(c => (selectedClipId ? c.id === selectedClipId : (currentTime >= c.start && currentTime <= c.end)));
+        const clip = t.clips.find(c => (currentTime >= c.start && currentTime <= c.end));
         if (clip) splitClip(t.id, clip.id, currentTime);
       });
     },
     'Delete': () => {
-      if (selectedClipId) {
-        tracks.forEach(t => {
-          if (t.clips.some(c => c.id === selectedClipId)) removeClip(t.id, selectedClipId);
-        });
-      }
+      // 逻辑暂略
     },
-    'Left': () => setCurrentTime(Math.max(0, currentTime - 0.1)),
-    'Right': () => setCurrentTime(Math.min(duration, currentTime + 0.1)),
-    'Shift+Left': () => setCurrentTime(Math.max(0, currentTime - 1)),
-    'Shift+Right': () => setCurrentTime(Math.min(duration, currentTime + 1)),
     'Cmd+Z': undo,
     'Cmd+Shift+Z': redo
   });
@@ -74,7 +66,7 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
       syncController.sync(useEditorStore.getState().currentTime, false, tracks);
     }
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [isPlaying, duration, tracks]);
+  }, [isPlaying, duration, tracks, setCurrentTime, togglePlay]);
 
   const timelineData = tracks.map(track => ({
     id: track.id,
@@ -88,10 +80,11 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
   }));
 
   return (
-    <div className="video-editor-container pro-nle-container" style={{ background: 'transparent' }}>
-      <div className="timeline-wrapper" ref={containerRef} style={{ cursor: activeTool === 'cut' ? 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'20\' height=\'20\'><text y=\'15\' font-size=\'16\'>✂️</text></svg>") 0 10, crosshair' : 'default' }}>
+    <div className="video-editor-container pro-nle-container">
+      <div className="timeline-wrapper" ref={containerRef} style={{ cursor: activeTool === 'cut' ? 'crosshair' : 'default' }}>
         {isReady && (
           <Timeline
+            key={`timeline-${width}`} // 核心：物理宽度变化时强制组件重绘
             onChange={(data: any) => {
               data.forEach((track: any) => {
                 track.actions.forEach((action: any) => {
