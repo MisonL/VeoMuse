@@ -1,0 +1,41 @@
+.theme-switcher-pro {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+  border: 1px solid var(--ap-border);
+}
+
+.theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--ap-text-dim);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.theme-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ap-text);
+}
+
+.theme-btn.active {
+  background: var(--ap-accent);
+  color: #fff;
+  box-shadow: 0 2px 8px var(--ap-accent-glow);
+}
+
+.btn-icon { font-size: 14px; }
+
+/* 亮色模式适配 */
+[data-theme='light'] .theme-switcher-pro {
+  background: rgba(0, 0, 0, 0.03);
+}

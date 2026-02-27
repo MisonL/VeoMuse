@@ -1,33 +1,33 @@
-# Specification: Theme System Development
+# 规格说明：主题系统开发
 
-## Overview
-Implement a comprehensive, dynamic theme system for the VeoMuse Pro application. The system will support standard Light/Dark modes, sync with OS preferences, and allow for custom color palettes via dynamic CSS variables, all while ensuring a smooth visual transition.
+## 概述
+为 VeoMuse Pro 应用程序实现一个全面、动态的主题系统。该系统将支持标准的亮色/暗色模式，与操作系统偏好同步，并允许通过动态 CSS 变量定义自定义调色板，同时确保平滑的视觉过渡。
 
-## Functional Requirements
-1. **Theme Modes:**
-   - Support for "Light" and "Dark" predefined themes.
-   - Support for "System" mode, which automatically detects and applies the OS-level `prefers-color-scheme`.
-   - Support for "Custom" mode, enabling dynamic modification of CSS variables for custom color palettes.
-2. **State & Persistence:**
-   - The selected theme preference (e.g., 'light', 'dark', 'system') must be persisted in the browser's `LocalStorage`.
-   - The application must read from `LocalStorage` on initial load to prevent FOUC (Flash of Unstyled Content).
-3. **UI Coverage:**
-   - **Glass Panels:** dedicated variables for background opacity, `backdrop-filter` (blur, saturate), and inner shadows.
-   - **Typography:** Variables for primary text, secondary/dim text, and accent/highlight colors.
-   - **Interactive UI:** Variables for button backgrounds, borders, hover states, and focus outlines.
-4. **Transition Effects:**
-   - Implement a smooth cross-fade/transition effect (e.g., `transition: background-color 0.3s, color 0.3s`) across the application when the theme changes.
+## 功能需求
+1. **主题模式：**
+   - 支持预定义的“亮色 (Light)”和“暗色 (Dark)”主题。
+   - 支持“系统 (System)”模式，自动检测并应用操作系统的 `prefers-color-scheme`。
+   - 支持“自定义 (Custom)”模式，允许动态修改 CSS 变量以实现自定义调色板。
+2. **状态与持久化：**
+   - 选定的主题偏好（如 'light'、'dark'、'system'）必须持久化存储在浏览器的 `LocalStorage` 中。
+   - 应用程序在初始加载时必须读取 `LocalStorage`，以防止首屏闪烁 (FOUC)。
+3. **UI 覆盖范围：**
+   - **玻璃面板 (Glass Panels)：** 为背景透明度、`backdrop-filter`（模糊、饱和度）和内阴影设置专用变量。
+   - **字体排版 (Typography)：** 设置主要文本、次要/暗淡文本以及强调/高亮颜色的变量。
+   - **交互 UI (Interactive UI)：** 设置按钮背景、边框、悬停状态和焦点轮廓的变量。
+4. **过渡效果：**
+   - 在主题切换时，在整个应用程序中实现平滑的淡入淡出/过渡效果（例如 `transition: background-color 0.3s, color 0.3s`）。
 
-## Non-Functional Requirements
-- **Performance:** Theme switching should avoid triggering heavy React re-renders by leveraging CSS variables (`--var`) updated at the `:root` or `<body>` level.
-- **Maintainability:** CSS variables must be organized logically in a central stylesheet.
+## 非功能需求
+- **性能：** 主题切换应通过在 `:root` 或 `<body>` 级别更新 CSS 变量 (`--var`) 来实现，避免触发沉重的 React 重新渲染。
+- **可维护性：** CSS 变量必须在中央样式表中进行逻辑化组织。
 
-## Acceptance Criteria
-- User can toggle between Light, Dark, and System themes via a UI control.
-- OS-level theme changes are reflected immediately when set to "System".
-- Refreshing the page remembers and correctly applies the previously selected theme.
-- The UI elements (glass panels, text, buttons) correctly map to the active theme's color palette.
-- Theme transitions occur smoothly without abrupt visual jumping.
+## 验收标准
+- 用户可以通过 UI 控件在亮色、暗色和系统主题之间切换。
+- 当设置为“系统”时，操作系统级别的主题更改能立即反映在应用中。
+- 刷新页面后能记住并正确应用之前选择的主题。
+- UI 元素（玻璃面板、文本、按钮）能正确映射到当前激活的主题色板。
+- 主题过渡平滑，无突兀的视觉跳变。
 
-## Out of Scope
-- Creating a visual "Theme Builder" UI tool for end-users to pick arbitrary hex codes (only the underlying variable support is in scope for this track).
+## 超出范围
+- 为最终用户创建一个可视化的“主题构建器” UI 工具（本轨道仅负责底层变量支持）。

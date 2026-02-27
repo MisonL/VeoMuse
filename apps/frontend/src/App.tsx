@@ -1,13 +1,16 @@
 import { useState, memo } from 'react'
 import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
+import { useThemeSync } from './hooks/useThemeSync'
 import VideoEditor from './components/Editor/VideoEditor'
 import MultiVideoPlayer from './components/Editor/MultiVideoPlayer'
 import PropertyInspector from './components/Editor/PropertyInspector'
 import AssetPanel from './components/Editor/AssetPanel'
 import ToastContainer from './components/Editor/ToastContainer'
+import ThemeSwitcher from './components/Common/ThemeSwitcher'
 
 function App() {
+  useThemeSync(); // 物理激活主题同步
   const { showToast } = useToastStore()
   const [activeMode, setActiveMode] = useState('edit')
   const [activeTool, setActiveTool] = useState('select')
@@ -106,7 +109,10 @@ function App() {
           <button className={`os-nav-tab ${activeMode === 'color' ? 'active' : ''}`} onClick={() => setActiveMode('color')}>调色</button>
           <button className={`os-nav-tab ${activeMode === 'audio' ? 'active' : ''}`} onClick={() => setActiveMode('audio')}>音频</button>
         </nav>
-        <button className="os-btn-export">导出作品</button>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <ThemeSwitcher />
+          <button className="os-btn-export">导出作品</button>
+        </div>
       </header>
 
       <main className="os-main">
