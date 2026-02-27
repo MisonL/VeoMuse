@@ -17,7 +17,7 @@ function App() {
   const [activeSidebar, setActiveSidebar] = useState('assets')
 
   return (
-    <>
+    <div className="pro-master-shell" onContextMenu={e => e.preventDefault()}>
       <style>{`
         :root {
           --pro-bg: #000000;
@@ -39,116 +39,107 @@ function App() {
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-        body { background: var(--pro-bg); color: var(--pro-text); font-family: -apple-system, sans-serif; overflow: hidden; transition: background 0.3s ease; }
+        body { background: var(--pro-bg); color: var(--pro-text); font-family: -apple-system, sans-serif; overflow: hidden; transition: all 0.3s ease; }
 
         .pro-master-shell {
-          height: 100vh; width: 100vw; display: grid; grid-template-rows: 52px 1fr 380px; gap: 4px; background: var(--pro-bg); padding: 4px;
+          height: 100vh; width: 100vw; display: grid; grid-template-rows: 48px 1fr 380px; gap: 2px; background: #000; padding: 2px;
         }
 
-        /* 核心面板：强制背景同步 */
-        .os-header, .os-panel, .os-footer {
-          background-color: var(--pro-surface) !important; 
-          border: 1px solid var(--pro-border) !important;
-          border-radius: 12px !important;
-          overflow: hidden;
-        }
-
-        .os-header { display: flex; align-items: center; padding: 0 24px; justify-content: space-between; }
-        .os-logo { font-weight: 900; font-size: 16px; letter-spacing: 1px; color: var(--pro-text); }
+        .os-header { background: var(--pro-surface); display: flex; align-items: center; padding: 0 24px; justify-content: space-between; border-bottom: 1px solid var(--pro-border); }
+        .os-logo { font-weight: 900; font-size: 14px; letter-spacing: 1px; color: #fff; }
         .os-logo span { color: var(--pro-accent); }
         
-        .os-nav-tab { color: var(--pro-text-dim); font-size: 13px; font-weight: 700; cursor: pointer; border: none; background: none; padding: 6px 16px; border-radius: 8px; }
-        .os-nav-tab.active { color: var(--pro-text); background: rgba(128,128,128,0.1); }
+        .os-nav-tab { color: var(--pro-text-dim); font-size: 12px; font-weight: 700; cursor: pointer; border: none; background: none; padding: 4px 12px; border-radius: 4px; }
+        .os-nav-tab.active { color: #fff; background: rgba(255,255,255,0.05); }
 
-        .os-main { display: grid; grid-template-columns: 320px 1fr 340px; gap: 4px; min-height: 0; }
+        .os-main { display: grid; grid-template-columns: 320px 1fr 340px; gap: 2px; min-height: 0; }
+        .os-panel { background: var(--pro-surface); display: flex; flex-direction: column; overflow: hidden; }
         
-        /* 监视器：强制保持沉浸式背景 */
-        .os-monitor { background: #000 !important; border: 1px solid #222 !important; padding: 24px; display: flex; flex-direction: column; }
-        [data-theme='light'] .os-monitor { border-color: var(--pro-border) !important; background: var(--pro-surface) !important; }
-        
-        .monitor-stage-box { flex: 1; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,0.5); }
+        .os-monitor { background: #080808 !important; padding: 20px; display: flex; flex-direction: column; }
+        .monitor-stage-box { flex: 1; background: #000; border-radius: 8px; border: 1px solid var(--pro-border); box-shadow: 0 30px 80px rgba(0,0,0,0.8); overflow: hidden; }
 
+        .pro-inspector-outer { background: var(--pro-surface) !important; }
+        .inspector-panel.glass-panel { background: transparent !important; border: none !important; }
+
+        .os-footer { background: var(--pro-surface); display: flex; flex-direction: column; }
+        .footer-tools { height: 40px; border-bottom: 1px solid var(--pro-border); display: flex; align-items: center; padding: 0 16px; justify-content: space-between; }
+        
         .tool-icon-btn { 
-          width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; 
-          border-radius: 8px; border: 1px solid transparent; background: transparent; cursor: pointer; color: var(--pro-text-dim); font-size: 20px; 
+          width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; 
+          border-radius: 6px; border: 1px solid transparent; background: transparent; cursor: pointer; color: var(--pro-text-dim); font-size: 18px; 
         }
         .tool-icon-btn.active-tool { background: var(--pro-accent) !important; color: #fff !important; }
-
-        /* 强制穿透：属性面板层级 */
-        .pro-inspector-outer, .pro-inspector-outer * { background-color: transparent !important; border-color: var(--pro-border) !important; color: inherit !important; }
-        .pro-inspector-outer { background-color: var(--pro-surface) !important; }
-
-        .os-footer { display: flex; flex-direction: column; }
-        .footer-tools { height: 44px; border-bottom: 1px solid var(--pro-border); display: flex; align-items: center; padding: 0 16px; justify-content: space-between; }
       `}</style>
 
       <ToastContainer />
       
-      <div className="pro-master-shell" onContextMenu={e => e.preventDefault()}>
-        <header className="os-header">
-          <div className="os-logo">VEOMUSE <span>PRO</span></div>
-          <nav style={{ display: 'flex', gap: '16px' }}>
-            <button className={`os-nav-tab ${activeMode === 'edit' ? 'active' : ''}`} onClick={() => setActiveMode('edit')}>编辑器</button>
-            <button className={`os-nav-tab ${activeMode === 'color' ? 'active' : ''}`} onClick={() => setActiveMode('color')}>调色</button>
-            <button className={`os-nav-tab ${activeMode === 'audio' ? 'active' : ''}`} onClick={() => setActiveMode('audio')}>音频</button>
-          </nav>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <ThemeSwitcher />
-            <button style={{ background: 'var(--pro-accent)', color: '#fff', border: 'none', padding: '6px 16px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>导出作品</button>
+      <header className="os-header">
+        <div className="os-logo">VEOMUSE <span>PRO</span></div>
+        <nav style={{ display: 'flex', gap: '32px' }}>
+          <button id="btn-mode-edit" className={`os-nav-tab ${activeMode === 'edit' ? 'active' : ''}`} onClick={() => setActiveMode('edit')}>编辑器</button>
+          <button id="btn-mode-color" className={`os-nav-tab ${activeMode === 'color' ? 'active' : ''}`} onClick={() => setActiveMode('color')}>调色</button>
+          <button id="btn-mode-audio" className={`os-nav-tab ${activeMode === 'audio' ? 'active' : ''}`} onClick={() => setActiveMode('audio')}>音频</button>
+        </nav>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <ThemeSwitcher />
+          <button className="os-btn-export" style={{ background: 'var(--pro-accent)', color: '#fff', border: 'none', padding: '6px 16px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>导出</button>
+        </div>
+      </header>
+
+      <main className="os-main">
+        <aside className="os-panel">
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--pro-border)', display: 'flex', gap: '16px' }}>
+            <button id="btn-side-assets" style={{ background: 'none', border: 'none', color: activeSidebar === 'assets' ? 'var(--pro-accent)' : '#888', fontWeight: 800, fontSize: '11px' }} onClick={() => setActiveSidebar('assets')}>资产</button>
+            <button id="btn-side-director" style={{ background: 'none', border: 'none', color: activeSidebar === 'director' ? 'var(--pro-accent)' : '#888', fontWeight: 800, fontSize: '11px' }} onClick={() => setActiveSidebar('director')}>导演</button>
           </div>
-        </header>
-
-        <main className="os-main">
-          <aside className="os-panel">
-            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--pro-border)', display: 'flex', gap: '16px' }}>
-              <button style={{ background: 'none', border: 'none', color: activeSidebar === 'assets' ? 'var(--pro-accent)' : '#888', fontWeight: 800, fontSize: '11px', cursor: 'pointer' }} onClick={() => setActiveSidebar('assets')}>资产</button>
-              <button style={{ background: 'none', border: 'none', color: activeSidebar === 'director' ? 'var(--pro-accent)' : '#888', fontWeight: 800, fontSize: '11px', cursor: 'pointer' }} onClick={() => setActiveSidebar('director')}>导演</button>
-            </div>
-            <div style={{ flex: 1, padding: '12px', overflow: 'hidden' }}>
-              {activeSidebar === 'assets' ? <AssetPanel /> : (
-                <div style={{ padding: '8px' }}>
-                  <textarea placeholder="描述你的电影梦..." style={{ width: '100%', height: '120px', background: 'rgba(128,128,128,0.05)', border: '1px solid var(--pro-border)', borderRadius: '8px', padding: '12px', color: 'var(--pro-text)', resize: 'none', outline: 'none' }} />
-                  <button style={{ width: '100%', marginTop: '12px', background: 'var(--pro-accent)', color: '#fff', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 800, cursor: 'pointer' }}>生成分镜</button>
-                </div>
-              )}
-            </div>
-          </aside>
-
-          <section className="os-panel os-monitor">
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
-              <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900 }}>● LIVE</div>
-              <div style={{ fontFamily: 'monospace', color: 'var(--pro-accent)', fontSize: '22px', fontWeight: 700 }}>00:00:00:00</div>
-              <div style={{ fontSize: '10px', color: 'var(--pro-text-dim)' }}>4K HDR</div>
-            </div>
-            <div className="monitor-stage-box"><MultiVideoPlayer /></div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', paddingTop: '16px' }}>
-              <button style={{ background: 'none', border: 'none', color: 'var(--pro-text)', fontSize: '18px', cursor: 'pointer' }}>⏮</button>
-              <button style={{ background: 'none', border: 'none', color: 'var(--pro-accent)', fontSize: '28px', cursor: 'pointer' }}>▶</button>
-              <button style={{ background: 'none', border: 'none', color: 'var(--pro-text)', fontSize: '18px', cursor: 'pointer' }}>⏭</button>
-            </div>
-          </section>
-
-          <aside className="os-panel pro-inspector-outer">
-            <PropertyInspector />
-          </aside>
-        </main>
-
-        <footer className="os-footer">
-          <div className="footer-tools">
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button className={`tool-icon-btn ${activeTool === 'select' ? 'active-tool' : ''}`} onClick={() => setActiveTool('select')}>↖</button>
-              <button className={`tool-icon-btn ${activeTool === 'cut' ? 'active-tool' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
-              <button className={`tool-icon-btn ${activeTool === 'hand' ? 'active-tool' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
-            </div>
-            <div style={{ fontSize: '10px', color: 'var(--pro-text-dim)', fontWeight: 700 }}>FPS: 60 | ENGINE: ROL DOWN 8.0</div>
+          <div style={{ flex: 1, padding: '12px' }}>
+            {activeSidebar === 'assets' ? <AssetPanel /> : (
+              <div>
+                <textarea placeholder="输入电影梦..." style={{ width: '100%', height: '100px', background: 'rgba(128,128,128,0.05)', border: '1px solid var(--pro-border)', borderRadius: '8px', padding: '12px', color: '#fff', resize: 'none' }} />
+                <button style={{ width: '100%', marginTop: '12px', background: 'var(--pro-accent)', color: '#fff', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 800 }}>生成分镜</button>
+              </div>
+            )}
           </div>
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <VideoEditor activeTool={activeTool as any} />
+        </aside>
+
+        <section className="os-panel os-monitor">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900 }}>● LIVE</div>
+            <div style={{ fontFamily: 'monospace', color: 'var(--pro-accent)', fontSize: '22px', fontWeight: 700 }}>00:00:00:00</div>
+            <div style={{ fontSize: '10px', color: '#888' }}>4K HDR</div>
           </div>
-        </footer>
-      </div>
-    </>
+          <div className="monitor-stage-box">
+            <MultiVideoPlayer />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', paddingTop: '16px' }}>
+            <button style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px' }}>⏮</button>
+            <button style={{ background: 'none', border: 'none', color: 'var(--pro-accent)', fontSize: '28px' }}>▶</button>
+            <button style={{ background: 'none', border: 'none', color: '#fff', fontSize: '18px' }}>⏭</button>
+          </div>
+        </section>
+
+        <aside className="os-panel pro-inspector-outer">
+          <PropertyInspector />
+        </aside>
+      </main>
+
+      <footer className="os-footer">
+        <div className="footer-tools">
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button id="tool-select" className={`tool-icon-btn ${activeTool === 'select' ? 'active-tool' : ''}`} onClick={() => setActiveTool('select')}>↖</button>
+            <button id="tool-cut" className={`tool-icon-btn ${activeTool === 'cut' ? 'active-tool' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
+            <button id="tool-hand" className={`tool-icon-btn ${activeTool === 'hand' ? 'active-tool' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
+          </div>
+          <div style={{ fontSize: '10px', color: '#888' }}>
+            FPS: 60 | ENGINE: ROL DOWN 8.0
+          </div>
+        </div>
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <VideoEditor activeTool={activeTool as any} />
+        </div>
+      </footer>
+    </div>
   )
 }
 
-export default App
+export default memo(App)
