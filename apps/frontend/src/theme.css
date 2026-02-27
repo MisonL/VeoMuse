@@ -1,0 +1,60 @@
+/**
+ * VeoMuse Pro Theme System
+ * 旗舰版主题变量体系 - 遵循 Apple 工业设计规范
+ */
+
+:root {
+  /* 默认暗色模式 (Dark Mode) - 基于 Apple SF Dark */
+  --ap-bg: #000000;
+  --ap-surface: #161617;
+  --ap-card: #1D1D1F;
+  --ap-panel: #1A1A1B;
+  --pro-surface: #121212;
+  
+  --ap-accent: #0071E3;
+  --ap-accent-soft: rgba(0, 113, 227, 0.15);
+  --ap-accent-glow: rgba(0, 122, 255, 0.4);
+  
+  --ap-border: rgba(255, 255, 255, 0.12);
+  --ap-text: #F5F5F7;
+  --ap-text-dim: #86868B;
+  
+  /* 玻璃面板 (Glass Panels) */
+  --ap-blur: 30px;
+  --ap-saturate: 180%;
+  --ap-glass-bg: rgba(22, 22, 23, 0.8);
+  
+  /* 基础参数 */
+  --ap-radius: 12px;
+  --ap-radius-inner: 8px;
+  
+  /* 全局过渡效果 */
+  --ap-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme='light'] {
+  /* 亮色模式 (Light Mode) - 基于 Apple SF Light */
+  --ap-bg: #F5F5F7;
+  --ap-surface: #FFFFFF;
+  --ap-card: #FBFBFD;
+  --ap-panel: #F5F5F7;
+  --pro-surface: #F2F2F7;
+  
+  --ap-accent: #0071E3;
+  --ap-accent-soft: rgba(0, 113, 227, 0.1);
+  --ap-accent-glow: rgba(0, 113, 227, 0.2);
+  
+  --ap-border: rgba(0, 0, 0, 0.1);
+  --ap-text: #1D1D1F;
+  --ap-text-dim: #86868B;
+  
+  /* 玻璃面板 (Glass Panels) */
+  --ap-blur: 20px;
+  --ap-saturate: 150%;
+  --ap-glass-bg: rgba(255, 255, 255, 0.7);
+}
+
+/* 全局过渡应用 */
+body, div, aside, header, footer, section, nav, button, input, textarea {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
