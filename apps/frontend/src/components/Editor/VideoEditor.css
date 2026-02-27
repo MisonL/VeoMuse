@@ -1,48 +1,70 @@
-/* Pro NLE Timeline - Absolute Control */
+/* Pro NLE Timeline - Master Refinement */
 
 .pro-nle-container {
   cursor: inherit !important;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.pro-nle-container * {
-  cursor: inherit !important;
-}
-
-/* 强制重写第三方库的背景为透明，以适应系统主题 */
-/* 注意：经审计，该库使用 timeline-editor- 前缀而非 react-timeline-editor- */
-.pro-nle-container .timeline-editor,
-.pro-nle-container .timeline-editor-row-area,
-.pro-nle-container .timeline-editor-edit-area,
-.pro-nle-container .timeline-editor-edit-row {
+/* 强力覆盖第三方库：建立物理层级感 */
+.pro-nle-container .timeline-editor {
   background: transparent !important;
-  border-color: var(--pro-border) !important;
 }
 
+/* 顶部刻度区：强化层级 */
 .pro-nle-container .timeline-editor-time-area {
-  background: rgba(128, 128, 128, 0.05) !important;
-  border-bottom: 1px solid var(--pro-border) !important;
-  color: var(--pro-text-dim) !important;
+  background: rgba(128, 128, 128, 0.08) !important;
+  border-bottom: 1px solid var(--ap-border) !important;
+  height: 32px !important;
+  color: var(--ap-text-dim) !important;
+  font-weight: 600;
 }
 
-/* 亮色模式特别适配：确保轨道区域也是亮的 */
+/* 轨道区：建立物理行感 */
+.pro-nle-container .timeline-editor-edit-area {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* 亮色模式：为轨道注入“苹果灰”深度 */
 [data-theme='light'] .pro-nle-container .timeline-editor-edit-area {
-  background: #fbfbfd !important;
+  background: #F2F2F7 !important;
 }
 
+/* 物理行样式：确保每一条轨道都可见 */
+.pro-nle-container .timeline-editor-edit-row {
+  border-bottom: 1px solid var(--ap-border) !important;
+  background: transparent !important;
+  transition: background 0.2s;
+}
+
+.pro-nle-container .timeline-editor-edit-row:hover {
+  background: rgba(128, 128, 128, 0.03) !important;
+}
+
+/* 播放指针：旗舰蓝发光 */
 .pro-nle-container .timeline-editor-cursor {
-  background: var(--pro-text) !important;
-  box-shadow: 0 0 10px var(--pro-accent);
+  background: var(--ap-accent) !important;
+  width: 2px !important;
+  box-shadow: 0 0 12px var(--ap-accent-glow);
+  z-index: 100;
 }
 
+/* 素材片段：工业级渐变与投影 */
 .pro-nle-container .timeline-editor-action-unit {
-  background: linear-gradient(180deg, var(--pro-accent) 0%, #005bbd 100%) !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
+  background: linear-gradient(180deg, var(--ap-accent) 0%, #005bbd 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 4px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.2) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+  overflow: hidden;
 }
 
 .pro-nle-container .timeline-editor-action-unit-selected {
-  border: 2px solid #fff !important;
-  box-shadow: 0 0 15px var(--pro-accent) !important;
+  border: 2.5px solid #fff !important;
+  box-shadow: 0 0 20px var(--ap-accent) !important;
+}
+
+/* 调整画布渲染精度 */
+.pro-nle-container canvas {
+  opacity: 0.8;
 }

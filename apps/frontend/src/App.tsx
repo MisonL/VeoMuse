@@ -206,14 +206,21 @@ function App() {
 
       <footer className="pro-panel timeline-container">
         <div className="timeline-actions" style={{ height: '52px' }}>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <button className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`} onClick={() => setActiveTool('select')}>↖</button>
             <button className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
             <button className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ap-text-dim)', fontWeight: 700 }}>GPU: {systemStatus.gpu}% | CACHE: 92% | ROL DOWN 8.0</div>
+          
+          <div style={{ display: 'flex', gap: '20px', fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)', textTransform: 'uppercase' }}>
+            <div style={{ background: 'rgba(52,199,89,0.1)', padding: '2px 8px', borderRadius: '4px', color: '#34C759' }}>GPU: {systemStatus.gpu}%</div>
+            <div style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '12px' }}>CACHE: 92%</div>
+            <div style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '12px', color: 'var(--ap-accent)' }}>ROL DOWN 8.0</div>
+          </div>
         </div>
-        <div style={{ flex: 1, overflow: 'hidden', padding: '16px' }}><VideoEditor activeTool={activeTool as any} /></div>
+        <div style={{ flex: 1, overflow: 'hidden', padding: '16px', background: 'rgba(0,0,0,0.02)' }}>
+          <VideoEditor activeTool={activeTool as any} />
+        </div>
       </footer>
     </div>
   )
