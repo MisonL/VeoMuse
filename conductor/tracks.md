@@ -64,3 +64,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: 开发主题系统**
   *Link: [./tracks/theme_system_20260227/](./tracks/theme_system_20260227/)*
+
+---
+
+- [ ] **Track: 补全所有规划的功能与前端功能的偏差，100% 对齐历史蓝图**
+  *Link: [./tracks/full_blueprint_alignment_20260227/](./tracks/full_blueprint_alignment_20260227/)*
