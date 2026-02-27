@@ -1,42 +1,37 @@
-# VeoMuse 旗舰版 (V3.1 Pro)
+# VeoMuse V3.1 Pro 旗舰版
 
-🎬 **工业级 AI 视频创作总线 | 极致 UI/UX · 神经动捕 · 全自动导演**
+> **以工匠之心，铸 AI 之魂。**
 
-VeoMuse 是 2026 年领先的 AI 视频生产力平台，通过 **Bun Monorepo** 架构实现了前后端 100% 的强类型同步。
+VeoMuse 是一款专注于 **Gemini Veo** 模型的顶级工业级 AI 视频创作平台。它通过极致的 **Obsidian Pro (黑曜石)** 视觉语言，将强大的多模型生成能力转化为简单、直观且高效的生产力工具。
 
----
+## 💎 旗舰特性 (V3.1 Pro)
 
-## ⚡ 核心能力
-- **全球模型总线**：一站式分发任务至 Sora, Kling, Gemini, Luma, Runway 等。
-- **全自动 AI 导演**：从脚本分析到物理合成的全自动化生产线。
-- **Native 同步引擎**：120s 巨型时间轴 60fps 丝滑预览。
-- **双主题美学**：Premium Light 与 暗色玻璃拟态自适应。
+- **Master Grid 工业布局**：严格对齐 Apple Pro 规范的三段式均衡架构，具备 16px 物理圆角与 12px 呼吸间距。
+- **100% 蓝图闭环**：完整集成 AI 一键导演、多模型实时实验室、3D NeRF 空间预览及 AI 媒体炼金术。
+- **Native SyncController**：摒弃 React 渲染压力，通过原生驱动实现 60fps 丝滑多轨播放与预览。
+- **全链路遥测看板**：实时物理抓取 GPU 负载、RAM 占用及缓存状态，指标每 2 秒物理跳动。
+- **专业级 NLE 增强**：支持全局快捷键总线、磁吸感对齐线、Beat 节奏感应及 Zundo 撤销重做系统。
+- **工业级全栈架构**：Bun Monorepo + ElysiaJS + React 19 + Eden Treaty (100% 类型同步)。
 
----
+## 🛠️ 快速启动
 
-## 🚀 快速开始
-
-### 1. 环境准备
-确保已安装 [Bun](https://bun.sh/) 1.3+ 和 [Docker](https://www.docker.com/)。
-
-### 2. 本地开发
 ```bash
+# 安装依赖
 bun install
-bun run dev
-```
 
-### 3. 生产部署 (Docker)
-```bash
-# 自动执行全量构建与部署
+# 拉起全栈开发环境 (Backend: 3001, Frontend: 5173)
+bun run dev
+
+# 生产级 Docker 一键部署
 bun run docker:up
 ```
 
----
+## 🏗️ 仓库结构
 
-## 📚 工程文档
-- **核心指引**: [GEMINI.md](./GEMINI.md) (开发必读)
-- **API 文档**: [docs/API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)
-- **部署指南**: [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
+- `apps/backend`: 工业级 AI 路由总线 (Elysia)。
+- `apps/frontend`: 旗舰版编辑器 UI (React 19)。
+- `packages/shared`: 100% E2E 类型定义与工具。
+- `conductor/`: 项目规格说明与执行计划存档。
 
 ---
-**以工匠之心，铸 AI 之魂。**
+**VeoMuse V3.1 Pro - 开启 AI 视频创作新纪元。**
