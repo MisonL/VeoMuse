@@ -59,3 +59,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: 专业级增强：全局快捷键、智能预加载与全链路遥测看板**
   *Link: [./tracks/pro_mastery_boost_20260226/](./tracks/pro_mastery_boost_20260226/)*
+
+---
+
+- [ ] **Track: 开发主题系统**
+  *Link: [./tracks/theme_system_20260227/](./tracks/theme_system_20260227/)*
