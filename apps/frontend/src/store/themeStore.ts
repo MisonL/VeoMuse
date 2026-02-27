@@ -1,0 +1,36 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
+export type ThemeMode = 'light' | 'dark' | 'system';
+
+interface ThemeState {
+  mode: ThemeMode;
+  customPalette: Record<string, string>;
+  
+  // Actions
+  setMode: (mode: ThemeMode) => void;
+  updateCustomPalette: (palette: Record<string, string>) => void;
+  resetCustomPalette: () => void;
+}
+
+export const useThemeStore = create<ThemeState>()(
+  persist(
+    (set) => ({
+      mode: 'system',
+      customPalette: {},
+
+      setMode: (mode) => set({ mode }),
+      
+      updateCustomPalette: (palette) => set((state) => ({
+        customPalette: { ...state.customPalette, ...palette }
+      })),
+      
+      resetCustomPalette: () => set({ customPalette: {} })
+    }),
+    {
+      name: 'veomuse-theme-storage',
+      // 仅在浏览器环境下执行持久化
+      skipHydration: typeof window === 'undefined'
+    }
+  )
+)
