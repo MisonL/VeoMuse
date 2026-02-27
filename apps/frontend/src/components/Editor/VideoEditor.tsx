@@ -16,15 +16,14 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
   const { 
     tracks, currentTime, setCurrentTime, duration, isPlaying, 
     togglePlay, updateClip, setSelectedClipId, splitClip, 
-    removeClip, zoomLevel 
+    zoomLevel, beatPoints 
   } = useEditorStore();
   
   // @ts-ignore
   const { undo, redo } = useEditorStore.temporal.getState();
-  
-  // 核心：精确测量容器物理宽度
   const [containerRef, { width, height }] = useMeasure<HTMLDivElement>();
   const [isReady, setIsReady] = useState(false);
+  const [snapLine, setSnapLine] = useState<{ visible: boolean; time: number }>({ visible: false, time: 0 });
   
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
@@ -36,9 +35,6 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
         const clip = t.clips.find(c => (currentTime >= c.start && currentTime <= c.end));
         if (clip) splitClip(t.id, clip.id, currentTime);
       });
-    },
-    'Delete': () => {
-      // 逻辑暂略
     },
     'Cmd+Z': undo,
     'Cmd+Shift+Z': redo
@@ -81,14 +77,25 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
 
   return (
     <div className="video-editor-container pro-nle-container">
+      {snapLine.visible && (
+        <div 
+          className="snap-guide-line" 
+          style={{ left: `${(snapLine.time / duration) * 100}%` }}
+        />
+      )}
+      
       <div className="timeline-wrapper" ref={containerRef} style={{ cursor: activeTool === 'cut' ? 'crosshair' : 'default' }}>
         {isReady && (
           <Timeline
-            key={`timeline-${width}`} // 核心：物理宽度变化时强制组件重绘
+            key={`timeline-${width}`}
             onChange={(data: any) => {
               data.forEach((track: any) => {
                 track.actions.forEach((action: any) => {
                   const snap = calculateSnap(action.start, action.id);
+                  if (snap.snapped) {
+                    setSnapLine({ visible: true, time: snap.time });
+                    setTimeout(() => setSnapLine({ visible: false, time: 0 }), 500);
+                  }
                   const finalStart = snap.snapped ? snap.time : action.start;
                   const finalEnd = finalStart + (action.end - action.start);
                   updateClip(track.id, action.id, { start: finalStart, end: finalEnd });

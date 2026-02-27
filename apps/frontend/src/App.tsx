@@ -1,4 +1,4 @@
-import { useState, memo, useEffect, useMemo, useCallback } from 'react'
+import { useState, memo, useEffect, useMemo } from 'react'
 import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import { useThemeSync } from './hooks/useThemeSync'
@@ -7,6 +7,7 @@ import VideoEditor from './components/Editor/VideoEditor'
 import MultiVideoPlayer from './components/Editor/MultiVideoPlayer'
 import PropertyInspector from './components/Editor/PropertyInspector'
 import AssetPanel from './components/Editor/AssetPanel'
+import ComparisonLab from './components/Editor/ComparisonLab'
 import ToastContainer from './components/Editor/ToastContainer'
 import ThemeSwitcher from './components/Common/ThemeSwitcher'
 
@@ -14,11 +15,22 @@ function App() {
   useThemeSync(); 
   const { showToast } = useToastStore()
   const { isPlaying, togglePlay, setCurrentTime, tracks, setTracks } = useEditorStore()
+  // @ts-ignore
+  const { undo, redo, pastStates, futureStates } = useEditorStore.temporal.getState()
+  
   const [activeMode, setActiveMode] = useState('edit')
   const [activeTool, setActiveTool] = useState('select')
   const [activeSidebar, setActiveSidebar] = useState('assets')
   const [directorPrompt, setDirectorPrompt] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+
+  const [telemetry, setTelemetry] = useState([10, 15, 8, 25, 12, 18, 14]);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTelemetry(prev => [...prev.slice(1), Math.floor(Math.random() * 20 + 10)]);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleDirector = async () => {
     if (!directorPrompt) return showToast('请输入导演创意', 'info');
@@ -43,11 +55,6 @@ function App() {
     } catch (e: any) { showToast(e.message, 'error'); }
     finally { setIsProcessing(false); }
   };
-
-  const systemStatus = useMemo(() => ({
-    gpu: Math.floor(Math.random() * 15 + 5),
-    ram: '5.1GB / 32GB'
-  }), [isPlaying]);
 
   return (
     <div className="veomuse-industrial-shell" onContextMenu={e => e.preventDefault()}>
@@ -75,44 +82,26 @@ function App() {
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-        body { background: var(--ap-bg); color: var(--ap-text); font-family: -apple-system, system-ui, sans-serif; overflow: hidden; }
+        body { background: var(--ap-bg); color: var(--ap-text); font-family: -apple-system, sans-serif; overflow: hidden; }
 
         .veomuse-industrial-shell {
           height: 100vh; width: 100vw; display: flex; flex-direction: column; background: var(--ap-bg); padding: 8px; gap: 8px;
         }
 
-        .pro-panel {
-          background: var(--ap-surface); border: 1px solid var(--ap-border); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.05);
-        }
-
-        /* 顶栏重塑：三段式均衡布局 */
-        .header-bar { 
-          height: 64px; padding: 0 24px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; background: var(--ap-surface); 
-        }
-        
+        .pro-panel { background: var(--ap-surface); border: 1px solid var(--ap-border); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; }
+        .header-bar { height: 56px; padding: 0 24px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; background: var(--ap-surface); }
         .brand-zone { display: flex; align-items: center; gap: 12px; }
-        .brand-logo { 
-          width: 30px; height: 30px; background: var(--ap-accent); border-radius: 8px; 
-          display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; font-size: 16px;
-          border: 0.5px solid rgba(255,255,255,0.2);
-        }
+        .brand-logo { width: 30px; height: 30px; background: var(--ap-accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; font-size: 16px; border: 0.5px solid rgba(255,255,255,0.2); }
         .brand-name { font-weight: 800; font-size: 15px; letter-spacing: -0.5px; opacity: 0.9; }
 
-        .mode-selector { 
-          display: flex; background: rgba(128,128,128,0.08); padding: 4px; border-radius: 12px; gap: 4px; 
-          border: 0.5px solid var(--ap-border);
-        }
-        .mode-tab { border: none; background: none; padding: 8px 24px; border-radius: 9px; font-size: 13px; font-weight: 700; color: var(--ap-text-dim); cursor: pointer; transition: 0.2s; }
-        .mode-tab.active { background: var(--ap-surface); color: var(--ap-accent); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .mode-selector { display: flex; background: rgba(128,128,128,0.08); padding: 4px; border-radius: 12px; gap: 4px; border: 0.5px solid var(--ap-border); }
+        .mode-tab { border: none; background: none; padding: 6px 24px; border-radius: 9px; font-size: 13px; font-weight: 700; color: var(--ap-text-dim); cursor: pointer; transition: 0.2s; }
+        .mode-tab.active { background: var(--ap-surface); color: var(--ap-accent); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 
-        .header-actions { display: flex; justify-content: flex-end; align-items: center; gap: 20px; }
-
-        .main-layout { flex: 1; display: grid; grid-template-columns: 340px 1fr 360px; gap: 8px; min-height: 0; }
+        .main-layout { flex: 1; display: grid; grid-template-columns: 320px 1fr 340px; gap: 8px; min-height: 0; }
         .panel-title-bar { height: 48px; padding: 0 20px; border-bottom: 1px solid var(--ap-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 
         .monitor-core { background: #000 !important; position: relative; border: 1px solid #222 !important; }
-        [data-theme='light'] .monitor-core { border-color: #eee !important; }
         .monitor-overlay { position: absolute; top: 24px; left: 24px; right: 24px; display: flex; justify-content: space-between; z-index: 5; pointer-events: none; }
         .timecode { font-family: "SF Mono", monospace; color: var(--ap-accent); font-size: 26px; font-weight: 600; letter-spacing: -1.5px; }
         
@@ -121,11 +110,13 @@ function App() {
         .transport-btn.play { color: var(--ap-accent); font-size: 44px; opacity: 1; }
 
         .timeline-container { height: 400px; flex-shrink: 0; }
-        .tool-icon { 
-          width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; 
-          border-radius: 8px; border: none; background: transparent; cursor: pointer; color: var(--ap-text-dim); font-size: 20px; transition: 0.2s;
-        }
+        .tool-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: none; background: transparent; cursor: pointer; color: var(--ap-text-dim); font-size: 20px; transition: 0.2s; }
         .tool-icon.active { background: var(--ap-accent); color: #fff; box-shadow: 0 0 15px var(--ap-accent-glow); }
+
+        .telemetry-sparkline { display: flex; align-items: flex-end; gap: 2px; height: 16px; width: 40px; }
+        .spark-bar { width: 3px; background: #34C759; border-radius: 1px; transition: height 0.5s ease; }
+
+        .pro-inspector-outer div, .pro-inspector-outer section { background-color: transparent !important; color: inherit !important; border-color: var(--ap-border) !important; }
       `}</style>
 
       <ToastContainer />
@@ -139,14 +130,14 @@ function App() {
         <div className="mode-selector">
           {['edit', 'color', 'audio'].map(m => (
             <button key={m} className={`mode-tab ${activeMode === m ? 'active' : ''}`} onClick={() => setActiveMode(m)}>
-              {m === 'edit' ? '剪辑' : m === 'color' ? '调色' : '音频大师'}
+              {m === 'edit' ? '剪辑' : m === 'color' ? '实验室' : '音频大师'}
             </button>
           ))}
         </div>
 
-        <div className="header-actions">
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <ThemeSwitcher />
-          <button style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px var(--ap-accent-glow)' }}>导出</button>
+          <button style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}>导出</button>
         </div>
       </header>
 
@@ -159,17 +150,11 @@ function App() {
             </div>
           </div>
           <div style={{ flex: 1, padding: '20px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            {activeSidebar === 'assets' ? <AssetPanel /> : (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <textarea 
-                  placeholder="在此输入您的创意分镜脚本..." 
-                  value={directorPrompt}
-                  onChange={(e) => setDirectorPrompt(e.target.value)}
-                  style={{ flex: 1, background: 'rgba(128,128,128,0.05)', border: '1px solid var(--ap-border)', borderRadius: '12px', padding: '20px', color: 'var(--ap-text)', resize: 'none', outline: 'none', fontSize: '15px' }} 
-                />
-                <button onClick={handleDirector} disabled={isProcessing} style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', height: '52px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}>
-                  {isProcessing ? '构思中...' : '生成分镜序列'}
-                </button>
+            <AssetPanel mode={activeSidebar as any} />
+            {activeSidebar === 'director' && (
+              <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--ap-border)', paddingTop: '20px' }}>
+                <textarea placeholder="输入电影脚本..." value={directorPrompt} onChange={(e) => setDirectorPrompt(e.target.value)} style={{ height: '80px', background: 'rgba(128,128,128,0.05)', border: '1px solid var(--ap-border)', borderRadius: '10px', padding: '12px', color: 'var(--ap-text)', resize: 'none', outline: 'none', fontSize: '13px' }} />
+                <button onClick={handleDirector} disabled={isProcessing} style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', height: '44px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}>一键分镜</button>
               </div>
             )}
           </div>
@@ -179,9 +164,9 @@ function App() {
           {activeMode === 'edit' ? (
             <>
               <div className="monitor-overlay">
-                <div style={{ color: '#FF3B30', fontSize: '11px', fontWeight: 900, background: 'rgba(255,59,48,0.1)', padding: '3px 8px', borderRadius: '4px' }}>● 实时</div>
+                <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900, background: 'rgba(255,59,48,0.1)', padding: '3px 8px', borderRadius: '4px' }}>● 实时</div>
                 <div className="timecode">00:00:00:00</div>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>4K | HDR</div>
+                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>4K | HDR</div>
               </div>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}><MultiVideoPlayer /></div>
               <div className="transport-controls">
@@ -190,10 +175,12 @@ function App() {
                 <button className="transport-btn" onClick={() => setCurrentTime(tracks[0]?.clips[0]?.end || 0)}>⏭</button>
               </div>
             </>
+          ) : activeMode === 'color' ? (
+            <ComparisonLab />
           ) : (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ap-text-dim)', gap: '20px' }}>
-              <div style={{ fontSize: '48px' }}>{activeMode === 'color' ? '🎨' : '🎚️'}</div>
-              <div style={{ fontSize: '18px', fontWeight: 700 }}>{activeMode.toUpperCase()} 引擎已挂载</div>
+              <div style={{ fontSize: '48px' }}>🎚️</div>
+              <div style={{ fontSize: '18px', fontWeight: 700 }}>AUDIO MASTER 引擎已就绪</div>
             </div>
           )}
         </section>
@@ -205,17 +192,26 @@ function App() {
       </div>
 
       <footer className="pro-panel timeline-container">
-        <div className="timeline-actions" style={{ height: '52px' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="timeline-actions">
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '4px', marginRight: '12px', borderRight: '1px solid var(--ap-border)', paddingRight: '12px' }}>
+              <button className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
+              <button className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0}>↪</button>
+            </div>
             <button className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`} onClick={() => setActiveTool('select')}>↖</button>
             <button className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
             <button className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
           </div>
-          
-          <div style={{ display: 'flex', gap: '20px', fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)', textTransform: 'uppercase' }}>
-            <div style={{ background: 'rgba(52,199,89,0.1)', padding: '2px 8px', borderRadius: '4px', color: '#34C759' }}>GPU: {systemStatus.gpu}%</div>
-            <div style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '12px' }}>CACHE: 92%</div>
-            <div style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '12px', color: 'var(--ap-accent)' }}>ROL DOWN 8.0</div>
+          <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>GPU LOAD</span>
+              <div className="telemetry-sparkline">
+                {telemetry.map((v, i) => <div key={i} className="spark-bar" style={{ height: `${v}%` }} />)}
+              </div>
+            </div>
+            <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)', borderLeft: '1px solid var(--ap-border)', paddingLeft: '12px' }}>
+              CACHE: <span style={{ color: '#34C759' }}>92%</span> | <span style={{ color: 'var(--ap-accent)' }}>ROL DOWN 8.0</span>
+            </div>
           </div>
         </div>
         <div style={{ flex: 1, overflow: 'hidden', padding: '16px', background: 'rgba(0,0,0,0.02)' }}>
@@ -226,4 +222,4 @@ function App() {
   )
 }
 
-export default App
+export default memo(App)

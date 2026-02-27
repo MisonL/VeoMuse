@@ -1,12 +1,31 @@
-/* Pro NLE Timeline - Absolute Control */
+/* Pro NLE Timeline - Master Refinement */
 
 .pro-nle-container {
   cursor: inherit !important;
   height: 100%;
-  width: 100% !important; /* 物理锁定：强制撑满父容器宽度 */
+  width: 100% !important;
   display: flex;
   flex-direction: column;
   flex: 1;
+  position: relative;
+}
+
+/* 磁吸辅助线 */
+.snap-guide-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: var(--ap-accent);
+  box-shadow: 0 0 8px var(--ap-accent);
+  z-index: 50;
+  pointer-events: none;
+  animation: fade-in-out 0.5s forwards;
+}
+
+@keyframes fade-in-out {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .timeline-wrapper {
@@ -17,13 +36,11 @@
   overflow: hidden;
 }
 
-/* 强力覆盖第三方库：建立物理层级感 */
 .pro-nle-container .timeline-editor {
   background: transparent !important;
-  width: 100% !important; /* 强制拉伸 */
+  width: 100% !important;
 }
 
-/* 顶部刻度区：强化层级 */
 .pro-nle-container .timeline-editor-time-area {
   background: rgba(128, 128, 128, 0.08) !important;
   border-bottom: 1px solid var(--ap-border) !important;
@@ -32,30 +49,19 @@
   font-weight: 600;
 }
 
-/* 轨道区：建立物理行感 */
 .pro-nle-container .timeline-editor-edit-area {
   background: rgba(0, 0, 0, 0.02) !important;
-  width: 100% !important;
 }
 
-/* 亮色模式：为轨道注入“苹果灰”深度 */
 [data-theme='light'] .pro-nle-container .timeline-editor-edit-area {
   background: #F2F2F7 !important;
 }
 
-/* 物理行样式：确保每一条轨道都可见并横向拉通 */
 .pro-nle-container .timeline-editor-edit-row {
   border-bottom: 1px solid var(--ap-border) !important;
   background: transparent !important;
-  width: 100% !important;
-  min-width: 100% !important;
 }
 
-.pro-nle-container .timeline-editor-edit-row:hover {
-  background: rgba(128, 128, 128, 0.03) !important;
-}
-
-/* 播放指针：旗舰蓝发光 */
 .pro-nle-container .timeline-editor-cursor {
   background: var(--ap-accent) !important;
   width: 2px !important;
@@ -63,9 +69,13 @@
   z-index: 100;
 }
 
-/* 素材片段：工业级渐变与投影 */
 .pro-nle-container .timeline-editor-action-unit {
   background: linear-gradient(180deg, var(--ap-accent) 0%, #005bbd 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 4px !important;
+}
+
+.pro-nle-container .timeline-editor-action-unit-selected {
+  border: 2.5px solid #fff !important;
+  box-shadow: 0 0 20px var(--ap-accent) !important;
 }

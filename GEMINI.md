@@ -1,52 +1,35 @@
-# VeoMuse V3.1 Pro 核心工程规范 (Instructional Context)
+# 仓库准则 (Repository Guidelines)
 
-> [!IMPORTANT]
-> **环境标注说明**：
-> 所有的 `/conductor` 及其子命令（如 `:setup`, `:implement`, `:review` 等）以及 `/init` 指令，均为 **Gemini CLI** 环境专供的增强型指令。在标准 Shell 环境下，这些指令是不可用的。请始终在 Gemini 终端交互界面中使用它们以获取完整的规格驱动开发（Spec-Driven Development）体验。
+## 🏗️ 项目架构与模块组织
+本项目采用 **Bun Workspaces (Monorepo)** 旗舰级架构，确保全栈 100% 类型同步。
+- **`apps/backend` (ElysiaJS)**: 工业级 AI 总线。所有 AI Service 必须继承 `BaseAiService` 以获取遥测与重试能力。
+- **`apps/frontend` (React 19)**: 顶级多轨编辑器。采用 **Native SyncController** 驱动播放，严禁 React State 驱动高频更新。
+- **`packages/shared`**: 类型桥接层。统一定义 Clip, Track, Scene 等通讯接口。
+- **`conductor/`**: Conductor 框架核心。包含所有规格说明 (`spec.md`) 与执行计划 (`plan.md`)。
+- **`tests/`**: 全链路自动化测试套件。
 
----
+## 🛠️ 构建、测试与开发命令
+| 命令 | 说明 |
+| :--- | :--- |
+| `bun run dev` | 物理拉起全栈开发环境 (Backend: 3001, Frontend: 5173) |
+| `bun run build` | 执行 Vite 8 + Oxc 极速混淆构建 |
+| `bun test` | 运行全量单元与集成测试 |
+| `bun run docker:up` | 一键部署生产容器 (Nginx 80 + Bun Backend) |
 
-## 🏗️ 架构总览 (Project Architecture)
+## ⚖️ 编码风格与命名规范
+- **类型安全**: 必须通过 `treaty<App>(...)` 桥接，禁止使用 `any`。
+- **视觉一致性**: 严格遵循 **Apple Pro (Obsidian)** 视觉规范。使用内联主题变量 (`--ap-`) 驱动 UI。
+- **UI 准则**: 强制 12px 间距与 16px 圆角布局。
+- **交互逻辑**: 必须为关键按钮绑定 **物理 ID** 以确保自动化审计。
 
-本项目采用 **Bun Workspaces (Monorepo)** 结构，旨在实现全栈 100% 的强类型同步。
+## 🧪 测试准则
+- **框架**: 使用 `bun:test`。
+- **规范**: 采用 TDD 流程。每个 Track 必须配套 `tests/*.test.ts`。
+- **Mock**: 严禁在测试中发起真实外部网络请求，必须 Mock `fetch` 响应。
 
-- **`apps/backend` (ElysiaJS)**: 工业级后端内核。
-  - **核心准则**: 任何 AI 业务 Service 必须继承 `BaseAiService`，以自动获得指数退避重试与耗时量化能力。
-- **`apps/frontend` (React 19)**: 旗舰级多轨道编辑器。
-  - **核心准则**: 交互逻辑优先采用 **React 19 Actions** (`useActionState`)；播放同步强制通过 **Native SyncController** 直接驱动，严禁通过 React State 驱动高频播放更新。
-- **`packages/shared`**: 逻辑桥接层。
-  - **核心准则**: 所有 E2E 通讯接口（Clip, Track, Scene）均在此统一定义，严禁前后端代码直接跨应用引用。
-
----
-
-## 🛠️ 构建与运维 (Commands)
-
-### 1. 本地开发 (Local Development)
-```bash
-# 自动启动后端(3001)与前端(5173)
-bun run dev
-```
-
-### 2. 生产构建 (Production Build)
-```bash
-# 执行 Vite 8 + Oxc 极速混淆构建
-bun run build
-```
-
-### 3. Docker 部署 (Containerization)
-```bash
-# 一键拉起全栈镜像 (Debian-based Bun)
-bun run docker:up
-```
+## 🚀 提交与 Conductor 准则
+- **提交规范**: `feat(scope): description` 或 `chore(conductor): ...`。
+- **自动化流**: 所有代码变更必须物理对齐 `spec.md`。完成 Track 后需执行同步与清理协议。
 
 ---
-
-## ⚖️ 开发红线 (Engineering Standards)
-
-1. **类型安全**: 通讯层必须通过 `treaty<App>(...)` 桥接，禁止任何 `any` 类型的透传。
-2. **错误处理**: 严禁在 UI 裸写 `try...catch`，必须调用共享的 `getErrorMessage` 辅助函数。
-3. **资源管理**: 后端必须保留 `setInterval` 自动巡检任务，确保 `uploads/generated` 目录 24 小时自愈。
-4. **视觉一致性**: 严格遵循 **Premium Light** 亮色主题与物理弹性动效规范。
-
----
-**VeoMuse - 以工匠之心，铸 AI 之魂。**
+**VeoMuse V3.1 Pro - 以工匠之心，铸 AI 之魂。**

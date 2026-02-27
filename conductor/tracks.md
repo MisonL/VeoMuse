@@ -67,5 +67,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: 补全所有规划的功能与前端功能的偏差，100% 对齐历史蓝图**
+- [~] **Track: 补全所有规划的功能与前端功能的偏差，100% 对齐历史蓝图**
   *Link: [./tracks/full_blueprint_alignment_20260227/](./tracks/full_blueprint_alignment_20260227/)*

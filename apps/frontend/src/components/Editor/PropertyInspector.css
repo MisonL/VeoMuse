@@ -1,79 +1,145 @@
-.inspector-panel {
+.pro-inspector-inner {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
-}
-
-.inspector-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .inspector-tabs {
   display: flex;
   gap: 16px;
+  padding: 0 12px;
 }
 
 .inspector-tabs button {
   background: none;
   border: none;
-  color: var(--text-sub);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ap-text-dim);
   cursor: pointer;
-  padding: 4px 0;
-  transition: all 0.2s;
+  padding: 8px 0;
+  position: relative;
 }
 
 .inspector-tabs button.active {
-  color: var(--accent-color);
-  border-bottom: 2px solid var(--accent-color);
+  color: var(--ap-accent);
 }
 
-.inspector-body {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
+.inspector-tabs button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; width: 100%; height: 2px;
+  background: var(--ap-accent);
 }
 
-.inspector-empty {
-  text-align: center;
-  padding-top: 40px;
-  color: var(--text-sub);
+.pro-inspector-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .inspector-section {
-  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .inspector-section label {
-  display: block;
-  margin-bottom: 8px;
-  color: var(--text-sub);
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ap-text-dim);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-.inspector-section input, .inspector-section textarea {
-  width: 100%;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 10px;
-  color: var(--text-main);
+.pro-input-mini, .pro-textarea-mini, .pro-select-mini {
+  background: rgba(128, 128, 128, 0.08);
+  border: 1px solid var(--ap-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--ap-text);
+  font-size: 12px;
   outline: none;
 }
 
-.clip-type-badge {
-  background: var(--accent-color);
+.pro-textarea-mini {
+  resize: none;
+  height: 80px;
+}
+
+/* 炼金术网格 */
+.alchemy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.alchemy-mini-btn {
+  background: rgba(128, 128, 128, 0.05);
+  border: 1px solid var(--ap-border);
+  border-radius: 6px;
+  padding: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ap-text);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.alchemy-mini-btn:hover {
+  background: var(--ap-accent-soft);
+  border-color: var(--ap-accent);
+}
+
+.pro-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pro-control-row span {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+  white-space: nowrap;
+}
+
+.pro-control-row input[type='range'] {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  background: var(--ap-border);
+  border-radius: 2px;
+}
+
+.pro-control-row input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  background: var(--ap-accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.pro-master-btn {
+  margin-top: 8px;
+  background: var(--ap-accent);
   color: #fff;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px var(--ap-accent-glow);
+}
+
+.inspector-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ap-text-dim);
+  gap: 8px;
+  text-align: center;
 }
