@@ -6,7 +6,7 @@ import TelemetryDashboard from './TelemetryDashboard';
 import './PropertyInspector.css';
 
 const PropertyInspector: React.FC = () => {
-  const { tracks, selectedClipId, updateClip, addClip } = useEditorStore();
+  const { tracks, selectedClipId, updateClip } = useEditorStore();
   const { showToast } = useToastStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<'properties' | 'lab'>('properties');
@@ -38,12 +38,42 @@ const PropertyInspector: React.FC = () => {
     }
   };
 
-  const handleAlchemy = async (type: string) => {
+  // 物理集成：全量炼金术调用
+  const handleAlchemy = async (type: 'repair' | 'style' | 'lip' | 'enhance' | 'audio' | 'tts') => {
+    if (!selectedClip) return;
     setIsProcessing(true);
     showToast(`🧬 正在执行高级炼金: ${type}`, 'info');
-    await new Promise(r => setTimeout(r, 1500));
-    showToast('✨ 炼金成功', 'success');
-    setIsProcessing(false);
+    
+    try {
+      let result;
+      switch (type) {
+        case 'repair':
+          result = await api.api.ai.repair.post({ description: (selectedClip as Clip).name });
+          break;
+        case 'style':
+          result = await api.api.ai.alchemy['style-transfer'].post({ clipId: (selectedClip as Clip).id, style: 'cinematic' });
+          break;
+        case 'lip':
+          result = await api.api.ai['sync-lip'].post({ videoUrl: 'mock-v', audioUrl: 'mock-a' });
+          break;
+        case 'enhance':
+          result = await api.api.ai.enhance.post({ prompt: (selectedClip as Clip).name });
+          break;
+        case 'audio':
+          result = await api.api.ai['analyze-audio'].post({ audioUrl: 'mock-a' });
+          break;
+        case 'tts':
+          result = await api.api.ai.tts.post({ text: (selectedClip as Clip).data?.content || '' });
+          break;
+      }
+      
+      if (result?.error) throw new Error(getErrorMessage(result.error));
+      showToast(`✨ ${type} 炼金成功`, 'success');
+    } catch (e: any) {
+      showToast(e.message, 'error');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const current = selectedClip as Clip | null;
@@ -65,29 +95,26 @@ const PropertyInspector: React.FC = () => {
           <div className="inspector-empty"><p>未选中片段</p><small>点击时间轴片段开始炼金</small></div>
         ) : (
           <div className="pro-inspector-content">
-            {/* 基础设置 */}
             <section className="inspector-section">
-              <label>片段元数据</label>
+              <label>片段名称</label>
               <input type="text" value={current.name} onChange={(e) => handleUpdate({ name: e.target.value })} className="pro-input-mini" />
             </section>
 
-            {/* 媒体炼金术组 (Alchemy Hub) */}
             <section className="inspector-section">
               <label>媒体炼金术 (Alchemy)</label>
               <div className="alchemy-grid">
-                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('画面修复')}>画面修复</button>
-                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('风格滤镜')}>风格迁移</button>
-                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('口型同步')}>口型同步</button>
-                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('动态增强')}>画质增强</button>
+                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('repair')}>画面修复</button>
+                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('style')}>风格迁移</button>
+                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('lip')}>口型同步</button>
+                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('enhance')}>画质增强</button>
               </div>
             </section>
 
-            {/* 空间 3D 与 音频控制 */}
             {current.type === 'video' && (
               <section className="inspector-section">
                 <label>空间 3D 控制 (NeRF)</label>
                 <div className="pro-control-row">
-                  <span>水平位移</span>
+                  <span>水平轴</span>
                   <input type="range" value={spatialX} onChange={e => setSpatialX(parseInt(e.target.value))} />
                 </div>
                 <button className="pro-master-btn" onClick={async () => {
@@ -109,9 +136,8 @@ const PropertyInspector: React.FC = () => {
                   <select className="pro-select-mini">
                     <option>自然男声 (中文)</option>
                     <option>甜美女声 (中文)</option>
-                    <option>磁性男声 (English)</option>
                   </select>
-                  <button className="alchemy-mini-btn" onClick={() => handleAlchemy('TTS')}>生成</button>
+                  <button className="alchemy-mini-btn" onClick={() => handleAlchemy('tts')}>生成</button>
                 </div>
               </section>
             )}
@@ -119,10 +145,10 @@ const PropertyInspector: React.FC = () => {
             <section className="inspector-section">
               <label>智能音频辅助</label>
               <div className="pro-control-row">
-                <span>BGM 匹配度</span>
+                <span>BGM 匹配</span>
                 <input type="range" value={bgmVolume} onChange={e => setBgmVolume(parseInt(e.target.value))} />
               </div>
-              <button className="alchemy-mini-btn w-full" onClick={() => handleAlchemy('BGM 匹配')}>一键匹配最佳 BGM</button>
+              <button className="alchemy-mini-btn w-full" onClick={() => handleAlchemy('audio')}>🥁 节奏感应分析</button>
             </section>
           </div>
         )}

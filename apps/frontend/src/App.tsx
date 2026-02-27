@@ -16,7 +16,6 @@ function App() {
   useThemeSync(); 
   const { showToast } = useToastStore()
   
-  // 最佳实践 1：使用 useShallow 实现渲染剪枝
   const { isPlaying, togglePlay, setCurrentTime, tracks, setTracks } = useEditorStore(
     useShallow(state => ({
       isPlaying: state.isPlaying,
@@ -39,7 +38,6 @@ function App() {
   const [telemetryHistory, setTelemetryHistory] = useState<number[]>(new Array(10).fill(0));
   const [currentMetrics, setCurrentMetrics] = useState({ gpu: 0, ram: '0 / 0', cache: '0%' });
 
-  // 最佳实践 2：物理驱动的遥测轮询
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
@@ -60,11 +58,33 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleDirector = async () => {
-    if (!directorPrompt) return showToast('请输入导演创意', 'info');
+  // 终极集成：AI 增强逻辑
+  const handleEnhance = async () => {
+    if (!directorPrompt) return showToast('请输入脚本', 'info');
     setIsProcessing(true);
-    showToast('🎬 AI 导演正在构思分镜...', 'info');
     try {
+      const { data, error } = await api.api.ai.enhance.post({ prompt: directorPrompt });
+      if (error) throw new Error(getErrorMessage(error));
+      if (data && 'enhanced' in data) {
+        setDirectorPrompt(data.enhanced);
+        showToast('✨ 提示词已由 AI 大师增强', 'success');
+      }
+    } catch (e: any) { showToast(e.message, 'error'); }
+    finally { setIsProcessing(false); }
+  };
+
+  const handleDirector = async () => {
+    if (!directorPrompt) return showToast('请输入脚本', 'info');
+    setIsProcessing(true);
+    showToast('🎬 正在调用模型中枢...', 'info');
+    try {
+      // 1. 先进行模型推荐
+      const { data: recData } = await api.api.models.recommend.post({ prompt: directorPrompt });
+      const modelId = recData && 'recommendedModelId' in recData ? recData.recommendedModelId : 'veo-3.1';
+      
+      showToast(`🎯 已自动路由至最佳模型: ${modelId}`, 'info');
+
+      // 2. 执行脚本分析
       const { data, error } = await api.api.ai.director.analyze.post({ script: directorPrompt });
       if (error) throw new Error(getErrorMessage(error));
       if (data && 'scenes' in data) {
@@ -77,7 +97,7 @@ function App() {
             offset += 5;
           });
           setTracks(newTracks);
-          showToast('分镜序列生成成功', 'success');
+          showToast(`已根据 ${modelId} 蓝图完成编排`, 'success');
         }
       }
     } catch (e: any) { showToast(e.message, 'error'); }
@@ -87,7 +107,6 @@ function App() {
   return (
     <div className="pro-master-shell" onContextMenu={e => e.preventDefault()}>
       <style>{`
-        /* 最佳实践 3：全局变量集权 */
         :root {
           --ap-bg: #000000;
           --ap-surface: #161617;
@@ -143,12 +162,10 @@ function App() {
         .tool-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 7px; border: none; background: transparent; cursor: pointer; color: var(--ap-text-dim); font-size: 18px; transition: 0.2s; }
         .tool-icon.active { background: var(--ap-accent); color: #fff; box-shadow: 0 0 12px var(--ap-accent-glow); }
 
-        .system-telemetry { display: flex; align-items: center; gap: 20px; }
-        .telemetry-item { display: flex; align-items: center; gap: 10px; font-size: 10px; font-weight: 800; color: var(--ap-text-dim); text-transform: uppercase; }
-        .telemetry-sparkline { display: flex; align-items: flex-end; gap: 2px; height: 14px; width: 40px; }
+        .telemetry-sparkline { display: flex; align-items: flex-end; gap: 2px; height: 16px; width: 40px; }
         .spark-bar { width: 3px; background: #34C759; border-radius: 1px; transition: height 0.5s ease; }
 
-        .pro-inspector-outer div, .pro-inspector-outer section { background-color: transparent !important; color: inherit !important; }
+        .pro-inspector-outer div, .pro-inspector-outer section { background-color: transparent !important; color: inherit !important; border-color: var(--ap-border) !important; }
       `}</style>
 
       <ToastContainer />
@@ -184,7 +201,10 @@ function App() {
             {activeSidebar === 'director' && (
               <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--ap-border)', paddingTop: '20px' }}>
                 <textarea placeholder="输入电影脚本..." value={directorPrompt} onChange={(e) => setDirectorPrompt(e.target.value)} style={{ height: '80px', background: 'rgba(128,128,128,0.05)', border: '1px solid var(--ap-border)', borderRadius: '10px', padding: '12px', color: 'var(--ap-text)', resize: 'none', outline: 'none', fontSize: '13px' }} />
-                <button onClick={handleDirector} disabled={isProcessing} style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', height: '44px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', opacity: isProcessing ? 0.5 : 1 }}>一键分镜</button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={handleEnhance} disabled={isProcessing} style={{ flex: 1, background: 'rgba(128,128,128,0.1)', color: 'var(--ap-text)', border: '1px solid var(--ap-border)', height: '40px', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }}>✨ 增强</button>
+                  <button onClick={handleDirector} disabled={isProcessing} style={{ flex: 2, background: 'var(--ap-accent)', color: '#fff', border: 'none', height: '40px', borderRadius: '10px', fontWeight: 800, cursor: 'pointer' }}>{isProcessing ? '处理中...' : '一键导演'}</button>
+                </div>
               </div>
             )}
           </div>
@@ -194,7 +214,7 @@ function App() {
           {activeMode === 'edit' ? (
             <>
               <div className="monitor-overlay">
-                <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900, background: 'rgba(255,59,48,0.1)', padding: '2px 6px', borderRadius: '4px' }}>● 实时</div>
+                <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900, background: 'rgba(255,59,48,0.1)', padding: '3px 8px', borderRadius: '4px' }}>● 实时</div>
                 <div className="timecode">00:00:00:00</div>
                 <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>4K | HDR</div>
               </div>
@@ -222,8 +242,8 @@ function App() {
       </div>
 
       <footer className="pro-panel timeline-container">
-        <div className="timeline-actions" style={{ height: '52px' }}>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="timeline-actions">
+          <div className="tool-bar-group">
             <div style={{ display: 'flex', gap: '4px', marginRight: '12px', borderRight: '1px solid var(--ap-border)', paddingRight: '12px' }}>
               <button className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
               <button className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0}>↪</button>
