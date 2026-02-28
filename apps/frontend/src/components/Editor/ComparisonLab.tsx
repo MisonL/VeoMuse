@@ -819,19 +819,21 @@ const ComparisonLab: React.FC = () => {
   const renderCompareMode = () => (
     <div className="lab-split-engine">
       <div className="model-pane">
-        <div className="pane-overlay">
-          <span className="model-name">{availableModels.find(m => m.id === leftModel)?.name || leftModel}</span>
-          <div className="metric-chip">A 通道</div>
-        </div>
-        <div className="pane-controls">
-          <select name="leftModel" value={leftModel} onChange={e => setLeftModel(e.target.value)}>
-            {availableModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
-          <select name="leftAssetId" value={leftAssetId} onChange={e => setLeftAssetId(e.target.value)}>
-            <option value="">选择素材</option>
-            {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
-          <button onClick={() => requestRecommendation('left')}>推荐</button>
+        <div className="pane-head">
+          <div className="pane-overlay">
+            <span className="model-name">{availableModels.find(m => m.id === leftModel)?.name || leftModel}</span>
+            <div className="metric-chip">A 通道</div>
+          </div>
+          <div className="pane-controls">
+            <select name="leftModel" value={leftModel} onChange={e => setLeftModel(e.target.value)}>
+              {availableModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+            <select name="leftAssetId" value={leftAssetId} onChange={e => setLeftAssetId(e.target.value)}>
+              <option value="">选择素材</option>
+              {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+            <button onClick={() => requestRecommendation('left')}>推荐</button>
+          </div>
         </div>
         <div className="pane-viewport">
           {leftAsset?.src ? <video ref={leftVideoRef} src={leftAsset.src} controls playsInline /> : <div className="empty-pane">请选择左侧素材</div>}
@@ -844,19 +846,21 @@ const ComparisonLab: React.FC = () => {
       </div>
 
       <div className="model-pane">
-        <div className="pane-overlay">
-          <span className="model-name">{availableModels.find(m => m.id === rightModel)?.name || rightModel}</span>
-          <div className="metric-chip secondary">B 通道</div>
-        </div>
-        <div className="pane-controls">
-          <select name="rightModel" value={rightModel} onChange={e => setRightModel(e.target.value)}>
-            {availableModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
-          <select name="rightAssetId" value={rightAssetId} onChange={e => setRightAssetId(e.target.value)}>
-            <option value="">选择素材</option>
-            {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
-          <button onClick={() => requestRecommendation('right')}>推荐</button>
+        <div className="pane-head">
+          <div className="pane-overlay">
+            <span className="model-name">{availableModels.find(m => m.id === rightModel)?.name || rightModel}</span>
+            <div className="metric-chip secondary">B 通道</div>
+          </div>
+          <div className="pane-controls">
+            <select name="rightModel" value={rightModel} onChange={e => setRightModel(e.target.value)}>
+              {availableModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+            <select name="rightAssetId" value={rightAssetId} onChange={e => setRightAssetId(e.target.value)}>
+              <option value="">选择素材</option>
+              {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select>
+            <button onClick={() => requestRecommendation('right')}>推荐</button>
+          </div>
         </div>
         <div className="pane-viewport">
           {rightAsset?.src ? <video ref={rightVideoRef} src={rightAsset.src} controls playsInline /> : <div className="empty-pane">请选择右侧素材</div>}
