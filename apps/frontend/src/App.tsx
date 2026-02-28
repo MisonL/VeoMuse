@@ -1,10 +1,14 @@
-import { useState, memo, useEffect, useActionState, useOptimistic, lazy, Suspense, useMemo } from 'react'
+import { useState, memo, useEffect, useActionState, useOptimistic, lazy, Suspense, useMemo, useRef, useCallback } from 'react'
+import type { CSSProperties } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import { useAdminMetricsPolling, useAdminMetricsStore } from './store/adminMetricsStore'
+import { LAYOUT_LIMITS, useLayoutStore } from './store/layoutStore'
 import { useThemeSync } from './hooks/useThemeSync'
 import { api, getErrorMessage } from './utils/eden'
+import { calcAspectFit, clamp } from './utils/layoutMath'
+import ResizeHandle from './components/Common/ResizeHandle'
 import ThemeSwitcher from './components/Common/ThemeSwitcher'
 import './App.css'
 
@@ -23,6 +27,15 @@ const ComparisonLab = lazy(loadComparisonLab)
 const ToastContainer = lazy(loadToastContainer)
 
 const fps = 30
+const DESKTOP_BREAKPOINT = 980
+const MAIN_PANEL_MIN_WIDTH = 560
+const MAIN_PANEL_MIN_HEIGHT = 260
+const HEADER_HEIGHT = 62
+const HORIZONTAL_HANDLE_SIZE = 10
+const VERTICAL_HANDLE_SIZE = 8
+const SHELL_VERTICAL_PADDING = 20
+const SHELL_VERTICAL_GAP = 30
+
 const formatTimecode = (seconds: number) => {
   const safe = Math.max(0, seconds)
   const hh = Math.floor(safe / 3600)
@@ -70,6 +83,15 @@ function App() {
       setSpatialPreview: state.setSpatialPreview
     }))
   )
+  const { leftPanelPx, rightPanelPx, timelinePx, setTimelinePx, resetLayout } = useLayoutStore(
+    useShallow(state => ({
+      leftPanelPx: state.leftPanelPx,
+      rightPanelPx: state.rightPanelPx,
+      timelinePx: state.timelinePx,
+      setTimelinePx: state.setTimelinePx,
+      resetLayout: state.resetLayout
+    }))
+  )
 
   // @ts-ignore
   const { undo, redo, pastStates, futureStates } = useEditorStore.temporal.getState()
@@ -82,8 +104,16 @@ function App() {
   const [directorScenes, setDirectorScenes] = useState<any[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [isTimelineReady, setIsTimelineReady] = useState(false)
+  const [isDesktopLayout, setIsDesktopLayout] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return window.innerWidth > DESKTOP_BREAKPOINT
+  })
+  const [previewFrameSize, setPreviewFrameSize] = useState({ width: 0, height: 0 })
   const [optimisticScenes, setOptimisticScenes] = useOptimistic<any[], any[]>(directorScenes, (_prev, next) => next)
   const [optimisticExportStatus, setOptimisticExportStatus] = useOptimistic<'idle' | 'pending' | 'done' | 'error', 'idle' | 'pending' | 'done' | 'error'>('idle', (_prev, next) => next)
+  const shellRef = useRef<HTMLDivElement | null>(null)
+  const mainLayoutRef = useRef<HTMLDivElement | null>(null)
+  const previewHostRef = useRef<HTMLDivElement | null>(null)
   const [exportState, runExportAction, isExportPending] = useActionState(async (_: { status: 'idle' | 'done' | 'error'; message?: string }, quality: 'standard' | '4k-hdr' | 'spatial-vr') => {
     const timelineData = {
       tracks: useEditorStore.getState().tracks,
@@ -260,8 +290,118 @@ function App() {
     }
   }, [exportState, exportQuality, runExportAction, setOptimisticExportStatus, showToast])
 
+  useEffect(() => {
+    const handleResize = () => setIsDesktopLayout(window.innerWidth > DESKTOP_BREAKPOINT)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
+    if (activeMode !== 'edit') return
+    if (!previewHostRef.current) return
+
+    const host = previewHostRef.current
+    let rafId = 0
+
+    const syncPreviewFrame = () => {
+      rafId = 0
+      const style = window.getComputedStyle(host)
+      const horizontalPadding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
+      const verticalPadding = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
+      const availableWidth = Math.max(0, host.clientWidth - horizontalPadding)
+      const availableHeight = Math.max(0, host.clientHeight - verticalPadding)
+      const fit = calcAspectFit(availableWidth, availableHeight)
+      setPreviewFrameSize(prev => (
+        prev.width === fit.width && prev.height === fit.height
+          ? prev
+          : fit
+      ))
+    }
+
+    const scheduleSync = () => {
+      if (rafId) return
+      rafId = window.requestAnimationFrame(syncPreviewFrame)
+    }
+
+    const resizeObserver = new ResizeObserver(scheduleSync)
+    resizeObserver.observe(host)
+    scheduleSync()
+
+    return () => {
+      resizeObserver.disconnect()
+      if (rafId) window.cancelAnimationFrame(rafId)
+    }
+  }, [activeMode, leftPanelPx, rightPanelPx, timelinePx])
+
+  const handleLeftPanelResize = useCallback((delta: number) => {
+    if (!isDesktopLayout) return
+
+    const mainWidth = mainLayoutRef.current?.clientWidth || 0
+    if (!mainWidth) return
+
+    const layoutState = useLayoutStore.getState()
+    const maxLeft = Math.min(
+      LAYOUT_LIMITS.leftPanelPx.max,
+      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - layoutState.rightPanelPx - MAIN_PANEL_MIN_WIDTH
+    )
+
+    layoutState.setLeftPanelPx(
+      clamp(layoutState.leftPanelPx + delta, LAYOUT_LIMITS.leftPanelPx.min, Math.max(LAYOUT_LIMITS.leftPanelPx.min, maxLeft))
+    )
+  }, [isDesktopLayout])
+
+  const handleRightPanelResize = useCallback((delta: number) => {
+    if (!isDesktopLayout) return
+
+    const mainWidth = mainLayoutRef.current?.clientWidth || 0
+    if (!mainWidth) return
+
+    const layoutState = useLayoutStore.getState()
+    const maxRight = Math.min(
+      LAYOUT_LIMITS.rightPanelPx.max,
+      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - layoutState.leftPanelPx - MAIN_PANEL_MIN_WIDTH
+    )
+
+    layoutState.setRightPanelPx(
+      clamp(layoutState.rightPanelPx - delta, LAYOUT_LIMITS.rightPanelPx.min, Math.max(LAYOUT_LIMITS.rightPanelPx.min, maxRight))
+    )
+  }, [isDesktopLayout])
+
+  const handleTimelineResize = useCallback((delta: number) => {
+    if (!isDesktopLayout) return
+
+    const shellHeight = shellRef.current?.clientHeight || window.innerHeight
+    const maxTimelineByShell = shellHeight
+      - HEADER_HEIGHT
+      - VERTICAL_HANDLE_SIZE
+      - SHELL_VERTICAL_PADDING
+      - SHELL_VERTICAL_GAP
+      - MAIN_PANEL_MIN_HEIGHT
+    const maxTimeline = Math.min(
+      LAYOUT_LIMITS.timelinePx.max,
+      Math.max(LAYOUT_LIMITS.timelinePx.min, maxTimelineByShell)
+    )
+
+    setTimelinePx(clamp(timelinePx - delta, LAYOUT_LIMITS.timelinePx.min, maxTimeline))
+  }, [isDesktopLayout, setTimelinePx, timelinePx])
+
+  const shellLayoutVars = useMemo(() => ({
+    '--left-panel-w': `${leftPanelPx}px`,
+    '--right-panel-w': `${rightPanelPx}px`,
+    '--timeline-h': `${timelinePx}px`
+  } as CSSProperties), [leftPanelPx, rightPanelPx, timelinePx])
+
+  const previewFrameStyle = useMemo(() => {
+    if (!previewFrameSize.width || !previewFrameSize.height) return undefined
+    return {
+      width: `${previewFrameSize.width}px`,
+      height: `${previewFrameSize.height}px`
+    } as CSSProperties
+  }, [previewFrameSize.height, previewFrameSize.width])
+
   return (
-    <div className="pro-master-shell">
+    <div className="pro-master-shell" ref={shellRef} style={shellLayoutVars}>
       <Suspense fallback={null}>
         <ToastContainer />
       </Suspense>
@@ -291,6 +431,9 @@ function App() {
         </div>
         <div className="header-actions">
           <ThemeSwitcher />
+          <button id="btn-reset-layout" aria-label="重置布局" className="layout-reset-btn" onClick={resetLayout}>
+            重置布局
+          </button>
           <select
             id="export-quality"
             name="exportQuality"
@@ -308,8 +451,8 @@ function App() {
         </div>
       </header>
 
-      <div className="os-main main-layout">
-        <aside className="pro-panel">
+      <div className="os-main main-layout" ref={mainLayoutRef}>
+        <aside className="pro-panel panel-left">
           <div className="panel-title-bar">
             <div className="sidebar-tabs">
               <button className={`sidebar-tab ${activeSidebar === 'assets' ? 'active' : ''}`} onClick={() => setActiveSidebar('assets')}>媒体资源</button>
@@ -332,35 +475,48 @@ function App() {
           </div>
         </aside>
 
-        <section className="pro-panel monitor-core">
+        {isDesktopLayout ? (
+          <ResizeHandle
+            axis="x"
+            className="main-resize-handle"
+            ariaLabel="调整左侧功能区宽度"
+            onDrag={handleLeftPanelResize}
+          />
+        ) : null}
+
+        <section className="pro-panel monitor-core panel-center">
           {activeMode === 'edit' ? (
-            <>
-              <div className="monitor-overlay">
-                <div className="monitor-overlay-left">
-                  <div className="live-badge">● 实时</div>
-                  <TimecodeDisplay />
-                </div>
-                <div className="preview-meta">
-                  <button
-                    onClick={() => setSpatialPreview(!isSpatialPreview)}
-                    className={`preview-mode-toggle ${isSpatialPreview ? 'active' : ''}`}
-                  >
-                    {isSpatialPreview ? '3D 模式' : '2D 模式'}
-                  </button>
-                  <div className="preview-quality">4K | HDR</div>
+            <div className="monitor-content">
+              <div className="preview-host" ref={previewHostRef}>
+                <div className="preview-frame" style={previewFrameStyle}>
+                  <div className="monitor-overlay">
+                    <div className="monitor-overlay-left">
+                      <div className="live-badge">● 实时</div>
+                      <TimecodeDisplay />
+                    </div>
+                    <div className="preview-meta">
+                      <button
+                        onClick={() => setSpatialPreview(!isSpatialPreview)}
+                        className={`preview-mode-toggle ${isSpatialPreview ? 'active' : ''}`}
+                      >
+                        {isSpatialPreview ? '3D 模式' : '2D 模式'}
+                      </button>
+                      <div className="preview-quality">4K | HDR</div>
+                    </div>
+                  </div>
+
+                  <Suspense fallback={<LazyFallback label="预览器加载中..." />}>
+                    <MultiVideoPlayer />
+                  </Suspense>
                 </div>
               </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                <Suspense fallback={<LazyFallback label="预览器加载中..." />}>
-                  <MultiVideoPlayer />
-                </Suspense>
-              </div>
+
               <div className="transport-controls">
                 <button id="tool-prev" aria-label="跳转到开头" className="transport-btn" onClick={() => setCurrentTime(0)}>⏮</button>
                 <button id="tool-play" aria-label={isPlaying ? '暂停播放' : '开始播放'} className="transport-btn play" onClick={togglePlay}>{isPlaying ? '⏸' : '▶'}</button>
                 <button id="tool-next" aria-label="跳转到下一片段" className="transport-btn" onClick={() => setCurrentTime(getNextClipTime())}>⏭</button>
               </div>
-            </>
+            </div>
           ) : activeMode === 'color' ? (
             <Suspense fallback={<LazyFallback label="实验室加载中..." />}>
               <ComparisonLab />
@@ -373,7 +529,16 @@ function App() {
           )}
         </section>
 
-        <aside className="pro-panel pro-inspector-outer">
+        {isDesktopLayout ? (
+          <ResizeHandle
+            axis="x"
+            className="main-resize-handle"
+            ariaLabel="调整右侧功能区宽度"
+            onDrag={handleRightPanelResize}
+          />
+        ) : null}
+
+        <aside className="pro-panel pro-inspector-outer panel-right">
           <div className="panel-title-bar"><span className="inspector-title">属性检查器</span></div>
           <div className="inspector-scroll">
             <Suspense fallback={<LazyFallback label="属性面板加载中..." />}>
@@ -382,6 +547,15 @@ function App() {
           </div>
         </aside>
       </div>
+
+      {isDesktopLayout ? (
+        <ResizeHandle
+          axis="y"
+          className="timeline-resize-handle"
+          ariaLabel="调整时间轴高度"
+          onDrag={handleTimelineResize}
+        />
+      ) : null}
 
       <footer className="pro-panel timeline-container" onMouseEnter={ensureTimelineReady} onFocusCapture={ensureTimelineReady}>
         <div className="timeline-actions">
