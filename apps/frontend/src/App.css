@@ -28,8 +28,8 @@
 }
 
 .pro-master-shell {
-  --left-panel-w: 540px;
-  --right-panel-w: 500px;
+  --left-panel-w: 430px;
+  --right-panel-w: 360px;
   --center-panel-min-w: 360px;
   --center-panel-fit-w: 760px;
   --timeline-h: 336px;

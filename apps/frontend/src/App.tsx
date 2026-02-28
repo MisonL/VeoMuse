@@ -31,6 +31,8 @@ const DESKTOP_BREAKPOINT = 980
 const MAIN_PANEL_MIN_WIDTH = 360
 const MAIN_PANEL_MIN_HEIGHT = 260
 const CENTER_PANEL_FALLBACK_WIDTH = 760
+const CENTER_PANEL_LAB_WIDTH = 820
+const CENTER_PANEL_AUDIO_WIDTH = 700
 const CENTER_PANEL_FRAME_GUTTER = 32
 const CENTER_PANEL_MAX_WIDTH = 980
 const HEADER_HEIGHT = 62
@@ -396,13 +398,16 @@ function App() {
   }, [isDesktopLayout, setTimelinePx, timelinePx])
 
   const centerPanelFitWidth = useMemo(() => {
-    if (!isDesktopLayout || previewFrameSize.width <= 0) return CENTER_PANEL_FALLBACK_WIDTH
+    if (!isDesktopLayout) return CENTER_PANEL_FALLBACK_WIDTH
+    if (activeMode === 'color') return CENTER_PANEL_LAB_WIDTH
+    if (activeMode === 'audio') return CENTER_PANEL_AUDIO_WIDTH
+    if (previewFrameSize.width <= 0) return CENTER_PANEL_FALLBACK_WIDTH
     return clamp(
       previewFrameSize.width + CENTER_PANEL_FRAME_GUTTER,
       MAIN_PANEL_MIN_WIDTH,
       CENTER_PANEL_MAX_WIDTH
     )
-  }, [isDesktopLayout, previewFrameSize.width])
+  }, [activeMode, isDesktopLayout, previewFrameSize.width])
 
   const shellLayoutVars = useMemo(() => ({
     '--left-panel-w': `${leftPanelPx}px`,
