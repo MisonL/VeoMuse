@@ -18,6 +18,7 @@ build/
 *.seed
 *.pid.lock
 dump.rdb
+data/
 
 # OS & IDE
 .vscode/
