@@ -336,16 +336,16 @@ function App() {
           {activeMode === 'edit' ? (
             <>
               <div className="monitor-overlay">
-                <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900 }}>● 实时</div>
+                <div className="live-badge">● 实时</div>
                 <TimecodeDisplay />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="preview-meta">
                   <button
                     onClick={() => setSpatialPreview(!isSpatialPreview)}
-                    style={{ border: '1px solid var(--ap-border)', background: isSpatialPreview ? 'var(--ap-accent-soft)' : 'rgba(0,0,0,0.25)', color: '#fff', fontSize: '10px', fontWeight: 700, borderRadius: '6px', padding: '4px 8px', cursor: 'pointer' }}
+                    className={`preview-mode-toggle ${isSpatialPreview ? 'active' : ''}`}
                   >
                     {isSpatialPreview ? '3D 模式' : '2D 模式'}
                   </button>
-                  <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>4K | HDR</div>
+                  <div className="preview-quality">4K | HDR</div>
                 </div>
               </div>
               <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
@@ -365,8 +365,8 @@ function App() {
             </Suspense>
           ) : (
             <div className="audio-master-state">
-              <div style={{ fontSize: '48px' }}>🎚️</div>
-              <div style={{ fontSize: '18px', fontWeight: 700 }}>AUDIO MASTER 引擎已就绪</div>
+              <div className="audio-master-icon">🎚️</div>
+              <div className="audio-master-title">AUDIO MASTER 引擎已就绪</div>
             </div>
           )}
         </section>
@@ -395,16 +395,16 @@ function App() {
 
           <div className="system-telemetry">
             <div className="telemetry-item">
-              <span>GPU LOAD: <b style={{color: '#34C759', marginLeft: '4px'}}>{currentMetrics.gpu}%</b></span>
+              <span>GPU LOAD: <b className="telemetry-value success">{currentMetrics.gpu}%</b></span>
               <div className="telemetry-sparkline">
                 {telemetryHistory.map((v, i) => <div key={i} className="spark-bar" style={{ height: `${Math.max(2, Math.min(100, v))}%` }} />)}
               </div>
             </div>
             <div className="telemetry-item telemetry-divider">
-              RAM: <span style={{ color: '#34C759' }}>{currentMetrics.ram}</span>
+              RAM: <span className="telemetry-value success">{currentMetrics.ram}</span>
             </div>
             <div className="telemetry-item telemetry-divider">
-              CACHE: <span style={{ color: 'var(--ap-accent)' }}>{currentMetrics.cache}</span>
+              CACHE: <span className="telemetry-value accent">{currentMetrics.cache}</span>
             </div>
           </div>
         </div>

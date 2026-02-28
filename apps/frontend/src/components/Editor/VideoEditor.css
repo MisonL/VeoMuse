@@ -42,24 +42,24 @@
 }
 
 .pro-nle-container .timeline-editor-time-area {
-  background: rgba(128, 128, 128, 0.08) !important;
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.03), rgba(17, 24, 39, 0.06)) !important;
   border-bottom: 1px solid var(--ap-border) !important;
-  height: 32px !important;
-  color: var(--ap-text-dim) !important;
-  font-weight: 600;
+  height: 34px !important;
+  color: color-mix(in srgb, var(--ap-text-dim) 88%, #ffffff 12%) !important;
+  font-weight: 700;
 }
 
 .pro-nle-container .timeline-editor-edit-area {
-  background: rgba(0, 0, 0, 0.02) !important;
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.02), rgba(17, 24, 39, 0.04)) !important;
 }
 
 [data-theme='light'] .pro-nle-container .timeline-editor-edit-area {
-  background: #F2F2F7 !important;
+  background: linear-gradient(180deg, #f8f9fc, #f2f4f8) !important;
 }
 
 .pro-nle-container .timeline-editor-edit-row {
   border-bottom: 1px solid var(--ap-border) !important;
-  background: transparent !important;
+  background: color-mix(in srgb, var(--ap-surface) 80%, transparent) !important;
 }
 
 .pro-nle-container .timeline-editor-cursor {
@@ -70,12 +70,13 @@
 }
 
 .pro-nle-container .timeline-editor-action-unit {
-  background: linear-gradient(180deg, var(--ap-accent) 0%, #005bbd 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 4px !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-accent) 90%, #2b7dff 10%) 0%, #005bbd 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 10px rgba(11, 102, 255, 0.24);
 }
 
 .pro-nle-container .timeline-editor-action-unit-selected {
-  border: 2.5px solid #fff !important;
+  border: 2px solid #fff !important;
   box-shadow: 0 0 20px var(--ap-accent) !important;
 }

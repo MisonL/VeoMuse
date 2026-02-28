@@ -5,19 +5,19 @@
 
 :root {
   color-scheme: light;
-  --ap-bg: #f6f7fb;
+  --ap-bg: #edf1f7;
   --ap-surface: #ffffff;
-  --ap-card: #f2f4f8;
-  --ap-panel: #f7f8fb;
-  --pro-surface: #f2f4f8;
+  --ap-card: #edf2f8;
+  --ap-panel: #f4f7fc;
+  --pro-surface: #edf2f8;
 
   --ap-accent: #0b66ff;
   --ap-accent-soft: rgba(11, 102, 255, 0.12);
   --ap-accent-glow: rgba(11, 102, 255, 0.22);
 
-  --ap-border: rgba(11, 21, 42, 0.12);
-  --ap-text: #101828;
-  --ap-text-dim: #475467;
+  --ap-border: rgba(11, 21, 42, 0.14);
+  --ap-text: #0f172a;
+  --ap-text-dim: #3f4f68;
   --ap-monitor-bg: #0e141f;
   --ap-monitor-border: rgba(11, 21, 42, 0.3);
 
@@ -31,7 +31,7 @@
   --ap-transition: all 0.3s cubic-bezier(0.2, 0.85, 0.25, 1);
   --ap-transition-fast: all 0.18s cubic-bezier(0.2, 0.85, 0.25, 1);
   --ap-spring-button: all 0.25s cubic-bezier(0.22, 1.15, 0.35, 1);
-  --ap-shadow-subtle: 0 2px 10px rgba(16, 24, 40, 0.08);
+  --ap-shadow-subtle: 0 6px 16px rgba(16, 24, 40, 0.08);
 
   /* 兼容旧变量命名 */
   --bg-color: var(--ap-bg);

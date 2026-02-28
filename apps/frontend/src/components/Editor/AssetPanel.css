@@ -14,31 +14,33 @@
 
 .asset-search-bar {
   flex: 1;
-  padding: 8px 12px;
+  padding: 9px 12px;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(128, 128, 128, 0.08);
+  background: color-mix(in srgb, var(--ap-surface) 82%, var(--ap-card) 18%);
   border: 1px solid var(--ap-border);
-  border-radius: 8px;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .asset-search-bar input {
   background: transparent;
   border: none;
   color: var(--ap-text);
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 500;
   width: 100%;
   outline: none;
 }
 
 /* 专业级导入按钮 */
 .import-btn-pro {
-  background: var(--ap-accent);
+  background: linear-gradient(165deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 72%, #09336d));
   color: #fff;
   border: none;
   padding: 0 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
@@ -62,22 +64,31 @@
 .asset-categories {
   display: flex;
   gap: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .cat-btn {
-  padding: 6px 12px;
+  padding: 6px 11px;
   font-size: 11px;
   font-weight: 700;
-  background: rgba(128, 128, 128, 0.08);
+  background: color-mix(in srgb, var(--ap-card) 70%, transparent);
   color: var(--ap-text-dim);
   border: 1px solid var(--ap-border);
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.cat-btn.active { background: var(--ap-text); color: var(--ap-bg); }
+.cat-btn:hover {
+  border-color: color-mix(in srgb, var(--ap-border) 60%, var(--ap-accent) 40%);
+  color: var(--ap-text);
+}
+
+.cat-btn.active {
+  background: color-mix(in srgb, var(--ap-accent-soft) 68%, #ffffff 32%);
+  border-color: color-mix(in srgb, var(--ap-accent) 30%, var(--ap-border));
+  color: var(--ap-accent);
+}
 
 .pro-asset-grid {
   flex: 1;
@@ -92,14 +103,15 @@
   grid-column: span 2;
   height: 200px;
   border: 2px dashed var(--ap-border);
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
   cursor: pointer;
-  background: rgba(128, 128, 128, 0.02);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 82%, transparent), color-mix(in srgb, var(--ap-card) 72%, transparent));
   transition: all 0.3s;
 }
 
@@ -113,16 +125,23 @@
 .pro-empty-state-v2 span { font-size: 11px; color: var(--ap-text-dim); }
 
 .asset-tile {
-  background: var(--ap-card);
-  border-radius: 10px;
+  background: color-mix(in srgb, var(--ap-surface) 90%, var(--ap-card) 10%);
+  border-radius: 12px;
   border: 1px solid var(--ap-border);
   overflow: hidden;
   transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+}
+
+.asset-tile:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--ap-border) 55%, var(--ap-accent) 45%);
+  box-shadow: 0 8px 16px rgba(16, 24, 40, 0.1);
 }
 
 .tile-preview {
   height: 74px;
-  background: rgba(0, 0, 0, 0.1);
+  background: linear-gradient(180deg, rgba(14, 20, 31, 0.1), rgba(14, 20, 31, 0.2));
   display: flex;
   align-items: center;
   justify-content: center;

@@ -15,6 +15,9 @@ const MultiVideoPlayer: React.FC = () => {
     }))
   );
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const hasPlayableVideo = tracks.some(
+    track => track.type === 'video' && track.clips.some(clip => (clip.src || '').trim().length > 0)
+  );
 
   // 注意：我们移除了对 currentTime 和 isPlaying 的依赖，防止频繁渲染
   // 同步逻辑现在由外部的 syncController 驱动
@@ -72,6 +75,12 @@ const MultiVideoPlayer: React.FC = () => {
             ) : null
           ))
         )}
+        {!hasPlayableVideo ? (
+          <div className="player-empty-state">
+            <div className="player-empty-title">预览区已就绪</div>
+            <div className="player-empty-subtitle">从左侧导入视频素材，或使用 AI 导演自动生成分镜</div>
+          </div>
+        ) : null}
         <div className="vfx-layer-overlay"></div>
         <TextOverlay />
       </div>

@@ -7,35 +7,35 @@
 .inspector-body {
   flex: 1;
   overflow-y: auto;
-  padding: 14px;
+  padding: 12px;
 }
 
 .inspector-tabs {
   display: flex;
-  gap: 16px;
-  padding: 0 12px;
+  gap: 8px;
+  padding: 0 10px;
 }
 
 .inspector-tabs button {
-  background: none;
-  border: none;
-  font-size: 12px;
+  background: color-mix(in srgb, var(--ap-card) 70%, transparent);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ap-text-dim);
   cursor: pointer;
-  padding: 8px 0;
+  padding: 7px 10px;
   position: relative;
 }
 
 .inspector-tabs button.active {
   color: var(--ap-accent);
+  border-color: color-mix(in srgb, var(--ap-accent) 25%, var(--ap-border));
+  background: color-mix(in srgb, var(--ap-accent-soft) 68%, #ffffff 32%);
 }
 
 .inspector-tabs button.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; width: 100%; height: 2px;
-  background: var(--ap-accent);
+  display: none;
 }
 
 .pro-inspector-content {
@@ -59,13 +59,14 @@
 }
 
 .pro-input-mini, .pro-textarea-mini, .pro-select-mini {
-  background: rgba(128, 128, 128, 0.08);
+  background: color-mix(in srgb, var(--ap-surface) 88%, var(--ap-card) 12%);
   border: 1px solid var(--ap-border);
-  border-radius: 6px;
-  padding: 8px 10px;
+  border-radius: 8px;
+  padding: 9px 10px;
   color: var(--ap-text);
   font-size: 12px;
   outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .pro-textarea-mini {
@@ -81,9 +82,9 @@
 }
 
 .alchemy-mini-btn {
-  background: rgba(128, 128, 128, 0.05);
+  background: color-mix(in srgb, var(--ap-card) 70%, transparent);
   border: 1px solid var(--ap-border);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 6px;
   font-size: 11px;
   font-weight: 600;
@@ -128,11 +129,11 @@
 
 .pro-master-btn {
   margin-top: 8px;
-  background: var(--ap-accent);
+  background: linear-gradient(165deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 72%, #09336d));
   color: #fff;
   border: none;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
