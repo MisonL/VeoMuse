@@ -8,15 +8,20 @@ export interface MotionData {
 
 export class MotionSyncManager {
   private static isActive = false;
+  private static intervalId: ReturnType<typeof setInterval> | null = null;
 
   static async startCapture(onData: (data: MotionData) => void) {
+    if (this.isActive) return;
     console.log('📹 AI 实时动捕引擎：正在初始化高频 60fps 采样流...');
     this.isActive = true;
     
     // 提升采样频率至 16ms (约 60fps)
-    const interval = setInterval(() => {
+    this.intervalId = setInterval(() => {
       if (!this.isActive) {
-        clearInterval(interval);
+        if (this.intervalId) {
+          clearInterval(this.intervalId);
+          this.intervalId = null;
+        }
         return;
       }
       
@@ -35,7 +40,15 @@ export class MotionSyncManager {
   }
 
   static stopCapture() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
     this.isActive = false;
     console.log('🛑 动捕引擎已停止');
+  }
+
+  static getStatus() {
+    return { isActive: this.isActive };
   }
 }

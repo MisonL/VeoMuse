@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useThemeStore, ThemeMode } from '../store/themeStore'
+import { useThemeStore } from '../store/themeStore'
 
 export const useThemeSync = () => {
   const { mode, customPalette } = useThemeStore()

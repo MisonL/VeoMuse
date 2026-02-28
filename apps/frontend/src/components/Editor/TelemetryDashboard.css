@@ -6,7 +6,7 @@
   font-size: 12px;
 }
 
-.metrics-section label, .api-metrics label {
+.metrics-section label, .api-metrics label, .db-ops-panel > label {
   display: block;
   color: var(--text-sub);
   margin-bottom: 8px;
@@ -16,9 +16,10 @@
 }
 
 .fps-chart {
-  background: rgba(0, 0, 0, 0.2);
+  background: color-mix(in srgb, var(--ap-panel) 85%, #ffffff 15%);
   border-radius: 8px;
   width: 100%;
+  border: 1px solid var(--ap-border);
 }
 
 .metrics-grid {
@@ -28,9 +29,10 @@
 }
 
 .metric-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ap-surface);
   padding: 12px;
   border-radius: 12px;
+  border: 1px solid var(--ap-border);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -38,15 +40,244 @@
 
 .metric-card .label { color: var(--text-sub); font-size: 10px; }
 .metric-card .value { font-size: 18px; font-weight: 700; color: var(--accent-color); }
+.metric-card .value.value-error { color: var(--danger-color); font-size: 13px; }
 
 .api-stat-row {
   display: grid;
   grid-template-columns: 1fr 40px 60px;
   gap: 8px;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ap-border);
 }
 
 .api-name { color: var(--text-main); }
 .api-success { color: var(--success-color); font-weight: 600; text-align: right; }
 .api-avg { color: var(--text-sub); text-align: right; }
+.api-empty { color: var(--text-sub); font-size: 11px; }
+
+.db-ops-panel {
+  border: 1px solid var(--ap-border);
+  border-radius: 12px;
+  background: var(--ap-surface);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.db-token-row,
+.db-actions-row {
+  display: flex;
+  gap: 8px;
+}
+
+.db-actions-row {
+  flex-wrap: wrap;
+}
+
+.db-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.db-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.db-filter-field span {
+  color: var(--ap-text-dim);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.db-filter-field select {
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: var(--ap-panel);
+  color: var(--ap-text);
+  font-size: 11px;
+}
+
+.db-search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.db-search-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--ap-panel);
+  color: var(--ap-text);
+}
+
+.db-token-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--ap-panel);
+  color: var(--ap-text);
+}
+
+.db-token-row button,
+.db-actions-row button,
+.db-search-row button,
+.db-load-more {
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: var(--ap-panel);
+  color: var(--ap-text);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.db-actions-row button {
+  flex: 1;
+}
+
+.db-search-row button {
+  flex: 0 0 auto;
+}
+
+.db-actions-row button.danger {
+  border-color: color-mix(in srgb, var(--danger-color) 35%, var(--ap-border));
+  color: var(--danger-color);
+}
+
+.db-actions-row button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.db-search-row button:disabled,
+.db-load-more:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.db-health-card {
+  border: 1px solid var(--ap-border);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--ap-text-dim);
+  background: var(--ap-panel);
+}
+
+.db-runtime-card {
+  border: 1px solid var(--ap-border);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--ap-text-dim);
+  background: color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%);
+}
+
+.db-runtime-card b {
+  color: var(--ap-text);
+}
+
+.db-runtime-path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.db-health-card.ok b { color: var(--success-color); }
+.db-health-card.corrupted b,
+.db-health-card.error b { color: var(--danger-color); }
+
+.db-health-msg {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+}
+
+.db-error {
+  color: var(--danger-color);
+  font-size: 11px;
+}
+
+.db-repair-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ap-text-dim);
+  font-size: 10px;
+}
+
+.db-repair-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.db-repair-item {
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.db-repair-head {
+  display: grid;
+  grid-template-columns: 68px 1fr auto;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--ap-text-dim);
+}
+
+.db-repair-head .status {
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.db-repair-head .status.repaired,
+.db-repair-head .status.ok { color: var(--success-color); }
+.db-repair-head .status.failed { color: var(--danger-color); }
+
+.db-repair-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ap-text-dim);
+  font-size: 10px;
+}
+
+.db-load-more {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .db-token-row,
+  .db-actions-row,
+  .db-search-row {
+    flex-direction: column;
+  }
+
+  .db-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .db-repair-head {
+    grid-template-columns: 1fr;
+  }
+}

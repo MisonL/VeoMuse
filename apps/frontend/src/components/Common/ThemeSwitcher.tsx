@@ -1,5 +1,6 @@
 import React from 'react'
-import { useThemeStore, ThemeMode } from '../../store/themeStore'
+import { useThemeStore } from '../../store/themeStore'
+import type { ThemeMode } from '../../store/themeStore'
 import './ThemeSwitcher.css'
 
 const ThemeSwitcher: React.FC = () => {

@@ -1,68 +1,443 @@
-/* VeoMuse Pro Mastery - Layout Tuning */
-
-.pro-main {
-  flex: 1.4 !important; /* 增大主舞台比例 */
-}
-
-.monitor-controls-pro {
-  margin-top: 16px;
+.pro-master-shell {
+  height: 100vh;
+  width: 100vw;
   display: grid;
-  grid-template-columns: 60px 1fr 60px;
+  grid-template-rows: 56px 1fr 380px;
+  gap: 8px;
+  background: var(--ap-bg);
+  padding: 8px;
+}
+
+.pro-master-shell,
+.os-header,
+.os-main,
+.pro-panel,
+.sidebar-content,
+.timeline-body {
+  min-width: 0;
+}
+
+.pro-panel {
+  background: var(--ap-surface);
+  border: 1px solid var(--ap-border);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.os-header {
+  display: grid;
+  grid-template-columns: 240px 1fr 400px;
   align-items: center;
-  gap: 20px;
+  padding: 0 24px;
 }
 
-.audio-peak-meter {
+.brand-zone {
   display: flex;
-  gap: 3px;
-}
-
-.transport-controls {
-  display: flex;
-  justify-content: center;
+  align-items: center;
   gap: 12px;
 }
 
-.monitor-extras {
-  text-align: right;
-  font-size: 10px;
-  font-weight: 700;
-  color: #34c759;
+.brand-logo {
+  width: 28px;
+  height: 28px;
+  background: var(--ap-accent);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  color: #fff;
+  font-size: 16px;
+  border: 1px solid color-mix(in srgb, var(--ap-accent) 25%, white);
 }
 
-.status-indicator {
+.brand-title {
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+}
+
+.mode-selector {
+  display: flex;
+  background: var(--ap-card);
+  padding: 3px;
+  border-radius: 10px;
+  gap: 2px;
+  border: 1px solid var(--ap-border);
+  justify-self: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.header-select {
+  background: var(--ap-surface);
+  color: var(--ap-text);
+  border: 1px solid var(--ap-border);
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  min-width: 110px;
+}
+
+.export-btn {
+  background: linear-gradient(160deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 72%, #09336d));
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 14px var(--ap-accent-glow);
+}
+
+.export-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.export-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.mode-tab {
+  border: none;
+  background: none;
+  padding: 6px 20px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ap-text-dim);
+  cursor: pointer;
+  transition: var(--ap-transition-fast);
+}
+
+.mode-tab.active {
+  background: var(--ap-surface);
+  color: var(--ap-accent);
+  box-shadow: var(--ap-shadow-subtle);
+}
+
+.os-main {
+  display: grid;
+  grid-template-columns: 320px 1fr 340px;
+  gap: 8px;
+  min-height: 0;
+}
+
+.panel-title-bar {
+  height: 44px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--ap-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.sidebar-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+
+.sidebar-tab {
+  background: none;
+  border: none;
+  color: var(--ap-text-dim);
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.sidebar-tab.active {
+  color: var(--ap-accent);
+  background: var(--ap-accent-soft);
+}
+
+.sidebar-content {
+  flex: 1;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.monitor-core {
+  background: var(--ap-monitor-bg) !important;
+  position: relative;
+  border: 1px solid var(--ap-monitor-border) !important;
+}
+
+.timecode {
+  font-family: "SF Mono", ui-monospace, monospace;
+  color: var(--ap-accent);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -1.5px;
+}
+
+.transport-controls {
+  height: 74px;
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  align-items: center;
+  border-top: 1px solid var(--ap-border);
+  flex-shrink: 0;
+}
+
+.transport-btn {
+  background: none;
+  border: none;
+  color: var(--ap-text);
+  cursor: pointer;
+  transition: var(--ap-transition-fast);
+  font-size: 24px;
+}
+
+.transport-btn.play {
+  color: var(--ap-accent);
+  font-size: 40px;
+  opacity: 1;
+}
+
+.audio-master-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ap-text-dim);
+  gap: 20px;
+}
+
+.timeline-container {
+  height: 380px;
+  flex-shrink: 0;
+}
+
+.timeline-actions {
+  height: 52px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--ap-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.timeline-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.undo-group {
+  display: flex;
+  gap: 4px;
+  margin-right: 12px;
+  border-right: 1px solid var(--ap-border);
+  padding-right: 12px;
+}
+
+.tool-icon {
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  background: var(--ap-surface);
+  color: var(--ap-text);
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.tool-icon.active {
+  border-color: var(--ap-accent);
+  color: var(--ap-accent);
+}
+
+.tool-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.system-telemetry {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 20px;
+  height: 100%;
+}
+
+.telemetry-divider {
+  border-left: 1px solid var(--ap-border);
+  padding-left: 16px;
+}
+
+.telemetry-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px;
   font-size: 10px;
   font-weight: 800;
-  color: #ff3b30;
-  letter-spacing: 1px;
-}
-
-/* 时间轴引擎区域补强 */
-.timeline-engine-pro {
-  flex: 1;
-  min-height: 0;
-  padding: 0;
-  background: #050505;
-}
-
-.meta-item {
-  font-size: 10px;
+  color: var(--ap-text-dim);
   text-transform: uppercase;
-  color: var(--pro-text-dim);
+  white-space: nowrap;
 }
 
-/* 覆盖时间轴内部样式以对齐 Pro 质感 */
-.react-timeline-editor-action-unit {
-  background: none !important;
-  border: none !important;
+.telemetry-sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+  width: 40px;
 }
 
-.react-timeline-editor-cursor {
-  background: var(--pro-accent) !important;
-  width: 2px !important;
+.spark-bar {
+  width: 3px;
+  background: #34c759;
+  border-radius: 1px;
+  transition: height 0.5s ease;
 }
 
-.react-timeline-editor-time-area {
-  background: #111 !important;
-  border-bottom: 1px solid var(--pro-border) !important;
+.timeline-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.inspector-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ap-text-dim);
+}
+
+.inspector-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.pro-inspector-outer div,
+.pro-inspector-outer section {
+  background-color: transparent !important;
+  color: inherit !important;
+  border-color: var(--ap-border) !important;
+}
+
+@media (max-width: 980px) {
+  body {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .pro-master-shell {
+    width: 100%;
+    height: auto;
+    min-height: 100vh;
+    grid-template-rows: auto auto auto;
+  }
+
+  .os-header {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+    height: auto;
+  }
+
+  .mode-selector {
+    justify-self: stretch;
+    overflow-x: auto;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+
+  .os-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(240px, auto) minmax(220px, auto) minmax(240px, auto);
+    min-height: auto;
+  }
+
+  .timeline-container {
+    height: auto;
+    min-height: 300px;
+  }
+
+  .transport-controls {
+    gap: 24px;
+  }
+
+  .timeline-actions {
+    height: auto;
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .timeline-tools {
+    justify-content: flex-start;
+  }
+
+  .system-telemetry {
+    width: 100%;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .timeline-body {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .pro-master-shell {
+    padding: 4px;
+    gap: 6px;
+  }
+
+  .mode-tab {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .header-select,
+  .export-btn {
+    width: 100%;
+  }
+
+  .telemetry-item {
+    font-size: 9px;
+  }
+
+  .telemetry-divider {
+    border-left: none;
+    padding-left: 0;
+  }
+
+  .sidebar-content {
+    padding: 12px;
+  }
 }

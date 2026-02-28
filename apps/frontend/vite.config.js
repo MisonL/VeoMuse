@@ -4,6 +4,29 @@ import path from 'path';
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [react()],
+    build: {
+        minify: 'oxc',
+        chunkSizeWarningLimit: 450,
+        rolldownOptions: {
+            output: {
+                codeSplitting: true,
+                manualChunks(id) {
+                    if (id.includes('react-dom') || id.includes('/react/'))
+                        return 'react';
+                    if (id.includes('@xzdarcy/react-timeline-editor'))
+                        return 'timeline';
+                    if (id.includes('framer-motion'))
+                        return 'motion';
+                    if (id.includes('/zustand') || id.includes('/zundo'))
+                        return 'state';
+                    return undefined;
+                }
+            }
+        }
+    },
+    optimizeDeps: {
+        include: ['react', 'react-dom', 'zustand', 'framer-motion']
+    },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
@@ -11,7 +34,7 @@ export default defineConfig({
         }
     },
     server: {
-        port: 5173,
+        port: 42873,
         strictPort: true,
         // 彻底移除 proxy，避免干扰根路径
         proxy: {}

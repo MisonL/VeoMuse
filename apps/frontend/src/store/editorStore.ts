@@ -14,6 +14,10 @@ interface EditorState {
   isPlaying: boolean;
   selectedClipId: string | null;
   zoomLevel: number;
+  isMotionCaptureActive: boolean;
+  latestMotionData: any | null;
+  isSpatialPreview: boolean;
+  spatialCamera: { yaw: number; pitch: number; scale: number };
   
   // Actions
   setTracks: (tracks: Track[]) => void;
@@ -28,6 +32,10 @@ interface EditorState {
   updateClip: (trackId: string, clipId: string, partialClip: Partial<Clip>) => void;
   removeClip: (trackId: string, clipId: string) => void;
   splitClip: (trackId: string, clipId: string, at: number) => void;
+  setMotionCaptureActive: (active: boolean) => void;
+  setLatestMotionData: (data: any | null) => void;
+  setSpatialPreview: (enabled: boolean) => void;
+  setSpatialCamera: (partial: Partial<{ yaw: number; pitch: number; scale: number }>) => void;
 }
 
 export const useEditorStore = create<EditorState>()(
@@ -46,6 +54,10 @@ export const useEditorStore = create<EditorState>()(
     isPlaying: false,
     selectedClipId: null,
     zoomLevel: 10,
+    isMotionCaptureActive: false,
+    latestMotionData: null,
+    isSpatialPreview: false,
+    spatialCamera: { yaw: 0, pitch: 0, scale: 1 },
 
     setTracks: (tracks) => set({ tracks }),
     setMarkers: (markers) => set({ markers }),
@@ -92,6 +104,12 @@ export const useEditorStore = create<EditorState>()(
         const c2 = { ...clip, id: `${clip.id}-cut-${Math.random().toString(36).substring(7)}`, start: at };
         return { ...t, clips: [...t.clips.filter(c => c.id !== clipId), c1, c2] };
       })
+    })),
+    setMotionCaptureActive: (isMotionCaptureActive) => set({ isMotionCaptureActive }),
+    setLatestMotionData: (latestMotionData) => set({ latestMotionData }),
+    setSpatialPreview: (isSpatialPreview) => set({ isSpatialPreview }),
+    setSpatialCamera: (partial) => set((state) => ({
+      spatialCamera: { ...state.spatialCamera, ...partial }
     }))
   }))
 )

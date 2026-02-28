@@ -31,12 +31,16 @@ const wsBaseFromApi = (base: string) => {
 }
 
 const requestJson = async <T,>(path: string, init?: RequestInit): Promise<T> => {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json'
-  }
+  const headers: Record<string, string> = {}
   const customHeaders = init?.headers
   if (customHeaders && typeof customHeaders === 'object' && !Array.isArray(customHeaders)) {
     Object.assign(headers, customHeaders as Record<string, string>)
+  }
+  const method = (init?.method || 'GET').toUpperCase()
+  const isFormDataBody = typeof FormData !== 'undefined' && init?.body instanceof FormData
+  if (method !== 'GET' && method !== 'HEAD' && !isFormDataBody) {
+    const hasContentType = Object.keys(headers).some(key => key.toLowerCase() === 'content-type')
+    if (!hasContentType) headers['Content-Type'] = 'application/json'
   }
 
   const response = await fetch(`${resolveApiBase()}${path}`, {

@@ -29,6 +29,22 @@ const ToastContainer: React.FC = () => {
           >
             <span className="toast-icon">{getIcon(toast.type)}</span>
             <span className="toast-message">{toast.message}</span>
+            {toast.actions && toast.actions.length > 0 ? (
+              <div className="toast-actions" onClick={(e) => e.stopPropagation()}>
+                {toast.actions.map((action, index) => (
+                  <button
+                    key={`${toast.id}-${index}`}
+                    className={`toast-action-btn ${action.variant || 'secondary'}`}
+                    onClick={() => {
+                      action.onClick?.();
+                      removeToast(toast.id);
+                    }}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </motion.div>
         ))}
       </AnimatePresence>

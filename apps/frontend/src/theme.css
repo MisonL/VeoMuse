@@ -1,60 +1,84 @@
 /**
  * VeoMuse Pro Theme System
- * 旗舰版主题变量体系 - 遵循 Apple 工业设计规范
+ * 旗舰版主题变量体系 - 亮色优先
  */
 
 :root {
-  /* 默认暗色模式 (Dark Mode) - 基于 Apple SF Dark */
-  --ap-bg: #000000;
-  --ap-surface: #161617;
-  --ap-card: #1D1D1F;
-  --ap-panel: #1A1A1B;
-  --pro-surface: #121212;
-  
-  --ap-accent: #0071E3;
-  --ap-accent-soft: rgba(0, 113, 227, 0.15);
-  --ap-accent-glow: rgba(0, 122, 255, 0.4);
-  
-  --ap-border: rgba(255, 255, 255, 0.12);
-  --ap-text: #F5F5F7;
-  --ap-text-dim: #86868B;
-  
-  /* 玻璃面板 (Glass Panels) */
-  --ap-blur: 30px;
-  --ap-saturate: 180%;
-  --ap-glass-bg: rgba(22, 22, 23, 0.8);
-  
-  /* 基础参数 */
-  --ap-radius: 12px;
-  --ap-radius-inner: 8px;
-  
-  /* 全局过渡效果 */
-  --ap-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
+  color-scheme: light;
+  --ap-bg: #f6f7fb;
+  --ap-surface: #ffffff;
+  --ap-card: #f2f4f8;
+  --ap-panel: #f7f8fb;
+  --pro-surface: #f2f4f8;
 
-[data-theme='light'] {
-  /* 亮色模式 (Light Mode) - 基于 Apple SF Light */
-  --ap-bg: #F5F5F7;
-  --ap-surface: #FFFFFF;
-  --ap-card: #FBFBFD;
-  --ap-panel: #F5F5F7;
-  --pro-surface: #F2F2F7;
-  
-  --ap-accent: #0071E3;
-  --ap-accent-soft: rgba(0, 113, 227, 0.1);
-  --ap-accent-glow: rgba(0, 113, 227, 0.2);
-  
-  --ap-border: rgba(0, 0, 0, 0.1);
-  --ap-text: #1D1D1F;
-  --ap-text-dim: #86868B;
-  
-  /* 玻璃面板 (Glass Panels) */
+  --ap-accent: #0b66ff;
+  --ap-accent-soft: rgba(11, 102, 255, 0.12);
+  --ap-accent-glow: rgba(11, 102, 255, 0.22);
+
+  --ap-border: rgba(11, 21, 42, 0.12);
+  --ap-text: #101828;
+  --ap-text-dim: #475467;
+  --ap-monitor-bg: #0e141f;
+  --ap-monitor-border: rgba(11, 21, 42, 0.3);
+
   --ap-blur: 20px;
   --ap-saturate: 150%;
-  --ap-glass-bg: rgba(255, 255, 255, 0.7);
+  --ap-glass-bg: rgba(255, 255, 255, 0.72);
+
+  --ap-radius: 12px;
+  --ap-radius-inner: 8px;
+
+  --ap-transition: all 0.3s cubic-bezier(0.2, 0.85, 0.25, 1);
+  --ap-transition-fast: all 0.18s cubic-bezier(0.2, 0.85, 0.25, 1);
+  --ap-spring-button: all 0.25s cubic-bezier(0.22, 1.15, 0.35, 1);
+  --ap-shadow-subtle: 0 2px 10px rgba(16, 24, 40, 0.08);
+
+  /* 兼容旧变量命名 */
+  --bg-color: var(--ap-bg);
+  --panel-bg: var(--ap-glass-bg);
+  --glass-border: var(--ap-border);
+  --glass-shadow: var(--ap-shadow-subtle);
+  --text-main: var(--ap-text);
+  --text-sub: var(--ap-text-dim);
+  --accent-color: var(--ap-accent);
+  --accent-glow: var(--ap-accent-glow);
+  --danger-color: #d92d20;
+  --success-color: #16a34a;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --ap-bg: #05070d;
+  --ap-surface: #101828;
+  --ap-card: #1d2939;
+  --ap-panel: #101828;
+  --pro-surface: #121c2c;
+
+  --ap-accent: #5aa2ff;
+  --ap-accent-soft: rgba(90, 162, 255, 0.2);
+  --ap-accent-glow: rgba(90, 162, 255, 0.35);
+
+  --ap-border: rgba(242, 244, 247, 0.14);
+  --ap-text: #f2f4f7;
+  --ap-text-dim: #d0d5dd;
+  --ap-monitor-bg: #030508;
+  --ap-monitor-border: rgba(208, 213, 221, 0.22);
+
+  --ap-blur: 28px;
+  --ap-saturate: 180%;
+  --ap-glass-bg: rgba(16, 24, 40, 0.78);
+
+  --ap-shadow-subtle: 0 2px 10px rgba(3, 5, 8, 0.45);
+
+  --danger-color: #ff5f56;
+  --success-color: #3adb76;
 }
 
 /* 全局过渡应用 */
 body, div, aside, header, footer, section, nav, button, input, textarea {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+button {
+  transition: var(--ap-spring-button);
 }

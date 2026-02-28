@@ -1,9 +1,10 @@
-import { useState, memo, useEffect, useActionState, useOptimistic, lazy, Suspense } from 'react'
+import { useState, memo, useEffect, useActionState, useOptimistic, lazy, Suspense, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
+import { useAdminMetricsPolling, useAdminMetricsStore } from './store/adminMetricsStore'
 import { useThemeSync } from './hooks/useThemeSync'
-import { adminGetJson, api, getErrorMessage } from './utils/eden'
+import { api, getErrorMessage } from './utils/eden'
 import ThemeSwitcher from './components/Common/ThemeSwitcher'
 import './App.css'
 
@@ -49,7 +50,10 @@ const LazyFallback = memo(({ label = '加载中...' }: { label?: string }) => (
 
 function App() {
   useThemeSync()
+  useAdminMetricsPolling()
   const { showToast } = useToastStore()
+  const metrics = useAdminMetricsStore(state => state.metrics)
+  const renderLoadHistory = useAdminMetricsStore(state => state.renderLoadHistory)
 
   const { isPlaying, togglePlay, setCurrentTime, tracks, setTracks } = useEditorStore(
     useShallow(state => ({
@@ -98,8 +102,18 @@ function App() {
     }
   }, { status: 'idle' as const })
 
-  const [telemetryHistory, setTelemetryHistory] = useState<number[]>(new Array(10).fill(0))
-  const [currentMetrics, setCurrentMetrics] = useState({ gpu: 0, ram: '0 / 0', cache: '0%' })
+  const telemetryHistory = useMemo(() => renderLoadHistory.slice(-10), [renderLoadHistory])
+  const currentMetrics = useMemo(() => {
+    if (!metrics?.system?.memory) return { gpu: 0, ram: '0 / 0', cache: '0%' }
+    const gpu = Number.isFinite(metrics.system.renderLoad) ? Math.round(metrics.system.renderLoad) : 0
+    const totalMemoryGb = Number(metrics.system.memory.total || 0) / (1024 ** 3)
+    const usagePercent = Number(metrics.system.memory.usage || 0) * 100
+    return {
+      gpu,
+      ram: `${totalMemoryGb.toFixed(1)}GB`,
+      cache: `${Math.round(usagePercent)}%`
+    }
+  }, [metrics])
 
   const showRecoverableToast = (
     message: string,
@@ -114,28 +128,6 @@ function App() {
       ]
     })
   }
-
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        const data = await adminGetJson<any>('/api/admin/metrics')
-        if (data && 'system' in data) {
-          const gpuLoad = Math.round(data.system.renderLoad)
-          setCurrentMetrics({
-            gpu: gpuLoad,
-            ram: `${(data.system.memory.total / (1024 ** 3)).toFixed(1)}GB`,
-            cache: `${Math.round(data.system.memory.usage * 100)}%`
-          })
-          setTelemetryHistory(prev => [...prev.slice(1), gpuLoad])
-        }
-      } catch {
-        // ignore telemetry pull errors in App header
-      }
-    }
-    const timer = setInterval(fetchMetrics, 2000)
-    fetchMetrics()
-    return () => clearInterval(timer)
-  }, [])
 
   useEffect(() => {
     // 空闲时预热非首屏模块，降低首次切换等待
@@ -277,7 +269,7 @@ function App() {
       <header className="pro-panel os-header">
         <div className="brand-zone">
           <div className="brand-logo">V</div>
-          <span style={{fontWeight: 800, fontSize: '15px'}}>VEOMUSE PRO</span>
+          <span className="brand-title">VEOMUSE PRO</span>
         </div>
         <div className="mode-selector">
           {['edit', 'color', 'audio'].map(m => (
@@ -297,20 +289,20 @@ function App() {
             </button>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <div className="header-actions">
           <ThemeSwitcher />
           <select
             id="export-quality"
             name="exportQuality"
             value={exportQuality}
             onChange={(e) => setExportQuality(e.target.value as 'standard' | '4k-hdr' | 'spatial-vr')}
-            style={{ background: 'var(--ap-surface)', color: 'var(--ap-text)', border: '1px solid var(--ap-border)', padding: '8px 10px', borderRadius: '10px', fontSize: '12px' }}
+            className="header-select"
           >
             <option value="standard">标准导出</option>
             <option value="4k-hdr">4K HDR</option>
             <option value="spatial-vr">空间视频</option>
           </select>
-          <button id="btn-export" aria-label="导出视频" onClick={handleExport} disabled={isProcessing || isExportPending} style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+          <button id="btn-export" aria-label="导出视频" className="export-btn" onClick={handleExport} disabled={isProcessing || isExportPending}>
             {getExportButtonLabel(isExportPending, optimisticExportStatus)}
           </button>
         </div>
@@ -319,14 +311,14 @@ function App() {
       <div className="os-main main-layout">
         <aside className="pro-panel">
           <div className="panel-title-bar">
-            <div style={{ display: 'flex', gap: '20px' }}>
-              <button style={{ background: 'none', border: 'none', color: activeSidebar === 'assets' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('assets')}>媒体资源</button>
-              <button style={{ background: 'none', border: 'none', color: activeSidebar === 'director' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('director')}>AI 导演</button>
-              <button style={{ background: 'none', border: 'none', color: activeSidebar === 'actors' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('actors')}>演员库</button>
-              <button style={{ background: 'none', border: 'none', color: activeSidebar === 'motion' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('motion')}>动捕实验室</button>
+            <div className="sidebar-tabs">
+              <button className={`sidebar-tab ${activeSidebar === 'assets' ? 'active' : ''}`} onClick={() => setActiveSidebar('assets')}>媒体资源</button>
+              <button className={`sidebar-tab ${activeSidebar === 'director' ? 'active' : ''}`} onClick={() => setActiveSidebar('director')}>AI 导演</button>
+              <button className={`sidebar-tab ${activeSidebar === 'actors' ? 'active' : ''}`} onClick={() => setActiveSidebar('actors')}>演员库</button>
+              <button className={`sidebar-tab ${activeSidebar === 'motion' ? 'active' : ''}`} onClick={() => setActiveSidebar('motion')}>动捕实验室</button>
             </div>
           </div>
-          <div style={{ flex: 1, padding: '20px', overflow: 'hidden' }}>
+          <div className="sidebar-content">
             <Suspense fallback={<LazyFallback label="资源面板加载中..." />}>
               <AssetPanel
                 mode={activeSidebar}
@@ -372,7 +364,7 @@ function App() {
               <ComparisonLab />
             </Suspense>
           ) : (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ap-text-dim)', gap: '20px' }}>
+            <div className="audio-master-state">
               <div style={{ fontSize: '48px' }}>🎚️</div>
               <div style={{ fontSize: '18px', fontWeight: 700 }}>AUDIO MASTER 引擎已就绪</div>
             </div>
@@ -380,8 +372,8 @@ function App() {
         </section>
 
         <aside className="pro-panel pro-inspector-outer">
-          <div className="panel-title-bar"><span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>属性检查器</span></div>
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="panel-title-bar"><span className="inspector-title">属性检查器</span></div>
+          <div className="inspector-scroll">
             <Suspense fallback={<LazyFallback label="属性面板加载中..." />}>
               <PropertyInspector />
             </Suspense>
@@ -391,8 +383,8 @@ function App() {
 
       <footer className="pro-panel timeline-container" onMouseEnter={ensureTimelineReady} onFocusCapture={ensureTimelineReady}>
         <div className="timeline-actions">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ display: 'flex', gap: '4px', marginRight: '12px', borderRight: '1px solid var(--ap-border)', paddingRight: '12px' }}>
+          <div className="timeline-tools">
+            <div className="undo-group">
               <button id="tool-undo" aria-label="撤销" className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
               <button id="tool-redo" aria-label="重做" className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0}>↪</button>
             </div>
@@ -408,15 +400,15 @@ function App() {
                 {telemetryHistory.map((v, i) => <div key={i} className="spark-bar" style={{ height: `${Math.max(2, Math.min(100, v))}%` }} />)}
               </div>
             </div>
-            <div className="telemetry-item" style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '16px' }}>
+            <div className="telemetry-item telemetry-divider">
               RAM: <span style={{ color: '#34C759' }}>{currentMetrics.ram}</span>
             </div>
-            <div className="telemetry-item" style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '16px' }}>
+            <div className="telemetry-item telemetry-divider">
               CACHE: <span style={{ color: 'var(--ap-accent)' }}>{currentMetrics.cache}</span>
             </div>
           </div>
         </div>
-        <div style={{ flex: 1, overflow: 'hidden', padding: '16px', background: 'rgba(0,0,0,0.02)' }}>
+        <div className="timeline-body">
           {isTimelineReady ? (
             <Suspense fallback={<LazyFallback label="时间轴加载中..." />}>
               <VideoEditor activeTool={activeTool as any} />

@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Timeline } from '@xzdarcy/react-timeline-editor';
 import '@xzdarcy/react-timeline-editor/dist/react-timeline-editor.css';
 import { useMeasure } from 'react-use';
+import { useShallow } from 'zustand/react/shallow';
 import { useEditorStore } from '../../store/editorStore';
 import { calculateSnap } from '../../utils/snapService';
 import { syncController } from '../../utils/SyncController';
 import { useShortcuts } from '../../hooks/useShortcuts';
+import {
+  filterTimelineActionsByWindow,
+  getTimelineVirtualWindow,
+  shouldEnableTimelineVirtualization
+} from '../../utils/timelineVirtualization';
 import './VideoEditor.css';
 
 interface VideoEditorProps {
@@ -13,11 +19,31 @@ interface VideoEditorProps {
 }
 
 const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
-  const { 
-    tracks, currentTime, setCurrentTime, duration, isPlaying, 
-    togglePlay, updateClip, setSelectedClipId, splitClip, 
-    zoomLevel, beatPoints 
-  } = useEditorStore();
+  const {
+    tracks,
+    currentTime,
+    setCurrentTime,
+    duration,
+    isPlaying,
+    togglePlay,
+    setSelectedClipId,
+    splitClip,
+    zoomLevel,
+    setTracks
+  } = useEditorStore(
+    useShallow(state => ({
+      tracks: state.tracks,
+      currentTime: state.currentTime,
+      setCurrentTime: state.setCurrentTime,
+      duration: state.duration,
+      isPlaying: state.isPlaying,
+      togglePlay: state.togglePlay,
+      setSelectedClipId: state.setSelectedClipId,
+      splitClip: state.splitClip,
+      zoomLevel: state.zoomLevel,
+      setTracks: state.setTracks
+    }))
+  );
   
   // @ts-ignore
   const { undo, redo } = useEditorStore.temporal.getState();
@@ -28,7 +54,7 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
 
-  useShortcuts({
+  const shortcutMap = useMemo(() => ({
     'Space': togglePlay,
     'Cmd+B': () => {
       tracks.forEach(t => {
@@ -38,7 +64,9 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
     },
     'Cmd+Z': undo,
     'Cmd+Shift+Z': redo
-  });
+  }), [togglePlay, tracks, currentTime, splitClip, undo, redo]);
+
+  useShortcuts(shortcutMap);
 
   useEffect(() => {
     if (width > 0) setIsReady(true);
@@ -75,6 +103,27 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
     }))
   }));
 
+  const totalClipCount = useMemo(
+    () => tracks.reduce((acc, track) => acc + track.clips.length, 0),
+    [tracks]
+  );
+
+  useEffect(() => {
+    const budget = totalClipCount > 180 ? 80 : totalClipCount > 100 ? 120 : 180;
+    syncController.setPerformanceBudget(budget);
+  }, [totalClipCount]);
+
+  const enableVirtualization = shouldEnableTimelineVirtualization(totalClipCount, duration);
+  const { windowStart, windowEnd } = getTimelineVirtualWindow(currentTime, duration);
+
+  const renderedTimelineData = useMemo(() => {
+    if (!enableVirtualization) return timelineData;
+    return timelineData.map(track => ({
+      ...track,
+      actions: filterTimelineActionsByWindow(track.actions, windowStart, windowEnd)
+    }));
+  }, [enableVirtualization, timelineData, windowStart, windowEnd]);
+
   return (
     <div className="video-editor-container pro-nle-container">
       {snapLine.visible && (
@@ -89,8 +138,15 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
           <Timeline
             key={`timeline-${width}`}
             onChange={(data: any) => {
-              data.forEach((track: any) => {
-                track.actions.forEach((action: any) => {
+              const nextTracks = tracks.map(track => {
+                const incomingTrack = data.find((t: any) => t.id === track.id);
+                if (!incomingTrack) return track;
+
+                const actionMap = new Map(incomingTrack.actions.map((a: any) => [a.id, a]));
+                const nextClips = track.clips.map(clip => {
+                  const action = actionMap.get(clip.id);
+                  if (!action) return clip;
+
                   const snap = calculateSnap(action.start, action.id);
                   if (snap.snapped) {
                     setSnapLine({ visible: true, time: snap.time });
@@ -98,10 +154,22 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
                   }
                   const finalStart = snap.snapped ? snap.time : action.start;
                   const finalEnd = finalStart + (action.end - action.start);
-                  updateClip(track.id, action.id, { start: finalStart, end: finalEnd });
+
+                  return {
+                    ...clip,
+                    start: finalStart,
+                    end: finalEnd
+                  };
                 });
+
+                return {
+                  ...track,
+                  clips: nextClips
+                };
               });
-              syncController.sync(useEditorStore.getState().currentTime, false, tracks);
+
+              setTracks(nextTracks);
+              syncController.sync(useEditorStore.getState().currentTime, false, nextTracks);
             }}
             // @ts-ignore
             onTimeChange={(time: number) => {
@@ -116,7 +184,7 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
                 setSelectedClipId(action.id);
               }
             }}
-            editorData={timelineData}
+            editorData={renderedTimelineData}
             effects={{ 
               video: { id: 'video', name: '片段' } 
             }}

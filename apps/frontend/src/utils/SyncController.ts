@@ -4,6 +4,20 @@ export class SyncController {
   private videoRefs = new Map<string, HTMLVideoElement>();
   private audioRefs = new Map<string, HTMLAudioElement>();
   private preloadedSet = new Set<string>(); // 记录已预加载的 Clip ID
+  private maxOpsPerSync = 160;
+  private lastSyncStats = { processed: 0, skipped: 0, preloaded: 0, seekAdjusted: 0 };
+
+  setPerformanceBudget(maxOpsPerSync: number) {
+    this.maxOpsPerSync = Math.max(20, Math.floor(maxOpsPerSync));
+  }
+
+  getPerformanceBudget() {
+    return this.maxOpsPerSync;
+  }
+
+  getLastSyncStats() {
+    return this.lastSyncStats;
+  }
 
   registerVideo(id: string, el: HTMLVideoElement | null) {
     if (el) this.videoRefs.set(id, el); 
@@ -28,10 +42,21 @@ export class SyncController {
   }
 
   sync(time: number, isPlaying: boolean, tracks: any[]) {
+    let processed = 0;
+    let skipped = 0;
+    let preloaded = 0;
+    let seekAdjusted = 0;
+
     tracks.forEach(track => {
       track.clips.forEach((clip: any) => {
+        if (processed >= this.maxOpsPerSync) {
+          skipped++;
+          return;
+        }
+
         const media = track.type === 'video' ? this.videoRefs.get(clip.id) : this.audioRefs.get(clip.id);
         if (!media) return;
+        processed++;
 
         // 1. 预测性预加载逻辑 (5秒阈值)
         const timeToStart = clip.start - time;
@@ -39,6 +64,7 @@ export class SyncController {
           console.log(`🚀 [Pro Preload] 预加载片段: ${clip.name || clip.id}`);
           media.load();
           this.preloadedSet.add(clip.id);
+          preloaded++;
         }
 
         // 2. 现有的同步逻辑
@@ -48,6 +74,7 @@ export class SyncController {
           const internalTime = time - clip.start;
           if (Math.abs(media.currentTime - internalTime) > 0.1) {
             media.currentTime = internalTime;
+            seekAdjusted++;
           }
           if (isPlaying && media.paused) media.play().catch(() => {});
           else if (!isPlaying && !media.paused) media.pause();
@@ -61,6 +88,9 @@ export class SyncController {
         }
       });
     });
+
+    this.lastSyncStats = { processed, skipped, preloaded, seekAdjusted };
+    return this.lastSyncStats;
   }
 }
 

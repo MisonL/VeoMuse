@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useEditorStore, Asset } from '../../store/editorStore';
+import { ActorProfile, useActorsStore } from '../../store/actorsStore';
 import { useToastStore } from '../../store/toastStore';
 import { api, getErrorMessage } from '../../utils/eden';
 import { MotionSyncManager } from '../../utils/motionSync';
@@ -13,13 +14,6 @@ interface AssetPanelProps {
   onRunDirector?: () => Promise<void> | void;
   directorScenes?: Array<{ title?: string; duration?: number; videoPrompt?: string }>;
   isAiWorking?: boolean;
-}
-
-interface ActorProfile {
-  id: string;
-  name: string;
-  refImage: string;
-  createdAt: string;
 }
 
 const AssetPanel: React.FC<AssetPanelProps> = ({
@@ -45,13 +39,20 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
     }))
   );
   const { showToast } = useToastStore();
+  const { actors, isActorLoading, fetchActors, prependActor } = useActorsStore(
+    useShallow(state => ({
+      actors: state.actors,
+      isActorLoading: state.isLoading,
+      fetchActors: state.fetchActors,
+      prependActor: state.prependActor
+    }))
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'all' | 'video' | 'audio'>('all');
-  const [actors, setActors] = useState<ActorProfile[]>([]);
   const [actorName, setActorName] = useState('');
   const [actorRefImage, setActorRefImage] = useState('');
   const [motionActorId, setMotionActorId] = useState('');
-  const [isActorLoading, setIsActorLoading] = useState(false);
+  const [isActorCreating, setIsActorCreating] = useState(false);
   const [isMotionSyncing, setIsMotionSyncing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef<Set<string>>(new Set());
@@ -64,17 +65,12 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
   }, []);
 
   const loadActors = useCallback(async () => {
-    setIsActorLoading(true);
     try {
-      const { data, error } = await api.api.ai.actors.get();
-      if (error) throw new Error(getErrorMessage(error));
-      if (data?.actors) setActors(data.actors as ActorProfile[]);
+      await fetchActors();
     } catch (e: any) {
       showToast(e.message || '加载演员库失败', 'error');
-    } finally {
-      setIsActorLoading(false);
     }
-  }, [showToast]);
+  }, [fetchActors, showToast]);
 
   useEffect(() => {
     if (mode === 'actors' || mode === 'motion') {
@@ -134,7 +130,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
       return;
     }
 
-    setIsActorLoading(true);
+    setIsActorCreating(true);
     try {
       const { data, error } = await api.api.ai.actors.post({
         name: actorName.trim(),
@@ -143,7 +139,9 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
 
       if (error) throw new Error(getErrorMessage(error));
       if (data?.actor) {
-        setActors(prev => [data.actor as ActorProfile, ...prev]);
+        const actor = data.actor as ActorProfile;
+        prependActor(actor);
+        if (!motionActorId) setMotionActorId(actor.id);
         setActorName('');
         setActorRefImage('');
         showToast('演员已加入演员库', 'success');
@@ -151,7 +149,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
     } catch (e: any) {
       showToast(e.message || '创建演员失败', 'error');
     } finally {
-      setIsActorLoading(false);
+      setIsActorCreating(false);
     }
   };
 
@@ -329,9 +327,9 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               className="import-btn-pro"
               style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }}
               onClick={handleCreateActor}
-              disabled={isActorLoading}
+              disabled={isActorLoading || isActorCreating}
             >
-              {isActorLoading ? '处理中...' : '新增演员'}
+              {isActorCreating ? '提交中...' : isActorLoading ? '加载中...' : '新增演员'}
             </button>
           </div>
 

@@ -14,6 +14,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transform-style: preserve-3d;
+  transition: transform 220ms ease;
+}
+
+.player-stage.spatial-mode {
+  cursor: grab;
+}
+
+.player-stage.spatial-mode:active {
+  cursor: grabbing;
 }
 
 .player-video-instance {
@@ -22,18 +32,23 @@
   height: 100%;
   object-fit: contain;
   display: none;
+  backface-visibility: hidden;
 }
 
 /* 神经渲染 VFX 样式模拟 */
 
 /* 1. 魔法粒子 */
 .magic-particles {
-  filter: contrast(1.2) brightness(1.1) drop-shadow(0 0 10px #a855f7) !important;
+  filter: contrast(1.2) brightness(1.1) drop-shadow(0 0 calc(10px * var(--vfx-intensity, 0.8)) #a855f7) !important;
 }
 
 /* 2. 赛博故障 */
 .cyber-glitch {
   animation: glitch 0.2s infinite;
+}
+
+.neon-bloom {
+  filter: saturate(calc(1 + var(--vfx-intensity, 0.8))) brightness(1.08) drop-shadow(0 0 calc(18px * var(--vfx-intensity, 0.8)) #00e5ff) !important;
 }
 
 @keyframes glitch {

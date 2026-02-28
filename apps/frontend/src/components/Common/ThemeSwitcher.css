@@ -1,10 +1,11 @@
 .theme-switcher-pro {
   display: flex;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--ap-card);
   padding: 4px;
   border-radius: 10px;
   gap: 4px;
   border: 1px solid var(--ap-border);
+  min-width: 0;
 }
 
 .theme-btn {
@@ -23,7 +24,7 @@
 }
 
 .theme-btn:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--ap-accent-soft);
   color: var(--ap-text);
 }
 
@@ -35,7 +36,20 @@
 
 .btn-icon { font-size: 14px; }
 
-/* 亮色模式适配 */
-[data-theme='light'] .theme-switcher-pro {
-  background: rgba(0, 0, 0, 0.03);
+@media (max-width: 640px) {
+  .theme-switcher-pro {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .theme-btn {
+    flex: 1 1 0;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  .btn-text {
+    display: none;
+  }
 }
