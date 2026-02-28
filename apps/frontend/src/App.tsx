@@ -1,21 +1,56 @@
-import { useState, memo, useEffect, useMemo } from 'react'
+import { useState, memo, useEffect, useActionState, useOptimistic, lazy, Suspense } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import { useThemeSync } from './hooks/useThemeSync'
-import { api, getErrorMessage } from './utils/eden'
-import VideoEditor from './components/Editor/VideoEditor'
-import MultiVideoPlayer from './components/Editor/MultiVideoPlayer'
-import PropertyInspector from './components/Editor/PropertyInspector'
-import AssetPanel from './components/Editor/AssetPanel'
-import ComparisonLab from './components/Editor/ComparisonLab'
-import ToastContainer from './components/Editor/ToastContainer'
+import { adminGetJson, api, getErrorMessage } from './utils/eden'
 import ThemeSwitcher from './components/Common/ThemeSwitcher'
+import './App.css'
+
+const loadVideoEditor = () => import('./components/Editor/VideoEditor')
+const loadMultiVideoPlayer = () => import('./components/Editor/MultiVideoPlayer')
+const loadPropertyInspector = () => import('./components/Editor/PropertyInspector')
+const loadAssetPanel = () => import('./components/Editor/AssetPanel')
+const loadComparisonLab = () => import('./components/Editor/ComparisonLab')
+const loadToastContainer = () => import('./components/Editor/ToastContainer')
+
+const VideoEditor = lazy(loadVideoEditor)
+const MultiVideoPlayer = lazy(loadMultiVideoPlayer)
+const PropertyInspector = lazy(loadPropertyInspector)
+const AssetPanel = lazy(loadAssetPanel)
+const ComparisonLab = lazy(loadComparisonLab)
+const ToastContainer = lazy(loadToastContainer)
+
+const fps = 30
+const formatTimecode = (seconds: number) => {
+  const safe = Math.max(0, seconds)
+  const hh = Math.floor(safe / 3600)
+  const mm = Math.floor((safe % 3600) / 60)
+  const ss = Math.floor(safe % 60)
+  const ff = Math.floor((safe - Math.floor(safe)) * fps)
+  return [hh, mm, ss, ff].map(v => String(v).padStart(2, '0')).join(':')
+}
+
+export const getExportButtonLabel = (
+  isExportPending: boolean,
+  optimisticExportStatus: 'idle' | 'pending' | 'done' | 'error'
+) => (isExportPending || optimisticExportStatus === 'pending' ? '导出中...' : '导出')
+
+const TimecodeDisplay = memo(() => {
+  const currentTime = useEditorStore(state => state.currentTime)
+  return <div className="timecode">{formatTimecode(currentTime)}</div>
+})
+
+const LazyFallback = memo(({ label = '加载中...' }: { label?: string }) => (
+  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ap-text-dim)', fontSize: '12px', fontWeight: 700 }}>
+    {label}
+  </div>
+))
 
 function App() {
-  useThemeSync(); 
+  useThemeSync()
   const { showToast } = useToastStore()
-  
+
   const { isPlaying, togglePlay, setCurrentTime, tracks, setTracks } = useEditorStore(
     useShallow(state => ({
       isPlaying: state.isPlaying,
@@ -25,138 +60,220 @@ function App() {
       setTracks: state.setTracks
     }))
   )
+  const { isSpatialPreview, setSpatialPreview } = useEditorStore(
+    useShallow(state => ({
+      isSpatialPreview: state.isSpatialPreview,
+      setSpatialPreview: state.setSpatialPreview
+    }))
+  )
 
   // @ts-ignore
   const { undo, redo, pastStates, futureStates } = useEditorStore.temporal.getState()
-  
+
   const [activeMode, setActiveMode] = useState('edit')
   const [activeTool, setActiveTool] = useState('select')
-  const [activeSidebar, setActiveSidebar] = useState('assets')
+  const [activeSidebar, setActiveSidebar] = useState<'assets' | 'director' | 'actors' | 'motion'>('assets')
+  const [exportQuality, setExportQuality] = useState<'standard' | '4k-hdr' | 'spatial-vr'>('standard')
   const [directorPrompt, setDirectorPrompt] = useState('')
+  const [directorScenes, setDirectorScenes] = useState<any[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isTimelineReady, setIsTimelineReady] = useState(false)
+  const [optimisticScenes, setOptimisticScenes] = useOptimistic<any[], any[]>(directorScenes, (_prev, next) => next)
+  const [optimisticExportStatus, setOptimisticExportStatus] = useOptimistic<'idle' | 'pending' | 'done' | 'error', 'idle' | 'pending' | 'done' | 'error'>('idle', (_prev, next) => next)
+  const [exportState, runExportAction, isExportPending] = useActionState(async (_: { status: 'idle' | 'done' | 'error'; message?: string }, quality: 'standard' | '4k-hdr' | 'spatial-vr') => {
+    const timelineData = {
+      tracks: useEditorStore.getState().tracks,
+      exportConfig: { quality }
+    }
+    try {
+      const { data, error } = await api.api.video.compose.post({ timelineData })
+      if (error) throw new Error(getErrorMessage(error))
+      if (data?.success) {
+        showToast(`导出成功: ${data.outputPath}`, 'success')
+        return { status: 'done' as const, message: data.outputPath }
+      }
+      return { status: 'error' as const, message: '导出失败' }
+    } catch (e: any) {
+      return { status: 'error' as const, message: e.message || '导出失败' }
+    }
+  }, { status: 'idle' as const })
 
-  const [telemetryHistory, setTelemetryHistory] = useState<number[]>(new Array(10).fill(0));
-  const [currentMetrics, setCurrentMetrics] = useState({ gpu: 0, ram: '0 / 0', cache: '0%' });
+  const [telemetryHistory, setTelemetryHistory] = useState<number[]>(new Array(10).fill(0))
+  const [currentMetrics, setCurrentMetrics] = useState({ gpu: 0, ram: '0 / 0', cache: '0%' })
+
+  const showRecoverableToast = (
+    message: string,
+    onRetry: () => void,
+    onFallback: () => void
+  ) => {
+    showToast(message, 'error', {
+      sticky: true,
+      actions: [
+        { label: '重试', variant: 'primary', onClick: onRetry },
+        { label: '降级继续编辑', variant: 'secondary', onClick: onFallback }
+      ]
+    })
+  }
 
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const { data } = await api.api.admin.metrics.get();
+        const data = await adminGetJson<any>('/api/admin/metrics')
         if (data && 'system' in data) {
-          const gpuLoad = Math.round(data.system.renderLoad);
+          const gpuLoad = Math.round(data.system.renderLoad)
           setCurrentMetrics({
             gpu: gpuLoad,
             ram: `${(data.system.memory.total / (1024 ** 3)).toFixed(1)}GB`,
             cache: `${Math.round(data.system.memory.usage * 100)}%`
-          });
-          setTelemetryHistory(prev => [...prev.slice(1), gpuLoad]);
+          })
+          setTelemetryHistory(prev => [...prev.slice(1), gpuLoad])
         }
-      } catch (e) {}
-    };
-    const timer = setInterval(fetchMetrics, 2000);
-    fetchMetrics();
-    return () => clearInterval(timer);
-  }, []);
+      } catch {
+        // ignore telemetry pull errors in App header
+      }
+    }
+    const timer = setInterval(fetchMetrics, 2000)
+    fetchMetrics()
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    // 空闲时预热非首屏模块，降低首次切换等待
+    const timer = setTimeout(() => {
+      void loadComparisonLab()
+      void loadPropertyInspector()
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (isTimelineReady) return
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number
+      cancelIdleCallback?: (id: number) => void
+    }
+
+    const markReady = () => {
+      setIsTimelineReady(true)
+      void loadVideoEditor()
+    }
+
+    if (typeof w.requestIdleCallback === 'function') {
+      const idleId = w.requestIdleCallback(markReady, { timeout: 800 })
+      return () => {
+        if (typeof w.cancelIdleCallback === 'function') w.cancelIdleCallback(idleId)
+      }
+    }
+
+    timeoutId = setTimeout(markReady, 320)
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [isTimelineReady])
+
+  const ensureTimelineReady = () => {
+    if (isTimelineReady) return
+    setIsTimelineReady(true)
+    void loadVideoEditor()
+  }
 
   const handleDirector = async () => {
-    if (!directorPrompt) return showToast('请输入脚本', 'info');
-    setIsProcessing(true);
+    if (!directorPrompt.trim()) return showToast('请输入脚本', 'info')
+    setIsProcessing(true)
+    setOptimisticScenes([{ title: 'AI 正在分析脚本...', duration: 1 }])
+
     try {
-      const { data, error } = await api.api.ai.director.analyze.post({ script: directorPrompt });
-      if (error) throw new Error(getErrorMessage(error));
+      const { data, error } = await api.api.ai.director.analyze.post({ script: directorPrompt })
+      if (error) throw new Error(getErrorMessage(error))
+
       if (data && 'scenes' in data) {
-        let offset = 0;
-        const newTracks = JSON.parse(JSON.stringify(tracks));
-        const vTrack = newTracks.find((t: any) => t.id === 'track-v1');
+        setDirectorScenes(data.scenes || [])
+        setOptimisticScenes(data.scenes || [])
+
+        let offset = 0
+        const newTracks = JSON.parse(JSON.stringify(tracks))
+        const vTrack = newTracks.find((t: any) => t.id === 'track-v1')
         if (vTrack) {
           data.scenes.forEach((scene: any, i: number) => {
-            vTrack.clips.push({ id: `auto-${Date.now()}-${i}`, start: offset, end: offset + 5, src: '', name: scene.title, type: 'video' });
-            offset += 5;
-          });
-          setTracks(newTracks);
-          showToast('分镜序列生成成功', 'success');
+            vTrack.clips.push({
+              id: `auto-${Date.now()}-${i}`,
+              start: offset,
+              end: offset + Number(scene.duration || 5),
+              src: '',
+              name: scene.title || `场景 ${i + 1}`,
+              type: 'video',
+              data: {
+                fromDirector: true,
+                videoPrompt: scene.videoPrompt,
+                audioPrompt: scene.audioPrompt,
+                worldLink: true,
+                worldId: (data as any).worldId
+              }
+            })
+            offset += Number(scene.duration || 5)
+          })
+          setTracks(newTracks)
+          showToast('分镜序列生成并编排成功', 'success')
         }
       }
-    } catch (e: any) { showToast(e.message, 'error'); }
-    finally { setIsProcessing(false); }
-  };
+    } catch (e: any) {
+      const fallbackScenes = directorScenes.length > 0 ? directorScenes : [{ title: '手动编排片段', duration: 5 }]
+      showRecoverableToast(
+        e.message || '导演分析失败',
+        () => { void handleDirector() },
+        () => {
+          setOptimisticScenes(fallbackScenes)
+          showToast('已降级为手动编排模式，可继续剪辑', 'warning')
+        }
+      )
+      setOptimisticScenes(fallbackScenes)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const getNextClipTime = () => {
+    const currentTime = useEditorStore.getState().currentTime
+    const allClipStarts = tracks
+      .flatMap(t => t.clips)
+      .map(c => c.start)
+      .filter(start => start > currentTime)
+      .sort((a, b) => a - b)
+
+    return allClipStarts[0] ?? 0
+  }
+
+  const handleExport = () => {
+    setOptimisticExportStatus('pending')
+    void runExportAction(exportQuality)
+  }
+
+  useEffect(() => {
+    if (exportState.status === 'done') setOptimisticExportStatus('done')
+    if (exportState.status === 'error') {
+      setOptimisticExportStatus('error')
+      showRecoverableToast(
+        exportState.message || '导出失败',
+        () => {
+          setOptimisticExportStatus('pending')
+          void runExportAction(exportQuality)
+        },
+        () => {
+          setOptimisticExportStatus('idle')
+          showToast('已降级为手动编辑模式，可继续编辑并稍后导出', 'warning')
+        }
+      )
+    }
+  }, [exportState, exportQuality, runExportAction, setOptimisticExportStatus, showToast])
 
   return (
-    <div className="pro-master-shell" onContextMenu={e => e.preventDefault()}>
-      <style>{`
-        :root {
-          --ap-bg: #000000;
-          --ap-surface: #161617;
-          --ap-card: #1D1D1F;
-          --ap-border: rgba(255, 255, 255, 0.1);
-          --ap-accent: #007AFF;
-          --ap-accent-glow: rgba(0, 122, 255, 0.3);
-          --ap-text: #F5F5F7;
-          --ap-text-dim: #8E8E93;
-          --ap-radius: 12px;
-        }
+    <div className="pro-master-shell">
+      <Suspense fallback={null}>
+        <ToastContainer />
+      </Suspense>
 
-        [data-theme='light'] {
-          --ap-bg: #F5F5F7;
-          --ap-surface: #FFFFFF;
-          --ap-card: #FBFBFD;
-          --ap-border: rgba(0, 0, 0, 0.08);
-          --ap-text: #1C1C1E;
-          --ap-text-dim: #8E8E93;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
-        body { background: var(--ap-bg); color: var(--ap-text); font-family: -apple-system, system-ui, sans-serif; overflow: hidden; transition: background 0.3s ease; }
-
-        .pro-master-shell {
-          height: 100vh; width: 100vw; display: grid; grid-template-rows: 56px 1fr 380px; gap: 8px; background: var(--ap-bg); padding: 8px;
-        }
-
-        .pro-panel { background: var(--ap-surface); border: 1px solid var(--ap-border); border-radius: 14px; display: flex; flex-direction: column; overflow: hidden; }
-
-        .os-header { display: grid; grid-template-columns: 240px 1fr 400px; align-items: center; padding: 0 24px; }
-        .brand-zone { display: flex; align-items: center; gap: 12px; }
-        .brand-logo { width: 28px; height: 28px; background: var(--ap-accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #fff; font-size: 16px; border: 0.5px solid rgba(255,255,255,0.2); }
-        
-        .mode-selector { display: flex; background: rgba(128,128,128,0.08); padding: 3px; border-radius: 10px; gap: 2px; border: 0.5px solid var(--ap-border); justify-self: center; }
-        .mode-tab { border: none; background: none; padding: 6px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; color: var(--ap-text-dim); cursor: pointer; transition: 0.2s; }
-        .mode-tab.active { background: var(--ap-surface); color: var(--ap-accent); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-
-        .os-main { display: grid; grid-template-columns: 320px 1fr 340px; gap: 8px; min-height: 0; }
-        .panel-title-bar { height: 44px; padding: 0 16px; border-bottom: 1px solid var(--ap-border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-
-        .monitor-core { background: #000 !important; position: relative; border: 1px solid #222 !important; }
-        .timecode { font-family: "SF Mono", monospace; color: var(--ap-accent); font-size: 26px; font-weight: 600; letter-spacing: -1.5px; }
-        
-        .transport-controls { height: 74px; display: flex; justify-content: center; gap: 48px; align-items: center; border-top: 1px solid rgba(255,255,255,0.03); flex-shrink: 0; }
-        .transport-btn { background: none; border: none; color: #fff; cursor: pointer; transition: 0.2s; font-size: 24px; }
-        .transport-btn.play { color: var(--ap-accent); font-size: 40px; opacity: 1; }
-
-        .timeline-container { height: 380px; flex-shrink: 0; }
-        
-        /* 终极对齐修复：遥测看板 */
-        .timeline-actions { 
-          height: 52px; padding: 0 20px; border-bottom: 1px solid var(--ap-border); 
-          display: flex; flex-direction: row !important; align-items: center !important; justify-content: space-between; 
-        }
-        
-        .system-telemetry { 
-          display: flex !important; flex-direction: row !important; align-items: center !important; gap: 20px; height: 100%;
-        }
-        
-        .telemetry-item { 
-          display: flex !important; flex-direction: row !important; align-items: center !important; gap: 8px; 
-          font-size: 10px; font-weight: 800; color: var(--ap-text-dim); text-transform: uppercase; white-space: nowrap;
-        }
-
-        .telemetry-sparkline { display: flex; align-items: flex-end; gap: 2px; height: 12px; width: 40px; }
-        .spark-bar { width: 3px; background: #34C759; border-radius: 1px; transition: height 0.5s ease; }
-
-        .pro-inspector-outer div, .pro-inspector-outer section { background-color: transparent !important; color: inherit !important; border-color: var(--ap-border) !important; }
-      `}</style>
-
-      <ToastContainer />
-      
       <header className="pro-panel os-header">
         <div className="brand-zone">
           <div className="brand-logo">V</div>
@@ -164,14 +281,38 @@ function App() {
         </div>
         <div className="mode-selector">
           {['edit', 'color', 'audio'].map(m => (
-            <button key={m} className={`mode-tab ${activeMode === m ? 'active' : ''}`} onClick={() => setActiveMode(m)}>
+            <button
+              key={m}
+              className={`mode-tab ${activeMode === m ? 'active' : ''}`}
+              onMouseEnter={() => {
+                if (m === 'color') void loadComparisonLab()
+                if (m === 'edit') {
+                  void loadVideoEditor()
+                  void loadMultiVideoPlayer()
+                }
+              }}
+              onClick={() => setActiveMode(m)}
+            >
               {m === 'edit' ? '剪辑' : m === 'color' ? '实验室' : '音频大师'}
             </button>
           ))}
         </div>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <ThemeSwitcher />
-          <button style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>导出</button>
+          <select
+            id="export-quality"
+            name="exportQuality"
+            value={exportQuality}
+            onChange={(e) => setExportQuality(e.target.value as 'standard' | '4k-hdr' | 'spatial-vr')}
+            style={{ background: 'var(--ap-surface)', color: 'var(--ap-text)', border: '1px solid var(--ap-border)', padding: '8px 10px', borderRadius: '10px', fontSize: '12px' }}
+          >
+            <option value="standard">标准导出</option>
+            <option value="4k-hdr">4K HDR</option>
+            <option value="spatial-vr">空间视频</option>
+          </select>
+          <button id="btn-export" aria-label="导出视频" onClick={handleExport} disabled={isProcessing || isExportPending} style={{ background: 'var(--ap-accent)', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+            {getExportButtonLabel(isExportPending, optimisticExportStatus)}
+          </button>
         </div>
       </header>
 
@@ -181,10 +322,21 @@ function App() {
             <div style={{ display: 'flex', gap: '20px' }}>
               <button style={{ background: 'none', border: 'none', color: activeSidebar === 'assets' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('assets')}>媒体资源</button>
               <button style={{ background: 'none', border: 'none', color: activeSidebar === 'director' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('director')}>AI 导演</button>
+              <button style={{ background: 'none', border: 'none', color: activeSidebar === 'actors' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('actors')}>演员库</button>
+              <button style={{ background: 'none', border: 'none', color: activeSidebar === 'motion' ? 'var(--ap-accent)' : 'var(--ap-text-dim)', fontWeight: 800, fontSize: '12px', cursor: 'pointer' }} onClick={() => setActiveSidebar('motion')}>动捕实验室</button>
             </div>
           </div>
           <div style={{ flex: 1, padding: '20px', overflow: 'hidden' }}>
-            <AssetPanel mode={activeSidebar as any} />
+            <Suspense fallback={<LazyFallback label="资源面板加载中..." />}>
+              <AssetPanel
+                mode={activeSidebar}
+                directorPrompt={directorPrompt}
+                onDirectorPromptChange={setDirectorPrompt}
+                onRunDirector={handleDirector}
+                directorScenes={optimisticScenes}
+                isAiWorking={isProcessing}
+              />
+            </Suspense>
           </div>
         </aside>
 
@@ -193,18 +345,32 @@ function App() {
             <>
               <div className="monitor-overlay">
                 <div style={{ color: '#FF3B30', fontSize: '10px', fontWeight: 900 }}>● 实时</div>
-                <div className="timecode">00:00:00:00</div>
-                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>4K | HDR</div>
+                <TimecodeDisplay />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    onClick={() => setSpatialPreview(!isSpatialPreview)}
+                    style={{ border: '1px solid var(--ap-border)', background: isSpatialPreview ? 'var(--ap-accent-soft)' : 'rgba(0,0,0,0.25)', color: '#fff', fontSize: '10px', fontWeight: 700, borderRadius: '6px', padding: '4px 8px', cursor: 'pointer' }}
+                  >
+                    {isSpatialPreview ? '3D 模式' : '2D 模式'}
+                  </button>
+                  <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>4K | HDR</div>
+                </div>
               </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}><MultiVideoPlayer /></div>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                <Suspense fallback={<LazyFallback label="预览器加载中..." />}>
+                  <MultiVideoPlayer />
+                </Suspense>
+              </div>
               <div className="transport-controls">
-                <button className="transport-btn" onClick={() => setCurrentTime(0)}>⏮</button>
-                <button className="transport-btn play" onClick={togglePlay}>{isPlaying ? '⏸' : '▶'}</button>
-                <button className="transport-btn" onClick={() => setCurrentTime(tracks[0]?.clips[0]?.end || 0)}>⏭</button>
+                <button id="tool-prev" aria-label="跳转到开头" className="transport-btn" onClick={() => setCurrentTime(0)}>⏮</button>
+                <button id="tool-play" aria-label={isPlaying ? '暂停播放' : '开始播放'} className="transport-btn play" onClick={togglePlay}>{isPlaying ? '⏸' : '▶'}</button>
+                <button id="tool-next" aria-label="跳转到下一片段" className="transport-btn" onClick={() => setCurrentTime(getNextClipTime())}>⏭</button>
               </div>
             </>
           ) : activeMode === 'color' ? (
-            <ComparisonLab />
+            <Suspense fallback={<LazyFallback label="实验室加载中..." />}>
+              <ComparisonLab />
+            </Suspense>
           ) : (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--ap-text-dim)', gap: '20px' }}>
               <div style={{ fontSize: '48px' }}>🎚️</div>
@@ -215,27 +381,31 @@ function App() {
 
         <aside className="pro-panel pro-inspector-outer">
           <div className="panel-title-bar"><span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ap-text-dim)' }}>属性检查器</span></div>
-          <div style={{ flex: 1, overflowY: 'auto' }}><PropertyInspector /></div>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <Suspense fallback={<LazyFallback label="属性面板加载中..." />}>
+              <PropertyInspector />
+            </Suspense>
+          </div>
         </aside>
       </div>
 
-      <footer className="pro-panel timeline-container">
+      <footer className="pro-panel timeline-container" onMouseEnter={ensureTimelineReady} onFocusCapture={ensureTimelineReady}>
         <div className="timeline-actions">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{ display: 'flex', gap: '4px', marginRight: '12px', borderRight: '1px solid var(--ap-border)', paddingRight: '12px' }}>
-              <button className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
-              <button className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0}>↪</button>
+              <button id="tool-undo" aria-label="撤销" className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
+              <button id="tool-redo" aria-label="重做" className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0}>↪</button>
             </div>
-            <button className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`} onClick={() => setActiveTool('select')}>↖</button>
-            <button className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
-            <button className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
+            <button id="tool-select" aria-label="选择工具" className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`} onClick={() => setActiveTool('select')}>↖</button>
+            <button id="tool-cut" aria-label="切割工具" className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
+            <button id="tool-hand" aria-label="平移工具" className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
           </div>
-          
+
           <div className="system-telemetry">
             <div className="telemetry-item">
               <span>GPU LOAD: <b style={{color: '#34C759', marginLeft: '4px'}}>{currentMetrics.gpu}%</b></span>
               <div className="telemetry-sparkline">
-                {telemetryHistory.map((v, i) => <div key={i} className="spark-bar" style={{ height: `${v}%` }} />)}
+                {telemetryHistory.map((v, i) => <div key={i} className="spark-bar" style={{ height: `${Math.max(2, Math.min(100, v))}%` }} />)}
               </div>
             </div>
             <div className="telemetry-item" style={{ borderLeft: '1px solid var(--ap-border)', paddingLeft: '16px' }}>
@@ -247,7 +417,13 @@ function App() {
           </div>
         </div>
         <div style={{ flex: 1, overflow: 'hidden', padding: '16px', background: 'rgba(0,0,0,0.02)' }}>
-          <VideoEditor activeTool={activeTool as any} />
+          {isTimelineReady ? (
+            <Suspense fallback={<LazyFallback label="时间轴加载中..." />}>
+              <VideoEditor activeTool={activeTool as any} />
+            </Suspense>
+          ) : (
+            <LazyFallback label="时间轴预热中..." />
+          )}
         </div>
       </footer>
     </div>
