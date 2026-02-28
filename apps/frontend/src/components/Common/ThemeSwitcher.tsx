@@ -6,10 +6,10 @@ import './ThemeSwitcher.css'
 const ThemeSwitcher: React.FC = () => {
   const { mode, setMode } = useThemeStore()
 
-  const modes: { id: ThemeMode; label: string; icon: string }[] = [
-    { id: 'light', label: '亮色', icon: '☀️' },
-    { id: 'dark', label: '暗色', icon: '🌙' },
-    { id: 'system', label: '系统', icon: '💻' }
+  const modes: { id: ThemeMode; label: string; shortLabel: string }[] = [
+    { id: 'light', label: '亮色', shortLabel: '亮' },
+    { id: 'dark', label: '暗色', shortLabel: '暗' },
+    { id: 'system', label: '系统', shortLabel: '系' }
   ]
 
   return (
@@ -21,7 +21,7 @@ const ThemeSwitcher: React.FC = () => {
           onClick={() => setMode(m.id)}
           title={m.label}
         >
-          <span className="btn-icon">{m.icon}</span>
+          <span className="btn-dot" aria-hidden>{m.shortLabel}</span>
           <span className="btn-text">{m.label}</span>
         </button>
       ))}
