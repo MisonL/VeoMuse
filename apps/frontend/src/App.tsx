@@ -28,8 +28,11 @@ const ToastContainer = lazy(loadToastContainer)
 
 const fps = 30
 const DESKTOP_BREAKPOINT = 980
-const MAIN_PANEL_MIN_WIDTH = 420
+const MAIN_PANEL_MIN_WIDTH = 360
 const MAIN_PANEL_MIN_HEIGHT = 260
+const CENTER_PANEL_FALLBACK_WIDTH = 760
+const CENTER_PANEL_FRAME_GUTTER = 32
+const CENTER_PANEL_MAX_WIDTH = 980
 const HEADER_HEIGHT = 62
 const HORIZONTAL_HANDLE_SIZE = 10
 const VERTICAL_HANDLE_SIZE = 8
@@ -113,6 +116,8 @@ function App() {
   const [optimisticExportStatus, setOptimisticExportStatus] = useOptimistic<'idle' | 'pending' | 'done' | 'error', 'idle' | 'pending' | 'done' | 'error'>('idle', (_prev, next) => next)
   const shellRef = useRef<HTMLDivElement | null>(null)
   const mainLayoutRef = useRef<HTMLDivElement | null>(null)
+  const leftPanelRef = useRef<HTMLElement | null>(null)
+  const rightPanelRef = useRef<HTMLElement | null>(null)
   const previewHostRef = useRef<HTMLDivElement | null>(null)
   const [exportState, runExportAction, isExportPending] = useActionState(async (_: { status: 'idle' | 'done' | 'error'; message?: string }, quality: 'standard' | '4k-hdr' | 'spatial-vr') => {
     const timelineData = {
@@ -341,13 +346,15 @@ function App() {
     if (!mainWidth) return
 
     const layoutState = useLayoutStore.getState()
+    const currentLeft = leftPanelRef.current?.clientWidth || layoutState.leftPanelPx
+    const currentRight = rightPanelRef.current?.clientWidth || layoutState.rightPanelPx
     const maxLeft = Math.min(
       LAYOUT_LIMITS.leftPanelPx.max,
-      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - layoutState.rightPanelPx - MAIN_PANEL_MIN_WIDTH
+      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - currentRight - MAIN_PANEL_MIN_WIDTH
     )
 
     layoutState.setLeftPanelPx(
-      clamp(layoutState.leftPanelPx + delta, LAYOUT_LIMITS.leftPanelPx.min, Math.max(LAYOUT_LIMITS.leftPanelPx.min, maxLeft))
+      clamp(currentLeft + delta, LAYOUT_LIMITS.leftPanelPx.min, Math.max(LAYOUT_LIMITS.leftPanelPx.min, maxLeft))
     )
   }, [isDesktopLayout])
 
@@ -358,13 +365,15 @@ function App() {
     if (!mainWidth) return
 
     const layoutState = useLayoutStore.getState()
+    const currentLeft = leftPanelRef.current?.clientWidth || layoutState.leftPanelPx
+    const currentRight = rightPanelRef.current?.clientWidth || layoutState.rightPanelPx
     const maxRight = Math.min(
       LAYOUT_LIMITS.rightPanelPx.max,
-      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - layoutState.leftPanelPx - MAIN_PANEL_MIN_WIDTH
+      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - currentLeft - MAIN_PANEL_MIN_WIDTH
     )
 
     layoutState.setRightPanelPx(
-      clamp(layoutState.rightPanelPx - delta, LAYOUT_LIMITS.rightPanelPx.min, Math.max(LAYOUT_LIMITS.rightPanelPx.min, maxRight))
+      clamp(currentRight - delta, LAYOUT_LIMITS.rightPanelPx.min, Math.max(LAYOUT_LIMITS.rightPanelPx.min, maxRight))
     )
   }, [isDesktopLayout])
 
@@ -386,11 +395,22 @@ function App() {
     setTimelinePx(clamp(timelinePx - delta, LAYOUT_LIMITS.timelinePx.min, maxTimeline))
   }, [isDesktopLayout, setTimelinePx, timelinePx])
 
+  const centerPanelFitWidth = useMemo(() => {
+    if (!isDesktopLayout || previewFrameSize.width <= 0) return CENTER_PANEL_FALLBACK_WIDTH
+    return clamp(
+      previewFrameSize.width + CENTER_PANEL_FRAME_GUTTER,
+      MAIN_PANEL_MIN_WIDTH,
+      CENTER_PANEL_MAX_WIDTH
+    )
+  }, [isDesktopLayout, previewFrameSize.width])
+
   const shellLayoutVars = useMemo(() => ({
     '--left-panel-w': `${leftPanelPx}px`,
     '--right-panel-w': `${rightPanelPx}px`,
+    '--center-panel-min-w': `${MAIN_PANEL_MIN_WIDTH}px`,
+    '--center-panel-fit-w': `${Math.round(centerPanelFitWidth)}px`,
     '--timeline-h': `${timelinePx}px`
-  } as CSSProperties), [leftPanelPx, rightPanelPx, timelinePx])
+  } as CSSProperties), [centerPanelFitWidth, leftPanelPx, rightPanelPx, timelinePx])
 
   const previewFrameStyle = useMemo(() => {
     if (!previewFrameSize.width || !previewFrameSize.height) return undefined
@@ -452,7 +472,7 @@ function App() {
       </header>
 
       <div className="os-main main-layout" ref={mainLayoutRef}>
-        <aside className="pro-panel panel-left">
+        <aside className="pro-panel panel-left" ref={leftPanelRef}>
           <div className="panel-title-bar">
             <div className="sidebar-tabs">
               <button className={`sidebar-tab ${activeSidebar === 'assets' ? 'active' : ''}`} onClick={() => setActiveSidebar('assets')}>媒体资源</button>
@@ -538,7 +558,7 @@ function App() {
           />
         ) : null}
 
-        <aside className="pro-panel pro-inspector-outer panel-right">
+        <aside className="pro-panel pro-inspector-outer panel-right" ref={rightPanelRef}>
           <div className="panel-title-bar"><span className="inspector-title">属性检查器</span></div>
           <div className="inspector-scroll">
             <Suspense fallback={<LazyFallback label="属性面板加载中..." />}>

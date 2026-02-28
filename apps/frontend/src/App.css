@@ -28,8 +28,10 @@
 }
 
 .pro-master-shell {
-  --left-panel-w: 460px;
-  --right-panel-w: 420px;
+  --left-panel-w: 540px;
+  --right-panel-w: 500px;
+  --center-panel-min-w: 360px;
+  --center-panel-fit-w: 760px;
   --timeline-h: 336px;
   --split-handle-w: 10px;
   --split-handle-h: 8px;
@@ -260,7 +262,12 @@
 
 .os-main {
   display: grid;
-  grid-template-columns: var(--left-panel-w) var(--split-handle-w) minmax(0, 1fr) var(--split-handle-w) var(--right-panel-w);
+  grid-template-columns:
+    minmax(var(--left-panel-w), 1fr)
+    var(--split-handle-w)
+    minmax(var(--center-panel-min-w), var(--center-panel-fit-w))
+    var(--split-handle-w)
+    minmax(var(--right-panel-w), 1fr);
   gap: 0;
   min-height: 0;
 }
