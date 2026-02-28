@@ -33,11 +33,11 @@ RUN chown -R veomuse:nodejs /app
 USER veomuse
 
 # 暴露端口
-EXPOSE 5173
+EXPOSE 42873
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5173/health || exit 1
+    CMD curl -f http://localhost:42873/health || exit 1
 
 # 启动应用（使用重构后的MVC架构）
 CMD ["npm", "start"]

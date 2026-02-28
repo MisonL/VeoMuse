@@ -7,7 +7,7 @@ export default defineConfig({
     emptyOutDir: true, // 构建时清空输出目录
   },
   server: {
-    port: 5173, // Vite 开发服务器端口
+    port: 42873, // Vite 开发服务器端口
   },
   plugins: [],
 });

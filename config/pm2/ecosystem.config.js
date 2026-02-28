@@ -8,11 +8,11 @@ module.exports = {
       exec_mode: "cluster",
       env: {
         NODE_ENV: "development",
-        PORT: 5173,
+        PORT: 42873,
       },
       env_production: {
         NODE_ENV: "production",
-        PORT: 5173,
+        PORT: 42873,
       },
       // 日志配置
       log_file: "./logs/pm2-combined.log",

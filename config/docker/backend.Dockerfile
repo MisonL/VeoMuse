@@ -14,7 +14,7 @@ COPY packages/shared ./packages/shared
 WORKDIR /app/apps/backend
 RUN bun install
 
-EXPOSE 3001
+EXPOSE 33117
 ENV NODE_ENV=production
 
 # 4. 直接启动
