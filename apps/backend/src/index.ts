@@ -52,7 +52,12 @@ const ensureDriversRegistered = (() => {
   }
 })()
 
-const resolveGeneratedDir = () => path.resolve(process.cwd(), '../../uploads/generated')
+const resolveGeneratedDir = () => {
+  const baseUploadsDir = process.env.UPLOADS_PATH
+    ? path.resolve(process.env.UPLOADS_PATH)
+    : path.resolve(process.cwd(), '../../uploads')
+  return path.join(baseUploadsDir, 'generated')
+}
 const storageProvider = new LocalStorageProvider()
 
 const authorizeAdmin = (request: Request, set: { status?: number | string }) => {
@@ -582,10 +587,16 @@ export const createApp = () => {
         memberName: t.String()
       })
     })
-    .get('/api/workspaces/:id/members', ({ params }) => ({
-      success: true,
-      members: WorkspaceService.getMembers(params.id)
-    }), {
+    .get('/api/workspaces/:id/members', ({ params, request, set }) => {
+      const authorized = authorizeWorkspaceRole(params.id, request, set, 'viewer')
+      if (!authorized) {
+        return { success: false, status: 'error', error: 'Forbidden: viewer membership required' }
+      }
+      return {
+        success: true,
+        members: WorkspaceService.getMembers(params.id)
+      }
+    }, {
       params: t.Object({ id: t.String() })
     })
     .get('/api/workspaces/:id/presence', ({ params }) => ({
@@ -713,6 +724,7 @@ export const createApp = () => {
         const memberName = String(query.memberName || 'Guest')
         if (!workspaceId) {
           ws.send(JSON.stringify({ type: 'error', error: 'workspaceId is required' }))
+          ws.close()
           return
         }
         const memberRole = WorkspaceService.getMemberRole(workspaceId, memberName)

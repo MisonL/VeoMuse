@@ -23,7 +23,18 @@ describe('工作区协作 API 回归', () => {
     const workspaceId = createData.workspace.id as string
     const projectId = createData.defaultProject.id as string
 
-    const membersResp = await app.handle(new Request(`http://localhost/api/workspaces/${workspaceId}/members`))
+    const membersUnauthorizedResp = await app.handle(
+      new Request(`http://localhost/api/workspaces/${workspaceId}/members`)
+    )
+    expect(membersUnauthorizedResp.status).toBe(403)
+
+    const membersResp = await app.handle(
+      new Request(`http://localhost/api/workspaces/${workspaceId}/members`, {
+        headers: {
+          'x-workspace-actor': 'Owner A'
+        }
+      })
+    )
     const membersData = await membersResp.json() as any
     expect(membersResp.status).toBe(200)
     expect(membersData.success).toBe(true)
