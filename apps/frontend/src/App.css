@@ -406,15 +406,15 @@ body.resizing-y {
 }
 
 .monitor-core {
-  background: var(--ap-monitor-bg) !important;
+  background: color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%) !important;
   position: relative;
-  border: 1px solid var(--ap-monitor-border) !important;
+  border: 1px solid var(--ap-border) !important;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.32),
-    0 16px 32px rgba(0, 0, 0, 0.26);
+    0 1px 2px rgba(16, 24, 40, 0.1),
+    0 8px 20px rgba(16, 24, 40, 0.08);
 }
 
 .monitor-content {
@@ -422,6 +422,8 @@ body.resizing-y {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 86%, var(--ap-panel) 14%), color-mix(in srgb, var(--ap-surface) 92%, transparent));
 }
 
 .preview-host {
@@ -536,15 +538,15 @@ body.resizing-y {
   justify-content: center;
   gap: 42px;
   align-items: center;
-  border-top: 1px solid color-mix(in srgb, var(--ap-monitor-border) 86%, #ffffff 14%);
-  background: linear-gradient(180deg, rgba(6, 11, 22, 0.16), rgba(6, 11, 22, 0.38));
+  border-top: 1px solid var(--ap-border);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 80%, var(--ap-panel) 20%), color-mix(in srgb, var(--ap-panel) 82%, #ffffff 18%));
   flex-shrink: 0;
 }
 
 .transport-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid color-mix(in srgb, var(--ap-monitor-border) 70%, #ffffff 30%);
-  color: #f8fafc;
+  background: color-mix(in srgb, var(--ap-surface) 90%, var(--ap-card) 10%);
+  border: 1px solid var(--ap-border);
+  color: var(--ap-text);
   width: 36px;
   height: 36px;
   border-radius: 999px;
@@ -566,8 +568,8 @@ body.resizing-y {
   width: 48px;
   height: 48px;
   font-size: 24px;
-  background: color-mix(in srgb, var(--ap-accent-soft) 65%, rgba(255, 255, 255, 0.05) 35%);
-  border-color: color-mix(in srgb, var(--ap-accent) 50%, #ffffff 50%);
+  background: color-mix(in srgb, var(--ap-accent-soft) 78%, #ffffff 22%);
+  border-color: color-mix(in srgb, var(--ap-accent) 55%, #ffffff 45%);
   opacity: 1;
 }
 

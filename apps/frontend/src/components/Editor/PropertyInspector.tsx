@@ -188,7 +188,7 @@ const PropertyInspector: React.FC = () => {
   const current = selectedClip as Clip | null;
 
   return (
-    <div className="inspector-panel glass-panel pro-inspector-inner">
+    <div className="pro-inspector-inner">
       <header className="inspector-header">
         <div className="inspector-tabs">
           <button className={activeTab === 'properties' ? 'active' : ''} onClick={() => setActiveTab('properties')}>属性</button>
