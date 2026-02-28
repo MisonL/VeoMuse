@@ -97,7 +97,7 @@ All tasks follow a strict lifecycle:
 
         **Manual Verification Steps:**
         1.  **Start the development server with the command:** `npm run dev`
-        2.  **Open your browser to:** `http://localhost:3000`
+        2.  **Open your browser to:** `http://localhost:42873`
         3.  **Confirm that you see:** The new user profile page, with the user's name and email displayed correctly.
         ```
 
@@ -107,7 +107,7 @@ All tasks follow a strict lifecycle:
 
         **Manual Verification Steps:**
         1.  **Ensure the server is running.**
-        2.  **Execute the following command in your terminal:** `curl -X POST http://localhost:8080/api/v1/users -d '{"name": "test"}'`
+        2.  **Execute the following command in your terminal:** `curl -X POST http://localhost:33117/api/v1/users -d '{"name": "test"}'`
         3.  **Confirm that you receive:** A JSON response with a status of `201 Created`.
         ```
 

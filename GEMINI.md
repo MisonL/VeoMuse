@@ -12,10 +12,10 @@
 ## 🛠️ 构建、部署与运维
 | 命令 | 说明 |
 | :--- | :--- |
-| `bun run dev` | 物理拉起全栈开发环境 (Backend: 3001, Frontend: 5173) |
+| `bun run dev` | 物理拉起全栈开发环境 (Backend: 33117, Frontend: 42873) |
 | `bun run build` | 执行 Vite 8 + Oxc 极速生产混淆构建 |
 | `bun test` | 运行全量 35 项原子级回归测试套件 |
-| `bun run docker:up` | **结项推荐**: 一键部署 Nginx 80 + Bun 生产容器总线 |
+| `bun run docker:up` | **结项推荐**: 一键部署 Nginx 18081 + Bun 生产容器总线 |
 
 ## ⚖️ 工程红线 (Strict Guidelines)
 - **视觉一致性**: 严格遵循 **Obsidian Pro** 视觉规范。使用 16px 圆角、12px 间距及内联变量 (`--ap-`) 驱动 UI。
