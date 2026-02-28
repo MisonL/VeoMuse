@@ -1,9 +1,9 @@
 .theme-switcher-pro {
   display: flex;
   background: color-mix(in srgb, var(--ap-card) 84%, #ffffff 16%);
-  padding: 3px;
+  padding: 2px;
   border-radius: 12px;
-  gap: 4px;
+  gap: 2px;
   border: 1px solid var(--ap-border);
   min-width: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
@@ -12,9 +12,9 @@
 .theme-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 11px;
-  border-radius: 10px;
+  gap: 5px;
+  padding: 6px 9px;
+  border-radius: 9px;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -36,13 +36,13 @@
 }
 
 .btn-dot {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   background: color-mix(in srgb, var(--ap-surface) 88%, transparent);
   color: inherit;
@@ -50,6 +50,17 @@
 
 .theme-btn.active .btn-dot {
   background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 1360px) {
+  .theme-btn {
+    gap: 4px;
+    padding: 6px 7px;
+  }
+
+  .btn-text {
+    display: none;
+  }
 }
 
 @media (max-width: 640px) {

@@ -270,19 +270,19 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             </div>
           </div>
 
-          <div className="hub-section" style={{ marginTop: '12px' }}>
+          <div className="hub-section hub-section-tight">
             <textarea
               className="pro-textarea-mini"
               placeholder="输入脚本，例如：清晨街道上，主角从咖啡店走出..."
               value={directorPrompt}
               onChange={(e) => onDirectorPromptChange?.(e.target.value)}
             />
-            <button id="btn-run-director" className="import-btn-pro" style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }} onClick={() => onRunDirector?.()} disabled={isAiWorking}>
+            <button id="btn-run-director" className="import-btn-pro hub-primary-btn" onClick={() => onRunDirector?.()} disabled={isAiWorking}>
               {isAiWorking ? '分析中...' : '生成分镜并编排'}
             </button>
           </div>
 
-          <div className="hub-section" style={{marginTop: '20px'}}>
+          <div className="hub-section hub-section-loose">
             <h4 className="section-label">分镜流</h4>
             <div className="scene-card-list">
               {(directorScenes.length ? directorScenes : [{ title: '等待生成', duration: 0 }]).map((scene, idx) => (
@@ -308,24 +308,21 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             </div>
           </div>
 
-          <div className="hub-section" style={{ marginTop: '12px' }}>
+          <div className="hub-section hub-section-tight">
             <input
-              className="pro-textarea-mini"
-              style={{ minHeight: '40px' }}
+              className="pro-textarea-mini actor-input"
               placeholder="演员名称，例如：都市女主角"
               value={actorName}
               onChange={(e) => setActorName(e.target.value)}
             />
             <input
-              className="pro-textarea-mini"
-              style={{ minHeight: '40px', marginTop: '8px' }}
+              className="pro-textarea-mini actor-input actor-input-spaced"
               placeholder="参考图 URL，例如：https://..."
               value={actorRefImage}
               onChange={(e) => setActorRefImage(e.target.value)}
             />
             <button
-              className="import-btn-pro"
-              style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }}
+              className="import-btn-pro hub-primary-btn"
               onClick={handleCreateActor}
               disabled={isActorLoading || isActorCreating}
             >
@@ -333,7 +330,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             </button>
           </div>
 
-          <div className="hub-section" style={{ marginTop: '20px' }}>
+          <div className="hub-section hub-section-loose">
             <h4 className="section-label">演员列表</h4>
             <div className="scene-card-list">
               {(actors.length ? actors : [{ id: 'empty', name: '暂无演员', refImage: '-', createdAt: '-' }]).map((actor, idx) => (
@@ -358,18 +355,16 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             </div>
           </div>
 
-          <div className="hub-section" style={{ marginTop: '12px' }}>
-            <div className="pro-control-row">
-              <button className="import-btn-pro" onClick={isMotionCaptureActive ? stopMotionCapture : startMotionCapture}>
+          <div className="hub-section hub-section-tight">
+            <div className="motion-controls">
+              <button className="import-btn-pro motion-btn" onClick={isMotionCaptureActive ? stopMotionCapture : startMotionCapture}>
                 {isMotionCaptureActive ? '停止动捕' : '启动动捕'}
               </button>
-              <button className="import-btn-pro" disabled={isMotionSyncing} onClick={syncMotionToActor}>
+              <button className="import-btn-pro motion-btn" disabled={isMotionSyncing} onClick={syncMotionToActor}>
                 {isMotionSyncing ? '同步中...' : '同步至演员'}
               </button>
-            </div>
-            <div className="pro-control-row mt-4">
               <select
-                className="pro-select-mini"
+                className="pro-select-mini motion-actor-select"
                 value={motionActorId}
                 onChange={(e) => setMotionActorId(e.target.value)}
               >
@@ -381,7 +376,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             </div>
           </div>
 
-          <div className="hub-section" style={{ marginTop: '20px' }}>
+          <div className="hub-section hub-section-loose">
             <h4 className="section-label">实时姿态摘要</h4>
             <div className="scene-card-list">
               <div className="scene-card">
