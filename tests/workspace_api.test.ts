@@ -70,13 +70,25 @@ describe('工作区协作 API 回归', () => {
     expect(addData.success).toBe(true)
     expect(addData.members.some((member: any) => member.name === 'Editor B' && member.role === 'editor')).toBe(true)
 
-    const projectsResp = await app.handle(new Request(`http://localhost/api/workspaces/${workspaceId}/projects`))
+    const projectsResp = await app.handle(
+      new Request(`http://localhost/api/workspaces/${workspaceId}/projects`, {
+        headers: {
+          'x-workspace-actor': 'Owner A'
+        }
+      })
+    )
     const projectsData = await projectsResp.json() as any
     expect(projectsResp.status).toBe(200)
     expect(projectsData.success).toBe(true)
     expect(projectsData.projects.some((project: any) => project.id === projectId)).toBe(true)
 
-    const auditResp = await app.handle(new Request(`http://localhost/api/projects/${projectId}/audit`))
+    const auditResp = await app.handle(
+      new Request(`http://localhost/api/projects/${projectId}/audit`, {
+        headers: {
+          'x-workspace-actor': 'Owner A'
+        }
+      })
+    )
     const auditData = await auditResp.json() as any
     expect(auditResp.status).toBe(200)
     expect(auditData.success).toBe(true)

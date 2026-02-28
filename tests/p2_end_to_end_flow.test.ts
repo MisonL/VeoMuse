@@ -101,7 +101,10 @@ describe('P2 端到端主路径回归', () => {
     const tokenResp = await app.handle(
       new Request('http://localhost/api/storage/upload-token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-actor': 'Owner P2'
+        },
         body: JSON.stringify({
           workspaceId,
           projectId,
@@ -117,7 +120,10 @@ describe('P2 端到端主路径回归', () => {
     const uploadResp = await app.handle(
       new Request(`http://localhost${tokenData.token.uploadUrl}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/octet-stream' },
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'x-workspace-actor': 'Owner P2'
+        },
         body: 'p2-e2e-binary'
       })
     )

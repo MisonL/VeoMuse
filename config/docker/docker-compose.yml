@@ -27,8 +27,8 @@ services:
       - veomuse-redis
     restart: always
     volumes:
-      - ../../uploads:/app/uploads
-      - ../../data:/app/data
+      - veomuse-uploads:/app/uploads
+      - veomuse-data:/app/data
     expose:
       - "33117"
 
@@ -45,3 +45,9 @@ services:
 networks:
   default:
     name: veomuse-network
+
+volumes:
+  veomuse-uploads:
+    name: veomuse-uploads
+  veomuse-data:
+    name: veomuse-data

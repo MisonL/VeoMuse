@@ -66,13 +66,26 @@ describe('协作平台化 API', () => {
     expect(acceptData.workspace.id).toBe(workspaceId)
     expect(acceptData.defaultProject.id).toBe(projectId)
 
-    const membersResp = await app.handle(new Request(`http://localhost/api/workspaces/${workspaceId}/members`))
+    const membersResp = await app.handle(
+      new Request(`http://localhost/api/workspaces/${workspaceId}/members`, {
+        headers: { 'x-workspace-actor': 'Owner A' }
+      })
+    )
     const membersData = await membersResp.json() as any
     expect(membersResp.status).toBe(200)
     expect(membersData.members.some((item: any) => item.name === 'Editor B')).toBe(true)
 
     WorkspaceService.upsertPresence(workspaceId, 'sess-test-1', 'Editor B', 'editor')
-    const presenceResp = await app.handle(new Request(`http://localhost/api/workspaces/${workspaceId}/presence`))
+    const presenceForbiddenResp = await app.handle(
+      new Request(`http://localhost/api/workspaces/${workspaceId}/presence`)
+    )
+    expect(presenceForbiddenResp.status).toBe(403)
+
+    const presenceResp = await app.handle(
+      new Request(`http://localhost/api/workspaces/${workspaceId}/presence`, {
+        headers: { 'x-workspace-actor': 'Editor B' }
+      })
+    )
     const presenceData = await presenceResp.json() as any
     expect(presenceResp.status).toBe(200)
     expect(presenceData.success).toBe(true)
@@ -96,17 +109,36 @@ describe('协作平台化 API', () => {
     expect(snapshotData.snapshot.projectId).toBe(projectId)
 
     const listSnapshotResp = await app.handle(
-      new Request(`http://localhost/api/projects/${projectId}/snapshots?limit=10`)
+      new Request(`http://localhost/api/projects/${projectId}/snapshots?limit=10`, {
+        headers: { 'x-workspace-actor': 'Editor B' }
+      })
     )
     const listSnapshotData = await listSnapshotResp.json() as any
     expect(listSnapshotResp.status).toBe(200)
     expect(listSnapshotData.success).toBe(true)
     expect(listSnapshotData.snapshots.length).toBeGreaterThan(0)
 
-    const uploadTokenResp = await app.handle(
+    const uploadTokenForbiddenResp = await app.handle(
       new Request('http://localhost/api/storage/upload-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspaceId,
+          projectId,
+          fileName: 'demo.mp4',
+          contentType: 'video/mp4'
+        })
+      })
+    )
+    expect(uploadTokenForbiddenResp.status).toBe(403)
+
+    const uploadTokenResp = await app.handle(
+      new Request('http://localhost/api/storage/upload-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-actor': 'Editor B'
+        },
         body: JSON.stringify({
           workspaceId,
           projectId,
@@ -124,7 +156,10 @@ describe('协作平台化 API', () => {
     const uploadResp = await app.handle(
       new Request(`http://localhost${uploadTokenData.token.uploadUrl}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/octet-stream' },
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'x-workspace-actor': 'Editor B'
+        },
         body: 'binary-content'
       })
     )

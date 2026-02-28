@@ -520,11 +520,20 @@ const ComparisonLab: React.FC = () => {
     const wid = nextWorkspaceId || workspaceId
     const pid = nextProjectId || projectId
     if (!wid) return
+    const actorName = currentActorName
 
     try {
       const [presencePayload, eventsPayload] = await Promise.all([
-        requestJson<{ success: boolean; members: CollabPresence[] }>(`/api/workspaces/${wid}/presence`),
-        requestJson<{ success: boolean; events: CollabEvent[] }>(`/api/workspaces/${wid}/collab/events?limit=50`)
+        requestJson<{ success: boolean; members: CollabPresence[] }>(`/api/workspaces/${wid}/presence`, {
+          headers: {
+            'x-workspace-actor': actorName
+          }
+        }),
+        requestJson<{ success: boolean; events: CollabEvent[] }>(`/api/workspaces/${wid}/collab/events?limit=50`, {
+          headers: {
+            'x-workspace-actor': actorName
+          }
+        })
       ])
       setPresence(presencePayload.members || [])
       setCollabEvents(eventsPayload.events || [])
@@ -535,7 +544,12 @@ const ComparisonLab: React.FC = () => {
     if (pid) {
       try {
         const snapshotsPayload = await requestJson<{ success: boolean; snapshots: Array<{ id: string; actorName: string; createdAt: string }> }>(
-          `/api/projects/${pid}/snapshots?limit=20`
+          `/api/projects/${pid}/snapshots?limit=20`,
+          {
+            headers: {
+              'x-workspace-actor': actorName
+            }
+          }
         )
         setSnapshots(snapshotsPayload.snapshots || [])
       } catch {
@@ -672,6 +686,10 @@ const ComparisonLab: React.FC = () => {
   }
 
   const requestUploadToken = async () => {
+    if (!workspaceId) {
+      showToast('请先创建或加入工作区', 'info')
+      return
+    }
     if (!uploadFileName.trim()) {
       showToast('请输入文件名', 'info')
       return
@@ -682,8 +700,11 @@ const ComparisonLab: React.FC = () => {
         token: { uploadUrl: string; objectKey: string };
       }>('/api/storage/upload-token', {
         method: 'POST',
+        headers: {
+          'x-workspace-actor': currentActorName
+        },
         body: JSON.stringify({
-          workspaceId: workspaceId || undefined,
+          workspaceId,
           projectId: projectId || undefined,
           fileName: uploadFileName.trim(),
           contentType: 'video/mp4'

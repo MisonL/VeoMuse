@@ -105,6 +105,28 @@ const authorizeWorkspaceRole = (
   }
 }
 
+const authorizeProjectRole = (
+  projectId: string,
+  request: Request,
+  set: { status?: number | string },
+  requiredRole: WorkspaceRole
+) => {
+  const project = WorkspaceService.getProject(projectId)
+  if (!project) {
+    set.status = 404
+    return null
+  }
+
+  const authorized = authorizeWorkspaceRole(project.workspaceId, request, set, requiredRole)
+  if (!authorized) return null
+
+  return {
+    ...authorized,
+    workspaceId: project.workspaceId,
+    project
+  }
+}
+
 const getCapabilities = () => {
   const configured = (key?: string) => Boolean(key && key.trim().length > 0)
 
@@ -599,25 +621,43 @@ export const createApp = () => {
     }, {
       params: t.Object({ id: t.String() })
     })
-    .get('/api/workspaces/:id/presence', ({ params }) => ({
-      success: true,
-      members: WorkspaceService.listPresence(params.id)
-    }), {
+    .get('/api/workspaces/:id/presence', ({ params, request, set }) => {
+      const authorized = authorizeWorkspaceRole(params.id, request, set, 'viewer')
+      if (!authorized) {
+        return { success: false, status: 'error', error: 'Forbidden: viewer membership required' }
+      }
+      return {
+        success: true,
+        members: WorkspaceService.listPresence(params.id)
+      }
+    }, {
       params: t.Object({ id: t.String() })
     })
-    .get('/api/workspaces/:id/collab/events', ({ params, query }) => ({
-      success: true,
-      events: WorkspaceService.listCollabEvents(params.id, Number.parseInt(query.limit || '50', 10))
-    }), {
+    .get('/api/workspaces/:id/collab/events', ({ params, query, request, set }) => {
+      const authorized = authorizeWorkspaceRole(params.id, request, set, 'viewer')
+      if (!authorized) {
+        return { success: false, status: 'error', error: 'Forbidden: viewer membership required' }
+      }
+      return {
+        success: true,
+        events: WorkspaceService.listCollabEvents(params.id, Number.parseInt(query.limit || '50', 10))
+      }
+    }, {
       params: t.Object({ id: t.String() }),
       query: t.Object({
         limit: t.Optional(t.String())
       })
     })
-    .get('/api/workspaces/:id/projects', ({ params }) => ({
-      success: true,
-      projects: WorkspaceService.listWorkspaceProjects(params.id)
-    }), {
+    .get('/api/workspaces/:id/projects', ({ params, request, set }) => {
+      const authorized = authorizeWorkspaceRole(params.id, request, set, 'viewer')
+      if (!authorized) {
+        return { success: false, status: 'error', error: 'Forbidden: viewer membership required' }
+      }
+      return {
+        success: true,
+        projects: WorkspaceService.listWorkspaceProjects(params.id)
+      }
+    }, {
       params: t.Object({ id: t.String() })
     })
     .post('/api/workspaces/:id/members', ({ params, body, request, set }) => {
@@ -636,10 +676,19 @@ export const createApp = () => {
         role: t.Union([t.Literal('owner'), t.Literal('editor'), t.Literal('viewer')])
       })
     })
-    .get('/api/projects/:id/audit', ({ params }) => ({
-      success: true,
-      logs: WorkspaceService.listAuditsByProject(params.id)
-    }), {
+    .get('/api/projects/:id/audit', ({ params, request, set }) => {
+      const authorized = authorizeProjectRole(params.id, request, set, 'viewer')
+      if (!authorized) {
+        if (set.status === 404) {
+          return { success: false, status: 'error', error: 'Project not found' }
+        }
+        return { success: false, status: 'error', error: 'Forbidden: viewer membership required' }
+      }
+      return {
+        success: true,
+        logs: WorkspaceService.listAuditsByProject(params.id)
+      }
+    }, {
       params: t.Object({ id: t.String() })
     })
     .post('/api/projects/:id/snapshots', ({ params, body, request, set }) => {
@@ -665,21 +714,41 @@ export const createApp = () => {
         content: t.Optional(t.Record(t.String(), t.Any()))
       })
     })
-    .get('/api/projects/:id/snapshots', ({ params, query }) => ({
-      success: true,
-      snapshots: WorkspaceService.listProjectSnapshots(params.id, Number.parseInt(query.limit || '20', 10))
-    }), {
+    .get('/api/projects/:id/snapshots', ({ params, query, request, set }) => {
+      const authorized = authorizeProjectRole(params.id, request, set, 'viewer')
+      if (!authorized) {
+        if (set.status === 404) {
+          return { success: false, status: 'error', error: 'Project not found' }
+        }
+        return { success: false, status: 'error', error: 'Forbidden: viewer membership required' }
+      }
+      return {
+        success: true,
+        snapshots: WorkspaceService.listProjectSnapshots(params.id, Number.parseInt(query.limit || '20', 10))
+      }
+    }, {
       params: t.Object({ id: t.String() }),
       query: t.Object({
         limit: t.Optional(t.String())
       })
     })
-    .post('/api/storage/upload-token', ({ body }) => ({
-      success: true,
-      token: storageProvider.issueUploadToken(body)
-    }), {
+    .post('/api/storage/upload-token', ({ body, request, set }) => {
+      const workspaceId = body.workspaceId.trim()
+      const authorized = authorizeWorkspaceRole(workspaceId, request, set, 'editor')
+      if (!authorized) {
+        return { success: false, status: 'error', error: 'Forbidden: editor membership required' }
+      }
+      if (body.projectId && !WorkspaceService.projectBelongsToWorkspace(workspaceId, body.projectId)) {
+        set.status = 403
+        return { success: false, status: 'error', error: 'Project does not belong to workspace' }
+      }
+      return {
+        success: true,
+        token: storageProvider.issueUploadToken(body)
+      }
+    }, {
       body: t.Object({
-        workspaceId: t.Optional(t.String()),
+        workspaceId: t.String(),
         projectId: t.Optional(t.String()),
         fileName: t.String(),
         contentType: t.Optional(t.String())
@@ -691,6 +760,15 @@ export const createApp = () => {
         if (!decodedObjectKey) {
           set.status = 400
           return { success: false, status: 'error', error: 'objectKey is required' }
+        }
+        const workspaceId = decodedObjectKey.split('/').map(segment => segment.trim()).filter(Boolean)[0]
+        if (!workspaceId) {
+          set.status = 400
+          return { success: false, status: 'error', error: 'workspaceId is required in objectKey' }
+        }
+        const authorized = authorizeWorkspaceRole(workspaceId, request, set, 'editor')
+        if (!authorized) {
+          return { success: false, status: 'error', error: 'Forbidden: editor membership required' }
         }
         const bytes = new Uint8Array(await request.arrayBuffer())
         const result = storageProvider.storeObject(decodedObjectKey, bytes)
