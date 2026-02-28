@@ -28,7 +28,7 @@ const ToastContainer = lazy(loadToastContainer)
 
 const fps = 30
 const DESKTOP_BREAKPOINT = 980
-const MAIN_PANEL_MIN_WIDTH = 560
+const MAIN_PANEL_MIN_WIDTH = 420
 const MAIN_PANEL_MIN_HEIGHT = 260
 const HEADER_HEIGHT = 62
 const HORIZONTAL_HANDLE_SIZE = 10
