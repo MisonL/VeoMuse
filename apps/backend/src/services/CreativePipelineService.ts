@@ -1,0 +1,405 @@
+import type { CreativeFeedbackPayload, CreativeRun, CreativeScene } from '@veomuse/shared'
+import { getLocalDb } from './LocalDatabaseService'
+
+const toIso = () => new Date().toISOString()
+
+const parseJson = <T>(raw: unknown, fallback: T): T => {
+  try {
+    if (typeof raw !== 'string') return fallback
+    return JSON.parse(raw) as T
+  } catch {
+    return fallback
+  }
+}
+
+const sceneFromRow = (row: any): CreativeScene => ({
+  id: row.id,
+  runId: row.run_id,
+  order: row.order_idx,
+  title: row.title,
+  videoPrompt: row.video_prompt,
+  audioPrompt: row.audio_prompt,
+  voiceoverText: row.voiceover_text,
+  duration: row.duration,
+  status: row.status,
+  revision: row.revision || 1,
+  lastFeedback: row.last_feedback || '',
+  generationMeta: parseJson<Record<string, unknown>>(row.generation_meta_json, {}),
+  createdAt: row.created_at,
+  updatedAt: row.updated_at
+})
+
+const runFromRow = (row: any, scenes: CreativeScene[]): CreativeRun => ({
+  id: row.id,
+  script: row.script,
+  style: row.style,
+  status: row.status,
+  version: row.version || 1,
+  parentRunId: row.parent_run_id || null,
+  qualityScore: Number(row.quality_score || 0),
+  notes: parseJson<Record<string, unknown>>(row.notes_json, {}),
+  scenes,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at
+})
+
+const parseScenesFromScript = (script: string) => {
+  const chunks = script
+    .split(/\n|。|\.|!|！|\?|？/)
+    .map(part => part.trim())
+    .filter(Boolean)
+    .slice(0, 8)
+  const source = chunks.length ? chunks : [script.trim() || '默认场景']
+  return source.map((line, index) => ({
+    order: index + 1,
+    title: `分镜 ${index + 1}`,
+    videoPrompt: line,
+    audioPrompt: `环境音与情绪配乐：${line}`,
+    voiceoverText: line,
+    duration: Math.max(3, Math.min(12, Math.round(line.length / 8)))
+  }))
+}
+
+export class CreativePipelineService {
+  private static insertFeedbackEvent(runId: string, scope: 'run' | 'scene', feedback: Record<string, unknown>, sceneId?: string) {
+    getLocalDb().prepare(`
+      INSERT INTO creative_feedback_events (id, run_id, scene_id, scope, feedback_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+      `feedback_${crypto.randomUUID()}`,
+      runId,
+      sceneId || null,
+      scope,
+      JSON.stringify(feedback),
+      toIso()
+    )
+  }
+
+  private static cloneRunWithScenes(runId: string, runFeedback: string = '') {
+    const base = this.getRun(runId)
+    if (!base) return null
+
+    const nextRunId = `run_${crypto.randomUUID()}`
+    const createdAt = toIso()
+    const notes = {
+      ...(base.notes || {}),
+      inheritedFromRunId: base.id,
+      versionReason: runFeedback || 'creative-feedback',
+      createdBy: 'feedback-loop'
+    }
+
+    getLocalDb().prepare(`
+      INSERT INTO creative_runs (
+        id, script, style, status, version, parent_run_id, quality_score, notes_json, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      nextRunId,
+      base.script,
+      base.style,
+      'generated',
+      (base.version || 1) + 1,
+      base.id,
+      base.qualityScore || 0,
+      JSON.stringify(notes),
+      createdAt,
+      createdAt
+    )
+
+    const insertScene = getLocalDb().prepare(`
+      INSERT INTO storyboard_scenes (
+        id, run_id, order_idx, title, video_prompt, audio_prompt, voiceover_text, duration, status,
+        revision, last_feedback, generation_meta_json, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+
+    base.scenes.forEach((scene) => {
+      const inheritedMeta = scene.generationMeta && typeof scene.generationMeta === 'object'
+        ? scene.generationMeta
+        : {}
+      insertScene.run(
+        `scene_${crypto.randomUUID()}`,
+        nextRunId,
+        scene.order,
+        scene.title,
+        scene.videoPrompt,
+        scene.audioPrompt,
+        scene.voiceoverText,
+        scene.duration,
+        scene.status,
+        scene.revision || 1,
+        scene.lastFeedback || '',
+        JSON.stringify({
+          ...inheritedMeta,
+          sourceSceneId: scene.id,
+          sourceRunId: base.id
+        }),
+        createdAt,
+        createdAt
+      )
+    })
+
+    return this.getRun(nextRunId)
+  }
+
+  static createRun(script: string, style: string = 'cinematic', context?: Record<string, unknown>): CreativeRun {
+    const runId = `run_${crypto.randomUUID()}`
+    const createdAt = toIso()
+    const notes = context && Object.keys(context).length > 0
+      ? { context }
+      : {}
+    getLocalDb().prepare(`
+      INSERT INTO creative_runs (
+        id, script, style, status, version, parent_run_id, quality_score, notes_json, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(runId, script, style, 'generated', 1, null, 0, JSON.stringify(notes), createdAt, createdAt)
+
+    const insertScene = getLocalDb().prepare(`
+      INSERT INTO storyboard_scenes (
+        id, run_id, order_idx, title, video_prompt, audio_prompt, voiceover_text, duration, status,
+        revision, last_feedback, generation_meta_json, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+
+    const scenes = parseScenesFromScript(script).map((scene) => {
+      const id = `scene_${crypto.randomUUID()}`
+      insertScene.run(
+        id,
+        runId,
+        scene.order,
+        scene.title,
+        scene.videoPrompt,
+        scene.audioPrompt,
+        scene.voiceoverText,
+        scene.duration,
+        'generated',
+        1,
+        '',
+        JSON.stringify({ source: 'script-parser', style }),
+        createdAt,
+        createdAt
+      )
+      return {
+        id,
+        runId,
+        order: scene.order,
+        title: scene.title,
+        videoPrompt: scene.videoPrompt,
+        audioPrompt: scene.audioPrompt,
+        voiceoverText: scene.voiceoverText,
+        duration: scene.duration,
+        status: 'generated' as const,
+        revision: 1,
+        lastFeedback: '',
+        generationMeta: { source: 'script-parser', style },
+        createdAt,
+        updatedAt: createdAt
+      }
+    })
+
+    return {
+      id: runId,
+      script,
+      style,
+      status: 'generated',
+      version: 1,
+      parentRunId: null,
+      qualityScore: 0,
+      notes,
+      scenes,
+      createdAt,
+      updatedAt: createdAt
+    }
+  }
+
+  static getRun(runId: string): CreativeRun | null {
+    const run = getLocalDb().prepare(`SELECT * FROM creative_runs WHERE id = ?`).get(runId)
+    if (!run) return null
+    const scenes = getLocalDb()
+      .prepare(`SELECT * FROM storyboard_scenes WHERE run_id = ? ORDER BY order_idx ASC`)
+      .all(runId)
+      .map(sceneFromRow)
+    return runFromRow(run, scenes)
+  }
+
+  static getRunVersions(runId: string): CreativeRun[] {
+    const base = this.getRun(runId)
+    if (!base) return []
+    let rootId = base.id
+    let currentParentId = base.parentRunId
+    let guard = 0
+    while (currentParentId && guard < 128) {
+      guard += 1
+      const parent = getLocalDb()
+        .prepare(`SELECT id, parent_run_id FROM creative_runs WHERE id = ? LIMIT 1`)
+        .get(currentParentId) as { id: string; parent_run_id: string | null } | null
+      if (!parent) break
+      rootId = parent.id
+      currentParentId = parent.parent_run_id
+    }
+
+    const rows = getLocalDb()
+      .prepare(`
+        WITH RECURSIVE run_chain(id) AS (
+          SELECT id FROM creative_runs WHERE id = ?
+          UNION ALL
+          SELECT child.id
+          FROM creative_runs child
+          JOIN run_chain parent ON child.parent_run_id = parent.id
+        )
+        SELECT *
+        FROM creative_runs
+        WHERE id IN (SELECT id FROM run_chain)
+        ORDER BY version ASC, created_at ASC
+      `)
+      .all(rootId)
+    return rows.map((row: any) => this.getRun(row.id)).filter(Boolean) as CreativeRun[]
+  }
+
+  static regenerateScene(runId: string, sceneId: string, feedback: string = '') {
+    const row = getLocalDb()
+      .prepare(`SELECT * FROM storyboard_scenes WHERE id = ? AND run_id = ?`)
+      .get(sceneId, runId) as any
+    if (!row) return null
+
+    const updatedAt = toIso()
+    const normalizedFeedback = feedback.trim() || '强化视觉冲击与镜头层次'
+    const enhancedPrompt = `${row.video_prompt}\n\n创意反馈：${normalizedFeedback}`
+    const audioPrompt = `${row.audio_prompt}\n\n补充：节奏与情绪变化更明显`
+    const generationMeta = parseJson<Record<string, unknown>>(row.generation_meta_json, {})
+
+    getLocalDb().prepare(`
+      UPDATE storyboard_scenes
+      SET video_prompt = ?, audio_prompt = ?, status = ?, revision = ?, last_feedback = ?, generation_meta_json = ?, updated_at = ?
+      WHERE id = ? AND run_id = ?
+    `).run(
+      enhancedPrompt,
+      audioPrompt,
+      'regenerated',
+      (row.revision || 1) + 1,
+      normalizedFeedback,
+      JSON.stringify({
+        ...generationMeta,
+        source: 'scene-regenerate',
+        regeneratedAt: updatedAt
+      }),
+      updatedAt,
+      sceneId,
+      runId
+    )
+
+    getLocalDb().prepare(`
+      UPDATE creative_runs SET status = ?, updated_at = ? WHERE id = ?
+    `).run('generated', updatedAt, runId)
+
+    this.insertFeedbackEvent(runId, 'scene', {
+      feedback: normalizedFeedback,
+      sceneId
+    }, sceneId)
+
+    return this.getRun(runId)
+  }
+
+  static applyFeedback(runId: string, payload: CreativeFeedbackPayload) {
+    const nextRun = this.cloneRunWithScenes(runId, payload.runFeedback || '')
+    if (!nextRun) return null
+
+    const updatedAt = toIso()
+
+    if (payload.runFeedback?.trim()) {
+      this.insertFeedbackEvent(nextRun.id, 'run', {
+        feedback: payload.runFeedback.trim()
+      })
+      const notes = {
+        ...(nextRun.notes || {}),
+        runFeedback: payload.runFeedback.trim()
+      }
+      getLocalDb().prepare(`
+        UPDATE creative_runs SET notes_json = ?, updated_at = ? WHERE id = ?
+      `).run(JSON.stringify(notes), updatedAt, nextRun.id)
+    }
+
+    const sceneFeedbacks = Array.isArray(payload.sceneFeedbacks)
+      ? payload.sceneFeedbacks.filter(item => item && item.sceneId && item.feedback && item.feedback.trim())
+      : []
+
+    sceneFeedbacks.forEach((item) => {
+      let row = getLocalDb()
+        .prepare(`SELECT * FROM storyboard_scenes WHERE id = ? AND run_id = ?`)
+        .get(item.sceneId, nextRun.id) as any
+      if (!row) {
+        const rows = getLocalDb()
+          .prepare(`SELECT * FROM storyboard_scenes WHERE run_id = ?`)
+          .all(nextRun.id) as any[]
+        row = rows.find((candidate) => {
+          const meta = parseJson<Record<string, unknown>>(candidate.generation_meta_json, {})
+          return meta.sourceSceneId === item.sceneId
+        })
+      }
+      if (!row) return
+      const meta = parseJson<Record<string, unknown>>(row.generation_meta_json, {})
+      const nextVideoPrompt = `${row.video_prompt}\n\n反馈优化：${item.feedback.trim()}`
+      getLocalDb().prepare(`
+        UPDATE storyboard_scenes
+        SET video_prompt = ?, status = ?, revision = ?, last_feedback = ?, generation_meta_json = ?, updated_at = ?
+        WHERE id = ? AND run_id = ?
+      `).run(
+        nextVideoPrompt,
+        'regenerated',
+        (row.revision || 1) + 1,
+        item.feedback.trim(),
+        JSON.stringify({
+          ...meta,
+          source: 'run-feedback',
+          feedbackAppliedAt: updatedAt
+        }),
+        updatedAt,
+        row.id,
+        nextRun.id
+      )
+
+      this.insertFeedbackEvent(nextRun.id, 'scene', {
+        feedback: item.feedback.trim(),
+        sceneId: row.id,
+        sourceSceneId: item.sceneId
+      }, row.id)
+    })
+
+    getLocalDb().prepare(`
+      UPDATE creative_runs SET status = ?, updated_at = ? WHERE id = ?
+    `).run('generated', updatedAt, nextRun.id)
+
+    return {
+      previousRunId: runId,
+      run: this.getRun(nextRun.id)
+    }
+  }
+
+  static commitRun(runId: string, options?: { qualityScore?: number; notes?: Record<string, unknown> }) {
+    const current = this.getRun(runId)
+    if (!current) return null
+    const updatedAt = toIso()
+    const qualityScore = options?.qualityScore === undefined
+      ? current.qualityScore || 0
+      : Math.max(0, Math.min(1, Number(options.qualityScore)))
+    const notes = {
+      ...(current.notes || {}),
+      ...(options?.notes || {}),
+      committedAt: updatedAt
+    }
+
+    getLocalDb().prepare(`
+      UPDATE creative_runs
+      SET status = ?, quality_score = ?, notes_json = ?, updated_at = ?
+      WHERE id = ?
+    `).run('completed', qualityScore, JSON.stringify(notes), updatedAt, runId)
+
+    this.insertFeedbackEvent(runId, 'run', {
+      type: 'commit',
+      qualityScore
+    })
+
+    return this.getRun(runId)
+  }
+}

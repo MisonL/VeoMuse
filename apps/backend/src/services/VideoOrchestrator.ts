@@ -1,5 +1,6 @@
 // apps/backend/src/services/VideoOrchestrator.ts
 import type { VideoModelDriver, GenerateParams, GenerateResult } from './ModelDriver';
+import { TelemetryService } from './TelemetryService';
 
 export class VideoOrchestrator {
   private static drivers: Map<string, VideoModelDriver> = new Map();
@@ -17,7 +18,25 @@ export class VideoOrchestrator {
     }
 
     console.log(`🚀 分发生成任务到驱动: ${driver.name}`);
-    return await driver.generate(params);
+    const start = Date.now();
+    try {
+      const result = await driver.generate(params);
+      TelemetryService.getInstance().recordApiCall({
+        service: `MODEL-${modelId}`,
+        durationMs: Date.now() - start,
+        success: result.success && result.status === 'ok',
+        timestamp: new Date().toISOString()
+      });
+      return result;
+    } catch (error) {
+      TelemetryService.getInstance().recordApiCall({
+        service: `MODEL-${modelId}`,
+        durationMs: Date.now() - start,
+        success: false,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
   }
 
   static getAvailableModels() {

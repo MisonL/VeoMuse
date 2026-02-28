@@ -23,6 +23,10 @@ export class TelemetryService {
     if (this.apiMetrics.length > this.MAX_HISTORY) this.apiMetrics.shift();
   }
 
+  getRawMetrics() {
+    return [...this.apiMetrics];
+  }
+
   getSummary() {
     const apiStats: any = {};
     this.apiMetrics.forEach(m => {
@@ -32,8 +36,12 @@ export class TelemetryService {
       if (m.success) apiStats[m.service].success++;
     });
 
-    // 增加 Pro 级模拟：当前渲染队列与 GPU 压力 (模拟数据用于演示 Pro 质感)
-    const renderLoad = Math.random() * 45 + 10; 
+    const cpuCount = Math.max(1, os.cpus().length);
+    const load = os.loadavg();
+    const firstLoad = load[0] ?? 0;
+    const renderLoad = Number(Math.min(100, (firstLoad / cpuCount) * 100).toFixed(2));
+    const oneMinuteAgo = Date.now() - 60_000;
+    const recentFailures = this.apiMetrics.filter(m => !m.success && new Date(m.timestamp).getTime() >= oneMinuteAgo).length;
 
     return {
       api: apiStats,
@@ -43,9 +51,9 @@ export class TelemetryService {
           total: os.totalmem(),
           usage: 1 - os.freemem() / os.totalmem()
         },
-        load: os.loadavg(),
+        load,
         uptime: os.uptime(),
-        renderQueue: Math.floor(Math.random() * 3),
+        renderQueue: recentFailures,
         renderLoad
       },
       timestamp: new Date().toISOString()

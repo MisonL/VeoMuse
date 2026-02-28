@@ -1,26 +1,50 @@
 // apps/backend/src/services/AudioAnalysisService.ts
+import { BaseAiService } from './BaseAiService';
 
 export interface AudioBeats {
+  success?: boolean;
+  status?: 'ok' | 'not_implemented';
+  message?: string;
   bpm: number;
   beats: number[]; // 强拍时间戳列表 (s)
 }
 
-export class AudioAnalysisService {
+export class AudioAnalysisService extends BaseAiService {
+  protected serviceName = 'AI-Audio-Analyzer';
+  private static instance = new AudioAnalysisService();
+
   static async analyze(audioUrl: string): Promise<AudioBeats> {
-    console.log(`🎵 正在对音频执行深度节奏分析: ${audioUrl}`);
-    
-    // 模拟分析逻辑。在真实环境下，这里会调用 Essentia.js 或后端 FFmpeg 提取数据
-    const mockBpm = 120;
-    const mockBeats: number[] = [];
-    
-    // 模拟每隔 0.5 秒一个鼓点 (120 BPM)
-    for (let t = 0; t < 30; t += 0.5) {
-      mockBeats.push(Number(t.toFixed(2)));
+    const apiUrl = process.env.AUDIO_ANALYSIS_API_URL;
+    const apiKey = process.env.AUDIO_ANALYSIS_API_KEY;
+
+    if (!apiUrl || !apiKey) {
+      return {
+        success: false,
+        status: 'not_implemented',
+        message: 'Audio Analysis provider 未配置 (AUDIO_ANALYSIS_API_URL / AUDIO_ANALYSIS_API_KEY)',
+        bpm: 0,
+        beats: []
+      };
     }
 
-    return {
-      bpm: mockBpm,
-      beats: mockBeats
-    };
+    try {
+      const { data } = await this.instance.request<any>(`${apiUrl.replace(/\/$/, '')}/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({ audioUrl })
+      });
+
+      return {
+        success: true,
+        status: 'ok',
+        bpm: Number(data.bpm || 0),
+        beats: Array.isArray(data.beats) ? data.beats : []
+      } as AudioBeats;
+    } catch (error: any) {
+      throw new Error(`音频分析失败: ${error.message}`);
+    }
   }
 }

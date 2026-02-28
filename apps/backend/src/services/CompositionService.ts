@@ -3,7 +3,34 @@ import path from 'path';
 import fs from 'fs/promises';
 import type { TimelineData } from '@veomuse/shared';
 
+type ExportQuality = NonNullable<TimelineData['exportConfig']>['quality']
+
 export class CompositionService {
+  static resolveOutputOptions(quality?: ExportQuality) {
+    if (quality === 'spatial-vr') {
+      return [
+        '-vcodec libx265', '-tag:v hvc1',
+        '-metadata:s:v:0 horizontal_disparity=0.05',
+        '-metadata:s:v:0 eye_view=left',
+        '-metadata:s:v:1 eye_view=right',
+        '-pix_fmt yuv420p10le'
+      ]
+    }
+    if (quality === '4k-hdr') {
+      return [
+        '-vcodec libx265',
+        '-tag:v hvc1',
+        '-preset medium',
+        '-pix_fmt yuv420p10le',
+        '-vf scale=3840:2160',
+        '-color_primaries bt2020',
+        '-colorspace bt2020nc',
+        '-color_trc smpte2084'
+      ]
+    }
+    return []
+  }
+
   /**
    * 工业级合成逻辑：支持环境变量路径，内置路径校验
    */
@@ -11,13 +38,14 @@ export class CompositionService {
     const timestamp = Date.now();
     const config = timelineData.exportConfig?.quality;
     const isSpatial = config === 'spatial-vr';
+    const is4kHdr = config === '4k-hdr';
     
-    const outputFileName = `render_${isSpatial ? 'SPATIAL_VR_' : ''}${timestamp}.mp4`;
+    const outputFileName = `render_${isSpatial ? 'SPATIAL_VR_' : is4kHdr ? '4K_HDR_' : ''}${timestamp}.mp4`;
     
     // 物理路径解耦：优先从环境变量读取，若无则使用绝对路径
-    const baseUploadsDir = process.env.UPLOADS_PATH 
+    const baseUploadsDir = process.env.UPLOADS_PATH
       ? path.resolve(process.env.UPLOADS_PATH)
-      : path.join(process.cwd(), 'uploads');
+      : path.resolve(process.cwd(), '../../uploads');
     
     const outputDir = path.join(baseUploadsDir, 'generated');
     
@@ -36,14 +64,9 @@ export class CompositionService {
           }
         });
 
-        if (isSpatial) {
-          command.outputOptions([
-            '-vcodec libx265', '-tag:v hvc1',
-            '-metadata:s:v:0 horizontal_disparity=0.05',
-            '-metadata:s:v:0 eye_view=left',
-            '-metadata:s:v:1 eye_view=right',
-            '-pix_fmt yuv420p10le'
-          ]);
+        const outputOptions = this.resolveOutputOptions(config)
+        if (outputOptions.length > 0) {
+          command.outputOptions(outputOptions)
         }
 
         command

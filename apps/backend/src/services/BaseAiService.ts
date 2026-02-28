@@ -1,5 +1,4 @@
 // apps/backend/src/services/BaseAiService.ts
-import { ApiKeyService } from './ApiKeyService';
 import { TelemetryService } from './TelemetryService';
 
 export interface PerformanceMetrics {

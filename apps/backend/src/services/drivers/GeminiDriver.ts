@@ -10,6 +10,16 @@ export class GeminiDriver implements VideoModelDriver {
 
   async generate(params: GenerateParams): Promise<GenerateResult> {
     const keys = ApiKeyService.getAvailableKeys();
+    if (!keys.length) {
+      return {
+        success: false,
+        status: 'not_implemented',
+        operationName: '',
+        message: 'Gemini provider 未配置 GEMINI_API_KEYS',
+        provider: this.id
+      };
+    }
+
     let lastError: Error | null = null;
 
     for (const key of keys) {
@@ -36,8 +46,10 @@ export class GeminiDriver implements VideoModelDriver {
         const data = await response.json() as any;
         return {
           success: true,
+          status: 'ok',
           operationName: data.name,
-          message: 'Gemini 生成任务已提交'
+          message: 'Gemini 生成任务已提交',
+          provider: this.id
         };
 
       } catch (error: any) {
@@ -46,6 +58,13 @@ export class GeminiDriver implements VideoModelDriver {
       }
     }
 
-    throw lastError || new Error('Gemini API 密钥均不可用');
+    return {
+      success: false,
+      status: 'error',
+      operationName: '',
+      message: 'Gemini 请求失败',
+      provider: this.id,
+      error: lastError?.message || 'Gemini API 密钥均不可用'
+    };
   }
 }

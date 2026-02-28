@@ -11,11 +11,42 @@ export class VfxService extends BaseAiService {
   protected serviceName = 'AI-Neural-VFX';
   private static instance = new VfxService();
 
-  static async applyVfx(params: VfxParams): Promise<{ success: boolean; operationId: string }> {
-    console.log(`✨ [Metrics] 启动神经特效: ${params.vfxType}`);
-    return {
-      success: true,
-      operationId: `vfx_${params.vfxType}_${Date.now()}`
-    };
+  static async applyVfx(params: VfxParams): Promise<{ success: boolean; status: 'ok' | 'not_implemented' | 'error'; operationId: string; message?: string; error?: string }> {
+    const apiUrl = process.env.VFX_API_URL;
+    const apiKey = process.env.VFX_API_KEY;
+
+    if (!apiUrl || !apiKey) {
+      return {
+        success: false,
+        status: 'not_implemented',
+        operationId: '',
+        message: 'VFX provider 未配置 (VFX_API_URL / VFX_API_KEY)'
+      };
+    }
+
+    try {
+      const { data } = await this.instance.request<any>(`${apiUrl.replace(/\/$/, '')}/apply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(params)
+      });
+
+      return {
+        success: true,
+        status: 'ok',
+        operationId: data.operationId || `vfx_${params.vfxType}_${Date.now()}`
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        status: 'error',
+        operationId: '',
+        message: 'VFX 应用失败',
+        error: error.message
+      };
+    }
   }
 }

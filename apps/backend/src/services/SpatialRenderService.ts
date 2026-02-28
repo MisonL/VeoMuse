@@ -1,12 +1,14 @@
 // apps/backend/src/services/SpatialRenderService.ts
 import { BaseAiService } from './BaseAiService';
-import { ApiKeyService } from './ApiKeyService';
 
 export interface SpatialResult {
   success: boolean;
+  status?: 'ok' | 'not_implemented' | 'error';
+  message?: string;
   nerfDataUrl: string;
   meshUrl: string;
   totalVoxels: number;
+  error?: string;
 }
 
 export class SpatialRenderService extends BaseAiService {
@@ -14,13 +16,47 @@ export class SpatialRenderService extends BaseAiService {
   private static instance = new SpatialRenderService();
 
   static async reconstruct(clipId: string, quality: string = 'ultra'): Promise<SpatialResult> {
-    // 模拟重构逻辑，已对齐基类
-    console.log(`🧊 [Metrics] 启动空间重构: ${clipId}`);
-    return {
-      success: true,
-      nerfDataUrl: `/uploads/spatial/ultra_scene_${Date.now()}.splat`,
-      meshUrl: `/uploads/spatial/ultra_model_${Date.now()}.glb`,
-      totalVoxels: 1200000
-    };
+    const apiUrl = process.env.SPATIAL_API_URL;
+    const apiKey = process.env.SPATIAL_API_KEY;
+
+    if (!apiUrl || !apiKey) {
+      return {
+        success: false,
+        status: 'not_implemented',
+        message: 'Spatial provider 未配置 (SPATIAL_API_URL / SPATIAL_API_KEY)',
+        nerfDataUrl: '',
+        meshUrl: '',
+        totalVoxels: 0
+      };
+    }
+
+    try {
+      const { data } = await this.instance.request<any>(`${apiUrl.replace(/\/$/, '')}/reconstruct`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({ clipId, quality })
+      });
+
+      return {
+        success: true,
+        status: 'ok',
+        nerfDataUrl: data.nerfDataUrl,
+        meshUrl: data.meshUrl,
+        totalVoxels: data.totalVoxels || 0
+      } as SpatialResult;
+    } catch (error: any) {
+      return {
+        success: false,
+        status: 'error',
+        message: 'Spatial 重构失败',
+        nerfDataUrl: '',
+        meshUrl: '',
+        totalVoxels: 0,
+        error: error.message
+      };
+    }
   }
 }
