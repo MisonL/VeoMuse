@@ -151,7 +151,8 @@
   gap: 3px;
   border: 1px solid var(--ap-border);
   justify-self: center;
-  width: min(100%, 336px);
+  width: fit-content;
+  max-width: 100%;
   min-width: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
@@ -551,33 +552,82 @@ body.resizing-y {
 }
 
 .transport-btn {
-  background: color-mix(in srgb, var(--ap-surface) 90%, var(--ap-card) 10%);
-  border: 1px solid var(--ap-border);
-  color: var(--ap-text);
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%) 0%,
+    color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--ap-border) 82%, #ffffff 18%);
+  color: color-mix(in srgb, var(--ap-text) 88%, #0f172a 12%);
   width: 36px;
   height: 36px;
   border-radius: 999px;
   cursor: pointer;
-  transition: var(--ap-transition-fast);
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
   font-size: 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -2px 4px rgba(15, 23, 42, 0.08),
+    0 4px 10px rgba(15, 23, 42, 0.14);
+}
+
+.transport-btn::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 8px;
+  right: 8px;
+  height: 34%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0));
+  pointer-events: none;
+  z-index: -1;
 }
 
 .transport-btn:hover {
-  border-color: color-mix(in srgb, var(--ap-accent) 36%, #ffffff 64%);
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--ap-accent) 42%, #ffffff 58%);
+  transform: translateY(-1px) scale(1.03);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -2px 4px rgba(15, 23, 42, 0.08),
+    0 6px 14px rgba(15, 23, 42, 0.2);
+}
+
+.transport-btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow:
+    inset 0 2px 4px rgba(15, 23, 42, 0.18),
+    0 2px 6px rgba(15, 23, 42, 0.12);
 }
 
 .transport-btn.play {
-  color: var(--ap-accent);
+  color: #ffffff;
   width: 48px;
   height: 48px;
   font-size: 24px;
-  background: color-mix(in srgb, var(--ap-accent-soft) 78%, #ffffff 22%);
-  border-color: color-mix(in srgb, var(--ap-accent) 55%, #ffffff 45%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-accent) 90%, #3b82f6 10%) 0%,
+    color-mix(in srgb, var(--ap-accent) 72%, #1d4ed8 28%) 100%
+  );
+  border-color: color-mix(in srgb, var(--ap-accent) 65%, #ffffff 35%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -3px 7px rgba(9, 51, 109, 0.35),
+    0 8px 18px color-mix(in srgb, var(--ap-accent) 30%, rgba(9, 51, 109, 0.45));
   opacity: 1;
+}
+
+.transport-btn.play:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -3px 7px rgba(9, 51, 109, 0.35),
+    0 10px 22px color-mix(in srgb, var(--ap-accent) 42%, rgba(9, 51, 109, 0.5));
 }
 
 .audio-master-state {
@@ -762,7 +812,8 @@ body.resizing-y {
   }
 
   .mode-selector {
-    width: min(100%, 304px);
+    width: fit-content;
+    max-width: 100%;
   }
 
   .mode-tab {
