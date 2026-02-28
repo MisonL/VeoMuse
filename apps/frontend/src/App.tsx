@@ -336,8 +336,10 @@ function App() {
           {activeMode === 'edit' ? (
             <>
               <div className="monitor-overlay">
-                <div className="live-badge">● 实时</div>
-                <TimecodeDisplay />
+                <div className="monitor-overlay-left">
+                  <div className="live-badge">● 实时</div>
+                  <TimecodeDisplay />
+                </div>
                 <div className="preview-meta">
                   <button
                     onClick={() => setSpatialPreview(!isSpatialPreview)}
@@ -384,6 +386,7 @@ function App() {
       <footer className="pro-panel timeline-container" onMouseEnter={ensureTimelineReady} onFocusCapture={ensureTimelineReady}>
         <div className="timeline-actions">
           <div className="timeline-tools">
+            <span className="timeline-section-title">编辑工具</span>
             <div className="undo-group">
               <button id="tool-undo" aria-label="撤销" className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
               <button id="tool-redo" aria-label="重做" className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0}>↪</button>
@@ -394,6 +397,7 @@ function App() {
           </div>
 
           <div className="system-telemetry">
+            <span className="timeline-section-title telemetry-label">系统状态</span>
             <div className="telemetry-item">
               <span>GPU LOAD: <b className="telemetry-value success">{currentMetrics.gpu}%</b></span>
               <div className="telemetry-sparkline">

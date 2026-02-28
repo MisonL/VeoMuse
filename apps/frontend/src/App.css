@@ -31,7 +31,7 @@
   height: 100vh;
   width: 100vw;
   display: grid;
-  grid-template-rows: 62px 1fr 378px;
+  grid-template-rows: 62px 1fr 336px;
   gap: 10px;
   background:
     radial-gradient(1100px 360px at 20% -10%, color-mix(in srgb, var(--ap-accent) 9%, transparent), transparent 70%),
@@ -222,7 +222,7 @@
 
 .os-main {
   display: grid;
-  grid-template-columns: 324px 1fr 344px;
+  grid-template-columns: minmax(272px, 0.95fr) minmax(640px, 2.4fr) minmax(260px, 0.9fr);
   gap: 10px;
   min-height: 0;
 }
@@ -302,6 +302,13 @@
   pointer-events: auto;
 }
 
+.monitor-overlay-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
 .live-badge {
   color: #ff453a;
   font-size: 10px;
@@ -348,9 +355,11 @@
 .timecode {
   font-family: "SF Mono", ui-monospace, monospace;
   color: var(--ap-accent);
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 600;
-  letter-spacing: -1.5px;
+  letter-spacing: -1.1px;
+  line-height: 1;
+  text-shadow: 0 0 16px color-mix(in srgb, var(--ap-accent) 45%, transparent);
 }
 
 .transport-controls {
@@ -415,7 +424,7 @@
 }
 
 .timeline-container {
-  height: 378px;
+  height: 336px;
   flex-shrink: 0;
 }
 
@@ -433,6 +442,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.timeline-section-title {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ap-border);
+  background: color-mix(in srgb, var(--ap-surface) 86%, var(--ap-card) 14%);
+  color: var(--ap-text-dim);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .undo-group {
@@ -478,6 +502,10 @@
   align-items: center !important;
   gap: 14px;
   height: 100%;
+}
+
+.telemetry-label {
+  margin-right: 4px;
 }
 
 .telemetry-divider {
@@ -605,6 +633,7 @@
 
   .timeline-tools {
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .system-telemetry {
