@@ -158,6 +158,17 @@ const getCapabilities = () => {
   }
 }
 
+const hasRenderableSources = (timelineData: any) => {
+  if (!timelineData || !Array.isArray(timelineData.tracks)) return false
+
+  return timelineData.tracks.some((track: any) => (
+    track?.type !== 'text'
+    && track?.type !== 'mask'
+    && Array.isArray(track?.clips)
+    && track.clips.some((clip: any) => typeof clip?.src === 'string' && clip.src.trim().length > 0)
+  ))
+}
+
 export const createApp = () => {
   ensureDriversRegistered()
   ModelMarketplaceService.ensureInitialized()
@@ -791,7 +802,19 @@ export const createApp = () => {
       })
     })
 
-    .post('/api/video/compose', async ({ body }) => await CompositionService.compose(body.timelineData), { body: t.Object({ timelineData: t.Any() }) })
+    .post('/api/video/compose', async ({ body, set }) => {
+      if (!hasRenderableSources(body.timelineData)) {
+        set.status = 400
+        return {
+          success: false,
+          status: 'error',
+          error: '请先导入并放置至少一个可渲染片段后再导出',
+          code: 'VALIDATION'
+        }
+      }
+
+      return await CompositionService.compose(body.timelineData)
+    }, { body: t.Object({ timelineData: t.Any() }) })
 
     .ws('/ws/generation', { open(ws) { ws.send({ message: '已连接到旗舰级总线' }) } })
     .ws('/ws/collab/:workspaceId', {
