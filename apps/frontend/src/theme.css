@@ -1,37 +1,39 @@
-/**
- * VeoMuse Pro Theme System
- * 旗舰版主题变量体系 - 亮色优先
- */
-
 :root {
   color-scheme: light;
-  --ap-bg: #edf1f7;
-  --ap-surface: #ffffff;
-  --ap-card: #edf2f8;
-  --ap-panel: #f4f7fc;
+  --ap-font-ui: "Avenir Next", "PingFang SC", "Noto Sans SC", "Segoe UI", sans-serif;
+  --ap-font-display: "Avenir Next Condensed", "DIN Alternate", "PingFang SC", "Noto Sans SC", sans-serif;
+  --ap-font-mono: "SF Mono", "JetBrains Mono", "Fira Code", "Menlo", monospace;
+
+  --ap-bg: #e8eff7;
+  --ap-surface: #fdfefe;
+  --ap-card: #f1f5fb;
+  --ap-panel: #f6f9fe;
+  --ap-panel-soft: #eef3fa;
   --pro-surface: #edf2f8;
 
-  --ap-accent: #0b66ff;
-  --ap-accent-soft: rgba(11, 102, 255, 0.12);
-  --ap-accent-glow: rgba(11, 102, 255, 0.22);
+  --ap-accent: #0f62fe;
+  --ap-accent-soft: rgba(15, 98, 254, 0.14);
+  --ap-accent-glow: rgba(15, 98, 254, 0.3);
+  --ap-accent-strong: #0043ce;
 
-  --ap-border: rgba(11, 21, 42, 0.14);
-  --ap-text: #0f172a;
-  --ap-text-dim: #3f4f68;
-  --ap-monitor-bg: #0e141f;
-  --ap-monitor-border: rgba(11, 21, 42, 0.3);
+  --ap-border: rgba(10, 26, 57, 0.16);
+  --ap-text: #12213f;
+  --ap-text-dim: #445474;
+  --ap-monitor-bg: #050a14;
+  --ap-monitor-border: rgba(226, 232, 240, 0.24);
 
-  --ap-blur: 20px;
-  --ap-saturate: 150%;
-  --ap-glass-bg: rgba(255, 255, 255, 0.72);
+  --ap-blur: 18px;
+  --ap-saturate: 148%;
+  --ap-glass-bg: rgba(255, 255, 255, 0.76);
 
-  --ap-radius: 12px;
-  --ap-radius-inner: 8px;
+  --ap-radius: 14px;
+  --ap-radius-inner: 10px;
 
-  --ap-transition: all 0.3s cubic-bezier(0.2, 0.85, 0.25, 1);
-  --ap-transition-fast: all 0.18s cubic-bezier(0.2, 0.85, 0.25, 1);
-  --ap-spring-button: all 0.25s cubic-bezier(0.22, 1.15, 0.35, 1);
-  --ap-shadow-subtle: 0 6px 16px rgba(16, 24, 40, 0.08);
+  --ap-transition: all 0.26s cubic-bezier(0.22, 0.86, 0.24, 1);
+  --ap-transition-fast: all 0.16s cubic-bezier(0.22, 0.86, 0.24, 1);
+  --ap-spring-button: all 0.23s cubic-bezier(0.22, 1.05, 0.35, 1);
+  --ap-shadow-subtle: 0 10px 26px rgba(16, 24, 40, 0.1);
+  --ap-shadow-panel: 0 2px 5px rgba(16, 24, 40, 0.08), 0 16px 30px rgba(16, 24, 40, 0.08);
 
   /* 兼容旧变量命名 */
   --bg-color: var(--ap-bg);
@@ -42,41 +44,43 @@
   --text-sub: var(--ap-text-dim);
   --accent-color: var(--ap-accent);
   --accent-glow: var(--ap-accent-glow);
-  --danger-color: #d92d20;
-  --success-color: #16a34a;
+  --danger-color: #c9312c;
+  --success-color: #0c9b4b;
 }
 
 [data-theme='dark'] {
   color-scheme: dark;
-  --ap-bg: #05070d;
-  --ap-surface: #101828;
-  --ap-card: #1d2939;
-  --ap-panel: #101828;
-  --pro-surface: #121c2c;
+  --ap-bg: #060b16;
+  --ap-surface: #0f172b;
+  --ap-card: #1a2640;
+  --ap-panel: #101a31;
+  --ap-panel-soft: #17233d;
+  --pro-surface: #141f36;
 
-  --ap-accent: #5aa2ff;
-  --ap-accent-soft: rgba(90, 162, 255, 0.2);
-  --ap-accent-glow: rgba(90, 162, 255, 0.35);
+  --ap-accent: #73a9ff;
+  --ap-accent-soft: rgba(115, 169, 255, 0.22);
+  --ap-accent-glow: rgba(115, 169, 255, 0.35);
+  --ap-accent-strong: #5393ff;
 
-  --ap-border: rgba(242, 244, 247, 0.14);
-  --ap-text: #f2f4f7;
-  --ap-text-dim: #d0d5dd;
-  --ap-monitor-bg: #030508;
-  --ap-monitor-border: rgba(208, 213, 221, 0.22);
+  --ap-border: rgba(226, 232, 240, 0.18);
+  --ap-text: #eef2ff;
+  --ap-text-dim: #cad5f0;
+  --ap-monitor-bg: #03060f;
+  --ap-monitor-border: rgba(191, 219, 254, 0.3);
 
-  --ap-blur: 28px;
-  --ap-saturate: 180%;
-  --ap-glass-bg: rgba(16, 24, 40, 0.78);
+  --ap-blur: 24px;
+  --ap-saturate: 174%;
+  --ap-glass-bg: rgba(13, 20, 38, 0.78);
 
-  --ap-shadow-subtle: 0 2px 10px rgba(3, 5, 8, 0.45);
+  --ap-shadow-subtle: 0 2px 10px rgba(2, 6, 23, 0.5);
+  --ap-shadow-panel: 0 2px 8px rgba(2, 6, 23, 0.4), 0 20px 36px rgba(2, 6, 23, 0.48);
 
-  --danger-color: #ff5f56;
-  --success-color: #3adb76;
+  --danger-color: #ff6363;
+  --success-color: #3ddb89;
 }
 
-/* 全局过渡应用 */
 body, div, aside, header, footer, section, nav, button, input, textarea {
-  transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+  transition: background-color 0.24s ease, color 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
 }
 
 button {
