@@ -15,8 +15,7 @@ GEMINI_API_KEYS=key1,key2
 ENV
 
 # 2. 启动集群
-cd config/docker
-docker-compose up -d --build
+docker-compose -f config/docker/docker-compose.yml up -d --build
 ```
 
 ## 🏗️ 架构详情
@@ -32,7 +31,7 @@ docker-compose up -d --build
 | Key | Default | Note |
 |---|---|---|
 | `PORT` | 33117 | 后端端口 |
-| `REDIS_PASSWORD` | `veomuse-redis-change-me` | Redis `requirepass` 口令，生产环境务必覆盖 |
+| `REDIS_PASSWORD` | (required) | Redis `requirepass` 口令，生产环境必填且必须为强口令 |
 | `UPLOADS_PATH` | `/app/uploads` | 导出与上传统一根目录 |
 | `VEOMUSE_DB_PATH` | `/app/data/veomuse.sqlite` | 本地 SQLite 存储路径（模型超市、创意闭环、协作审计） |
 | `DB_AUTO_REPAIR` | `true` | 启动时发现 SQLite 损坏自动尝试修复（`false` 时关闭） |
@@ -60,15 +59,44 @@ docker-compose up -d --build
 ```bash
 curl -s http://127.0.0.1:18081/api/health
 curl -s http://127.0.0.1:18081/api/capabilities
+
+STAMP=$(date +%s)
+SESSION_JSON=$(curl -s http://127.0.0.1:18081/api/auth/register \
+  -X POST \
+  -H 'Content-Type: application/json' \
+  -d "{\"email\":\"smoke-${STAMP}@veomuse.local\",\"password\":\"Passw0rd!123\",\"organizationName\":\"SmokeOrg-${STAMP}\"}")
+ACCESS_TOKEN=$(echo "$SESSION_JSON" | jq -r '.session.accessToken')
+ORG_ID=$(echo "$SESSION_JSON" | jq -r '.organizations[0].id')
+
 curl -s http://127.0.0.1:18081/api/models/marketplace | jq '.models | length'
-curl -s http://127.0.0.1:18081/api/models/policies | jq '.policies | length'
-WS_JSON=$(curl -s http://127.0.0.1:18081/api/workspaces -X POST -H 'Content-Type: application/json' -d '{"name":"smoke-ws","ownerName":"OwnerSmoke"}')
+curl -s http://127.0.0.1:18081/api/models/policies \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  -H "x-organization-id: ${ORG_ID}" | jq '.policies | length'
+
+WS_JSON=$(curl -s http://127.0.0.1:18081/api/workspaces \
+  -X POST \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  -H "x-organization-id: ${ORG_ID}" \
+  -d "{\"name\":\"smoke-ws-${STAMP}\",\"ownerName\":\"OwnerSmoke\",\"organizationId\":\"${ORG_ID}\"}")
 WORKSPACE_ID=$(echo "$WS_JSON" | jq -r '.workspace.id')
 PROJECT_ID=$(echo "$WS_JSON" | jq -r '.defaultProject.id')
-TOKEN_JSON=$(curl -s http://127.0.0.1:18081/api/storage/upload-token -X POST -H 'Content-Type: application/json' -H 'x-workspace-actor: OwnerSmoke' -d "{\"workspaceId\":\"${WORKSPACE_ID}\",\"projectId\":\"${PROJECT_ID}\",\"fileName\":\"demo.mp4\"}")
+
+TOKEN_JSON=$(curl -s http://127.0.0.1:18081/api/storage/upload-token \
+  -X POST \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  -H "x-organization-id: ${ORG_ID}" \
+  -d "{\"workspaceId\":\"${WORKSPACE_ID}\",\"projectId\":\"${PROJECT_ID}\",\"fileName\":\"demo.mp4\"}")
 echo "$TOKEN_JSON" | jq '.token.provider, .token.objectKey'
 UPLOAD_URL=$(echo "$TOKEN_JSON" | jq -r '.token.uploadUrl')
-curl -s "http://127.0.0.1:18081${UPLOAD_URL}" -X PUT -H 'Content-Type: application/octet-stream' -H 'x-workspace-actor: OwnerSmoke' --data-binary 'demo' | jq '.uploaded.bytes'
+
+curl -s "http://127.0.0.1:18081${UPLOAD_URL}" \
+  -X PUT \
+  -H 'Content-Type: application/octet-stream' \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  --data-binary 'demo' | jq '.uploaded.bytes'
+
 curl -s http://127.0.0.1:18081/api/admin/db/health -H "x-admin-token: $ADMIN_TOKEN" | jq '.health.status'
 curl -s http://127.0.0.1:18081/api/admin/db/runtime -H "x-admin-token: $ADMIN_TOKEN" | jq '.runtime'
 curl -I http://127.0.0.1:18081 | grep -E "Content-Security-Policy|X-Frame-Options|Referrer-Policy|Permissions-Policy"
@@ -89,8 +117,9 @@ CI 已内置双层扫描：
 - `Gitleaks Deep Scan`（历史级深度扫描 + SARIF）
 
 ## 🔒 协作鉴权要求
-- 工作区 Owner 级接口（邀请管理、成员管理）必须携带 `x-workspace-actor`，并且该成员在目标工作区中真实角色为 `owner`。
-- WebSocket 协作通道只允许已加入工作区的成员连接；非成员会收到错误并断开。
+- 所有工作区接口统一使用 `Authorization: Bearer <accessToken>`，并以真实工作区成员角色做鉴权（`viewer/editor/owner`）。
+- 邀请与成员管理接口要求 `owner` 角色；上传令牌与本地上传要求至少 `editor` 角色。
+- WebSocket 协作通道必须携带 `veomuse-auth.<accessToken>` 子协议，且仅允许已加入工作区的成员连接；非成员会被立即断开。
 
 ## 🧪 协作 WS 压测脚本
 默认对运行中的后端执行协作通道压测（创建工作区 -> 多客户端并发连接 -> timeline/cursor/heartbeat ACK 统计）。
