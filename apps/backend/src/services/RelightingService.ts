@@ -1,13 +1,16 @@
 // apps/backend/src/services/RelightingService.ts
 import { BaseAiService } from './BaseAiService';
+import type { ChannelRuntimeContext } from './ChannelConfigService';
+import { ChannelConfigService } from './ChannelConfigService';
 
 export class RelightingService extends BaseAiService {
   protected serviceName = 'AI-Relighting-Engine';
   private static instance = new RelightingService();
 
-  static async applyRelighting(clipId: string, style: string): Promise<any> {
-    const apiUrl = process.env.RELIGHT_API_URL;
-    const apiKey = process.env.RELIGHT_API_KEY;
+  static async applyRelighting(clipId: string, style: string, context?: ChannelRuntimeContext): Promise<any> {
+    const channel = context?.organizationId ? ChannelConfigService.resolve('relighting', context) : null
+    const apiUrl = channel?.baseUrl || process.env.RELIGHT_API_URL;
+    const apiKey = channel?.apiKey || process.env.RELIGHT_API_KEY;
 
     if (!apiUrl || !apiKey) {
       return {

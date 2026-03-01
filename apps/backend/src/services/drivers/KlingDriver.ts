@@ -1,13 +1,20 @@
 // apps/backend/src/services/drivers/KlingDriver.ts
-import type { VideoModelDriver, GenerateParams, GenerateResult } from '../ModelDriver';
+import type { VideoModelDriver, GenerateParams, GenerateResult, GenerateRuntimeContext } from '../ModelDriver';
+import { ChannelConfigService } from '../ChannelConfigService';
 
 export class KlingDriver implements VideoModelDriver {
   id = 'kling-v1';
   name = '快手可灵 Kling V1';
 
-  async generate(params: GenerateParams): Promise<GenerateResult> {
-    const apiUrl = process.env.KLING_API_URL;
-    const apiKey = process.env.KLING_API_KEY;
+  async generate(params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult> {
+    const channel = context?.organizationId
+      ? ChannelConfigService.resolve(this.id, {
+        organizationId: context.organizationId,
+        workspaceId: context.workspaceId
+      })
+      : null
+    const apiUrl = channel?.baseUrl || process.env.KLING_API_URL;
+    const apiKey = channel?.apiKey || process.env.KLING_API_KEY;
 
     if (!apiUrl || !apiKey) {
       return {

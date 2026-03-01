@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { app } from '../apps/backend/src/index';
 import { VfxService } from '../apps/backend/src/services/VfxService';
+import { createAuthHeaders, createTestSession } from './helpers/auth';
 
 describe('影棚特效链路验证', () => {
   const envBackup: Record<string, string | undefined> = {};
@@ -22,13 +23,17 @@ describe('影棚特效链路验证', () => {
   });
 
   it('provider 未配置时应返回 not_implemented', async () => {
+    const session = await createTestSession('vfx-flow')
     process.env.VFX_API_URL = '';
     process.env.VFX_API_KEY = '';
 
     const response = await app.handle(
       new Request('http://localhost/api/ai/vfx/apply', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           clipId: 'clip-vfx-1',
           vfxType: 'magic-particles',

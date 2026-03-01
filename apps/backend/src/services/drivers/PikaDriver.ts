@@ -1,14 +1,21 @@
 // apps/backend/src/services/drivers/PikaDriver.ts
-import type { VideoModelDriver, GenerateParams, GenerateResult } from '../ModelDriver';
+import type { VideoModelDriver, GenerateParams, GenerateResult, GenerateRuntimeContext } from '../ModelDriver';
+import { ChannelConfigService } from '../ChannelConfigService';
 
 export class PikaDriver implements VideoModelDriver {
   id = 'pika-1.5';
   name = 'Pika Art 1.5';
 
-  async generate(params: GenerateParams): Promise<GenerateResult> {
+  async generate(params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult> {
     const effect = params.options?.creativeEffect || 'squish';
-    const apiUrl = process.env.PIKA_API_URL;
-    const apiKey = process.env.PIKA_API_KEY;
+    const channel = context?.organizationId
+      ? ChannelConfigService.resolve(this.id, {
+        organizationId: context.organizationId,
+        workspaceId: context.workspaceId
+      })
+      : null
+    const apiUrl = channel?.baseUrl || process.env.PIKA_API_URL;
+    const apiKey = channel?.apiKey || process.env.PIKA_API_KEY;
 
     if (!apiUrl || !apiKey) {
       return {

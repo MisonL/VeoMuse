@@ -17,7 +17,6 @@ export abstract class BaseAiService {
   ): Promise<{ data: T; metrics: PerformanceMetrics }> {
     const startTime = performance.now();
     let lastError: Error | null = null;
-    let success = false;
 
     for (let i = 0; i < retries; i++) {
       try {
@@ -31,7 +30,6 @@ export abstract class BaseAiService {
         const data = await response.json() as any;
         const endTime = performance.now();
         const durationMs = Math.round(endTime - startTime);
-        success = true;
 
         const metrics: PerformanceMetrics = {
           durationMs,

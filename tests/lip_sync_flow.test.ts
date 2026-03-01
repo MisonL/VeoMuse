@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { LipSyncService } from '../apps/backend/src/services/LipSyncService';
 import { app } from '../apps/backend/src/index';
+import { createAuthHeaders, createTestSession } from './helpers/auth';
 
 describe('口型同步链路验证', () => {
   const envBackup: Record<string, string | undefined> = {};
@@ -50,6 +51,7 @@ describe('口型同步链路验证', () => {
   });
 
   it('生成接口应兼容 sync_lip 并透传为 syncLip', async () => {
+    const session = await createTestSession('lip-sync')
     process.env.LUMA_API_URL = 'https://mock.luma.local';
     process.env.LUMA_API_KEY = 'mock-token';
 
@@ -70,7 +72,10 @@ describe('口型同步链路验证', () => {
     const response = await app.handle(
       new Request('http://localhost/api/video/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           modelId: 'luma-dream',
           text: '测试口型兼容',

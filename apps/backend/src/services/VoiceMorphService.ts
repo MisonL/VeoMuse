@@ -1,13 +1,16 @@
 // apps/backend/src/services/VoiceMorphService.ts
 import { BaseAiService } from './BaseAiService';
+import type { ChannelRuntimeContext } from './ChannelConfigService';
+import { ChannelConfigService } from './ChannelConfigService';
 
 export class VoiceMorphService extends BaseAiService {
   protected serviceName = 'AI-Voice-Morpher';
   private static instance = new VoiceMorphService();
 
-  static async morph(audioUrl: string, targetVoiceId: string): Promise<any> {
-    const apiUrl = process.env.VOICE_MORPH_API_URL;
-    const apiKey = process.env.VOICE_MORPH_API_KEY;
+  static async morph(audioUrl: string, targetVoiceId: string, context?: ChannelRuntimeContext): Promise<any> {
+    const channel = context?.organizationId ? ChannelConfigService.resolve('voiceMorph', context) : null
+    const apiUrl = channel?.baseUrl || process.env.VOICE_MORPH_API_URL;
+    const apiKey = channel?.apiKey || process.env.VOICE_MORPH_API_KEY;
 
     if (!apiUrl || !apiKey) {
       return {

@@ -1,6 +1,7 @@
 // apps/backend/src/services/drivers/GeminiDriver.ts
-import type { VideoModelDriver, GenerateParams, GenerateResult } from '../ModelDriver';
+import type { VideoModelDriver, GenerateParams, GenerateResult, GenerateRuntimeContext } from '../ModelDriver';
 import { ApiKeyService } from '../ApiKeyService';
+import { ChannelConfigService } from '../ChannelConfigService';
 
 export class GeminiDriver implements VideoModelDriver {
   id = 'veo-3.1';
@@ -8,8 +9,18 @@ export class GeminiDriver implements VideoModelDriver {
 
   private API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-  async generate(params: GenerateParams): Promise<GenerateResult> {
-    const keys = ApiKeyService.getAvailableKeys();
+  async generate(params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult> {
+    const channel = context?.organizationId
+      ? ChannelConfigService.resolve(this.id, {
+        organizationId: context.organizationId,
+        workspaceId: context.workspaceId
+      })
+      : null
+    const channelKeys = channel?.apiKey
+      ? channel.apiKey.split(',').map(item => item.trim()).filter(Boolean)
+      : []
+    const keys = channelKeys.length ? channelKeys : ApiKeyService.getAvailableKeys()
+    const apiBase = channel?.baseUrl?.trim() ? channel.baseUrl.replace(/\/$/, '') : this.API_BASE
     if (!keys.length) {
       return {
         success: false,
@@ -24,7 +35,7 @@ export class GeminiDriver implements VideoModelDriver {
 
     for (const key of keys) {
       try {
-        const url = `${this.API_BASE}/veo-3.1-generate-001:predictLongRunning?key=${key}`;
+        const url = `${apiBase}/veo-3.1-generate-001:predictLongRunning?key=${key}`;
         
         const response = await fetch(url, {
           method: 'POST',

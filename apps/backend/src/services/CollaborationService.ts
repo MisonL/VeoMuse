@@ -9,6 +9,7 @@ interface WsLike {
 interface JoinPayload {
   workspaceId: string
   memberName: string
+  userId?: string
   role?: WorkspaceRole
   sessionId?: string
 }
@@ -56,6 +57,7 @@ export class CollaborationService {
     workspaceId: string
     sessionId: string
     memberName: string
+    userId: string | null
     role: WorkspaceRole
   }>()
 
@@ -76,11 +78,13 @@ export class CollaborationService {
 
     const roleFromQuery = query.role === 'owner' || query.role === 'editor' ? query.role : 'viewer'
     const roleFromData = data.role === 'owner' || data.role === 'editor' || data.role === 'viewer' ? data.role : undefined
+    const userId = meta?.userId || data.userId || query.userId || null
 
     return {
       workspaceId: meta?.workspaceId || data.workspaceId || params.workspaceId || query.workspaceId || null,
       sessionId: meta?.sessionId || data.sessionId || query.sessionId || null,
       memberName: meta?.memberName || data.memberName || query.memberName || 'Guest',
+      userId: userId ? String(userId) : null,
       role: (meta?.role || roleFromData || roleFromQuery || 'viewer') as WorkspaceRole
     }
   }
@@ -89,35 +93,41 @@ export class CollaborationService {
     const sessionId = payload.sessionId?.trim() || `sess_${crypto.randomUUID()}`
     const workspaceId = payload.workspaceId.trim()
     const memberName = payload.memberName.trim() || 'Guest'
-    const memberRole = WorkspaceService.getMemberRole(workspaceId, memberName)
-    if (!memberRole) {
+    const userId = payload.userId?.trim() || null
+    const member = userId
+      ? WorkspaceService.getMemberByUserId(workspaceId, userId)
+      : WorkspaceService.getMember(workspaceId, memberName)
+    if (!member) {
       safeSend(ws, {
         type: 'error',
         error: 'Member is not part of workspace'
       })
       return false
     }
-    const role = memberRole
+    const role = member.role
+    const resolvedMemberName = member.name
 
     ws.data = {
       ...(ws.data || {}),
       workspaceId,
       sessionId,
-      memberName,
+      memberName: resolvedMemberName,
+      userId,
       role
     }
     this.sessionMeta.set(ws, {
       workspaceId,
       sessionId,
-      memberName,
+      memberName: resolvedMemberName,
+      userId,
       role
     })
 
     this.workspaceMap(workspaceId).set(sessionId, ws)
-    WorkspaceService.upsertPresence(workspaceId, sessionId, memberName, role)
+    WorkspaceService.upsertPresence(workspaceId, sessionId, resolvedMemberName, role)
     WorkspaceService.logCollabEvent(
       workspaceId,
-      memberName,
+      resolvedMemberName,
       'presence.join',
       { sessionId, role },
       { sessionId }
@@ -137,7 +147,7 @@ export class CollaborationService {
         type: 'presence.joined',
         workspaceId,
         sessionId,
-        memberName,
+        memberName: resolvedMemberName,
         role,
         members: snapshot
       },
@@ -187,7 +197,8 @@ export class CollaborationService {
     const session = this.resolveSession(ws)
     const workspaceId = session.workspaceId
     const sessionId = session.sessionId
-    const memberName = session.memberName
+    let memberName = session.memberName
+    let sessionUserId = session.userId
     let role: WorkspaceRole = session.role
 
     if (!workspaceId || !sessionId) {
@@ -195,25 +206,42 @@ export class CollaborationService {
       return
     }
 
-    const currentRole = WorkspaceService.getMemberRole(workspaceId, memberName)
-    if (!currentRole) {
+    // 某些运行时实现会在 message 回调中丢失 open 阶段注入的 userId；
+    // 兜底从 presence(sessionId) 恢复身份，避免协作通道被误判为非成员。
+    if (!sessionUserId) {
+      const presence = WorkspaceService.getPresenceBySession(workspaceId, sessionId)
+      if (presence) {
+        memberName = presence.memberName
+        role = presence.role
+      }
+    }
+
+    const currentMember = sessionUserId
+      ? WorkspaceService.getMemberByUserId(workspaceId, sessionUserId)
+      : WorkspaceService.getMember(workspaceId, memberName)
+    if (!currentMember) {
       safeSend(ws, { type: 'error', error: 'Member is not part of workspace' })
       this.leave(ws)
       return
     }
+    const currentRole = currentMember.role
+    const currentName = currentMember.name
+    sessionUserId = currentMember.userId || sessionUserId
+    const effectiveMemberName = currentName || memberName
     if (currentRole !== role) {
       role = currentRole
-      ws.data = { ...(ws.data || {}), role }
+      ws.data = { ...(ws.data || {}), role, memberName: effectiveMemberName }
       this.sessionMeta.set(ws, {
         workspaceId,
         sessionId,
-        memberName,
+        memberName: effectiveMemberName,
+        userId: sessionUserId || null,
         role
       })
     }
 
     if (message.type === 'presence.heartbeat') {
-      WorkspaceService.upsertPresence(workspaceId, sessionId, memberName, role)
+      WorkspaceService.upsertPresence(workspaceId, sessionId, effectiveMemberName, role)
       safeSend(ws, { type: 'ack', ackType: 'presence.heartbeat', ts: Date.now() })
       return
     }
@@ -228,10 +256,10 @@ export class CollaborationService {
       return
     }
 
-    WorkspaceService.upsertPresence(workspaceId, sessionId, memberName, role)
+    WorkspaceService.upsertPresence(workspaceId, sessionId, effectiveMemberName, role)
     WorkspaceService.logCollabEvent(
       workspaceId,
-      memberName,
+      effectiveMemberName,
       message.type,
       {
         ...message.payload,
@@ -247,7 +275,7 @@ export class CollaborationService {
         eventType: message.type,
         workspaceId,
         projectId: message.projectId || null,
-        actorName: memberName,
+        actorName: effectiveMemberName,
         sessionId,
         payload: message.payload || {},
         ts: Date.now()

@@ -1,5 +1,5 @@
 // apps/backend/src/services/VideoOrchestrator.ts
-import type { VideoModelDriver, GenerateParams, GenerateResult } from './ModelDriver';
+import type { VideoModelDriver, GenerateParams, GenerateResult, GenerateRuntimeContext } from './ModelDriver';
 import { TelemetryService } from './TelemetryService';
 
 export class VideoOrchestrator {
@@ -10,7 +10,7 @@ export class VideoOrchestrator {
     this.drivers.set(driver.id, driver);
   }
 
-  static async generate(modelId: string, params: GenerateParams): Promise<GenerateResult> {
+  static async generate(modelId: string, params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult> {
     const driver = this.drivers.get(modelId);
     
     if (!driver) {
@@ -20,7 +20,7 @@ export class VideoOrchestrator {
     console.log(`🚀 分发生成任务到驱动: ${driver.name}`);
     const start = Date.now();
     try {
-      const result = await driver.generate(params);
+      const result = await driver.generate(params, context);
       TelemetryService.getInstance().recordApiCall({
         service: `MODEL-${modelId}`,
         durationMs: Date.now() - start,

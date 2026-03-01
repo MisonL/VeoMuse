@@ -1,5 +1,7 @@
 // apps/backend/src/services/VfxService.ts
 import { BaseAiService } from './BaseAiService';
+import type { ChannelRuntimeContext } from './ChannelConfigService';
+import { ChannelConfigService } from './ChannelConfigService';
 
 export interface VfxParams {
   clipId: string;
@@ -11,9 +13,13 @@ export class VfxService extends BaseAiService {
   protected serviceName = 'AI-Neural-VFX';
   private static instance = new VfxService();
 
-  static async applyVfx(params: VfxParams): Promise<{ success: boolean; status: 'ok' | 'not_implemented' | 'error'; operationId: string; message?: string; error?: string }> {
-    const apiUrl = process.env.VFX_API_URL;
-    const apiKey = process.env.VFX_API_KEY;
+  static async applyVfx(
+    params: VfxParams,
+    context?: ChannelRuntimeContext
+  ): Promise<{ success: boolean; status: 'ok' | 'not_implemented' | 'error'; operationId: string; message?: string; error?: string }> {
+    const channel = context?.organizationId ? ChannelConfigService.resolve('vfx', context) : null
+    const apiUrl = channel?.baseUrl || process.env.VFX_API_URL;
+    const apiKey = channel?.apiKey || process.env.VFX_API_KEY;
 
     if (!apiUrl || !apiKey) {
       return {

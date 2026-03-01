@@ -14,18 +14,40 @@ export interface MotionSyncPayload {
 }
 
 export class ActorConsistencyService {
-  private static actors: ActorProfile[] = [
-    { id: 'hero-man', name: '英俊男性', refImage: '/assets/actors/hero.jpg', createdAt: new Date().toISOString() },
-    { id: 'smart-girl', name: '智慧少女', refImage: '/assets/actors/girl.jpg', createdAt: new Date().toISOString() }
-  ];
+  private static actorsByOrganization = new Map<string, ActorProfile[]>();
 
-  static getActor(id: string): ActorProfile | undefined {
-    return this.actors.find(a => a.id === id);
+  private static buildSeedActors(): ActorProfile[] {
+    const now = new Date().toISOString();
+    return [
+      { id: 'hero-man', name: '英俊男性', refImage: '/assets/actors/hero.jpg', createdAt: now },
+      { id: 'smart-girl', name: '智慧少女', refImage: '/assets/actors/girl.jpg', createdAt: now }
+    ];
   }
 
-  static getAllActors(): ActorProfile[] { return this.actors; }
+  private static normalizeOrganizationId(organizationId?: string): string {
+    const normalized = (organizationId || '').trim();
+    return normalized || 'org_default';
+  }
 
-  static createActor(name: string, refImage: string): ActorProfile {
+  private static resolveActors(organizationId?: string): ActorProfile[] {
+    const orgId = this.normalizeOrganizationId(organizationId);
+    const existing = this.actorsByOrganization.get(orgId);
+    if (existing) return existing;
+    const seed = this.buildSeedActors();
+    this.actorsByOrganization.set(orgId, seed);
+    return seed;
+  }
+
+  static getActor(id: string, organizationId?: string): ActorProfile | undefined {
+    return this.resolveActors(organizationId).find(a => a.id === id);
+  }
+
+  static getAllActors(organizationId?: string): ActorProfile[] {
+    return [...this.resolveActors(organizationId)];
+  }
+
+  static createActor(name: string, refImage: string, organizationId?: string): ActorProfile {
+    const actors = this.resolveActors(organizationId);
     const sanitized = name.trim().toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-');
     const actor: ActorProfile = {
       id: `${sanitized || 'actor'}-${Date.now()}`,
@@ -33,12 +55,12 @@ export class ActorConsistencyService {
       refImage: refImage.trim(),
       createdAt: new Date().toISOString()
     };
-    this.actors = [actor, ...this.actors];
+    this.actorsByOrganization.set(this.normalizeOrganizationId(organizationId), [actor, ...actors]);
     return actor;
   }
 
-  static syncMotion(actorId: string, motionData: MotionSyncPayload) {
-    const actor = this.getActor(actorId);
+  static syncMotion(actorId: string, motionData: MotionSyncPayload, organizationId?: string) {
+    const actor = this.getActor(actorId, organizationId);
     if (!actor) {
       throw new Error(`未找到演员: ${actorId}`);
     }
@@ -54,8 +76,8 @@ export class ActorConsistencyService {
   }
 
   // 增强型：支持自定义一致性强度
-  static buildCharacterParams(actorId: string, prompt: string, strength: number = 1.0) {
-    const actor = this.getActor(actorId);
+  static buildCharacterParams(actorId: string, prompt: string, strength: number = 1.0, organizationId?: string) {
+    const actor = this.getActor(actorId, organizationId);
     if (!actor) return { text: prompt };
 
     return {

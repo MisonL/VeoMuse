@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from '../apps/backend/src/index'
+import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 describe('P2 端到端主路径回归', () => {
   it('应串通策略治理 -> 创意 run -> 协作邀请 -> 本地上传链路', async () => {
+    const owner = await createTestSession('p2-owner')
+    const editor = await createTestSession('p2-editor')
+
     const policyResp = await app.handle(
       new Request('http://localhost/api/models/policies', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           name: 'P2-E2E-Policy',
           priority: 'quality',
@@ -23,7 +30,10 @@ describe('P2 端到端主路径回归', () => {
     const decisionResp = await app.handle(
       new Request(`http://localhost/api/models/policies/${policyId}/simulate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           prompt: '都市夜景追车镜头，8秒',
           budgetUsd: 1.2
@@ -38,7 +48,10 @@ describe('P2 端到端主路径回归', () => {
     const runResp = await app.handle(
       new Request('http://localhost/api/ai/creative/run', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           script: '城市夜景，主角穿梭人群，最后定格在霓虹招牌前。',
           style: 'cinematic',
@@ -58,7 +71,10 @@ describe('P2 端到端主路径回归', () => {
     const workspaceResp = await app.handle(
       new Request('http://localhost/api/workspaces', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           name: 'P2-E2E-Workspace',
           ownerName: 'Owner P2'
@@ -74,10 +90,10 @@ describe('P2 端到端主路径回归', () => {
     const inviteResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/invites`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-workspace-actor': 'Owner P2'
-        },
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({ role: 'editor' })
       })
     )
@@ -88,7 +104,10 @@ describe('P2 端到端主路径回归', () => {
     const acceptResp = await app.handle(
       new Request(`http://localhost/api/workspaces/invites/${inviteData.invite.code}/accept`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(editor.accessToken, {
+          organizationId: editor.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({ memberName: 'Editor P2' })
       })
     )
@@ -101,10 +120,10 @@ describe('P2 端到端主路径回归', () => {
     const tokenResp = await app.handle(
       new Request('http://localhost/api/storage/upload-token', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-workspace-actor': 'Owner P2'
-        },
+        headers: createAuthHeaders(editor.accessToken, {
+          organizationId: editor.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           workspaceId,
           projectId,
@@ -122,7 +141,7 @@ describe('P2 端到端主路径回归', () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/octet-stream',
-          'x-workspace-actor': 'Owner P2'
+          Authorization: `Bearer ${editor.accessToken}`
         },
         body: 'p2-e2e-binary'
       })

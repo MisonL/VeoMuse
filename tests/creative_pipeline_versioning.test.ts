@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from '../apps/backend/src/index'
+import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 describe('创意闭环版本化 API', () => {
   it('应支持反馈生成新版本、版本列表与提交完成', async () => {
+    const session = await createTestSession('creative-ver')
     const createResp = await app.handle(
       new Request('http://localhost/api/ai/creative/run', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           script: '夜雨城市街头，主角奔跑。镜头切到高空俯拍。最后定格在霓虹灯反光。',
           style: 'cinematic',
@@ -28,7 +33,10 @@ describe('创意闭环版本化 API', () => {
     const feedbackResp = await app.handle(
       new Request(`http://localhost/api/ai/creative/run/${sourceRunId}/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           runFeedback: '整体节奏更紧凑，增加反差光影',
           sceneFeedbacks: [
@@ -55,7 +63,10 @@ describe('创意闭环版本化 API', () => {
     const feedbackResp2 = await app.handle(
       new Request(`http://localhost/api/ai/creative/run/${latestRunId}/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           runFeedback: '第二轮反馈：提升过场连贯性'
         })
@@ -69,7 +80,9 @@ describe('创意闭环版本化 API', () => {
     const newestRunId = feedbackData2.run.id as string
 
     const versionsResp = await app.handle(
-      new Request(`http://localhost/api/ai/creative/run/${sourceRunId}/versions`)
+      new Request(`http://localhost/api/ai/creative/run/${sourceRunId}/versions`, {
+        headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
+      })
     )
     const versionsData = await versionsResp.json() as any
     expect(versionsResp.status).toBe(200)
@@ -80,7 +93,9 @@ describe('创意闭环版本化 API', () => {
     expect(versionsData.versions[versionsData.versions.length - 1].id).toBe(newestRunId)
 
     const versionsFromMiddleResp = await app.handle(
-      new Request(`http://localhost/api/ai/creative/run/${latestRunId}/versions`)
+      new Request(`http://localhost/api/ai/creative/run/${latestRunId}/versions`, {
+        headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
+      })
     )
     const versionsFromMiddleData = await versionsFromMiddleResp.json() as any
     expect(versionsFromMiddleResp.status).toBe(200)
@@ -89,7 +104,10 @@ describe('创意闭环版本化 API', () => {
     const commitResp = await app.handle(
       new Request(`http://localhost/api/ai/creative/run/${newestRunId}/commit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           qualityScore: 0.91,
           notes: {

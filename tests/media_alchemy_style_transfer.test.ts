@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { app } from '../apps/backend/src/index';
 import { StyleTransferService } from '../apps/backend/src/services/StyleTransferService';
+import { createAuthHeaders, createTestSession } from './helpers/auth';
 
 describe('媒体炼金术：风格迁移服务', () => {
   const envBackup: Record<string, string | undefined> = {};
@@ -22,13 +23,17 @@ describe('媒体炼金术：风格迁移服务', () => {
   });
 
   it('provider 未配置时应返回 not_implemented', async () => {
+    const session = await createTestSession('style-transfer')
     process.env.ALCHEMY_API_URL = '';
     process.env.ALCHEMY_API_KEY = '';
 
     const response = await app.handle(
       new Request('http://localhost/api/ai/alchemy/style-transfer', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({ clipId: 'clip-1', style: 'van_gogh' })
       })
     );

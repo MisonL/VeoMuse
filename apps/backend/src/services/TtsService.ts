@@ -1,14 +1,20 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { BaseAiService } from './BaseAiService';
+import type { ChannelRuntimeContext } from './ChannelConfigService';
+import { ChannelConfigService } from './ChannelConfigService';
 
 export class TtsService extends BaseAiService {
   protected serviceName = 'AI-TTS';
   private static instance = new TtsService();
 
-  static async synthesize(text: string): Promise<{ success: boolean; status: 'ok' | 'not_implemented' | 'error'; audioUrl?: string; message?: string; error?: string }> {
-    const apiUrl = process.env.TTS_API_URL;
-    const apiKey = process.env.TTS_API_KEY;
+  static async synthesize(
+    text: string,
+    context?: ChannelRuntimeContext
+  ): Promise<{ success: boolean; status: 'ok' | 'not_implemented' | 'error'; audioUrl?: string; message?: string; error?: string }> {
+    const channel = context?.organizationId ? ChannelConfigService.resolve('tts', context) : null
+    const apiUrl = channel?.baseUrl || process.env.TTS_API_URL;
+    const apiKey = channel?.apiKey || process.env.TTS_API_KEY;
 
     if (!apiUrl || !apiKey) {
       return {
