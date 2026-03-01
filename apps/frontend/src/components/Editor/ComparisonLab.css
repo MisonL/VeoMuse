@@ -888,9 +888,28 @@
 .capability-row {
   padding: 8px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+}
+
+.channel-row-controls {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.channel-row-controls input,
+.channel-row-controls select {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 88%, #ffffff 12%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%);
+  color: var(--ap-text);
+  padding: 7px 9px;
+  font-size: 12px;
 }
 
 .capability-meta {

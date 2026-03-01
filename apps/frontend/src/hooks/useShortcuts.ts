@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export interface ShortcutMap {
   [key: string]: () => void;
@@ -9,6 +9,12 @@ export interface ShortcutMap {
  * 借鉴 FCPX/Premiere 逻辑，支持高频剪辑操作
  */
 export const useShortcuts = (shortcuts: ShortcutMap) => {
+  const shortcutsRef = useRef<ShortcutMap>(shortcuts)
+
+  useEffect(() => {
+    shortcutsRef.current = shortcuts
+  }, [shortcuts])
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // 避免在输入框触发快捷键
@@ -32,13 +38,14 @@ export const useShortcuts = (shortcuts: ShortcutMap) => {
       else if (event.code === 'ArrowRight') key = event.shiftKey ? 'Shift+Right' : 'Right';
       else if (event.code === 'KeyS' && !isCmdOrCtrl) key = 'S'; // 磁吸开关
 
-      if (key && shortcuts[key]) {
+      const handler = key ? shortcutsRef.current[key] : undefined
+      if (handler) {
         event.preventDefault();
-        shortcuts[key]();
+        handler();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shortcuts]);
+  }, []);
 };

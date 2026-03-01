@@ -2,6 +2,32 @@ import { treaty } from '@elysiajs/eden'
 import type { App } from '@veomuse/backend'
 
 const ADMIN_TOKEN_STORAGE_KEY = 'veomuse-admin-token'
+const ACCESS_TOKEN_STORAGE_KEY = 'veomuse-access-token'
+const REFRESH_TOKEN_STORAGE_KEY = 'veomuse-refresh-token'
+const ORGANIZATION_STORAGE_KEY = 'veomuse-organization-id'
+
+const parseJwtPayload = (token: string): Record<string, any> | null => {
+  const parts = token.split('.')
+  if (parts.length < 2) return null
+  try {
+    const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padding = normalized.length % 4
+    const base64 = padding === 0 ? normalized : `${normalized}${'='.repeat(4 - padding)}`
+    const decoded = atob(base64)
+    const json = JSON.parse(decoded)
+    return json && typeof json === 'object' ? json : null
+  } catch {
+    return null
+  }
+}
+
+const isTokenExpired = (token: string) => {
+  const payload = parseJwtPayload(token)
+  if (!payload) return true
+  const exp = Number(payload.exp)
+  if (!Number.isFinite(exp) || exp <= 0) return true
+  return Date.now() >= exp * 1000
+}
 
 export const resolveApiBase = () => {
   if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL as string
@@ -15,6 +41,57 @@ export const api = treaty<App>(resolveApiBase())
 export const getAdminToken = () => {
   if (typeof window === 'undefined') return ''
   return localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || ''
+}
+
+export const getAccessToken = () => {
+  if (typeof window === 'undefined') return ''
+  const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) || ''
+  if (!token) return ''
+  if (!isTokenExpired(token)) return token
+  localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+  localStorage.removeItem(ORGANIZATION_STORAGE_KEY)
+  return ''
+}
+
+export const hasValidAccessToken = () => Boolean(getAccessToken().trim())
+
+export const setAccessToken = (token: string) => {
+  if (typeof window === 'undefined') return
+  const value = token.trim()
+  if (!value) localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+  else localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, value)
+}
+
+export const getRefreshToken = () => {
+  if (typeof window === 'undefined') return ''
+  return localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) || ''
+}
+
+export const setRefreshToken = (token: string) => {
+  if (typeof window === 'undefined') return
+  const value = token.trim()
+  if (!value) localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+  else localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, value)
+}
+
+export const getOrganizationId = () => {
+  if (typeof window === 'undefined') return ''
+  return localStorage.getItem(ORGANIZATION_STORAGE_KEY) || ''
+}
+
+export const setOrganizationId = (organizationId: string) => {
+  if (typeof window === 'undefined') return
+  const value = organizationId.trim()
+  if (!value) localStorage.removeItem(ORGANIZATION_STORAGE_KEY)
+  else localStorage.setItem(ORGANIZATION_STORAGE_KEY, value)
+}
+
+export const clearAuthSession = () => {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
+  localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+  localStorage.removeItem(ORGANIZATION_STORAGE_KEY)
 }
 
 export const setAdminToken = (token: string) => {
@@ -37,6 +114,17 @@ const buildAdminHeaders = (
   }
   const token = getAdminToken().trim()
   if (token) headers['x-admin-token'] = token
+  return headers
+}
+
+export const buildAuthHeaders = (extraHeaders?: Record<string, string>) => {
+  const headers: Record<string, string> = {
+    ...(extraHeaders || {})
+  }
+  const accessToken = getAccessToken().trim()
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`
+  const organizationId = getOrganizationId().trim()
+  if (organizationId && !headers['x-organization-id']) headers['x-organization-id'] = organizationId
   return headers
 }
 

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { create } from 'zustand'
-import { adminGetJson } from '../utils/eden'
+import { adminGetJson, getAdminToken } from '../utils/eden'
 
 const BASE_INTERVAL_MS = 2000
 const MAX_INTERVAL_MS = 30000
@@ -64,6 +64,13 @@ const refreshAdminMetricsNow = async (
   if (inFlightRefresh) return inFlightRefresh
 
   inFlightRefresh = (async () => {
+    if (!getAdminToken().trim()) {
+      set((state) => ({
+        error: state.error || '请先填写 Admin Token 后查看监控',
+        failureStreak: 0
+      }))
+      return false
+    }
     try {
       const data = await adminGetJson<AdminMetricsPayload>('/api/admin/metrics')
       const renderLoad = Number.isFinite(data?.system?.renderLoad) ? Math.round(data.system.renderLoad) : 0

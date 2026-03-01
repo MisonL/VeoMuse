@@ -1,8 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
+  AiChannelConfig,
   CollabEvent,
   CollabPresence,
   CreativeRun,
+  Organization,
+  OrganizationMember,
+  OrganizationRole,
   RoutingExecution,
   RoutingPolicy,
   WorkspaceInvite,
@@ -10,7 +14,18 @@ import type {
 } from '@veomuse/shared'
 import { useEditorStore } from '../../store/editorStore'
 import { useToastStore } from '../../store/toastStore'
-import { api, getErrorMessage, resolveApiBase } from '../../utils/eden'
+import {
+  api,
+  buildAuthHeaders,
+  clearAuthSession,
+  getAccessToken,
+  getOrganizationId,
+  getRefreshToken,
+  resolveApiBase,
+  setAccessToken,
+  setOrganizationId,
+  setRefreshToken
+} from '../../utils/eden'
 import './ComparisonLab.css'
 
 type LabMode = 'compare' | 'marketplace' | 'creative' | 'collab'
@@ -25,13 +40,34 @@ interface CapabilityPayload {
   timestamp?: string
 }
 
+interface AuthProfile {
+  id: string
+  email: string
+}
+
+interface ChannelFormState {
+  providerId: string
+  baseUrl: string
+  apiKey: string
+  model: string
+  path: string
+  temperature: string
+  enabled: boolean
+  scope: 'organization' | 'workspace'
+}
+
+interface ModelRecommendation {
+  recommendedModelId?: string
+}
+
 const MODEL_CAPABILITY_ROWS: Array<{ id: string; label: string; env: string }> = [
   { id: 'veo-3.1', label: 'Gemini Veo 3.1', env: 'GEMINI_API_KEYS' },
   { id: 'kling-v1', label: 'Kling V1', env: 'KLING_API_URL + KLING_API_KEY' },
   { id: 'sora-preview', label: 'Sora Preview', env: 'SORA_API_URL + SORA_API_KEY' },
   { id: 'luma-dream', label: 'Luma Dream', env: 'LUMA_API_URL + LUMA_API_KEY' },
   { id: 'runway-gen3', label: 'Runway Gen-3', env: 'RUNWAY_API_URL + RUNWAY_API_KEY' },
-  { id: 'pika-1.5', label: 'Pika 1.5', env: 'PIKA_API_URL + PIKA_API_KEY' }
+  { id: 'pika-1.5', label: 'Pika 1.5', env: 'PIKA_API_URL + PIKA_API_KEY' },
+  { id: 'openai-compatible', label: 'OpenAI 兼容（自定义）', env: 'Base URL + API Key + model' }
 ]
 
 const SERVICE_CAPABILITY_ROWS: Array<{ id: string; label: string; env: string }> = [
@@ -60,7 +96,7 @@ const wsBaseFromApi = (base: string) => {
 }
 
 const requestJson = async <T,>(path: string, init?: RequestInit): Promise<T> => {
-  const headers: Record<string, string> = {}
+  const headers: Record<string, string> = buildAuthHeaders()
   const customHeaders = init?.headers
   if (customHeaders && typeof customHeaders === 'object' && !Array.isArray(customHeaders)) {
     Object.assign(headers, customHeaders as Record<string, string>)
@@ -142,11 +178,28 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const [showChannelPanel, setShowChannelPanel] = useState(false)
   const [isCapabilitiesLoading, setIsCapabilitiesLoading] = useState(false)
   const [capabilities, setCapabilities] = useState<CapabilityPayload | null>(null)
+  const [authProfile, setAuthProfile] = useState<AuthProfile | null>(null)
+  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState(() => getOrganizationId())
+  const [orgMembers, setOrgMembers] = useState<OrganizationMember[]>([])
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [registerMode, setRegisterMode] = useState(false)
+  const [registerOrgName, setRegisterOrgName] = useState('我的组织')
+  const [newOrgName, setNewOrgName] = useState('')
+  const [inviteMemberEmail, setInviteMemberEmail] = useState('')
+  const [inviteOrgRole, setInviteOrgRole] = useState<OrganizationRole>('member')
+  const [isAuthBusy, setIsAuthBusy] = useState(false)
+  const [channelConfigs, setChannelConfigs] = useState<AiChannelConfig[]>([])
+  const [channelForms, setChannelForms] = useState<Record<string, ChannelFormState>>({})
+  const [activeChannelScope, setActiveChannelScope] = useState<'organization' | 'workspace'>('organization')
 
   const wsRef = useRef<WebSocket | null>(null)
   const heartbeatRef = useRef<number | null>(null)
   const leftVideoRef = useRef<HTMLVideoElement | null>(null)
   const rightVideoRef = useRef<HTMLVideoElement | null>(null)
+  const policyExecRequestSeqRef = useRef(0)
+  const policySimulateSeqRef = useRef(0)
 
   const assets = useMemo(
     () => allAssets.filter(asset => asset.type === 'video'),
@@ -161,7 +214,328 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const leftAsset = useMemo(() => assets.find(a => a.id === leftAssetId), [assets, leftAssetId])
   const rightAsset = useMemo(() => assets.find(a => a.id === rightAssetId), [assets, rightAssetId])
   const currentActorName = memberName.trim() || workspaceOwner.trim() || 'Owner'
-  const ownerActorName = workspaceOwner.trim() || currentActorName
+  const effectiveOrganizationId = selectedOrganizationId.trim() || organizations[0]?.id || ''
+
+  const applySession = useCallback((payload: {
+    session: { accessToken: string; refreshToken: string; user: { id: string; email: string } };
+    organizations?: Organization[];
+  }) => {
+    setAccessToken(payload.session.accessToken)
+    setRefreshToken(payload.session.refreshToken)
+    setAuthProfile({
+      id: payload.session.user.id,
+      email: payload.session.user.email
+    })
+    const orgRows = payload.organizations || []
+    setOrganizations(orgRows)
+    const nextOrgId = orgRows.some(item => item.id === selectedOrganizationId)
+      ? selectedOrganizationId
+      : orgRows[0]?.id || ''
+    if (nextOrgId) {
+      setSelectedOrganizationId(nextOrgId)
+      setOrganizationId(nextOrgId)
+    }
+  }, [selectedOrganizationId])
+
+  const loadAuthProfile = useCallback(async () => {
+    const accessToken = getAccessToken().trim()
+    if (!accessToken) {
+      setAuthProfile(null)
+      setOrganizations([])
+      return
+    }
+    try {
+      const payload = await requestJson<{ success: boolean; user: AuthProfile; organizations: Organization[] }>('/api/auth/me')
+      setAuthProfile(payload.user)
+      setOrganizations(payload.organizations || [])
+      const storedOrgId = getOrganizationId()
+      const preferredOrgId = payload.organizations?.some(item => item.id === storedOrgId)
+        ? storedOrgId
+        : payload.organizations?.[0]?.id || ''
+      if (preferredOrgId) {
+        setSelectedOrganizationId(preferredOrgId)
+        setOrganizationId(preferredOrgId)
+      }
+      void loadPolicies(false)
+    } catch {
+      clearAuthSession()
+      setAuthProfile(null)
+      setOrganizations([])
+    }
+  }, [])
+
+  const submitAuth = async () => {
+    if (!loginEmail.trim() || !loginPassword.trim()) {
+      showToast('请输入邮箱和密码', 'info')
+      return
+    }
+    setIsAuthBusy(true)
+    try {
+      if (registerMode) {
+        const payload = await requestJson<{
+          success: boolean;
+          session: { accessToken: string; refreshToken: string; user: { id: string; email: string } };
+          organizations: Organization[];
+        }>('/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: loginEmail.trim(),
+            password: loginPassword,
+            organizationName: registerOrgName.trim() || '我的组织'
+          })
+        })
+        applySession(payload)
+        await loadPolicies(false)
+        showToast('注册并登录成功', 'success')
+      } else {
+        const payload = await requestJson<{
+          success: boolean;
+          session: { accessToken: string; refreshToken: string; user: { id: string; email: string } };
+          organizations: Organization[];
+        }>('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: loginEmail.trim(),
+            password: loginPassword
+          })
+        })
+        applySession(payload)
+        await loadPolicies(false)
+        showToast('登录成功', 'success')
+      }
+    } catch (error: any) {
+      showToast(error.message || '登录失败', 'error')
+    } finally {
+      setIsAuthBusy(false)
+    }
+  }
+
+  const logoutAuth = async () => {
+    const refreshToken = getRefreshToken().trim()
+    try {
+      await requestJson('/api/auth/logout', {
+        method: 'POST',
+        body: JSON.stringify({
+          refreshToken
+        })
+      })
+    } catch {
+      // noop
+    }
+    clearAuthSession()
+    setAuthProfile(null)
+    setOrganizations([])
+    setSelectedOrganizationId('')
+    setOrgMembers([])
+    showToast('已退出登录', 'success')
+  }
+
+  const createOrganization = async () => {
+    if (!newOrgName.trim()) {
+      showToast('请输入组织名称', 'info')
+      return
+    }
+    try {
+      const payload = await requestJson<{ success: boolean; organization: Organization }>('/api/organizations', {
+        method: 'POST',
+        body: JSON.stringify({ name: newOrgName.trim() })
+      })
+      const nextOrganizations = [...organizations, payload.organization]
+      setOrganizations(nextOrganizations)
+      setNewOrgName('')
+      setSelectedOrganizationId(payload.organization.id)
+      setOrganizationId(payload.organization.id)
+      showToast('组织创建成功', 'success')
+    } catch (error: any) {
+      showToast(error.message || '创建组织失败', 'error')
+    }
+  }
+
+  const refreshOrganizationMembers = useCallback(async () => {
+    if (!effectiveOrganizationId) {
+      setOrgMembers([])
+      return
+    }
+    try {
+      const payload = await requestJson<{ success: boolean; members: OrganizationMember[] }>(`/api/organizations/${effectiveOrganizationId}/members`)
+      setOrgMembers(payload.members || [])
+    } catch {
+      setOrgMembers([])
+    }
+  }, [effectiveOrganizationId])
+
+  const addOrganizationMember = async () => {
+    if (!effectiveOrganizationId) {
+      showToast('请先选择组织', 'info')
+      return
+    }
+    if (!inviteMemberEmail.trim()) {
+      showToast('请输入成员邮箱', 'info')
+      return
+    }
+    try {
+      await requestJson(`/api/organizations/${effectiveOrganizationId}/members`, {
+        method: 'POST',
+        body: JSON.stringify({
+          email: inviteMemberEmail.trim(),
+          role: inviteOrgRole
+        })
+      })
+      setInviteMemberEmail('')
+      showToast('成员已加入组织', 'success')
+      await refreshOrganizationMembers()
+    } catch (error: any) {
+      showToast(error.message || '添加成员失败', 'error')
+    }
+  }
+
+  const applyChannelForms = useCallback((configs: AiChannelConfig[]) => {
+    const next: Record<string, ChannelFormState> = {}
+    for (const row of configs) {
+      const extra = row.extra && typeof row.extra === 'object'
+        ? row.extra as Record<string, unknown>
+        : {}
+      next[row.providerId] = {
+        providerId: row.providerId,
+        baseUrl: row.baseUrl || '',
+        apiKey: '',
+        model: String(extra.model || ''),
+        path: String(extra.path || ''),
+        temperature: extra.temperature === undefined || extra.temperature === null
+          ? ''
+          : String(extra.temperature),
+        enabled: row.enabled,
+        scope: row.workspaceId ? 'workspace' : 'organization'
+      }
+    }
+    setChannelForms(next)
+  }, [])
+
+  const updateChannelForm = (providerId: string, patch: Partial<ChannelFormState>) => {
+    setChannelForms(prev => ({
+      ...prev,
+      [providerId]: {
+        providerId,
+        baseUrl: patch.baseUrl ?? prev[providerId]?.baseUrl ?? '',
+        apiKey: patch.apiKey ?? prev[providerId]?.apiKey ?? '',
+        model: patch.model ?? prev[providerId]?.model ?? '',
+        path: patch.path ?? prev[providerId]?.path ?? '',
+        temperature: patch.temperature ?? prev[providerId]?.temperature ?? '',
+        enabled: patch.enabled ?? prev[providerId]?.enabled ?? true,
+        scope: patch.scope ?? prev[providerId]?.scope ?? activeChannelScope
+      }
+    }))
+  }
+
+  const refreshChannelConfigs = useCallback(async () => {
+    if (!effectiveOrganizationId) return
+    try {
+      if (activeChannelScope === 'workspace' && workspaceId) {
+        const payload = await requestJson<{ success: boolean; configs: AiChannelConfig[]; capabilities: CapabilityPayload }>(`/api/workspaces/${workspaceId}/channels`)
+        setChannelConfigs(payload.configs || [])
+        setCapabilities(payload.capabilities || null)
+        applyChannelForms(payload.configs || [])
+      } else {
+        const payload = await requestJson<{ success: boolean; configs: AiChannelConfig[]; capabilities: CapabilityPayload }>(`/api/organizations/${effectiveOrganizationId}/channels`)
+        setChannelConfigs(payload.configs || [])
+        setCapabilities(payload.capabilities || null)
+        applyChannelForms(payload.configs || [])
+      }
+    } catch (error: any) {
+      showToast(error.message || '加载渠道配置失败', 'error')
+    }
+  }, [activeChannelScope, applyChannelForms, effectiveOrganizationId, showToast, workspaceId])
+
+  const buildChannelExtra = (providerId: string, form: ChannelFormState) => {
+    if (providerId !== 'openai-compatible') return {}
+    const model = form.model.trim()
+    const path = form.path.trim()
+    const temperatureRaw = form.temperature.trim()
+    const extra: Record<string, unknown> = {}
+    if (model) extra.model = model
+    if (path) extra.path = path
+    if (temperatureRaw) extra.temperature = Number(temperatureRaw)
+    return extra
+  }
+
+  const validateChannelForm = (providerId: string, form: ChannelFormState) => {
+    if (providerId !== 'openai-compatible' || !form.enabled) return true
+    if (!form.model.trim()) {
+      showToast('OpenAI 兼容渠道必须填写 model', 'warning')
+      return false
+    }
+    const temperatureRaw = form.temperature.trim()
+    if (!temperatureRaw) return true
+    const temperature = Number(temperatureRaw)
+    if (!Number.isFinite(temperature) || temperature < 0 || temperature > 2) {
+      showToast('temperature 需在 0 到 2 之间', 'warning')
+      return false
+    }
+    return true
+  }
+
+  const saveChannelConfig = async (providerId: string) => {
+    if (!effectiveOrganizationId) {
+      showToast('请先选择组织', 'info')
+      return
+    }
+    const form = channelForms[providerId]
+    if (!form) return
+    if (!validateChannelForm(providerId, form)) return
+    const path = activeChannelScope === 'workspace' && workspaceId
+      ? `/api/workspaces/${workspaceId}/channels/${providerId}`
+      : `/api/organizations/${effectiveOrganizationId}/channels/${providerId}`
+    const extra = buildChannelExtra(providerId, form)
+    try {
+      await requestJson(path, {
+        method: 'PUT',
+        body: JSON.stringify({
+          baseUrl: form.baseUrl.trim() || undefined,
+          apiKey: form.apiKey.trim() || undefined,
+          enabled: form.enabled,
+          extra
+        })
+      })
+      setChannelForms(prev => ({
+        ...prev,
+        [providerId]: {
+          ...prev[providerId],
+          apiKey: ''
+        }
+      }))
+      showToast('渠道配置已保存', 'success')
+      await refreshChannelConfigs()
+      await loadCapabilities()
+    } catch (error: any) {
+      showToast(error.message || '保存渠道配置失败', 'error')
+    }
+  }
+
+  const testChannelConfig = async (providerId: string) => {
+    const form = channelForms[providerId]
+    if (!form) return
+    if (!validateChannelForm(providerId, form)) return
+    const extra = buildChannelExtra(providerId, form)
+    try {
+      const payload = await requestJson<{ success: boolean; message: string }>('/api/channels/test', {
+        method: 'POST',
+        body: JSON.stringify({
+          providerId,
+          baseUrl: form.baseUrl.trim() || undefined,
+          apiKey: form.apiKey.trim() || undefined,
+          workspaceId: activeChannelScope === 'workspace' && workspaceId ? workspaceId : undefined,
+          extra
+        })
+      })
+      if (payload.success) {
+        showToast(payload.message || '测试通过', 'success')
+      } else {
+        showToast(payload.message || '测试失败', 'error')
+      }
+    } catch (error: any) {
+      showToast(error.message || '测试失败', 'error')
+    }
+  }
 
   useEffect(() => {
     const loadModels = async () => {
@@ -181,11 +555,21 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   }, [])
 
   useEffect(() => {
+    void loadAuthProfile()
+  }, [loadAuthProfile])
+
+  useEffect(() => {
+    if (!effectiveOrganizationId) return
+    setOrganizationId(effectiveOrganizationId)
+    void refreshOrganizationMembers()
+  }, [effectiveOrganizationId, refreshOrganizationMembers])
+
+  useEffect(() => {
     if (!selectedPolicyId) return
     setPolicyExecutions([])
     setPolicyExecOffset(0)
     setPolicyExecHasMore(false)
-    void loadPolicyExecutions(true)
+    void loadPolicyExecutions(true, selectedPolicyId)
   }, [selectedPolicyId])
 
   useEffect(() => {
@@ -237,19 +621,24 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const loadCapabilities = useCallback(async () => {
     setIsCapabilitiesLoading(true)
     try {
-      const payload = await requestJson<CapabilityPayload>('/api/capabilities')
+      const query = activeChannelScope === 'workspace' && workspaceId
+        ? `?workspaceId=${encodeURIComponent(workspaceId)}`
+        : ''
+      const payload = await requestJson<CapabilityPayload>(`/api/capabilities${query}`)
       setCapabilities(payload)
     } catch (error: any) {
       showToast(error.message || '加载渠道接入状态失败', 'error')
     } finally {
       setIsCapabilitiesLoading(false)
     }
-  }, [showToast])
+  }, [activeChannelScope, showToast, workspaceId])
 
   const openChannelPanel = useCallback(() => {
     setShowChannelPanel(true)
     void loadCapabilities()
-  }, [loadCapabilities])
+    void refreshChannelConfigs()
+    void refreshOrganizationMembers()
+  }, [loadCapabilities, refreshChannelConfigs, refreshOrganizationMembers])
 
   useEffect(() => {
     const handleOpenChannelPanel = () => {
@@ -264,16 +653,32 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     }
   }, [loadCapabilities])
 
+  useEffect(() => {
+    if (!showChannelPanel || !authProfile) return
+    void refreshChannelConfigs()
+    void loadCapabilities()
+  }, [showChannelPanel, authProfile, activeChannelScope, workspaceId, effectiveOrganizationId, refreshChannelConfigs, loadCapabilities])
+
   const refreshMarketplace = async (notify: boolean) => {
-    const { data, error } = await api.api.models.marketplace.get()
-    if (error) return showToast(getErrorMessage(error), 'error')
-    if (data?.models) {
-      setMarketplace(data.models as any[])
+    try {
+      const payload = await requestJson<{ success: boolean; models: any[] }>('/api/models/marketplace')
+      if (Array.isArray(payload.models)) {
+        setMarketplace(payload.models)
+      } else {
+        setMarketplace([])
+      }
       if (notify) showToast('模型超市数据已刷新', 'success')
+    } catch (error: any) {
+      showToast(error.message || '加载模型超市失败', 'error')
     }
   }
 
   const loadPolicies = async (notify: boolean) => {
+    if (!getAccessToken().trim()) {
+      setPolicies([])
+      setSelectedPolicyId('')
+      return
+    }
     setIsPolicyLoading(true)
     try {
       const payload = await requestJson<{ success: boolean; policies: RoutingPolicy[] }>('/api/models/policies')
@@ -291,8 +696,10 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     }
   }
 
-  const loadPolicyExecutions = async (reset: boolean) => {
-    if (!selectedPolicyId) return
+  const loadPolicyExecutions = async (reset: boolean, policyIdOverride?: string) => {
+    const policyId = policyIdOverride || selectedPolicyId
+    if (!policyId) return
+    const requestSeq = ++policyExecRequestSeqRef.current
     setPolicyExecLoading(true)
     try {
       const offset = reset ? 0 : policyExecOffset
@@ -300,15 +707,20 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
         success: boolean;
         executions: RoutingExecution[];
         page: { hasMore: boolean; offset: number; total: number };
-      }>(`/api/models/policies/${selectedPolicyId}/executions?limit=${POLICY_EXEC_PAGE_SIZE}&offset=${offset}`)
+      }>(`/api/models/policies/${policyId}/executions?limit=${POLICY_EXEC_PAGE_SIZE}&offset=${offset}`)
+      if (requestSeq !== policyExecRequestSeqRef.current) return
       const rows = payload.executions || []
-      setPolicyExecutions(reset ? rows : [...policyExecutions, ...rows])
+      setPolicyExecutions(prev => (reset ? rows : [...prev, ...rows]))
       setPolicyExecHasMore(Boolean(payload.page?.hasMore))
       setPolicyExecOffset(offset + rows.length)
     } catch (error: any) {
-      showToast(error.message || '加载策略执行记录失败', 'error')
+      if (requestSeq === policyExecRequestSeqRef.current) {
+        showToast(error.message || '加载策略执行记录失败', 'error')
+      }
     } finally {
-      setPolicyExecLoading(false)
+      if (requestSeq === policyExecRequestSeqRef.current) {
+        setPolicyExecLoading(false)
+      }
     }
   }
 
@@ -339,8 +751,15 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     const prompt = side === 'left' ? leftAsset?.name : rightAsset?.name
     if (!prompt) return showToast('请先选择对比素材', 'info')
 
-    const { data, error } = await api.api.models.recommend.post({ prompt })
-    if (error) return showToast(getErrorMessage(error), 'error')
+    let data: ModelRecommendation
+    try {
+      data = await requestJson<ModelRecommendation>('/api/models/recommend', {
+        method: 'POST',
+        body: JSON.stringify({ prompt })
+      })
+    } catch (error: any) {
+      return showToast(error.message || '推荐模型失败', 'error')
+    }
 
     if (data?.recommendedModelId) {
       if (side === 'left') setLeftModel(data.recommendedModelId)
@@ -416,10 +835,12 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     if (isPolicySimulating) {
       return null
     }
+    const policyIdAtRequest = selectedPolicyId
+    const requestSeq = ++policySimulateSeqRef.current
     setIsPolicySimulating(true)
     try {
-      const endpoint = selectedPolicyId
-        ? `/api/models/policies/${selectedPolicyId}/simulate`
+      const endpoint = policyIdAtRequest
+        ? `/api/models/policies/${policyIdAtRequest}/simulate`
         : '/api/models/policy/simulate'
       const payload = await requestJson<{ success: boolean; decision: any }>(endpoint, {
         method: 'POST',
@@ -429,21 +850,26 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
           priority: policyPriority
         })
       })
+      if (requestSeq !== policySimulateSeqRef.current) return null
       const decision = payload.decision || null
       setPolicyDecision(decision)
       if (decision?.recommendedModelId) {
         setLeftModel(decision.recommendedModelId)
       }
       showToast(`策略推荐模型：${decision?.recommendedModelId || '--'}`, 'success')
-      if (selectedPolicyId) {
-        await loadPolicyExecutions(true)
+      if (policyIdAtRequest) {
+        await loadPolicyExecutions(true, policyIdAtRequest)
       }
       return decision
     } catch (error: any) {
-      showToast(error.message || '策略模拟失败', 'error')
+      if (requestSeq === policySimulateSeqRef.current) {
+        showToast(error.message || '策略模拟失败', 'error')
+      }
       return null
     } finally {
-      setIsPolicySimulating(false)
+      if (requestSeq === policySimulateSeqRef.current) {
+        setIsPolicySimulating(false)
+      }
     }
   }
 
@@ -578,24 +1004,15 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     }
   }
 
-  const refreshWorkspaceState = async (nextWorkspaceId?: string, nextProjectId?: string, actorOverride?: string) => {
+  const refreshWorkspaceState = async (nextWorkspaceId?: string, nextProjectId?: string) => {
     const wid = nextWorkspaceId || workspaceId
     const pid = nextProjectId || projectId
     if (!wid) return
-    const actorName = actorOverride?.trim() || currentActorName
 
     try {
       const [presencePayload, eventsPayload] = await Promise.all([
-        requestJson<{ success: boolean; members: CollabPresence[] }>(`/api/workspaces/${wid}/presence`, {
-          headers: {
-            'x-workspace-actor': actorName
-          }
-        }),
-        requestJson<{ success: boolean; events: CollabEvent[] }>(`/api/workspaces/${wid}/collab/events?limit=50`, {
-          headers: {
-            'x-workspace-actor': actorName
-          }
-        })
+        requestJson<{ success: boolean; members: CollabPresence[] }>(`/api/workspaces/${wid}/presence`),
+        requestJson<{ success: boolean; events: CollabEvent[] }>(`/api/workspaces/${wid}/collab/events?limit=50`)
       ])
       setPresence(presencePayload.members || [])
       setCollabEvents(eventsPayload.events || [])
@@ -606,12 +1023,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     if (pid) {
       try {
         const snapshotsPayload = await requestJson<{ success: boolean; snapshots: Array<{ id: string; actorName: string; createdAt: string }> }>(
-          `/api/projects/${pid}/snapshots?limit=20`,
-          {
-            headers: {
-              'x-workspace-actor': actorName
-            }
-          }
+          `/api/projects/${pid}/snapshots?limit=20`
         )
         setSnapshots(snapshotsPayload.snapshots || [])
       } catch {
@@ -621,12 +1033,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
 
     try {
       const invitesPayload = await requestJson<{ success: boolean; invites: WorkspaceInvite[] }>(
-        `/api/workspaces/${wid}/invites`,
-        {
-          headers: {
-            'x-workspace-actor': ownerActorName
-          }
-        }
+        `/api/workspaces/${wid}/invites`
       )
       setInvites(invitesPayload.invites || [])
     } catch {
@@ -642,23 +1049,28 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     try {
       const payload = await requestJson<{
         success: boolean;
-        workspace: { id: string };
+        workspace: { id: string; organizationId?: string };
         defaultProject: { id: string };
         owner?: { name?: string; role?: WorkspaceRole };
       }>('/api/workspaces', {
         method: 'POST',
         body: JSON.stringify({
           name: workspaceName.trim(),
-          ownerName: workspaceOwner.trim() || 'Owner'
+          ownerName: workspaceOwner.trim() || 'Owner',
+          organizationId: effectiveOrganizationId || undefined
         })
       })
       setWorkspaceId(payload.workspace.id)
+      if (payload.workspace.organizationId) {
+        setSelectedOrganizationId(payload.workspace.organizationId)
+        setOrganizationId(payload.workspace.organizationId)
+      }
       setProjectId(payload.defaultProject.id)
       const ownerName = payload.owner?.name || workspaceOwner.trim() || 'Owner'
       setMemberName(ownerName)
       setCollabRole(payload.owner?.role || 'owner')
       showToast('协作空间创建成功', 'success')
-      await refreshWorkspaceState(payload.workspace.id, payload.defaultProject.id, ownerName)
+      await refreshWorkspaceState(payload.workspace.id, payload.defaultProject.id)
     } catch (error: any) {
       showToast(error.message || '创建工作区失败', 'error')
     }
@@ -678,9 +1090,6 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
         `/api/workspaces/${workspaceId}/invites`,
         {
           method: 'POST',
-          headers: {
-            'x-workspace-actor': ownerActorName
-          },
           body: JSON.stringify({
             role: inviteRole,
             expiresInHours: 24
@@ -704,7 +1113,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       const payload = await requestJson<{
         success: boolean;
         member: { role: WorkspaceRole } | null;
-        workspace: { id: string } | null;
+        workspace: { id: string; organizationId?: string } | null;
         defaultProject: { id: string } | null;
       }>(`/api/workspaces/invites/${inviteCode.trim()}/accept`, {
         method: 'POST',
@@ -713,6 +1122,10 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
         })
       })
       if (payload.workspace?.id) setWorkspaceId(payload.workspace.id)
+      if (payload.workspace?.organizationId) {
+        setSelectedOrganizationId(payload.workspace.organizationId)
+        setOrganizationId(payload.workspace.organizationId)
+      }
       if (payload.defaultProject?.id) setProjectId(payload.defaultProject.id)
       if (payload.member?.role) setCollabRole(payload.member.role)
       showToast('已接受邀请并加入空间', 'success')
@@ -730,9 +1143,6 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     try {
       await requestJson<{ success: boolean }>(`/api/projects/${projectId}/snapshots`, {
         method: 'POST',
-        headers: {
-          'x-workspace-actor': memberName.trim() || 'Editor'
-        },
         body: JSON.stringify({
           content: {
             source: 'comparison-lab',
@@ -763,9 +1173,6 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
         token: { uploadUrl: string; objectKey: string };
       }>('/api/storage/upload-token', {
         method: 'POST',
-        headers: {
-          'x-workspace-actor': currentActorName
-        },
         body: JSON.stringify({
           workspaceId,
           projectId: projectId || undefined,
@@ -798,13 +1205,18 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       return
     }
     disconnectWs()
+    const accessToken = getAccessToken().trim()
+    if (!accessToken) {
+      showToast('请先登录后再连接协作通道', 'info')
+      return
+    }
     const query = new URLSearchParams({
       memberName: memberName.trim() || 'Editor',
       role: collabRole,
       sessionId: `sess-${Math.random().toString(36).slice(2, 10)}`
     })
     const wsUrl = `${wsBaseFromApi(resolveApiBase())}/ws/collab/${workspaceId}?${query.toString()}`
-    const socket = new WebSocket(wsUrl)
+    const socket = new WebSocket(wsUrl, ['veomuse-collab.v1', `veomuse-auth.${accessToken}`])
     wsRef.current = socket
 
     socket.onopen = () => {
@@ -868,6 +1280,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     }))
     const optimisticEvent: CollabEvent = {
       id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      organizationId: effectiveOrganizationId || 'local',
       workspaceId: workspaceId || 'local',
       projectId: projectId || null,
       actorName,
@@ -1391,21 +1804,97 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     </div>
   )
 
+  const channelConfigMap = useMemo(() => {
+    const map = new Map<string, AiChannelConfig>()
+    for (const row of channelConfigs) map.set(row.providerId, row)
+    return map
+  }, [channelConfigs])
+
   const renderChannelRows = (
     rows: Array<{ id: string; label: string; env: string }>,
     source: Record<string, boolean | string> | undefined
   ) => rows.map((row) => {
     const raw = source?.[row.id]
     const enabled = raw === true || (typeof raw === 'string' && raw.trim().length > 0)
+    const form = channelForms[row.id] || {
+      providerId: row.id,
+      baseUrl: '',
+      apiKey: '',
+      model: '',
+      path: '',
+      temperature: '',
+      enabled: true,
+      scope: activeChannelScope
+    }
+    const savedConfig = channelConfigMap.get(row.id)
     return (
       <div key={row.id} className="capability-row">
         <div className="capability-meta">
           <strong>{row.label}</strong>
           <span>{row.env}</span>
+          {row.id === 'openai-compatible' ? <span>支持 OpenAI SDK 兼容网关与第三方模型</span> : null}
+          {savedConfig?.secretMasked ? <span>已存密钥：{savedConfig.secretMasked}</span> : null}
         </div>
-        <span className={`capability-badge ${enabled ? 'ok' : 'off'}`}>
-          {enabled ? '已接入' : '未接入'}
-        </span>
+        <form
+          className="channel-row-controls"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void saveChannelConfig(row.id)
+          }}
+        >
+          <span className={`capability-badge ${enabled ? 'ok' : 'off'}`}>
+            {enabled ? '已接入' : '未接入'}
+          </span>
+          <input
+            name={`channelBaseUrl-${row.id}`}
+            value={form.baseUrl}
+            onChange={(event) => updateChannelForm(row.id, { baseUrl: event.target.value })}
+            placeholder="Base URL（可选）"
+          />
+          <input
+            name={`channelApiKey-${row.id}`}
+            value={form.apiKey}
+            onChange={(event) => updateChannelForm(row.id, { apiKey: event.target.value })}
+            placeholder="填写 API Key"
+            type="password"
+            autoComplete="off"
+          />
+          {row.id === 'openai-compatible' ? (
+            <>
+              <input
+                name={`channelModel-${row.id}`}
+                value={form.model}
+                onChange={(event) => updateChannelForm(row.id, { model: event.target.value })}
+                placeholder="模型 ID（必填）"
+              />
+              <input
+                name={`channelPath-${row.id}`}
+                value={form.path}
+                onChange={(event) => updateChannelForm(row.id, { path: event.target.value })}
+                placeholder="兼容路径（默认 /v1/chat/completions）"
+              />
+              <input
+                name={`channelTemperature-${row.id}`}
+                value={form.temperature}
+                onChange={(event) => updateChannelForm(row.id, { temperature: event.target.value })}
+                placeholder="temperature（可选，0~2）"
+              />
+            </>
+          ) : null}
+          <label className="sync-toggle">
+            <input
+              name={`channelEnabled-${row.id}`}
+              type="checkbox"
+              checked={form.enabled}
+              onChange={(event) => updateChannelForm(row.id, { enabled: event.target.checked })}
+            />
+            <span>启用</span>
+          </label>
+          <div className="lab-inline-actions">
+            <button type="button" onClick={() => void testChannelConfig(row.id)}>测试</button>
+            <button type="submit">保存</button>
+          </div>
+        </form>
       </div>
     )
   })
@@ -1448,8 +1937,8 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
           <section className="channel-panel">
             <header className="channel-panel-head">
               <div>
-                <h3>AI 渠道接入状态</h3>
-                <p>配置后请重启 `veomuse-backend` 容器，状态会自动刷新。</p>
+                <h3>AI 渠道接入中心</h3>
+                <p>支持多租户组织级共享与工作区覆写，配置即时生效。</p>
               </div>
               <button type="button" className="channel-close-btn" onClick={() => setShowChannelPanel(false)}>关闭</button>
             </header>
@@ -1458,24 +1947,165 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
               <button type="button" className="channel-refresh-btn" onClick={() => void loadCapabilities()} disabled={isCapabilitiesLoading}>
                 {isCapabilitiesLoading ? '刷新中...' : '刷新状态'}
               </button>
-              <code className="channel-hint">配置位置：项目根目录 `.env`（Docker 使用 `env_file` 注入）</code>
+              <button type="button" className="channel-refresh-btn" onClick={() => void refreshChannelConfigs()} disabled={!effectiveOrganizationId}>
+                刷新配置
+              </button>
+              <code className="channel-hint">{authProfile ? `当前账号：${authProfile.email}` : '请先登录后再管理渠道'}</code>
             </div>
 
-            <div className="channel-grid">
-              <section className="channel-card">
-                <h4>视频模型渠道</h4>
-                <div className="channel-list">
-                  {renderChannelRows(MODEL_CAPABILITY_ROWS, capabilities?.models)}
-                </div>
-              </section>
+            {!authProfile ? (
+              <div className="channel-grid">
+                <section className="channel-card">
+                  <h4>{registerMode ? '注册并创建组织' : '登录账号'}</h4>
+                  <div className="channel-list">
+                    <div className="capability-row">
+                      <form
+                        className="channel-row-controls"
+                        onSubmit={(event) => {
+                          event.preventDefault()
+                          void submitAuth()
+                        }}
+                      >
+                        <input
+                          name="loginEmail"
+                          value={loginEmail}
+                          onChange={(event) => setLoginEmail(event.target.value)}
+                          placeholder="邮箱"
+                          autoComplete="email"
+                        />
+                        <input
+                          name="loginPassword"
+                          type="password"
+                          value={loginPassword}
+                          onChange={(event) => setLoginPassword(event.target.value)}
+                          placeholder="密码（至少 8 位）"
+                          autoComplete={registerMode ? 'new-password' : 'current-password'}
+                        />
+                        {registerMode ? (
+                          <input
+                            name="registerOrgName"
+                            value={registerOrgName}
+                            onChange={(event) => setRegisterOrgName(event.target.value)}
+                            placeholder="初始组织名"
+                          />
+                        ) : null}
+                        <div className="lab-inline-actions">
+                          <button type="submit" disabled={isAuthBusy}>
+                            {isAuthBusy ? '提交中...' : registerMode ? '注册并登录' : '登录'}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isAuthBusy}
+                            onClick={() => setRegisterMode(prev => !prev)}
+                          >
+                            {registerMode ? '切换到登录' : '切换到注册'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            ) : (
+              <div className="channel-grid">
+                <section className="channel-card">
+                  <h4>组织与成员</h4>
+                  <div className="channel-list">
+                    <div className="capability-row">
+                      <div className="channel-row-controls">
+                        <select
+                          name="selectedOrganizationId"
+                          value={effectiveOrganizationId}
+                          onChange={(event) => {
+                            setSelectedOrganizationId(event.target.value)
+                            setOrganizationId(event.target.value)
+                          }}
+                        >
+                          {organizations.map(item => (
+                            <option key={item.id} value={item.id}>{item.name}</option>
+                          ))}
+                        </select>
+                        <input
+                          name="newOrganizationName"
+                          value={newOrgName}
+                          onChange={(event) => setNewOrgName(event.target.value)}
+                          placeholder="新组织名称"
+                        />
+                        <div className="lab-inline-actions">
+                          <button onClick={() => void createOrganization()}>创建组织</button>
+                          <button onClick={() => void logoutAuth()}>退出登录</button>
+                        </div>
+                        <input
+                          name="inviteMemberEmail"
+                          value={inviteMemberEmail}
+                          onChange={(event) => setInviteMemberEmail(event.target.value)}
+                          placeholder="成员邮箱（需已注册）"
+                          autoComplete="email"
+                        />
+                        <select
+                          name="inviteOrganizationRole"
+                          value={inviteOrgRole}
+                          onChange={(event) => setInviteOrgRole(event.target.value as OrganizationRole)}
+                        >
+                          <option value="member">member</option>
+                          <option value="admin">admin</option>
+                          <option value="owner">owner</option>
+                        </select>
+                        <div className="lab-inline-actions">
+                          <button onClick={() => void addOrganizationMember()}>添加成员</button>
+                          <button onClick={() => void refreshOrganizationMembers()}>刷新成员</button>
+                        </div>
+                        <div className="capability-meta">
+                          {orgMembers.slice(0, 6).map(item => (
+                            <span key={item.id}>{item.email} · {item.role}</span>
+                          ))}
+                          {orgMembers.length === 0 ? <span>暂无成员</span> : null}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
 
-              <section className="channel-card">
-                <h4>媒体服务渠道</h4>
-                <div className="channel-list">
-                  {renderChannelRows(SERVICE_CAPABILITY_ROWS, capabilities?.services)}
-                </div>
-              </section>
-            </div>
+                <section className="channel-card">
+                  <h4>渠道作用域</h4>
+                  <div className="channel-list">
+                    <div className="capability-row">
+                      <div className="channel-row-controls">
+                        <select
+                          name="activeChannelScope"
+                          value={activeChannelScope}
+                          onChange={(event) => setActiveChannelScope(event.target.value as 'organization' | 'workspace')}
+                        >
+                          <option value="organization">组织级共享</option>
+                          <option value="workspace">工作区覆写</option>
+                        </select>
+                        <span className="channel-hint">
+                          当前工作区：{workspaceId || '未选择'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {authProfile ? (
+              <div className="channel-grid">
+                <section className="channel-card">
+                  <h4>视频模型渠道</h4>
+                  <div className="channel-list">
+                    {renderChannelRows(MODEL_CAPABILITY_ROWS, capabilities?.models)}
+                  </div>
+                </section>
+
+                <section className="channel-card">
+                  <h4>媒体服务渠道</h4>
+                  <div className="channel-list">
+                    {renderChannelRows(SERVICE_CAPABILITY_ROWS, capabilities?.services)}
+                  </div>
+                </section>
+              </div>
+            ) : null}
           </section>
         </div>
       ) : null}

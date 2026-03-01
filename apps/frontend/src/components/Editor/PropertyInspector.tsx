@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useActorsStore } from '../../store/actorsStore';
-import { api, getErrorMessage } from '../../utils/eden';
-import { useEditorStore, Clip } from '../../store/editorStore';
+import { buildAuthHeaders, getAccessToken, resolveApiBase } from '../../utils/eden';
+import { useEditorStore } from '../../store/editorStore';
+import type { Clip } from '../../store/editorStore';
 import { useToastStore } from '../../store/toastStore';
 import {
   applyStyleDataUpdate,
@@ -52,10 +53,41 @@ const PropertyInspector: React.FC = () => {
   });
 
   useEffect(() => {
+    if (!getAccessToken().trim()) return;
     void fetchActors().catch(() => {
       // ignore actor list errors in inspector
     });
   }, [fetchActors]);
+
+  const extractErrorMessage = (payload: any, fallback: string) => {
+    if (!payload || typeof payload !== 'object') return fallback;
+    if (typeof payload.error === 'string' && payload.error.trim()) return payload.error;
+    if (typeof payload.message === 'string' && payload.message.trim()) return payload.message;
+    if (typeof payload.reason === 'string' && payload.reason.trim()) return payload.reason;
+    if (typeof payload.repair?.error === 'string' && payload.repair.error.trim()) return payload.repair.error;
+    return fallback;
+  };
+
+  const callAuthJson = async <T = any>(path: string, body: Record<string, unknown>) => {
+    if (!getAccessToken().trim()) {
+      throw new Error('请先登录后再使用 AI 功能');
+    }
+
+    const response = await fetch(`${resolveApiBase()}${path}`, {
+      method: 'POST',
+      headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(body ?? {})
+    });
+
+    const payload = await response.json().catch(() => null) as any;
+    if (!response.ok) {
+      throw new Error(extractErrorMessage(payload, `请求失败 (${response.status})`));
+    }
+    if (payload && typeof payload === 'object' && (payload.success === false || payload.status === 'error')) {
+      throw new Error(extractErrorMessage(payload, '请求失败'));
+    }
+    return payload as T;
+  };
 
   const handleUpdate = (updates: Partial<Clip>) => {
     if (parentTrackId && selectedClipId) { 
@@ -93,21 +125,25 @@ const PropertyInspector: React.FC = () => {
         ? ((selectedClip as Clip).data?.content || (selectedClip as Clip).name)
         : (selectedClip as Clip).name;
 
-      const { data, error } = await api.api.ai.translate.post({
+      const data = await callAuthJson<{
+        translatedText?: string;
+        detectedLang?: string;
+        targetLang?: string;
+      }>('/api/ai/translate', {
         text: sourceText,
         targetLang
       });
-
-      if (error) throw new Error(getErrorMessage(error));
       if (!data?.translatedText) throw new Error('翻译结果为空');
+      const resolvedDetectedLang = data.detectedLang || 'auto';
+      const resolvedTargetLang = data.targetLang || targetLang;
       const cloned = buildTranslatedClipClone(selectedClip as Clip, {
         translatedText: data.translatedText,
-        detectedLang: data.detectedLang,
-        targetLang: data.targetLang
+        detectedLang: resolvedDetectedLang,
+        targetLang: resolvedTargetLang
       }, Date.now());
       cloneSelectedClip(cloned);
 
-      showToast(`已翻译并克隆为 ${data.targetLang}`, 'success');
+      showToast(`已翻译并克隆为 ${resolvedTargetLang}`, 'success');
     } catch (e: any) {
       showToast(e.message || '翻译失败', 'error');
     } finally {
@@ -122,41 +158,42 @@ const PropertyInspector: React.FC = () => {
     showToast(`🧬 正在执行高级炼金: ${type}`, 'info');
     
     try {
-      let result;
+      let payload: any;
       switch (type) {
         case 'repair':
-          result = await api.api.ai.repair.post({ description: (selectedClip as Clip).name });
+          payload = await callAuthJson('/api/ai/repair', { description: (selectedClip as Clip).name });
           break;
         case 'style':
-          result = await api.api.ai.alchemy['style-transfer'].post({
+          payload = await callAuthJson('/api/ai/alchemy/style-transfer', {
             clipId: (selectedClip as Clip).id,
             style: stylePreset,
             referenceModel: styleModel
           });
           break;
         case 'lip':
-          result = await api.api.ai['sync-lip'].post({ videoUrl: (selectedClip as Clip).src, audioUrl: (selectedClip as Clip).src });
+          payload = await callAuthJson('/api/ai/sync-lip', {
+            videoUrl: (selectedClip as Clip).src,
+            audioUrl: (selectedClip as Clip).src
+          });
           break;
         case 'enhance':
-          result = await api.api.ai.enhance.post({ prompt: (selectedClip as Clip).name });
+          payload = await callAuthJson('/api/ai/enhance', { prompt: (selectedClip as Clip).name });
           break;
         case 'audio':
-          result = await api.api.ai['analyze-audio'].post({ audioUrl: (selectedClip as Clip).src });
+          payload = await callAuthJson('/api/ai/analyze-audio', { audioUrl: (selectedClip as Clip).src });
           break;
         case 'tts':
-          result = await api.api.ai.tts.post({ text: (selectedClip as Clip).data?.content || '' });
+          payload = await callAuthJson('/api/ai/tts', { text: (selectedClip as Clip).data?.content || '' });
           break;
         case 'vfx':
-          result = await api.api.ai.vfx.apply.post({
+          payload = await callAuthJson('/api/ai/vfx/apply', {
             clipId: (selectedClip as Clip).id,
             vfxType,
             intensity: vfxIntensity
           });
           break;
       }
-      
-      if (result?.error) throw new Error(getErrorMessage(result.error));
-      const payload = result?.data as any;
+
       if (payload?.status === 'not_implemented') {
         showToast(payload.message || '该能力未配置 provider', 'warning');
       } else if (payload?.success === false) {
@@ -352,8 +389,7 @@ const PropertyInspector: React.FC = () => {
                 <button className="pro-master-btn" onClick={async () => {
                   setIsProcessing(true);
                   try {
-                    const { data, error } = await api.api.ai.spatial.render.post({ clipId: current.id });
-                    if (error) throw new Error(getErrorMessage(error));
+                    const data = await callAuthJson('/api/ai/spatial/render', { clipId: current.id });
                     if (data?.status === 'not_implemented') showToast(data.message || '3D 重构服务未配置', 'warning');
                     else if (data?.success) showToast('✨ 3D 重构完成', 'success');
                     else showToast('3D 重构执行失败', 'error');
