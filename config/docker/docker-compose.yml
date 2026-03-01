@@ -4,10 +4,10 @@ services:
   veomuse-redis:
     image: redis:alpine
     restart: always
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-veomuse-redis-change-me}
+    env_file:
+      - ../../.env
     command: >-
-      sh -c 'redis-server --port 46379 --save 60 1 --loglevel warning --protected-mode yes --requirepass "$${REDIS_PASSWORD}"'
+      sh -c 'if [ -z "$${REDIS_PASSWORD}" ]; then echo "REDIS_PASSWORD is required"; exit 1; fi; redis-server --port 46379 --save 60 1 --loglevel warning --protected-mode yes --requirepass "$${REDIS_PASSWORD}"'
     expose:
       - "46379"
 
@@ -21,7 +21,6 @@ services:
       - NODE_ENV=production
       - REDIS_HOST=veomuse-redis
       - REDIS_PORT=46379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-veomuse-redis-change-me}
       - PORT=33117
       - UPLOADS_PATH=/app/uploads
       - VEOMUSE_DB_PATH=/app/data/veomuse.sqlite
