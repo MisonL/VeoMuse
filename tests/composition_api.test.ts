@@ -47,4 +47,19 @@ describe('Video Composition API 连通性验证', () => {
     expect(data.success).toBe(true);
     expect(data.outputPath).toContain('.mp4');
   });
+
+  it('空时间轴导出应返回校验错误', async () => {
+    const response = await app.handle(
+      new Request('http://localhost/api/video/compose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timelineData: { tracks: [] } })
+      })
+    );
+
+    const data = await response.json() as any;
+    expect(response.status).toBe(400);
+    expect(data.success).toBe(false);
+    expect(data.code).toBe('VALIDATION');
+  });
 });
