@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "${ROOT_DIR}"
+
+echo "[security] running pre-push secret scan..."
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --staged --redact --no-banner --config .gitleaks.toml
+else
+  echo "[security] gitleaks not installed, fallback to bun secrets_guard"
+  bun run scripts/secrets_guard.ts --staged
+fi
+echo "[security] pre-push scan passed"

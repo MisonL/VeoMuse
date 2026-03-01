@@ -5,12 +5,13 @@
 系统已完全容器化，前端镜像会在构建阶段自动执行前端构建（无需宿主机预先生成 `dist`）。
 
 ```bash
-# 1. 填入环境变量（至少包含 Gemini Key）
+# 1. 填入环境变量（生产环境必须配置安全变量）
 cat > .env <<'ENV'
-GEMINI_API_KEYS=key1,key2
-# 可选：ADMIN_TOKEN=your_admin_token
-# 建议：为 Redis 设置强口令
+JWT_SECRET=replace-with-32+chars-random-jwt-secret
+SECRET_ENCRYPTION_KEY=replace-with-32-bytes-hex-or-base64
+ADMIN_TOKEN=replace-with-admin-token
 REDIS_PASSWORD=replace-with-strong-password
+GEMINI_API_KEYS=key1,key2
 ENV
 
 # 2. 启动集群
@@ -36,7 +37,9 @@ docker-compose up -d --build
 | `VEOMUSE_DB_PATH` | `/app/data/veomuse.sqlite` | 本地 SQLite 存储路径（模型超市、创意闭环、协作审计） |
 | `DB_AUTO_REPAIR` | `true` | 启动时发现 SQLite 损坏自动尝试修复（`false` 时关闭） |
 | `DB_HEALTHCHECK_INTERVAL_MS` | `0` | 运行时数据库健康巡检间隔（毫秒），`0` 表示关闭巡检 |
-| `ADMIN_TOKEN` | (empty) | 配置后 `/api/admin/metrics` 需 `x-admin-token` |
+| `JWT_SECRET` | (empty) | 生产环境必填，未配置将拒绝启动 |
+| `SECRET_ENCRYPTION_KEY` | (empty) | 生产环境必填，用于渠道密钥加密 |
+| `ADMIN_TOKEN` | (empty) | 建议必填，配置后 `/api/admin/metrics` 需 `x-admin-token` |
 | `ALCHEMY_API_URL` | (empty) | 风格迁移服务地址（启用 `/api/ai/alchemy/style-transfer`） |
 | `ALCHEMY_API_KEY` | (empty) | 风格迁移服务密钥 |
 | `CLEANUP_INTERVAL_MS` | `86400000` | 自动清理任务调度间隔（毫秒） |
@@ -71,6 +74,19 @@ curl -s http://127.0.0.1:18081/api/admin/db/runtime -H "x-admin-token: $ADMIN_TO
 curl -I http://127.0.0.1:18081 | grep -E "Content-Security-Policy|X-Frame-Options|Referrer-Policy|Permissions-Policy"
 curl -s http://127.0.0.1:18081/api/admin/metrics -H "x-admin-token: $ADMIN_TOKEN" | jq '.api["System-Cleanup"]'
 ```
+
+## 🛡️ Secrets 防泄漏
+```bash
+# 安装本地 pre-push 钩子（提交前自动扫描）
+bun run hooks:install
+
+# 全仓扫描（轻量）
+bun run security:scan
+```
+
+CI 已内置双层扫描：
+- `Bun Secrets Guard`（轻量正则）
+- `Gitleaks Deep Scan`（历史级深度扫描 + SARIF）
 
 ## 🔒 协作鉴权要求
 - 工作区 Owner 级接口（邀请管理、成员管理）必须携带 `x-workspace-actor`，并且该成员在目标工作区中真实角色为 `owner`。

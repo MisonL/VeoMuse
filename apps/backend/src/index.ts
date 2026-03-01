@@ -1615,9 +1615,29 @@ const parseMs = (value: string | undefined, fallback: number) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
+const isWeakSecret = (value: string | undefined, placeholders: string[]) => {
+  const secret = String(value || '').trim()
+  if (!secret) return true
+  return placeholders.some(item => item.toLowerCase() === secret.toLowerCase())
+}
+
 if (import.meta.main) {
-  if (String(process.env.NODE_ENV || '').toLowerCase() === 'production' && !process.env.JWT_SECRET?.trim()) {
-    throw new Error('JWT_SECRET 未配置，生产环境拒绝启动')
+  const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production'
+  if (isProduction) {
+    if (!process.env.JWT_SECRET?.trim()) {
+      throw new Error('JWT_SECRET 未配置，生产环境拒绝启动')
+    }
+    if (!process.env.SECRET_ENCRYPTION_KEY?.trim()) {
+      throw new Error('SECRET_ENCRYPTION_KEY 未配置，生产环境拒绝启动')
+    }
+    if (isWeakSecret(process.env.REDIS_PASSWORD, [
+      'veomuse-redis-change-me',
+      'replace-with-strong-password',
+      'changeme',
+      'change-me'
+    ])) {
+      throw new Error('REDIS_PASSWORD 未配置强口令，生产环境拒绝启动')
+    }
   }
   if (!isDevRuntime() && !process.env.ADMIN_TOKEN?.trim()) {
     console.error('[Security] ADMIN_TOKEN 未配置，管理接口已在生产模式禁用。请设置 ADMIN_TOKEN 后重启服务。')

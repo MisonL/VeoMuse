@@ -37,6 +37,12 @@ bun run lint
 
 # 全量回归测试
 bun test
+
+# 敏感信息扫描（轻量）
+bun run security:scan
+
+# 安装 pre-push 安全钩子
+bun run hooks:install
 ```
 
 ## 🏗️ 仓库结构
