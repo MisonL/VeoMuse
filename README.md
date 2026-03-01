@@ -44,6 +44,15 @@ bun test
 # 敏感信息扫描（轻量）
 bun run security:scan
 
+# 安装 Playwright Chromium（首次）
+bun run e2e:install
+
+# 浏览器级冒烟门禁（PR 必跑）
+bun run e2e:smoke
+
+# 浏览器级回归套件
+bun run e2e:regression
+
 # 安装 pre-push 安全钩子
 bun run hooks:install
 ```
