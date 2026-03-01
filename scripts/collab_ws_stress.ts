@@ -8,6 +8,9 @@ interface StressConfig {
   ackTimeoutMs: number
   workspaceName: string
   ownerName: string
+  ownerEmail: string
+  ownerPassword: string
+  runTag: string
 }
 
 interface StressClient {
@@ -50,12 +53,42 @@ interface StressSummary {
   durationMs: number
 }
 
+interface AuthSessionPayload {
+  accessToken: string
+  refreshToken: string
+  expiresAt: string
+  user: {
+    id: string
+    email: string
+  }
+}
+
+interface OrganizationPayload {
+  id: string
+  name: string
+}
+
+interface AuthResponsePayload {
+  success: boolean
+  session: AuthSessionPayload
+  organizations: OrganizationPayload[]
+}
+
+interface AuthContext {
+  accessToken: string
+  organizationId: string
+  userId: string
+  email: string
+}
+
 const parsePositiveInt = (value: string | undefined, fallback: number) => {
   const parsed = Number.parseInt(String(value || ''), 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
 const parseConfig = (): StressConfig => {
+  const runTag = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+  const ownerName = process.env.COLLAB_STRESS_OWNER || 'StressOwner'
   const apiBase = String(process.env.API_BASE_URL || '').trim().replace(/\/+$/, '')
   return {
     selfHost: process.env.SELF_HOST === '1' || process.env.SELF_HOST === 'true',
@@ -64,7 +97,10 @@ const parseConfig = (): StressConfig => {
     rounds: parsePositiveInt(process.env.COLLAB_STRESS_ROUNDS, 10),
     ackTimeoutMs: parsePositiveInt(process.env.COLLAB_STRESS_ACK_TIMEOUT_MS, 6000),
     workspaceName: process.env.COLLAB_STRESS_WORKSPACE || `WS 压测 ${Date.now()}`,
-    ownerName: process.env.COLLAB_STRESS_OWNER || 'StressOwner'
+    ownerName,
+    ownerEmail: process.env.COLLAB_STRESS_OWNER_EMAIL || `stress-owner-${runTag}@veomuse.local`,
+    ownerPassword: process.env.COLLAB_STRESS_OWNER_PASSWORD || 'StressOwner!2026',
+    runTag
   }
 }
 
@@ -102,6 +138,59 @@ const requestJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
   return payload as T
 }
 
+const authHeaders = (auth: AuthContext): HeadersInit => ({
+  Authorization: `Bearer ${auth.accessToken}`,
+  'x-organization-id': auth.organizationId
+})
+
+const extractAuthContext = (payload: AuthResponsePayload): AuthContext => {
+  const accessToken = payload.session?.accessToken?.trim()
+  const userId = payload.session?.user?.id?.trim()
+  const email = payload.session?.user?.email?.trim()
+  const organizationId = payload.organizations?.[0]?.id?.trim()
+  if (!accessToken || !userId || !email || !organizationId) {
+    throw new Error('登录响应缺少 accessToken/userId/organizationId')
+  }
+  return {
+    accessToken,
+    organizationId,
+    userId,
+    email
+  }
+}
+
+const ensureUserSession = async (apiBase: string, input: {
+  email: string
+  password: string
+  organizationName?: string
+}) => {
+  try {
+    const registered = await requestJson<AuthResponsePayload>(`${apiBase}/api/auth/register`, {
+      method: 'POST',
+      body: JSON.stringify({
+        email: input.email,
+        password: input.password,
+        organizationName: input.organizationName
+      })
+    })
+    return extractAuthContext(registered)
+  } catch (error: any) {
+    const message = String(error?.message || '')
+    if (!message.includes('已注册')) {
+      throw error
+    }
+  }
+
+  const loggedIn = await requestJson<AuthResponsePayload>(`${apiBase}/api/auth/login`, {
+    method: 'POST',
+    body: JSON.stringify({
+      email: input.email,
+      password: input.password
+    })
+  })
+  return extractAuthContext(loggedIn)
+}
+
 const waitOpen = (ws: WebSocket, timeoutMs: number) => new Promise<void>((resolve, reject) => {
   const timer = setTimeout(() => {
     reject(new Error('WebSocket open timeout'))
@@ -110,6 +199,11 @@ const waitOpen = (ws: WebSocket, timeoutMs: number) => new Promise<void>((resolv
   ws.onopen = () => {
     clearTimeout(timer)
     resolve()
+  }
+
+  ws.onclose = (event) => {
+    clearTimeout(timer)
+    reject(new Error(`WebSocket closed before open (${event.code}): ${event.reason || 'no reason'}`))
   }
 
   ws.onerror = () => {
@@ -244,8 +338,9 @@ const run = async () => {
   const startedAt = performance.now()
   let apiBase = await resolveApiBase(config.apiBase)
   let runtimeApp: any = null
+  const shouldSelfHost = config.selfHost || (!config.apiBase && !(await canReachApiBase(apiBase)))
 
-  if (config.selfHost) {
+  if (shouldSelfHost) {
     const mod = await import('../apps/backend/src/index')
     runtimeApp = mod.createApp()
     runtimeApp.listen({ port: 0, hostname: '127.0.0.1' })
@@ -256,15 +351,22 @@ const run = async () => {
   }
 
   const wsBase = toWsBase(apiBase)
+  const ownerAuth = await ensureUserSession(apiBase, {
+    email: config.ownerEmail,
+    password: config.ownerPassword,
+    organizationName: `${config.ownerName} Organization`
+  })
   const createPayload = await requestJson<{
     success: boolean
     workspace: { id: string }
     defaultProject: { id: string }
   }>(`${apiBase}/api/workspaces`, {
     method: 'POST',
+    headers: authHeaders(ownerAuth),
     body: JSON.stringify({
       name: config.workspaceName,
-      ownerName: config.ownerName
+      ownerName: config.ownerName,
+      organizationId: ownerAuth.organizationId
     })
   })
 
@@ -276,18 +378,23 @@ const run = async () => {
   const projectId = createPayload.defaultProject.id
   const clients: StressClient[] = []
   const latencies: number[] = []
+  const memberSessions: AuthContext[] = []
 
   try {
     for (let i = 1; i < config.clients; i += 1) {
       const memberName = `StressMember-${i + 1}`
+      const memberSession = await ensureUserSession(apiBase, {
+        email: `stress-member-${config.runTag}-${i + 1}@veomuse.local`,
+        password: `StressMember!2026-${i + 1}`
+      })
+      memberSessions.push(memberSession)
       await requestJson<{ success: boolean }>(`${apiBase}/api/workspaces/${workspaceId}/members`, {
         method: 'POST',
-        headers: {
-          'x-workspace-actor': config.ownerName
-        },
+        headers: authHeaders(ownerAuth),
         body: JSON.stringify({
           name: memberName,
-          role: 'editor'
+          role: 'editor',
+          userId: memberSession.userId
         })
       })
     }
@@ -296,13 +403,21 @@ const run = async () => {
       const role: CollabRole = i === 0 ? 'owner' : 'editor'
       const memberName = i === 0 ? config.ownerName : `StressMember-${i + 1}`
       const sessionId = `stress-${i + 1}-${Math.random().toString(36).slice(2, 8)}`
+      const accessToken = i === 0 ? ownerAuth.accessToken : memberSessions[i - 1]?.accessToken
+      if (!accessToken) {
+        throw new Error(`缺少第 ${i + 1} 个客户端 accessToken`)
+      }
       const query = new URLSearchParams({
-        workspaceId,
-        memberName,
-        role,
         sessionId
       })
-      const ws = new WebSocket(`${wsBase}/ws/collab/${workspaceId}?${query.toString()}`)
+      const ws = new WebSocket(
+        `${wsBase}/ws/collab/${workspaceId}?${query.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      )
       await waitOpen(ws, config.ackTimeoutMs)
       const client: StressClient = {
         ws,
