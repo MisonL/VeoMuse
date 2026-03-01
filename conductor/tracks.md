@@ -85,4 +85,22 @@
   *Archive: [./archive/full_blueprint_alignment_20260227/](./archive/full_blueprint_alignment_20260227/)*
 
 ---
-**VeoMuse V3.1 Pro - 全轨道对齐完成。**
+
+## 🚧 下一阶段待执行轨道 (V3.2)
+
+规划总览见：[./v3_2_next_phase_plan_20260302.md](./v3_2_next_phase_plan_20260302.md)
+
+- [ ] **Track: 前端信息架构重构与体验可理解性**
+  *Plan: [./v3_2_next_phase_plan_20260302.md](./v3_2_next_phase_plan_20260302.md)*
+
+- [ ] **Track: 生产可靠性与故障自愈强化**
+  *Plan: [./v3_2_next_phase_plan_20260302.md](./v3_2_next_phase_plan_20260302.md)*
+
+- [ ] **Track: 多租户治理与成本控制**
+  *Plan: [./v3_2_next_phase_plan_20260302.md](./v3_2_next_phase_plan_20260302.md)*
+
+- [ ] **Track: 发布工程与质量门禁（E2E）**
+  *Plan: [./v3_2_next_phase_plan_20260302.md](./v3_2_next_phase_plan_20260302.md)*
+
+---
+**VeoMuse V3.2 - 进入规划执行阶段。**
