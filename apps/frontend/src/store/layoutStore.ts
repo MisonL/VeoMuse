@@ -15,15 +15,15 @@ const createSafeStorage = () => createJSONStorage(() => {
 })
 
 export const LAYOUT_DEFAULTS = {
-  leftPanelPx: 430,
-  rightPanelPx: 360,
-  timelinePx: 336
+  leftPanelPx: 470,
+  rightPanelPx: 390,
+  timelinePx: 332
 } as const
 
 export const LAYOUT_LIMITS = {
-  leftPanelPx: { min: 280, max: 680 },
-  rightPanelPx: { min: 240, max: 620 },
-  timelinePx: { min: 240, max: 460 }
+  leftPanelPx: { min: 320, max: 760 },
+  rightPanelPx: { min: 280, max: 680 },
+  timelinePx: { min: 240, max: 500 }
 } as const
 
 interface LayoutState {
@@ -52,7 +52,7 @@ export const useLayoutStore = create<LayoutState>()(
       resetLayout: () => set({ ...LAYOUT_DEFAULTS })
     }),
     {
-      name: 'veomuse-layout-storage-v5',
+      name: 'veomuse-layout-storage-v6',
       storage: createSafeStorage(),
       skipHydration: typeof window === 'undefined'
     }

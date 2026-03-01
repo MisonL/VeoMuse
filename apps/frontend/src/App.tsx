@@ -30,11 +30,11 @@ const fps = 30
 const DESKTOP_BREAKPOINT = 980
 const MAIN_PANEL_MIN_WIDTH = 360
 const MAIN_PANEL_MIN_HEIGHT = 260
-const CENTER_PANEL_FALLBACK_WIDTH = 760
-const CENTER_PANEL_LAB_WIDTH = 820
-const CENTER_PANEL_AUDIO_WIDTH = 700
-const CENTER_PANEL_FRAME_GUTTER = 32
-const CENTER_PANEL_MAX_WIDTH = 980
+const CENTER_PANEL_FALLBACK_WIDTH = 640
+const CENTER_PANEL_LAB_WIDTH = 760
+const CENTER_PANEL_AUDIO_WIDTH = 620
+const CENTER_PANEL_FRAME_GUTTER = 24
+const CENTER_PANEL_MAX_WIDTH = 900
 const HEADER_HEIGHT = 62
 const HORIZONTAL_HANDLE_SIZE = 10
 const VERTICAL_HANDLE_SIZE = 8
@@ -239,6 +239,13 @@ function App() {
   const openDirectorFromAnywhere = useCallback(() => {
     setActiveMode('edit')
     setActiveSidebar('director')
+  }, [])
+
+  const openChannelAccess = useCallback(() => {
+    setActiveMode('color')
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('veomuse:open-channel-panel'))
+    }, 0)
   }, [])
 
   const guideSteps = useMemo<GuideStep[]>(() => ([
@@ -640,6 +647,14 @@ function App() {
           ))}
         </div>
         <div className="header-actions">
+          <button
+            id="btn-open-channel-access"
+            aria-label="打开 AI 渠道接入"
+            className="channel-entry-btn"
+            onClick={openChannelAccess}
+          >
+            AI接入
+          </button>
           <button
             id="btn-open-guide"
             aria-label="打开使用引导"
