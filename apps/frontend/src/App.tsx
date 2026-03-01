@@ -11,7 +11,7 @@ import { calcAspectFit, clamp } from './utils/layoutMath'
 import ResizeHandle from './components/Common/ResizeHandle'
 import ThemeSwitcher from './components/Common/ThemeSwitcher'
 import WorkspaceShell from './components/Layout/WorkspaceShell'
-import type { PreviewAspect } from './types/layout'
+import type { CenterPanelMode, PreviewAspect } from './types/layout'
 import './App.css'
 
 const loadVideoEditor = () => import('./components/Editor/VideoEditor')
@@ -49,6 +49,10 @@ const GUIDE_STORAGE_KEY = 'veomuse-onboarding-v1'
 const PREVIEW_ASPECT_RATIO_MAP: Record<PreviewAspect, number> = {
   '16:9': 16 / 9,
   '21:9': 21 / 9
+}
+const CENTER_MODE_WIDTH_BOOST: Record<CenterPanelMode, number> = {
+  fit: 0,
+  focus: 84
 }
 type ExportUiStatus = 'idle' | 'pending' | 'done' | 'error'
 type ExportProgressStage = 'idle' | 'validating' | 'composing' | 'packaging' | 'done' | 'error'
@@ -132,12 +136,29 @@ function App() {
       setSpatialPreview: state.setSpatialPreview
     }))
   )
-  const { leftPanelPx, rightPanelPx, timelinePx, previewAspect, setTimelinePx, resetLayout } = useLayoutStore(
+  const {
+    leftPanelPx,
+    rightPanelPx,
+    timelinePx,
+    centerMode,
+    topBarDensity,
+    previewAspect,
+    setCenterMode,
+    setTopBarDensity,
+    setPreviewAspect,
+    setTimelinePx,
+    resetLayout
+  } = useLayoutStore(
     useShallow(state => ({
       leftPanelPx: state.leftPanelPx,
       rightPanelPx: state.rightPanelPx,
       timelinePx: state.timelinePx,
+      centerMode: state.centerMode,
+      topBarDensity: state.topBarDensity,
       previewAspect: state.previewAspect,
+      setCenterMode: state.setCenterMode,
+      setTopBarDensity: state.setTopBarDensity,
+      setPreviewAspect: state.setPreviewAspect,
       setTimelinePx: state.setTimelinePx,
       resetLayout: state.resetLayout
     }))
@@ -641,10 +662,11 @@ function App() {
 
   const centerPanelMinWidth = useMemo(() => {
     if (!isDesktopLayout) return MAIN_PANEL_MIN_WIDTH
-    if (activeMode === 'color') return 420
-    if (activeMode === 'audio') return 390
-    return MAIN_PANEL_MIN_WIDTH
-  }, [activeMode, isDesktopLayout])
+    const boost = CENTER_MODE_WIDTH_BOOST[centerMode]
+    if (activeMode === 'color') return 420 + boost
+    if (activeMode === 'audio') return 390 + boost
+    return MAIN_PANEL_MIN_WIDTH + boost
+  }, [activeMode, centerMode, isDesktopLayout])
 
   const handleLeftPanelResize = useCallback((delta: number) => {
     if (!isDesktopLayout) return
@@ -704,26 +726,30 @@ function App() {
 
   const centerPanelFitWidth = useMemo(() => {
     if (!isDesktopLayout) return CENTER_PANEL_FALLBACK_WIDTH
+    const maxBoost = centerMode === 'focus' ? 180 : 0
     if (activeMode === 'color') {
-      return clamp(CENTER_PANEL_LAB_WIDTH, centerPanelMinWidth, CENTER_PANEL_LAB_MAX_WIDTH)
+      return clamp(CENTER_PANEL_LAB_WIDTH + maxBoost, centerPanelMinWidth, CENTER_PANEL_LAB_MAX_WIDTH + maxBoost)
     }
     if (activeMode === 'audio') {
-      return clamp(CENTER_PANEL_AUDIO_WIDTH, centerPanelMinWidth, CENTER_PANEL_AUDIO_MAX_WIDTH)
+      return clamp(CENTER_PANEL_AUDIO_WIDTH + maxBoost, centerPanelMinWidth, CENTER_PANEL_AUDIO_MAX_WIDTH + maxBoost)
     }
     const editFitWidth = Math.max(
       CENTER_PANEL_EDIT_WIDTH,
       previewFrameSize.width > 0 ? previewFrameSize.width + CENTER_PANEL_FRAME_GUTTER : 0
     )
-    return clamp(editFitWidth, centerPanelMinWidth, CENTER_PANEL_EDIT_MAX_WIDTH)
-  }, [activeMode, centerPanelMinWidth, isDesktopLayout, previewFrameSize.width])
+    return clamp(editFitWidth + maxBoost, centerPanelMinWidth, CENTER_PANEL_EDIT_MAX_WIDTH + maxBoost)
+  }, [activeMode, centerMode, centerPanelMinWidth, isDesktopLayout, previewFrameSize.width])
 
   const shellLayoutVars = useMemo(() => ({
     '--left-panel-w': `${leftPanelPx}px`,
     '--right-panel-w': `${rightPanelPx}px`,
     '--center-panel-min-w': `${centerPanelMinWidth}px`,
     '--center-panel-fit-w': `${Math.round(centerPanelFitWidth)}px`,
+    '--left-panel-flex': centerMode === 'focus' ? '1.18fr' : '1.75fr',
+    '--right-panel-flex': centerMode === 'focus' ? '1.08fr' : '1.55fr',
     '--timeline-h': `${timelinePx}px`
   } as CSSProperties), [
+    centerMode,
     centerPanelFitWidth,
     centerPanelMinWidth,
     leftPanelPx,
@@ -788,7 +814,7 @@ function App() {
   }, [guideAnchorRect])
 
   return (
-    <WorkspaceShell shellRef={shellRef} style={shellLayoutVars}>
+    <WorkspaceShell shellRef={shellRef} style={shellLayoutVars} layoutMode={centerMode} topBarDensity={topBarDensity}>
       <Suspense fallback={null}>
         <ToastContainer />
       </Suspense>
@@ -818,6 +844,42 @@ function App() {
           ))}
         </div>
         <div className="header-actions" data-testid="area-header-actions">
+          <div className="header-segment" data-testid="group-center-mode">
+            <button
+              type="button"
+              className={`header-segment-btn ${centerMode === 'fit' ? 'active' : ''}`}
+              onClick={() => setCenterMode('fit')}
+              data-testid="btn-center-mode-fit"
+            >
+              均衡
+            </button>
+            <button
+              type="button"
+              className={`header-segment-btn ${centerMode === 'focus' ? 'active' : ''}`}
+              onClick={() => setCenterMode('focus')}
+              data-testid="btn-center-mode-focus"
+            >
+              聚焦
+            </button>
+          </div>
+          <div className="header-segment" data-testid="group-topbar-density">
+            <button
+              type="button"
+              className={`header-segment-btn ${topBarDensity === 'comfortable' ? 'active' : ''}`}
+              onClick={() => setTopBarDensity('comfortable')}
+              data-testid="btn-density-comfortable"
+            >
+              舒展
+            </button>
+            <button
+              type="button"
+              className={`header-segment-btn ${topBarDensity === 'compact' ? 'active' : ''}`}
+              onClick={() => setTopBarDensity('compact')}
+              data-testid="btn-density-compact"
+            >
+              紧凑
+            </button>
+          </div>
           <button
             id="btn-open-channel-access"
             aria-label="打开 AI 渠道接入"
@@ -854,6 +916,17 @@ function App() {
             <option value="standard">标准导出</option>
             <option value="4k-hdr">4K HDR</option>
             <option value="spatial-vr">空间视频</option>
+          </select>
+          <select
+            id="preview-aspect"
+            name="previewAspect"
+            value={previewAspect}
+            onChange={(e) => setPreviewAspect(e.target.value as PreviewAspect)}
+            className="header-select preview-aspect-select"
+            data-testid="select-preview-aspect"
+          >
+            <option value="16:9">预览 16:9</option>
+            <option value="21:9">预览 21:9</option>
           </select>
           <div className="export-action-wrap">
             <button
