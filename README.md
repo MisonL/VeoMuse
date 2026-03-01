@@ -66,5 +66,10 @@ bun run hooks:install
 - 自动执行 `docker compose up -d --build` 并等待健康检查通过。
 - 输出访问地址与常用运维命令（停止、日志）。
 
+## 🧭 版本管理
+
+- 版本规范：`docs/VERSIONING.md`
+- 变更日志：`CHANGELOG.md`
+
 ---
 **VeoMuse V3.1 Pro - 开启 AI 视频创作新纪元。**
