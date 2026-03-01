@@ -75,7 +75,6 @@ export class CollaborationService {
     const data = (ws.data || {}) as Record<string, any>
     const query = (data.query || {}) as Record<string, any>
     const params = (data.params || {}) as Record<string, any>
-
     const roleFromQuery = query.role === 'owner' || query.role === 'editor' ? query.role : 'viewer'
     const roleFromData = data.role === 'owner' || data.role === 'editor' || data.role === 'viewer' ? data.role : undefined
     const userId = meta?.userId || data.userId || query.userId || null
@@ -113,7 +112,8 @@ export class CollaborationService {
       sessionId,
       memberName: resolvedMemberName,
       userId,
-      role
+      role,
+      __collabJoined: true
     }
     this.sessionMeta.set(ws, {
       workspaceId,
@@ -158,16 +158,38 @@ export class CollaborationService {
   }
 
   static leave(ws: WsLike) {
+    const meta = this.sessionMeta.get(ws)
+    const data = (ws.data || {}) as Record<string, any>
     const session = this.resolveSession(ws)
-    const workspaceId = session.workspaceId
-    const sessionId = session.sessionId
-    const memberName = session.memberName
+    let workspaceId = session.workspaceId ? String(session.workspaceId).trim() : ''
+    let sessionId = session.sessionId ? String(session.sessionId).trim() : ''
+    let memberName = session.memberName
+
+    if (!meta && data.__collabJoined !== true) {
+      if (!workspaceId || !sessionId) return
+      const presence = WorkspaceService.getPresenceBySession(workspaceId, sessionId)
+      if (!presence) return
+      memberName = presence.memberName
+      ws.data = {
+        ...(ws.data || {}),
+        workspaceId,
+        sessionId,
+        memberName,
+        role: presence.role,
+        __collabJoined: true
+      }
+    }
+
     if (!workspaceId || !sessionId) return
 
     const map = this.sessions.get(workspaceId)
     map?.delete(sessionId)
     if (map && map.size === 0) this.sessions.delete(workspaceId)
     this.sessionMeta.delete(ws)
+    ws.data = {
+      ...(ws.data || {}),
+      __collabJoined: false
+    }
 
     WorkspaceService.removePresence(workspaceId, sessionId)
     WorkspaceService.logCollabEvent(
@@ -194,12 +216,42 @@ export class CollaborationService {
       return
     }
 
+    const meta = this.sessionMeta.get(ws)
+    const data = (ws.data || {}) as Record<string, any>
+    const query = (data.query || {}) as Record<string, any>
+    const params = (data.params || {}) as Record<string, any>
     const session = this.resolveSession(ws)
-    const workspaceId = session.workspaceId
-    const sessionId = session.sessionId
+    let workspaceId = session.workspaceId
+    let sessionId = session.sessionId
     let memberName = session.memberName
     let sessionUserId = session.userId
     let role: WorkspaceRole = session.role
+
+    if (!meta && data.__collabJoined !== true) {
+      const fallbackWorkspaceId = String(workspaceId || data.workspaceId || params.workspaceId || query.workspaceId || '').trim()
+      const fallbackSessionId = String(sessionId || data.sessionId || query.sessionId || '').trim()
+      if (!fallbackWorkspaceId || !fallbackSessionId) {
+        safeSend(ws, { type: 'error', error: 'Session not initialized' })
+        return
+      }
+      const presence = WorkspaceService.getPresenceBySession(fallbackWorkspaceId, fallbackSessionId)
+      if (!presence) {
+        safeSend(ws, { type: 'error', error: 'Session not initialized' })
+        return
+      }
+      workspaceId = fallbackWorkspaceId
+      sessionId = fallbackSessionId
+      memberName = presence.memberName
+      role = presence.role
+      ws.data = {
+        ...(ws.data || {}),
+        workspaceId,
+        sessionId,
+        memberName,
+        role,
+        __collabJoined: true
+      }
+    }
 
     if (!workspaceId || !sessionId) {
       safeSend(ws, { type: 'error', error: 'Session not initialized' })
