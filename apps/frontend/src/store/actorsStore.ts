@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { api, getErrorMessage } from '../utils/eden'
+import { buildAuthHeaders, getAccessToken, resolveApiBase } from '../utils/eden'
 
 const ACTOR_CACHE_TTL_MS = 60 * 1000
 
@@ -32,13 +32,23 @@ export const useActorsStore = create<ActorsState>((set, get) => ({
     const isFresh = lastLoadedAt !== null && (Date.now() - lastLoadedAt) < ACTOR_CACHE_TTL_MS
     if (!force && actors.length > 0 && isFresh) return actors
     if (inFlightFetch) return inFlightFetch
+    if (!getAccessToken().trim()) {
+      set({ actors: [], isLoading: false, error: '', lastLoadedAt: null })
+      return []
+    }
 
     set({ isLoading: true, error: '' })
     inFlightFetch = (async () => {
       try {
-        const { data, error } = await api.api.ai.actors.get()
-        if (error) throw new Error(getErrorMessage(error))
-        const rows = Array.isArray(data?.actors) ? (data.actors as ActorProfile[]) : []
+        const response = await fetch(`${resolveApiBase()}/api/ai/actors`, {
+          method: 'GET',
+          headers: buildAuthHeaders()
+        })
+        const payload = await response.json().catch(() => null) as any
+        if (!response.ok || payload?.success === false) {
+          throw new Error(payload?.error || `HTTP ${response.status}`)
+        }
+        const rows = Array.isArray(payload?.actors) ? (payload.actors as ActorProfile[]) : []
         set({
           actors: rows,
           isLoading: false,

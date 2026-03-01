@@ -6,7 +6,7 @@ import { useToastStore } from './store/toastStore'
 import { useAdminMetricsPolling, useAdminMetricsStore } from './store/adminMetricsStore'
 import { LAYOUT_LIMITS, useLayoutStore } from './store/layoutStore'
 import { useThemeSync } from './hooks/useThemeSync'
-import { api, getErrorMessage } from './utils/eden'
+import { buildAuthHeaders, resolveApiBase } from './utils/eden'
 import { calcAspectFit, clamp } from './utils/layoutMath'
 import ResizeHandle from './components/Common/ResizeHandle'
 import ThemeSwitcher from './components/Common/ThemeSwitcher'
@@ -46,6 +46,8 @@ const SHELL_VERTICAL_GAP = 30
 const GUIDE_STORAGE_KEY = 'veomuse-onboarding-v1'
 type ExportUiStatus = 'idle' | 'pending' | 'done' | 'error'
 type ExportProgressStage = 'idle' | 'validating' | 'composing' | 'packaging' | 'done' | 'error'
+type ExportActionState = { status: 'idle' | 'done' | 'error'; message?: string }
+type ExportQuality = 'standard' | '4k-hdr' | 'spatial-vr'
 
 interface GuideStep {
   title: string
@@ -140,7 +142,7 @@ function App() {
   const [activeMode, setActiveMode] = useState('edit')
   const [activeTool, setActiveTool] = useState('select')
   const [activeSidebar, setActiveSidebar] = useState<'assets' | 'director' | 'actors' | 'motion'>('assets')
-  const [exportQuality, setExportQuality] = useState<'standard' | '4k-hdr' | 'spatial-vr'>('standard')
+  const [exportQuality, setExportQuality] = useState<ExportQuality>('standard')
   const [directorPrompt, setDirectorPrompt] = useState('')
   const [directorScenes, setDirectorScenes] = useState<any[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
@@ -162,23 +164,27 @@ function App() {
   const previewHostRef = useRef<HTMLDivElement | null>(null)
   const exportProgressTimerRef = useRef<number | null>(null)
   const exportFeedbackResetTimerRef = useRef<number | null>(null)
-  const [exportState, runExportAction, isExportPending] = useActionState(async (_: { status: 'idle' | 'done' | 'error'; message?: string }, quality: 'standard' | '4k-hdr' | 'spatial-vr') => {
+  const [exportState, runExportAction, isExportPending] = useActionState<ExportActionState, ExportQuality>(async (_state, quality) => {
     const timelineData = {
       tracks: useEditorStore.getState().tracks,
       exportConfig: { quality }
     }
     try {
-      const { data, error } = await api.api.video.compose.post({ timelineData })
-      if (error) throw new Error(getErrorMessage(error))
-      if (data?.success) {
-        showToast(`导出成功: ${data.outputPath}`, 'success')
-        return { status: 'done' as const, message: data.outputPath }
+      const response = await fetch(`${resolveApiBase()}/api/video/compose`, {
+        method: 'POST',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ timelineData })
+      })
+      const payload = await response.json().catch(() => null) as any
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || `HTTP ${response.status}`)
       }
-      return { status: 'error' as const, message: '导出失败' }
+      showToast(`导出成功: ${payload.outputPath}`, 'success')
+      return { status: 'done' as const, message: payload.outputPath }
     } catch (e: any) {
       return { status: 'error' as const, message: e.message || '导出失败' }
     }
-  }, { status: 'idle' as const })
+  }, { status: 'idle' })
   const [exportUiStatus, setExportUiStatus] = useState<ExportUiStatus>('idle')
   const [exportProgress, setExportProgress] = useState(0)
   const [exportStage, setExportStage] = useState<ExportProgressStage>('idle')
@@ -381,25 +387,33 @@ function App() {
     setOptimisticScenes([{ title: 'AI 正在分析脚本...', duration: 1 }])
 
     try {
-      const { data, error } = await api.api.ai.director.analyze.post({ script: directorPrompt })
-      if (error) throw new Error(getErrorMessage(error))
+      const response = await fetch(`${resolveApiBase()}/api/ai/director/analyze`, {
+        method: 'POST',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ script: directorPrompt })
+      })
+      const data = await response.json().catch(() => null) as any
+      if (!response.ok || !data || data.success === false) {
+        throw new Error(data?.error || `HTTP ${response.status}`)
+      }
 
       if (data && 'scenes' in data) {
         setDirectorScenes(data.scenes || [])
         setOptimisticScenes(data.scenes || [])
 
-        let offset = 0
-        const newTracks = JSON.parse(JSON.stringify(tracks))
-        const vTrack = newTracks.find((t: any) => t.id === 'track-v1')
-        if (vTrack) {
-          data.scenes.forEach((scene: any, i: number) => {
-            vTrack.clips.push({
+        const latestTracks = useEditorStore.getState().tracks
+        const primaryTrack = latestTracks.find(track => track.id === 'track-v1')
+        if (primaryTrack) {
+          let offset = primaryTrack.clips.reduce((max, clip) => Math.max(max, Number(clip.end) || 0), 0)
+          const newClips = (data.scenes || []).map((scene: any, i: number) => {
+            const duration = Number(scene.duration || 5)
+            const clip = {
               id: `auto-${Date.now()}-${i}`,
               start: offset,
-              end: offset + Number(scene.duration || 5),
+              end: offset + duration,
               src: '',
               name: scene.title || `场景 ${i + 1}`,
-              type: 'video',
+              type: 'video' as const,
               data: {
                 fromDirector: true,
                 videoPrompt: scene.videoPrompt,
@@ -407,10 +421,16 @@ function App() {
                 worldLink: true,
                 worldId: (data as any).worldId
               }
-            })
-            offset += Number(scene.duration || 5)
+            }
+            offset += duration
+            return clip
           })
-          setTracks(newTracks)
+          const mergedTracks = latestTracks.map(track => (
+            track.id === 'track-v1'
+              ? { ...track, clips: [...track.clips, ...newClips] }
+              : track
+          ))
+          setTracks(mergedTracks)
           showToast('分镜序列生成并编排成功', 'success')
         }
       }
@@ -831,7 +851,7 @@ function App() {
               onClick={handleExport}
               disabled={isProcessing || isExportPending}
             >
-              {getExportButtonLabel(isExportPending, exportUiStatus, exportProgress)}
+              {getExportButtonLabel(isExportPending, optimisticExportStatus, exportProgress)}
             </button>
             {exportUiStatus !== 'idle' ? (
               <div className={`export-feedback-pop ${exportUiStatus}`} role="status" aria-live="polite">

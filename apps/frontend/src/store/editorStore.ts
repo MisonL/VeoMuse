@@ -1,8 +1,30 @@
 import { create } from 'zustand'
 import { temporal } from 'zundo'
-import { Clip, Track, Asset, Marker } from '@veomuse/shared'
+import type { Clip, Track, Asset, Marker } from '@veomuse/shared'
 
 export type { Clip, Track, Asset, Marker };
+
+const BASELINE_DURATION = 120
+
+const normalizeDuration = (tracks: Track[]) => {
+  const maxEnd = tracks.reduce((acc, track) => {
+    const trackMax = track.clips.reduce((clipAcc, clip) => {
+      const end = Number(clip.end)
+      return Number.isFinite(end) ? Math.max(clipAcc, end) : clipAcc
+    }, 0)
+    return Math.max(acc, trackMax)
+  }, 0)
+  return Math.max(BASELINE_DURATION, Math.ceil(maxEnd + 1))
+}
+
+const buildTrackState = (tracks: Track[], currentTime: number) => {
+  const duration = normalizeDuration(tracks)
+  return {
+    tracks,
+    duration,
+    currentTime: Math.min(Math.max(0, currentTime), duration)
+  }
+}
 
 interface EditorState {
   tracks: Track[];
@@ -59,10 +81,14 @@ export const useEditorStore = create<EditorState>()(
     isSpatialPreview: false,
     spatialCamera: { yaw: 0, pitch: 0, scale: 1 },
 
-    setTracks: (tracks) => set({ tracks }),
+    setTracks: (tracks) => set((state) => ({
+      ...buildTrackState(tracks, state.currentTime)
+    })),
     setMarkers: (markers) => set({ markers }),
     setBeatPoints: (beatPoints) => set({ beatPoints }),
-    setCurrentTime: (time) => set({ currentTime: time }),
+    setCurrentTime: (time) => set((state) => ({
+      currentTime: Math.min(Math.max(0, time), state.duration)
+    })),
     togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
     setSelectedClipId: (id) => set({ selectedClipId: id }),
     setZoomLevel: (zoomLevel) => set({ zoomLevel }),
@@ -75,27 +101,30 @@ export const useEditorStore = create<EditorState>()(
         if (t.clips.some(c => c.id === clip.id)) return t;
         return { ...t, clips: [...t.clips, clip] };
       });
-      return { tracks: newTracks };
+      return {
+        ...buildTrackState(newTracks, state.currentTime)
+      };
     }),
     updateClip: (trackId, clipId, partialClip) => set((state) => {
       const safePartial = { ...partialClip };
-      if (safePartial.end !== undefined && safePartial.end > state.duration) {
-        safePartial.end = state.duration;
-      }
-      return {
-        tracks: state.tracks.map(t => 
+      const newTracks = state.tracks.map(t =>
           t.id === trackId ? { ...t, clips: t.clips.map(c => c.id === clipId ? { ...c, ...safePartial } : c) } : t
         )
+      return {
+        ...buildTrackState(newTracks, state.currentTime)
       };
     }),
-    removeClip: (trackId, clipId) => set((state) => ({
-      selectedClipId: state.selectedClipId === clipId ? null : state.selectedClipId,
-      tracks: state.tracks.map(t =>
+    removeClip: (trackId, clipId) => set((state) => {
+      const newTracks = state.tracks.map(t =>
         t.id === trackId ? { ...t, clips: t.clips.filter(c => c.id !== clipId) } : t
       )
-    })),
-    splitClip: (trackId, clipId, at) => set((state) => ({
-      tracks: state.tracks.map(t => {
+      return {
+        selectedClipId: state.selectedClipId === clipId ? null : state.selectedClipId,
+        ...buildTrackState(newTracks, state.currentTime)
+      }
+    }),
+    splitClip: (trackId, clipId, at) => set((state) => {
+      const newTracks = state.tracks.map(t => {
         if (t.id !== trackId) return t;
         const clip = t.clips.find(c => c.id === clipId);
         if (!clip || at <= clip.start || at >= clip.end) return t;
@@ -104,12 +133,28 @@ export const useEditorStore = create<EditorState>()(
         const c2 = { ...clip, id: `${clip.id}-cut-${Math.random().toString(36).substring(7)}`, start: at };
         return { ...t, clips: [...t.clips.filter(c => c.id !== clipId), c1, c2] };
       })
-    })),
+      return {
+        ...buildTrackState(newTracks, state.currentTime)
+      }
+    }),
     setMotionCaptureActive: (isMotionCaptureActive) => set({ isMotionCaptureActive }),
     setLatestMotionData: (latestMotionData) => set({ latestMotionData }),
     setSpatialPreview: (isSpatialPreview) => set({ isSpatialPreview }),
     setSpatialCamera: (partial) => set((state) => ({
       spatialCamera: { ...state.spatialCamera, ...partial }
     }))
-  }))
+  }), {
+    limit: 80,
+    partialize: (state) => ({
+      tracks: state.tracks,
+      markers: state.markers,
+      beatPoints: state.beatPoints,
+      currentTime: state.currentTime,
+      duration: state.duration,
+      selectedClipId: state.selectedClipId,
+      zoomLevel: state.zoomLevel,
+      spatialCamera: state.spatialCamera,
+      isSpatialPreview: state.isSpatialPreview
+    })
+  })
 )

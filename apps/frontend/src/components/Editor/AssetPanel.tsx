@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useEditorStore, Asset } from '../../store/editorStore';
-import { ActorProfile, useActorsStore } from '../../store/actorsStore';
+import { useEditorStore } from '../../store/editorStore';
+import type { Asset } from '../../store/editorStore';
+import { useActorsStore } from '../../store/actorsStore';
+import type { ActorProfile } from '../../store/actorsStore';
 import { useToastStore } from '../../store/toastStore';
-import { api, getErrorMessage } from '../../utils/eden';
+import { buildAuthHeaders, getAccessToken, resolveApiBase } from '../../utils/eden';
 import { MotionSyncManager } from '../../utils/motionSync';
 import './AssetPanel.css';
 
@@ -97,14 +99,21 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
       try {
         const dataUrl = await readFileAsDataUrl(file);
         const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
-        const { data, error } = await api.api.storage['local-import'].post({
-          fileName: file.name,
-          base64Data,
-          contentType: file.type || undefined
+        const response = await fetch(`${resolveApiBase()}/api/storage/local-import`, {
+          method: 'POST',
+          headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            fileName: file.name,
+            base64Data,
+            contentType: file.type || undefined
+          })
         });
-        if (error) throw new Error(getErrorMessage(error));
-        if (data?.success && data.imported?.localPath) {
-          exportSrc = data.imported.localPath;
+        const payload = await response.json().catch(() => null) as any
+        if (!response.ok) {
+          throw new Error(payload?.error || `HTTP ${response.status}`)
+        }
+        if (payload?.success && payload.imported?.localPath) {
+          exportSrc = payload.imported.localPath;
         }
       } catch (e: any) {
         showToast(`${file.name} 未能完成后端导入，将仅用于本地预览`, 'warning');
@@ -162,17 +171,28 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
       showToast('请填写演员名称和参考图 URL', 'info');
       return;
     }
+    const accessToken = getAccessToken().trim();
+    if (!accessToken) {
+      showToast('请先登录后再创建演员', 'info');
+      return;
+    }
 
     setIsActorCreating(true);
     try {
-      const { data, error } = await api.api.ai.actors.post({
-        name: actorName.trim(),
-        refImage: actorRefImage.trim()
+      const response = await fetch(`${resolveApiBase()}/api/ai/actors`, {
+        method: 'POST',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          name: actorName.trim(),
+          refImage: actorRefImage.trim()
+        })
       });
-
-      if (error) throw new Error(getErrorMessage(error));
-      if (data?.actor) {
-        const actor = data.actor as ActorProfile;
+      const payload = await response.json().catch(() => null) as any
+      if (!response.ok || payload?.success === false) {
+        throw new Error(payload?.error || `HTTP ${response.status}`);
+      }
+      if (payload?.actor) {
+        const actor = payload.actor as ActorProfile;
         prependActor(actor);
         if (!motionActorId) setMotionActorId(actor.id);
         setActorName('');
@@ -209,14 +229,26 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
       showToast('暂无动捕数据', 'warning');
       return;
     }
+    const accessToken = getAccessToken().trim();
+    if (!accessToken) {
+      showToast('请先登录后再同步动捕', 'info');
+      return;
+    }
 
     setIsMotionSyncing(true);
     try {
-      const { data, error } = await api.api.ai.actors['motion-sync'].post({
-        actorId: motionActorId,
-        motionData: latestMotionData
+      const response = await fetch(`${resolveApiBase()}/api/ai/actors/motion-sync`, {
+        method: 'POST',
+        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          actorId: motionActorId,
+          motionData: latestMotionData
+        })
       });
-      if (error) throw new Error(getErrorMessage(error));
+      const payload = await response.json().catch(() => null) as any
+      if (!response.ok || payload?.success === false) {
+        throw new Error(payload?.error || `HTTP ${response.status}`);
+      }
 
       if (selectedClipId) {
         const parentTrack = tracks.find(track => track.clips.some(clip => clip.id === selectedClipId));
@@ -232,7 +264,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
         }
       }
 
-      showToast(`动捕已同步到演员：${data?.actorName || motionActorId}`, 'success');
+      showToast(`动捕已同步到演员：${payload?.actorName || motionActorId}`, 'success');
     } catch (e: any) {
       showToast(e.message || '动捕同步失败', 'error');
     } finally {

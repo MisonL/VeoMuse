@@ -18,6 +18,21 @@ interface VideoEditorProps {
   activeTool?: 'select' | 'cut' | 'hand';
 }
 
+interface TimelineActionPayload {
+  id: string;
+  start: number;
+  end: number;
+  data?: {
+    trackId?: string;
+    [key: string]: unknown;
+  };
+}
+
+interface TimelineTrackPayload {
+  id: string;
+  actions: TimelineActionPayload[];
+}
+
 const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
   const {
     tracks,
@@ -53,6 +68,7 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
   
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
+  const snapResetTimerRef = useRef<number | null>(null);
 
   const shortcutMap = useMemo(() => ({
     'Space': togglePlay,
@@ -91,6 +107,13 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
     }
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [isPlaying, duration, tracks, setCurrentTime, togglePlay]);
+
+  useEffect(() => () => {
+    if (snapResetTimerRef.current) {
+      window.clearTimeout(snapResetTimerRef.current);
+      snapResetTimerRef.current = null;
+    }
+  }, []);
 
   const timelineData = tracks.map(track => ({
     id: track.id,
@@ -137,12 +160,14 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
         {isReady && (
           <Timeline
             key={`timeline-${width}`}
-            onChange={(data: any) => {
+            onChange={(data: TimelineTrackPayload[]) => {
               const nextTracks = tracks.map(track => {
-                const incomingTrack = data.find((t: any) => t.id === track.id);
+                const incomingTrack = data.find(t => t.id === track.id);
                 if (!incomingTrack) return track;
 
-                const actionMap = new Map(incomingTrack.actions.map((a: any) => [a.id, a]));
+                const actionMap = new Map<string, TimelineActionPayload>(
+                  incomingTrack.actions.map(action => [action.id, action])
+                );
                 const nextClips = track.clips.map(clip => {
                   const action = actionMap.get(clip.id);
                   if (!action) return clip;
@@ -150,7 +175,13 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
                   const snap = calculateSnap(action.start, action.id);
                   if (snap.snapped) {
                     setSnapLine({ visible: true, time: snap.time });
-                    setTimeout(() => setSnapLine({ visible: false, time: 0 }), 500);
+                    if (snapResetTimerRef.current) {
+                      window.clearTimeout(snapResetTimerRef.current);
+                    }
+                    snapResetTimerRef.current = window.setTimeout(() => {
+                      setSnapLine({ visible: false, time: 0 });
+                      snapResetTimerRef.current = null;
+                    }, 500);
                   }
                   const finalStart = snap.snapped ? snap.time : action.start;
                   const finalEnd = finalStart + (action.end - action.start);
@@ -177,9 +208,10 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
               syncController.sync(time, false, tracks);
             }}
             // @ts-ignore
-            onActionClick={(action: any) => {
-              if (activeTool === 'cut') {
-                splitClip(action.data.trackId, action.id, currentTime);
+            onActionClick={(action: TimelineActionPayload) => {
+              const trackId = typeof action?.data?.trackId === 'string' ? action.data.trackId : '';
+              if (activeTool === 'cut' && trackId) {
+                splitClip(trackId, action.id, currentTime);
               } else {
                 setSelectedClipId(action.id);
               }
