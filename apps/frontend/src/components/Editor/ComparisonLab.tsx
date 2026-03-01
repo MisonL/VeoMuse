@@ -19,6 +19,32 @@ interface ComparisonLabProps {
   onOpenAssets?: () => void
 }
 
+interface CapabilityPayload {
+  models?: Record<string, boolean>
+  services?: Record<string, boolean | string>
+  timestamp?: string
+}
+
+const MODEL_CAPABILITY_ROWS: Array<{ id: string; label: string; env: string }> = [
+  { id: 'veo-3.1', label: 'Gemini Veo 3.1', env: 'GEMINI_API_KEYS' },
+  { id: 'kling-v1', label: 'Kling V1', env: 'KLING_API_URL + KLING_API_KEY' },
+  { id: 'sora-preview', label: 'Sora Preview', env: 'SORA_API_URL + SORA_API_KEY' },
+  { id: 'luma-dream', label: 'Luma Dream', env: 'LUMA_API_URL + LUMA_API_KEY' },
+  { id: 'runway-gen3', label: 'Runway Gen-3', env: 'RUNWAY_API_URL + RUNWAY_API_KEY' },
+  { id: 'pika-1.5', label: 'Pika 1.5', env: 'PIKA_API_URL + PIKA_API_KEY' }
+]
+
+const SERVICE_CAPABILITY_ROWS: Array<{ id: string; label: string; env: string }> = [
+  { id: 'tts', label: 'TTS 配音', env: 'TTS_API_URL + TTS_API_KEY' },
+  { id: 'voiceMorph', label: '音色迁移', env: 'VOICE_MORPH_API_URL + VOICE_MORPH_API_KEY' },
+  { id: 'spatialRender', label: '空间重构', env: 'SPATIAL_API_URL + SPATIAL_API_KEY' },
+  { id: 'vfx', label: 'VFX 特效', env: 'VFX_API_URL + VFX_API_KEY' },
+  { id: 'lipSync', label: '口型同步', env: 'LIP_SYNC_API_URL + LIP_SYNC_API_KEY' },
+  { id: 'audioAnalysis', label: '音频分析', env: 'AUDIO_ANALYSIS_API_URL + AUDIO_ANALYSIS_API_KEY' },
+  { id: 'relighting', label: '重光照', env: 'RELIGHT_API_URL + RELIGHT_API_KEY' },
+  { id: 'styleTransfer', label: '风格迁移', env: 'ALCHEMY_API_URL + ALCHEMY_API_KEY' }
+]
+
 const POLICY_EXEC_PAGE_SIZE = 12
 const defaultWeights = {
   quality: 0.45,
@@ -113,6 +139,9 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const [uploadFileName, setUploadFileName] = useState('demo.mp4')
   const [uploadToken, setUploadToken] = useState<string>('')
   const [isWsConnected, setIsWsConnected] = useState(false)
+  const [showChannelPanel, setShowChannelPanel] = useState(false)
+  const [isCapabilitiesLoading, setIsCapabilitiesLoading] = useState(false)
+  const [capabilities, setCapabilities] = useState<CapabilityPayload | null>(null)
 
   const wsRef = useRef<WebSocket | null>(null)
   const heartbeatRef = useRef<number | null>(null)
@@ -204,6 +233,23 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       if (wsRef.current) wsRef.current.close()
     }
   }, [])
+
+  const loadCapabilities = async () => {
+    setIsCapabilitiesLoading(true)
+    try {
+      const payload = await requestJson<CapabilityPayload>('/api/capabilities')
+      setCapabilities(payload)
+    } catch (error: any) {
+      showToast(error.message || '加载渠道接入状态失败', 'error')
+    } finally {
+      setIsCapabilitiesLoading(false)
+    }
+  }
+
+  const openChannelPanel = () => {
+    setShowChannelPanel(true)
+    void loadCapabilities()
+  }
 
   const refreshMarketplace = async (notify: boolean) => {
     const { data, error } = await api.api.models.marketplace.get()
@@ -1331,6 +1377,25 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     </div>
   )
 
+  const renderChannelRows = (
+    rows: Array<{ id: string; label: string; env: string }>,
+    source: Record<string, boolean | string> | undefined
+  ) => rows.map((row) => {
+    const raw = source?.[row.id]
+    const enabled = raw === true || (typeof raw === 'string' && raw.trim().length > 0)
+    return (
+      <div key={row.id} className="capability-row">
+        <div className="capability-meta">
+          <strong>{row.label}</strong>
+          <span>{row.env}</span>
+        </div>
+        <span className={`capability-badge ${enabled ? 'ok' : 'off'}`}>
+          {enabled ? '已接入' : '未接入'}
+        </span>
+      </div>
+    )
+  })
+
   return (
     <div className="comparison-lab-pro">
       <div className="lab-toolbar" data-guide="lab-toolbar">
@@ -1355,6 +1420,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
           ) : (
             <button className="lab-btn" onClick={() => void refreshMarketplace(true)}>刷新超市</button>
           )}
+          <button className="lab-btn" onClick={openChannelPanel}>渠道接入</button>
         </div>
       </div>
 
@@ -1362,6 +1428,43 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       {labMode === 'marketplace' ? renderMarketplaceMode() : null}
       {labMode === 'creative' ? renderCreativeMode() : null}
       {labMode === 'collab' ? renderCollabMode() : null}
+
+      {showChannelPanel ? (
+        <div className="channel-panel-mask" role="dialog" aria-modal="true" aria-label="AI 渠道接入状态">
+          <section className="channel-panel">
+            <header className="channel-panel-head">
+              <div>
+                <h3>AI 渠道接入状态</h3>
+                <p>配置后请重启 `veomuse-backend` 容器，状态会自动刷新。</p>
+              </div>
+              <button type="button" className="channel-close-btn" onClick={() => setShowChannelPanel(false)}>关闭</button>
+            </header>
+
+            <div className="channel-panel-actions">
+              <button type="button" className="channel-refresh-btn" onClick={() => void loadCapabilities()} disabled={isCapabilitiesLoading}>
+                {isCapabilitiesLoading ? '刷新中...' : '刷新状态'}
+              </button>
+              <code className="channel-hint">配置位置：项目根目录 `.env`（Docker 使用 `env_file` 注入）</code>
+            </div>
+
+            <div className="channel-grid">
+              <section className="channel-card">
+                <h4>视频模型渠道</h4>
+                <div className="channel-list">
+                  {renderChannelRows(MODEL_CAPABILITY_ROWS, capabilities?.models)}
+                </div>
+              </section>
+
+              <section className="channel-card">
+                <h4>媒体服务渠道</h4>
+                <div className="channel-list">
+                  {renderChannelRows(SERVICE_CAPABILITY_ROWS, capabilities?.services)}
+                </div>
+              </section>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   )
 }
