@@ -44,6 +44,8 @@ const VERTICAL_HANDLE_SIZE = 8
 const SHELL_VERTICAL_PADDING = 20
 const SHELL_VERTICAL_GAP = 30
 const GUIDE_STORAGE_KEY = 'veomuse-onboarding-v1'
+type ExportUiStatus = 'idle' | 'pending' | 'done' | 'error'
+type ExportProgressStage = 'idle' | 'validating' | 'composing' | 'packaging' | 'done' | 'error'
 
 interface GuideStep {
   title: string
@@ -65,8 +67,29 @@ const formatTimecode = (seconds: number) => {
 
 export const getExportButtonLabel = (
   isExportPending: boolean,
-  optimisticExportStatus: 'idle' | 'pending' | 'done' | 'error'
-) => (isExportPending || optimisticExportStatus === 'pending' ? '导出中...' : '导出')
+  optimisticExportStatus: ExportUiStatus,
+  progressPercent?: number
+) => {
+  if (isExportPending || optimisticExportStatus === 'pending') {
+    if (typeof progressPercent === 'number' && progressPercent > 0) {
+      return `导出中 ${Math.round(Math.max(1, Math.min(99, progressPercent)))}%`
+    }
+    return '导出中...'
+  }
+  return '导出'
+}
+
+const resolveExportStageByProgress = (progress: number): ExportProgressStage => {
+  if (progress < 30) return 'validating'
+  if (progress < 78) return 'composing'
+  return 'packaging'
+}
+
+const compactExportMessage = (message: string, limit = 92) => {
+  const normalized = message.replace(/\s+/g, ' ').trim()
+  if (normalized.length <= limit) return normalized
+  return `${normalized.slice(0, limit)}...`
+}
 
 const TimecodeDisplay = memo(() => {
   const currentTime = useEditorStore(state => state.currentTime)
@@ -131,12 +154,14 @@ function App() {
   const [guideStepIndex, setGuideStepIndex] = useState(0)
   const [guideAnchorRect, setGuideAnchorRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
   const [optimisticScenes, setOptimisticScenes] = useOptimistic<any[], any[]>(directorScenes, (_prev, next) => next)
-  const [optimisticExportStatus, setOptimisticExportStatus] = useOptimistic<'idle' | 'pending' | 'done' | 'error', 'idle' | 'pending' | 'done' | 'error'>('idle', (_prev, next) => next)
+  const [optimisticExportStatus, setOptimisticExportStatus] = useOptimistic<ExportUiStatus, ExportUiStatus>('idle', (_prev, next) => next)
   const shellRef = useRef<HTMLDivElement | null>(null)
   const mainLayoutRef = useRef<HTMLDivElement | null>(null)
   const leftPanelRef = useRef<HTMLElement | null>(null)
   const rightPanelRef = useRef<HTMLElement | null>(null)
   const previewHostRef = useRef<HTMLDivElement | null>(null)
+  const exportProgressTimerRef = useRef<number | null>(null)
+  const exportFeedbackResetTimerRef = useRef<number | null>(null)
   const [exportState, runExportAction, isExportPending] = useActionState(async (_: { status: 'idle' | 'done' | 'error'; message?: string }, quality: 'standard' | '4k-hdr' | 'spatial-vr') => {
     const timelineData = {
       tracks: useEditorStore.getState().tracks,
@@ -154,6 +179,10 @@ function App() {
       return { status: 'error' as const, message: e.message || '导出失败' }
     }
   }, { status: 'idle' as const })
+  const [exportUiStatus, setExportUiStatus] = useState<ExportUiStatus>('idle')
+  const [exportProgress, setExportProgress] = useState(0)
+  const [exportStage, setExportStage] = useState<ExportProgressStage>('idle')
+  const [lastExportOutput, setLastExportOutput] = useState('')
 
   const telemetryHistory = useMemo(() => renderLoadHistory.slice(-10), [renderLoadHistory])
   const hasRenderableClips = useMemo(() => (
@@ -188,6 +217,43 @@ function App() {
       ]
     })
   }
+
+  const clearExportFeedbackTimers = useCallback(() => {
+    if (typeof window === 'undefined') return
+    if (exportProgressTimerRef.current) {
+      window.clearInterval(exportProgressTimerRef.current)
+      exportProgressTimerRef.current = null
+    }
+    if (exportFeedbackResetTimerRef.current) {
+      window.clearTimeout(exportFeedbackResetTimerRef.current)
+      exportFeedbackResetTimerRef.current = null
+    }
+  }, [])
+
+  const startExportProgressFeedback = useCallback(() => {
+    if (typeof window === 'undefined') return
+    clearExportFeedbackTimers()
+    setExportProgress(8)
+    setExportStage('validating')
+    exportProgressTimerRef.current = window.setInterval(() => {
+      setExportProgress(prev => {
+        if (prev >= 94) return prev
+        const delta = prev < 30 ? 7 : prev < 68 ? 4 : 2
+        const next = Math.min(94, prev + delta)
+        setExportStage(resolveExportStageByProgress(next))
+        return next
+      })
+    }, 260)
+  }, [clearExportFeedbackTimers])
+
+  const resetExportFeedback = useCallback((status: ExportUiStatus = 'idle') => {
+    clearExportFeedbackTimers()
+    setExportUiStatus(status)
+    setOptimisticExportStatus(status)
+    setExportProgress(0)
+    setExportStage(status === 'error' ? 'error' : status === 'done' ? 'done' : 'idle')
+    if (status === 'idle') setLastExportOutput('')
+  }, [clearExportFeedbackTimers, setOptimisticExportStatus])
 
   useEffect(() => {
     // 空闲时预热非首屏模块，降低首次切换等待
@@ -377,31 +443,76 @@ function App() {
 
   const handleExport = () => {
     if (!hasRenderableClips) {
-      setOptimisticExportStatus('idle')
+      resetExportFeedback('idle')
       showToast('请先导入并放置至少一个可渲染片段后再导出', 'info')
       return
     }
+    setLastExportOutput('')
+    setExportUiStatus('pending')
     setOptimisticExportStatus('pending')
+    startExportProgressFeedback()
     void runExportAction(exportQuality)
   }
 
   useEffect(() => {
-    if (exportState.status === 'done') setOptimisticExportStatus('done')
+    if (exportState.status === 'done') {
+      clearExportFeedbackTimers()
+      setExportUiStatus('done')
+      setOptimisticExportStatus('done')
+      setExportProgress(100)
+      setExportStage('done')
+      setLastExportOutput(exportState.message || '')
+      if (typeof window !== 'undefined') {
+        exportFeedbackResetTimerRef.current = window.setTimeout(() => {
+          resetExportFeedback('idle')
+        }, 4200)
+      }
+    }
     if (exportState.status === 'error') {
+      clearExportFeedbackTimers()
+      setExportUiStatus('error')
       setOptimisticExportStatus('error')
+      setExportStage('error')
       showRecoverableToast(
         exportState.message || '导出失败',
         () => {
+          setExportUiStatus('pending')
           setOptimisticExportStatus('pending')
+          setLastExportOutput('')
+          startExportProgressFeedback()
           void runExportAction(exportQuality)
         },
         () => {
-          setOptimisticExportStatus('idle')
+          resetExportFeedback('idle')
           showToast('已降级为手动编辑模式，可继续编辑并稍后导出', 'warning')
         }
       )
     }
-  }, [exportState, exportQuality, runExportAction, setOptimisticExportStatus, showToast])
+  }, [clearExportFeedbackTimers, exportState, exportQuality, resetExportFeedback, runExportAction, setOptimisticExportStatus, showToast, startExportProgressFeedback])
+
+  useEffect(() => () => clearExportFeedbackTimers(), [clearExportFeedbackTimers])
+
+  const exportQualityLabel = useMemo(() => {
+    if (exportQuality === '4k-hdr') return '4K HDR'
+    if (exportQuality === 'spatial-vr') return '空间视频'
+    return '标准导出'
+  }, [exportQuality])
+
+  const exportFeedbackTitle = useMemo(() => {
+    if (exportStage === 'validating') return '准备素材中'
+    if (exportStage === 'composing') return '渲染时间轴中'
+    if (exportStage === 'packaging') return '封装输出中'
+    if (exportStage === 'done') return '导出完成'
+    if (exportStage === 'error') return '导出失败'
+    return '等待导出'
+  }, [exportStage])
+
+  const exportFeedbackSubtitle = useMemo(() => {
+    if (exportUiStatus === 'pending') return `规格：${exportQualityLabel}`
+    if (exportUiStatus === 'done') return '输出文件已生成'
+    if (exportUiStatus === 'error') return compactExportMessage(exportState.message || '请重试或稍后再试')
+    return ''
+  }, [exportQualityLabel, exportState.message, exportUiStatus])
 
   useEffect(() => {
     const handleResize = () => setIsDesktopLayout(window.innerWidth > DESKTOP_BREAKPOINT)
@@ -712,9 +823,36 @@ function App() {
             <option value="4k-hdr">4K HDR</option>
             <option value="spatial-vr">空间视频</option>
           </select>
-          <button id="btn-export" aria-label="导出视频" className="export-btn" onClick={handleExport} disabled={isProcessing || isExportPending}>
-            {getExportButtonLabel(isExportPending, optimisticExportStatus)}
-          </button>
+          <div className="export-action-wrap">
+            <button
+              id="btn-export"
+              aria-label="导出视频"
+              className={`export-btn ${exportUiStatus === 'pending' ? 'is-pending' : ''} ${exportUiStatus === 'done' ? 'is-done' : ''} ${exportUiStatus === 'error' ? 'is-error' : ''}`}
+              onClick={handleExport}
+              disabled={isProcessing || isExportPending}
+            >
+              {getExportButtonLabel(isExportPending, exportUiStatus, exportProgress)}
+            </button>
+            {exportUiStatus !== 'idle' ? (
+              <div className={`export-feedback-pop ${exportUiStatus}`} role="status" aria-live="polite">
+                <div className="export-feedback-top">
+                  <span className="export-feedback-title">{exportFeedbackTitle}</span>
+                  {exportUiStatus === 'pending' ? (
+                    <span className="export-feedback-percent">{Math.round(exportProgress)}%</span>
+                  ) : null}
+                </div>
+                <div className="export-feedback-subtitle">{exportFeedbackSubtitle}</div>
+                {exportUiStatus === 'pending' ? (
+                  <div className="export-progress-track">
+                    <span className="export-progress-fill" style={{ width: `${Math.max(6, Math.min(100, exportProgress))}%` }} />
+                  </div>
+                ) : null}
+                {exportUiStatus === 'done' && lastExportOutput ? (
+                  <div className="export-feedback-path" title={lastExportOutput}>{lastExportOutput}</div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
 

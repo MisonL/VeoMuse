@@ -7,6 +7,13 @@ import { api, getErrorMessage } from '../../utils/eden';
 import { MotionSyncManager } from '../../utils/motionSync';
 import './AssetPanel.css';
 
+const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result || ''));
+  reader.onerror = () => reject(new Error(`读取文件失败: ${file.name}`));
+  reader.readAsDataURL(file);
+});
+
 interface AssetPanelProps {
   mode?: 'assets' | 'director' | 'actors' | 'motion';
   directorPrompt?: string;
@@ -78,22 +85,40 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
     }
   }, [mode, loadActors]);
 
-  const importFiles = useCallback((files: FileList | File[]) => {
+  const importFiles = useCallback(async (files: FileList | File[]) => {
     const list = Array.from(files);
     if (!list.length) return;
 
-    list.forEach(file => {
+    for (const file of list) {
       const url = URL.createObjectURL(file);
       objectUrlsRef.current.add(url);
+      let exportSrc = '';
+
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+        const { data, error } = await api.api.storage['local-import'].post({
+          fileName: file.name,
+          base64Data,
+          contentType: file.type || undefined
+        });
+        if (error) throw new Error(getErrorMessage(error));
+        if (data?.success && data.imported?.localPath) {
+          exportSrc = data.imported.localPath;
+        }
+      } catch (e: any) {
+        showToast(`${file.name} 未能完成后端导入，将仅用于本地预览`, 'warning');
+      }
 
       const newAsset: Asset = {
         id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
         name: file.name,
         type: file.type.startsWith('video') ? 'video' : 'audio',
-        src: url
+        src: url,
+        exportSrc
       };
       addAsset(newAsset);
-    });
+    }
 
     showToast(`成功导入 ${list.length} 个媒体资产`, 'success');
   }, [addAsset, showToast]);
@@ -101,14 +126,14 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
   const handleImportClick = () => { fileInputRef.current?.click(); };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) importFiles(e.target.files);
+    if (e.target.files) void importFiles(e.target.files);
     e.target.value = '';
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.dataTransfer.files?.length) {
-      importFiles(e.dataTransfer.files);
+      void importFiles(e.dataTransfer.files);
     }
   };
 
@@ -118,7 +143,15 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
     const track = newTracks.find((t: any) => t.id === targetTrackId);
     if (track) {
       const start = track.clips.length > 0 ? track.clips[track.clips.length - 1].end : 0;
-      track.clips.push({ id: `clip-${Date.now()}`, start, end: start + 5, src: asset.src, name: asset.name, type: asset.type });
+      track.clips.push({
+        id: `clip-${Date.now()}`,
+        start,
+        end: start + 5,
+        src: asset.src,
+        name: asset.name,
+        type: asset.type,
+        data: asset.exportSrc ? { exportSrc: asset.exportSrc } : undefined
+      });
       setTracks(newTracks);
       showToast(`已将 ${asset.name} 添加至时间轴`, 'success');
     }

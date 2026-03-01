@@ -19,6 +19,7 @@ export interface Asset {
   id: string;
   name: string;
   src: string;
+  exportSrc?: string;
   type: 'video' | 'audio' | 'image';
   thumbnail?: string;
 }
