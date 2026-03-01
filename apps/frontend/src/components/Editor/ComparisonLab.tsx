@@ -1663,30 +1663,30 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   )
 
   const renderCollabMode = () => (
-    <div className="collab-shell">
-      <section className="collab-card">
+    <div className="collab-shell" data-testid="area-collab-shell">
+      <section className="collab-card" data-testid="area-collab-workspace-card">
         <h4>团队空间</h4>
         <div className="lab-inline-fields">
           <label className="lab-field">
             <span>空间名</span>
-            <input name="workspaceName" value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} />
+            <input name="workspaceName" value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} data-testid="input-workspace-name" />
           </label>
           <label className="lab-field">
             <span>Owner</span>
-            <input name="workspaceOwner" value={workspaceOwner} onChange={(event) => setWorkspaceOwner(event.target.value)} />
+            <input name="workspaceOwner" value={workspaceOwner} onChange={(event) => setWorkspaceOwner(event.target.value)} data-testid="input-workspace-owner" />
           </label>
         </div>
         <div className="lab-inline-actions">
-          <button onClick={() => void createWorkspace()}>创建工作区</button>
-          <button disabled={!workspaceId} onClick={() => void refreshWorkspaceState()}>刷新状态</button>
+          <button onClick={() => void createWorkspace()} data-testid="btn-create-workspace">创建工作区</button>
+          <button disabled={!workspaceId} onClick={() => void refreshWorkspaceState()} data-testid="btn-refresh-workspace-state">刷新状态</button>
         </div>
         <div className="collab-meta">
-          <span>workspace: {workspaceId || '-'}</span>
+          <span data-testid="text-workspace-id">workspace: {workspaceId || '-'}</span>
           <span>project: {projectId || '-'}</span>
         </div>
       </section>
 
-      <section className="collab-card">
+      <section className="collab-card" data-testid="area-collab-invite-card">
         <h4>邀请与加入</h4>
         <div className="lab-inline-fields">
           <label className="lab-field">
@@ -1713,12 +1713,12 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
         <div className="lab-inline-fields">
           <label className="lab-field">
             <span>邀请码</span>
-            <input name="inviteCode" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} />
+            <input name="inviteCode" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} data-testid="input-invite-code" />
           </label>
         </div>
         <div className="lab-inline-actions">
-          <button disabled={!workspaceId || collabRole !== 'owner'} onClick={() => void createInvite()}>生成邀请</button>
-          <button onClick={() => void acceptInvite()}>接受邀请</button>
+          <button disabled={!workspaceId || collabRole !== 'owner'} onClick={() => void createInvite()} data-testid="btn-create-invite">生成邀请</button>
+          <button onClick={() => void acceptInvite()} data-testid="btn-accept-invite">接受邀请</button>
         </div>
         <div className="collab-list">
           {invites.slice(0, 6).map(item => (
@@ -1900,8 +1900,8 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   })
 
   return (
-    <div className="comparison-lab-pro">
-      <div className="lab-toolbar" data-guide="lab-toolbar">
+    <div className="comparison-lab-pro" data-testid="area-comparison-lab">
+      <div className="lab-toolbar" data-guide="lab-toolbar" data-testid="area-lab-toolbar">
         <div className="lab-status">
           <span className="live-dot">●</span> 实验室在线
         </div>
@@ -1913,17 +1913,17 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
             </label>
           ) : null}
           <div className="lab-mode-switch">
-            <button className={`lab-mode-btn ${labMode === 'compare' ? 'active' : ''}`} onClick={() => setLabMode('compare')}>对比</button>
-            <button className={`lab-mode-btn ${labMode === 'marketplace' ? 'active' : ''}`} onClick={() => setLabMode('marketplace')}>策略治理</button>
-            <button className={`lab-mode-btn ${labMode === 'creative' ? 'active' : ''}`} onClick={() => setLabMode('creative')}>创意闭环</button>
-            <button className={`lab-mode-btn ${labMode === 'collab' ? 'active' : ''}`} onClick={() => setLabMode('collab')}>协作平台</button>
+            <button className={`lab-mode-btn ${labMode === 'compare' ? 'active' : ''}`} onClick={() => setLabMode('compare')} data-testid="btn-lab-mode-compare">对比</button>
+            <button className={`lab-mode-btn ${labMode === 'marketplace' ? 'active' : ''}`} onClick={() => setLabMode('marketplace')} data-testid="btn-lab-mode-marketplace">策略治理</button>
+            <button className={`lab-mode-btn ${labMode === 'creative' ? 'active' : ''}`} onClick={() => setLabMode('creative')} data-testid="btn-lab-mode-creative">创意闭环</button>
+            <button className={`lab-mode-btn ${labMode === 'collab' ? 'active' : ''}`} onClick={() => setLabMode('collab')} data-testid="btn-lab-mode-collab">协作平台</button>
           </div>
           {labMode === 'compare' ? (
             <button id="btn-export-compare-report" className="lab-btn" onClick={() => void exportReport()}>导出对比报告</button>
           ) : (
             <button className="lab-btn" onClick={() => void refreshMarketplace(true)}>刷新超市</button>
           )}
-          <button className="lab-btn" onClick={openChannelPanel}>渠道接入</button>
+          <button className="lab-btn" onClick={openChannelPanel} data-testid="btn-open-channel-panel">渠道接入</button>
         </div>
       </div>
 
@@ -1933,14 +1933,14 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       {labMode === 'collab' ? renderCollabMode() : null}
 
       {showChannelPanel ? (
-        <div className="channel-panel-mask" role="dialog" aria-modal="true" aria-label="AI 渠道接入状态">
-          <section className="channel-panel">
+        <div className="channel-panel-mask" role="dialog" aria-modal="true" aria-label="AI 渠道接入状态" data-testid="area-channel-panel-mask">
+          <section className="channel-panel" data-testid="area-channel-panel">
             <header className="channel-panel-head">
               <div>
                 <h3>AI 渠道接入中心</h3>
                 <p>支持多租户组织级共享与工作区覆写，配置即时生效。</p>
               </div>
-              <button type="button" className="channel-close-btn" onClick={() => setShowChannelPanel(false)}>关闭</button>
+              <button type="button" className="channel-close-btn" onClick={() => setShowChannelPanel(false)} data-testid="btn-close-channel-panel">关闭</button>
             </header>
 
             <div className="channel-panel-actions">
@@ -1972,6 +1972,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
                           onChange={(event) => setLoginEmail(event.target.value)}
                           placeholder="邮箱"
                           autoComplete="email"
+                          data-testid="input-login-email"
                         />
                         <input
                           name="loginPassword"
@@ -1980,6 +1981,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
                           onChange={(event) => setLoginPassword(event.target.value)}
                           placeholder="密码（至少 8 位）"
                           autoComplete={registerMode ? 'new-password' : 'current-password'}
+                          data-testid="input-login-password"
                         />
                         {registerMode ? (
                           <input
@@ -1987,16 +1989,18 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
                             value={registerOrgName}
                             onChange={(event) => setRegisterOrgName(event.target.value)}
                             placeholder="初始组织名"
+                            data-testid="input-register-organization"
                           />
                         ) : null}
                         <div className="lab-inline-actions">
-                          <button type="submit" disabled={isAuthBusy}>
+                          <button type="submit" disabled={isAuthBusy} data-testid="btn-submit-auth">
                             {isAuthBusy ? '提交中...' : registerMode ? '注册并登录' : '登录'}
                           </button>
                           <button
                             type="button"
                             disabled={isAuthBusy}
                             onClick={() => setRegisterMode(prev => !prev)}
+                            data-testid="btn-toggle-register-mode"
                           >
                             {registerMode ? '切换到登录' : '切换到注册'}
                           </button>
@@ -2020,6 +2024,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
                             setSelectedOrganizationId(event.target.value)
                             setOrganizationId(event.target.value)
                           }}
+                          data-testid="select-organization"
                         >
                           {organizations.map(item => (
                             <option key={item.id} value={item.id}>{item.name}</option>
@@ -2030,10 +2035,11 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
                           value={newOrgName}
                           onChange={(event) => setNewOrgName(event.target.value)}
                           placeholder="新组织名称"
+                          data-testid="input-new-organization-name"
                         />
                         <div className="lab-inline-actions">
-                          <button onClick={() => void createOrganization()}>创建组织</button>
-                          <button onClick={() => void logoutAuth()}>退出登录</button>
+                          <button onClick={() => void createOrganization()} data-testid="btn-create-organization">创建组织</button>
+                          <button onClick={() => void logoutAuth()} data-testid="btn-logout-auth">退出登录</button>
                         </div>
                         <input
                           name="inviteMemberEmail"

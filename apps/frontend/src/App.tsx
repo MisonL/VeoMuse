@@ -10,6 +10,8 @@ import { buildAuthHeaders, resolveApiBase } from './utils/eden'
 import { calcAspectFit, clamp } from './utils/layoutMath'
 import ResizeHandle from './components/Common/ResizeHandle'
 import ThemeSwitcher from './components/Common/ThemeSwitcher'
+import WorkspaceShell from './components/Layout/WorkspaceShell'
+import type { PreviewAspect } from './types/layout'
 import './App.css'
 
 const loadVideoEditor = () => import('./components/Editor/VideoEditor')
@@ -44,6 +46,10 @@ const VERTICAL_HANDLE_SIZE = 8
 const SHELL_VERTICAL_PADDING = 20
 const SHELL_VERTICAL_GAP = 30
 const GUIDE_STORAGE_KEY = 'veomuse-onboarding-v1'
+const PREVIEW_ASPECT_RATIO_MAP: Record<PreviewAspect, number> = {
+  '16:9': 16 / 9,
+  '21:9': 21 / 9
+}
 type ExportUiStatus = 'idle' | 'pending' | 'done' | 'error'
 type ExportProgressStage = 'idle' | 'validating' | 'composing' | 'packaging' | 'done' | 'error'
 type ExportActionState = { status: 'idle' | 'done' | 'error'; message?: string }
@@ -126,11 +132,12 @@ function App() {
       setSpatialPreview: state.setSpatialPreview
     }))
   )
-  const { leftPanelPx, rightPanelPx, timelinePx, setTimelinePx, resetLayout } = useLayoutStore(
+  const { leftPanelPx, rightPanelPx, timelinePx, previewAspect, setTimelinePx, resetLayout } = useLayoutStore(
     useShallow(state => ({
       leftPanelPx: state.leftPanelPx,
       rightPanelPx: state.rightPanelPx,
       timelinePx: state.timelinePx,
+      previewAspect: state.previewAspect,
       setTimelinePx: state.setTimelinePx,
       resetLayout: state.resetLayout
     }))
@@ -608,7 +615,8 @@ function App() {
       const verticalPadding = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
       const availableWidth = Math.max(0, host.clientWidth - horizontalPadding)
       const availableHeight = Math.max(0, host.clientHeight - verticalPadding)
-      const fit = calcAspectFit(availableWidth, availableHeight)
+      const previewRatio = PREVIEW_ASPECT_RATIO_MAP[previewAspect] || PREVIEW_ASPECT_RATIO_MAP['16:9']
+      const fit = calcAspectFit(availableWidth, availableHeight, previewRatio)
       setPreviewFrameSize(prev => (
         prev.width === fit.width && prev.height === fit.height
           ? prev
@@ -629,7 +637,7 @@ function App() {
       resizeObserver.disconnect()
       if (rafId) window.cancelAnimationFrame(rafId)
     }
-  }, [activeMode, leftPanelPx, rightPanelPx, timelinePx])
+  }, [activeMode, leftPanelPx, previewAspect, rightPanelPx, timelinePx])
 
   const centerPanelMinWidth = useMemo(() => {
     if (!isDesktopLayout) return MAIN_PANEL_MIN_WIDTH
@@ -780,17 +788,17 @@ function App() {
   }, [guideAnchorRect])
 
   return (
-    <div className="pro-master-shell" ref={shellRef} style={shellLayoutVars}>
+    <WorkspaceShell shellRef={shellRef} style={shellLayoutVars}>
       <Suspense fallback={null}>
         <ToastContainer />
       </Suspense>
 
-      <header className="pro-panel os-header">
+      <header className="pro-panel os-header" data-testid="area-top-header">
         <div className="brand-zone">
           <div className="brand-logo">V</div>
           <span className="brand-title">VEOMUSE PRO</span>
         </div>
-        <div className="mode-selector" data-guide="mode-selector">
+        <div className="mode-selector" data-guide="mode-selector" data-testid="area-mode-selector">
           {['edit', 'color', 'audio'].map(m => (
             <button
               key={m}
@@ -803,17 +811,19 @@ function App() {
                 }
               }}
               onClick={() => setActiveMode(m)}
+              data-testid={`btn-mode-${m}`}
             >
               {m === 'edit' ? '剪辑' : m === 'color' ? '实验室' : '音频大师'}
             </button>
           ))}
         </div>
-        <div className="header-actions">
+        <div className="header-actions" data-testid="area-header-actions">
           <button
             id="btn-open-channel-access"
             aria-label="打开 AI 渠道接入"
             className="channel-entry-btn"
             onClick={openChannelAccess}
+            data-testid="btn-open-channel-access"
           >
             AI接入
           </button>
@@ -825,11 +835,12 @@ function App() {
               setGuideStepIndex(0)
               setIsGuideOpen(true)
             }}
+            data-testid="btn-open-guide"
           >
             使用引导
           </button>
           <ThemeSwitcher />
-          <button id="btn-reset-layout" aria-label="重置布局" className="layout-reset-btn" onClick={resetLayout}>
+          <button id="btn-reset-layout" aria-label="重置布局" className="layout-reset-btn" onClick={resetLayout} data-testid="btn-reset-layout">
             重置布局
           </button>
           <select
@@ -838,6 +849,7 @@ function App() {
             value={exportQuality}
             onChange={(e) => setExportQuality(e.target.value as 'standard' | '4k-hdr' | 'spatial-vr')}
             className="header-select"
+            data-testid="select-export-quality"
           >
             <option value="standard">标准导出</option>
             <option value="4k-hdr">4K HDR</option>
@@ -850,6 +862,7 @@ function App() {
               className={`export-btn ${exportUiStatus === 'pending' ? 'is-pending' : ''} ${exportUiStatus === 'done' ? 'is-done' : ''} ${exportUiStatus === 'error' ? 'is-error' : ''}`}
               onClick={handleExport}
               disabled={isProcessing || isExportPending}
+              data-testid="btn-export"
             >
               {getExportButtonLabel(isExportPending, optimisticExportStatus, exportProgress)}
             </button>
@@ -876,8 +889,8 @@ function App() {
         </div>
       </header>
 
-      <div className="os-main main-layout" ref={mainLayoutRef}>
-        <aside className="pro-panel panel-left" ref={leftPanelRef}>
+      <div className="os-main main-layout" ref={mainLayoutRef} data-testid="area-main-layout">
+        <aside className="pro-panel panel-left" ref={leftPanelRef} data-testid="area-left-panel">
           <div className="panel-title-bar">
             <div className="sidebar-tabs">
               <button className={`sidebar-tab ${activeSidebar === 'assets' ? 'active' : ''}`} onClick={() => setActiveSidebar('assets')}>媒体资源</button>
@@ -907,15 +920,21 @@ function App() {
             ariaLabel="调整左侧功能区宽度"
             hint="拖动调整左侧功能区宽度"
             guideKey="left-resize-handle"
+            testId="handle-left-panel"
             onDrag={handleLeftPanelResize}
           />
         ) : null}
 
-        <section className="pro-panel monitor-core panel-center">
+        <section className="pro-panel monitor-core panel-center" data-testid="area-center-panel">
           {activeMode === 'edit' ? (
             <div className="monitor-content">
-              <div className="preview-host" ref={previewHostRef}>
-                <div className="preview-frame" style={previewFrameStyle}>
+              <div className="preview-host" ref={previewHostRef} data-testid="area-preview-host">
+                <div
+                  className="preview-frame"
+                  style={previewFrameStyle}
+                  data-testid="area-preview-frame"
+                  data-aspect-ratio={previewAspect}
+                >
                   <div className="monitor-overlay">
                     <div className="monitor-overlay-left">
                       <div className="live-badge">● 实时</div>
@@ -925,6 +944,7 @@ function App() {
                       <button
                         onClick={() => setSpatialPreview(!isSpatialPreview)}
                         className={`preview-mode-toggle ${isSpatialPreview ? 'active' : ''}`}
+                        data-testid="btn-preview-mode-toggle"
                       >
                         {isSpatialPreview ? '3D 模式' : '2D 模式'}
                       </button>
@@ -942,9 +962,9 @@ function App() {
               </div>
 
               <div className="transport-controls">
-                <button id="tool-prev" aria-label="跳转到开头" className="transport-btn" onClick={() => setCurrentTime(0)}>⏮</button>
-                <button id="tool-play" aria-label={isPlaying ? '暂停播放' : '开始播放'} className="transport-btn play" onClick={togglePlay}>{isPlaying ? '⏸' : '▶'}</button>
-                <button id="tool-next" aria-label="跳转到下一片段" className="transport-btn" onClick={() => setCurrentTime(getNextClipTime())}>⏭</button>
+                <button id="tool-prev" aria-label="跳转到开头" className="transport-btn" onClick={() => setCurrentTime(0)} data-testid="btn-player-prev">⏮</button>
+                <button id="tool-play" aria-label={isPlaying ? '暂停播放' : '开始播放'} className="transport-btn play" onClick={togglePlay} data-testid="btn-player-play">{isPlaying ? '⏸' : '▶'}</button>
+                <button id="tool-next" aria-label="跳转到下一片段" className="transport-btn" onClick={() => setCurrentTime(getNextClipTime())} data-testid="btn-player-next">⏭</button>
               </div>
             </div>
           ) : activeMode === 'color' ? (
@@ -973,11 +993,12 @@ function App() {
             className="main-resize-handle"
             ariaLabel="调整右侧功能区宽度"
             hint="拖动调整右侧功能区宽度"
+            testId="handle-right-panel"
             onDrag={handleRightPanelResize}
           />
         ) : null}
 
-        <aside className="pro-panel pro-inspector-outer panel-right" ref={rightPanelRef}>
+        <aside className="pro-panel pro-inspector-outer panel-right" ref={rightPanelRef} data-testid="area-right-panel">
           <div className="panel-title-bar"><span className="inspector-title">属性检查器</span></div>
           <div className="inspector-scroll">
             <Suspense fallback={<LazyFallback label="属性面板加载中..." />}>
@@ -993,21 +1014,22 @@ function App() {
           className="timeline-resize-handle"
           ariaLabel="调整时间轴高度"
           hint="拖动调整时间轴高度"
+          testId="handle-timeline"
           onDrag={handleTimelineResize}
         />
       ) : null}
 
-      <footer className="pro-panel timeline-container" onMouseEnter={ensureTimelineReady} onFocusCapture={ensureTimelineReady}>
+      <footer className="pro-panel timeline-container" onMouseEnter={ensureTimelineReady} onFocusCapture={ensureTimelineReady} data-testid="area-timeline">
         <div className="timeline-actions">
           <div className="timeline-tools" data-guide="timeline-tools">
             <span className="timeline-section-title">编辑工具</span>
             <div className="undo-group">
-              <button id="tool-undo" aria-label="撤销" className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
-              <button id="tool-redo" aria-label="重做" className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0}>↪</button>
+              <button id="tool-undo" aria-label="撤销" className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0} data-testid="btn-tool-undo">↩</button>
+              <button id="tool-redo" aria-label="重做" className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0} data-testid="btn-tool-redo">↪</button>
             </div>
-            <button id="tool-select" aria-label="选择工具" className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`} onClick={() => setActiveTool('select')}>↖</button>
-            <button id="tool-cut" aria-label="切割工具" className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`} onClick={() => setActiveTool('cut')}>✂</button>
-            <button id="tool-hand" aria-label="平移工具" className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`} onClick={() => setActiveTool('hand')}>✋</button>
+            <button id="tool-select" aria-label="选择工具" className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`} onClick={() => setActiveTool('select')} data-testid="btn-tool-select">↖</button>
+            <button id="tool-cut" aria-label="切割工具" className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`} onClick={() => setActiveTool('cut')} data-testid="btn-tool-cut">✂</button>
+            <button id="tool-hand" aria-label="平移工具" className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`} onClick={() => setActiveTool('hand')} data-testid="btn-tool-hand">✋</button>
           </div>
 
           <div className="system-telemetry">
@@ -1038,7 +1060,7 @@ function App() {
       </footer>
 
       {isGuideOpen && currentGuideStep ? (
-        <div className="guide-overlay" role="dialog" aria-modal="true" aria-label="新手引导">
+        <div className="guide-overlay" role="dialog" aria-modal="true" aria-label="新手引导" data-testid="area-guide-overlay">
           <div className="guide-dim" />
           {guideHighlightStyle ? <div className="guide-highlight" style={guideHighlightStyle} /> : null}
           <section className="guide-card" style={guideCardStyle}>
@@ -1062,7 +1084,7 @@ function App() {
           </section>
         </div>
       ) : null}
-    </div>
+    </WorkspaceShell>
   )
 }
 

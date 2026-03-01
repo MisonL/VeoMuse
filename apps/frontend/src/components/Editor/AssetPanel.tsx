@@ -296,7 +296,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button id="btn-import" className="import-btn-pro" onClick={handleImportClick}><span>➕</span> 导入</button>
+            <button id="btn-import" className="import-btn-pro" onClick={handleImportClick} data-testid="btn-import-assets"><span>➕</span> 导入</button>
           </div>
 
           <div className="asset-categories">
@@ -342,8 +342,9 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               placeholder="输入脚本，例如：清晨街道上，主角从咖啡店走出..."
               value={directorPrompt}
               onChange={(e) => onDirectorPromptChange?.(e.target.value)}
+              data-testid="input-director-prompt"
             />
-            <button id="btn-run-director" className="import-btn-pro hub-primary-btn" onClick={() => onRunDirector?.()} disabled={isAiWorking}>
+            <button id="btn-run-director" className="import-btn-pro hub-primary-btn" onClick={() => onRunDirector?.()} disabled={isAiWorking} data-testid="btn-run-director">
               {isAiWorking ? '分析中...' : '生成分镜并编排'}
             </button>
           </div>

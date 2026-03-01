@@ -11,6 +11,8 @@ bun.lockb
 dist/
 build/
 *.tsbuildinfo
+playwright-report/
+test-results/
 
 # Runtime
 *.log
