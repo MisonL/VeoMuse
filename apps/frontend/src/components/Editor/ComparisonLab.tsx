@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   CollabEvent,
   CollabPresence,
@@ -234,7 +234,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     }
   }, [])
 
-  const loadCapabilities = async () => {
+  const loadCapabilities = useCallback(async () => {
     setIsCapabilitiesLoading(true)
     try {
       const payload = await requestJson<CapabilityPayload>('/api/capabilities')
@@ -244,12 +244,25 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     } finally {
       setIsCapabilitiesLoading(false)
     }
-  }
+  }, [showToast])
 
-  const openChannelPanel = () => {
+  const openChannelPanel = useCallback(() => {
     setShowChannelPanel(true)
     void loadCapabilities()
-  }
+  }, [loadCapabilities])
+
+  useEffect(() => {
+    const handleOpenChannelPanel = () => {
+      setLabMode('marketplace')
+      setShowChannelPanel(true)
+      void loadCapabilities()
+    }
+
+    window.addEventListener('veomuse:open-channel-panel', handleOpenChannelPanel as EventListener)
+    return () => {
+      window.removeEventListener('veomuse:open-channel-panel', handleOpenChannelPanel as EventListener)
+    }
+  }, [loadCapabilities])
 
   const refreshMarketplace = async (notify: boolean) => {
     const { data, error } = await api.api.models.marketplace.get()
