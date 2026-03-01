@@ -25,8 +25,11 @@ bun run dev
 # 生产构建
 bun run build
 
-# 生产级 Docker 一键部署
-bun run docker:up
+# macOS / Linux 一键生产部署
+bun run deploy:oneclick
+
+# Windows PowerShell 一键生产部署
+bun run deploy:oneclick:win
 ```
 
 ## ✅ 质量命令
@@ -51,6 +54,17 @@ bun run hooks:install
 - `apps/frontend`: 旗舰版编辑器 UI (React 19)。
 - `packages/shared`: 100% E2E 类型定义与工具。
 - `conductor/`: 项目规格说明与执行计划存档。
+
+## 🚀 三平台一键部署
+
+- `macOS`: `bash scripts/one-click-deploy.sh`
+- `Linux`: `bash scripts/one-click-deploy.sh`
+- `Windows`: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/one-click-deploy.ps1`
+
+脚本能力：
+- 自动创建或修复 `.env` 必需安全变量（`JWT_SECRET`、`SECRET_ENCRYPTION_KEY`、`ADMIN_TOKEN`、`REDIS_PASSWORD`）。
+- 自动执行 `docker compose up -d --build` 并等待健康检查通过。
+- 输出访问地址与常用运维命令（停止、日志）。
 
 ---
 **VeoMuse V3.1 Pro - 开启 AI 视频创作新纪元。**
