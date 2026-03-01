@@ -3,20 +3,32 @@
 ## 🚀 一键部署 (Recommended)
 
 系统已完全容器化，前端镜像会在构建阶段自动执行前端构建（无需宿主机预先生成 `dist`）。
+V3.1 正式发版支持三大平台一键安装部署：
 
 ```bash
-# 1. 填入环境变量（生产环境必须配置安全变量）
-cat > .env <<'ENV'
-JWT_SECRET=replace-with-32+chars-random-jwt-secret
-SECRET_ENCRYPTION_KEY=replace-with-32-bytes-hex-or-base64
-ADMIN_TOKEN=replace-with-admin-token
-REDIS_PASSWORD=replace-with-strong-password
-GEMINI_API_KEYS=key1,key2
-ENV
-
-# 2. 启动集群
-docker-compose -f config/docker/docker-compose.yml up -d --build
+# macOS / Linux
+bash scripts/one-click-deploy.sh
 ```
+
+```powershell
+# Windows PowerShell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/one-click-deploy.ps1
+```
+
+```bat
+:: Windows CMD（可双击）
+scripts\\one-click-deploy.cmd
+```
+
+脚本会自动完成：
+- 创建或修复 `.env` 中生产必需安全变量（随机强密钥）。
+- 自动启动 Docker Compose 集群（默认带 `--build`）。
+- 自动等待 `http://127.0.0.1:18081/api/health` 健康检查通过。
+
+### 一键脚本参数
+- `--force-env` / `-ForceEnv`：强制重建关键安全变量（会备份旧 `.env`）。
+- `--skip-build` / `-SkipBuild`：跳过镜像重建，直接 `up -d`。
+- `--api-port <port>` / `-ApiPort <port>`：自定义健康检查端口。
 
 ## 🏗️ 架构详情
 - **Nginx**: 入口网关，负责静态资源托管、`/api` 反代与 `/ws` WebSocket 转发。
@@ -119,7 +131,7 @@ CI 已内置双层扫描：
 ## 🔒 协作鉴权要求
 - 所有工作区接口统一使用 `Authorization: Bearer <accessToken>`，并以真实工作区成员角色做鉴权（`viewer/editor/owner`）。
 - 邀请与成员管理接口要求 `owner` 角色；上传令牌与本地上传要求至少 `editor` 角色。
-- WebSocket 协作通道必须携带 `veomuse-auth.<accessToken>` 子协议，且仅允许已加入工作区的成员连接；非成员会被立即断开。
+- WebSocket 协作通道推荐携带 `veomuse-auth.<accessToken>` 子协议；服务端兼容 `Authorization: Bearer <accessToken>`。仅允许已加入工作区的成员连接，非成员会被立即断开。
 
 ## 🧪 协作 WS 压测脚本
 默认对运行中的后端执行协作通道压测（创建工作区 -> 多客户端并发连接 -> timeline/cursor/heartbeat ACK 统计）。
