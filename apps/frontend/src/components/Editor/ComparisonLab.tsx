@@ -578,11 +578,11 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     }
   }
 
-  const refreshWorkspaceState = async (nextWorkspaceId?: string, nextProjectId?: string) => {
+  const refreshWorkspaceState = async (nextWorkspaceId?: string, nextProjectId?: string, actorOverride?: string) => {
     const wid = nextWorkspaceId || workspaceId
     const pid = nextProjectId || projectId
     if (!wid) return
-    const actorName = currentActorName
+    const actorName = actorOverride?.trim() || currentActorName
 
     try {
       const [presencePayload, eventsPayload] = await Promise.all([
@@ -654,10 +654,11 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       })
       setWorkspaceId(payload.workspace.id)
       setProjectId(payload.defaultProject.id)
-      if (payload.owner?.name) setMemberName(payload.owner.name)
+      const ownerName = payload.owner?.name || workspaceOwner.trim() || 'Owner'
+      setMemberName(ownerName)
       setCollabRole(payload.owner?.role || 'owner')
       showToast('协作空间创建成功', 'success')
-      await refreshWorkspaceState(payload.workspace.id, payload.defaultProject.id)
+      await refreshWorkspaceState(payload.workspace.id, payload.defaultProject.id, ownerName)
     } catch (error: any) {
       showToast(error.message || '创建工作区失败', 'error')
     }
