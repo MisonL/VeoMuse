@@ -30,11 +30,14 @@ const fps = 30
 const DESKTOP_BREAKPOINT = 980
 const MAIN_PANEL_MIN_WIDTH = 360
 const MAIN_PANEL_MIN_HEIGHT = 260
-const CENTER_PANEL_FALLBACK_WIDTH = 640
-const CENTER_PANEL_LAB_WIDTH = 760
-const CENTER_PANEL_AUDIO_WIDTH = 620
-const CENTER_PANEL_FRAME_GUTTER = 24
-const CENTER_PANEL_MAX_WIDTH = 900
+const CENTER_PANEL_FALLBACK_WIDTH = 560
+const CENTER_PANEL_EDIT_WIDTH = 540
+const CENTER_PANEL_LAB_WIDTH = 980
+const CENTER_PANEL_AUDIO_WIDTH = 740
+const CENTER_PANEL_FRAME_GUTTER = 12
+const CENTER_PANEL_EDIT_MAX_WIDTH = 680
+const CENTER_PANEL_AUDIO_MAX_WIDTH = 900
+const CENTER_PANEL_LAB_MAX_WIDTH = 1120
 const HEADER_HEIGHT = 62
 const HORIZONTAL_HANDLE_SIZE = 10
 const VERTICAL_HANDLE_SIZE = 8
@@ -153,6 +156,13 @@ function App() {
   }, { status: 'idle' as const })
 
   const telemetryHistory = useMemo(() => renderLoadHistory.slice(-10), [renderLoadHistory])
+  const hasRenderableClips = useMemo(() => (
+    tracks.some(track => (
+      track.type !== 'text'
+      && track.type !== 'mask'
+      && track.clips.some(clip => typeof clip.src === 'string' && clip.src.trim().length > 0)
+    ))
+  ), [tracks])
   const currentMetrics = useMemo(() => {
     if (!metrics?.system?.memory) return { gpu: 0, ram: '0 / 0', cache: '0%' }
     const gpu = Number.isFinite(metrics.system.renderLoad) ? Math.round(metrics.system.renderLoad) : 0
@@ -366,6 +376,11 @@ function App() {
   }
 
   const handleExport = () => {
+    if (!hasRenderableClips) {
+      setOptimisticExportStatus('idle')
+      showToast('请先导入并放置至少一个可渲染片段后再导出', 'info')
+      return
+    }
     setOptimisticExportStatus('pending')
     void runExportAction(exportQuality)
   }
@@ -485,6 +500,13 @@ function App() {
     }
   }, [activeMode, leftPanelPx, rightPanelPx, timelinePx])
 
+  const centerPanelMinWidth = useMemo(() => {
+    if (!isDesktopLayout) return MAIN_PANEL_MIN_WIDTH
+    if (activeMode === 'color') return 420
+    if (activeMode === 'audio') return 390
+    return MAIN_PANEL_MIN_WIDTH
+  }, [activeMode, isDesktopLayout])
+
   const handleLeftPanelResize = useCallback((delta: number) => {
     if (!isDesktopLayout) return
 
@@ -496,13 +518,13 @@ function App() {
     const currentRight = rightPanelRef.current?.clientWidth || layoutState.rightPanelPx
     const maxLeft = Math.min(
       LAYOUT_LIMITS.leftPanelPx.max,
-      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - currentRight - MAIN_PANEL_MIN_WIDTH
+      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - currentRight - centerPanelMinWidth
     )
 
     layoutState.setLeftPanelPx(
       clamp(currentLeft + delta, LAYOUT_LIMITS.leftPanelPx.min, Math.max(LAYOUT_LIMITS.leftPanelPx.min, maxLeft))
     )
-  }, [isDesktopLayout])
+  }, [centerPanelMinWidth, isDesktopLayout])
 
   const handleRightPanelResize = useCallback((delta: number) => {
     if (!isDesktopLayout) return
@@ -515,13 +537,13 @@ function App() {
     const currentRight = rightPanelRef.current?.clientWidth || layoutState.rightPanelPx
     const maxRight = Math.min(
       LAYOUT_LIMITS.rightPanelPx.max,
-      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - currentLeft - MAIN_PANEL_MIN_WIDTH
+      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - currentLeft - centerPanelMinWidth
     )
 
     layoutState.setRightPanelPx(
       clamp(currentRight - delta, LAYOUT_LIMITS.rightPanelPx.min, Math.max(LAYOUT_LIMITS.rightPanelPx.min, maxRight))
     )
-  }, [isDesktopLayout])
+  }, [centerPanelMinWidth, isDesktopLayout])
 
   const handleTimelineResize = useCallback((delta: number) => {
     if (!isDesktopLayout) return
@@ -543,23 +565,32 @@ function App() {
 
   const centerPanelFitWidth = useMemo(() => {
     if (!isDesktopLayout) return CENTER_PANEL_FALLBACK_WIDTH
-    if (activeMode === 'color') return CENTER_PANEL_LAB_WIDTH
-    if (activeMode === 'audio') return CENTER_PANEL_AUDIO_WIDTH
-    if (previewFrameSize.width <= 0) return CENTER_PANEL_FALLBACK_WIDTH
-    return clamp(
-      previewFrameSize.width + CENTER_PANEL_FRAME_GUTTER,
-      MAIN_PANEL_MIN_WIDTH,
-      CENTER_PANEL_MAX_WIDTH
+    if (activeMode === 'color') {
+      return clamp(CENTER_PANEL_LAB_WIDTH, centerPanelMinWidth, CENTER_PANEL_LAB_MAX_WIDTH)
+    }
+    if (activeMode === 'audio') {
+      return clamp(CENTER_PANEL_AUDIO_WIDTH, centerPanelMinWidth, CENTER_PANEL_AUDIO_MAX_WIDTH)
+    }
+    const editFitWidth = Math.max(
+      CENTER_PANEL_EDIT_WIDTH,
+      previewFrameSize.width > 0 ? previewFrameSize.width + CENTER_PANEL_FRAME_GUTTER : 0
     )
-  }, [activeMode, isDesktopLayout, previewFrameSize.width])
+    return clamp(editFitWidth, centerPanelMinWidth, CENTER_PANEL_EDIT_MAX_WIDTH)
+  }, [activeMode, centerPanelMinWidth, isDesktopLayout, previewFrameSize.width])
 
   const shellLayoutVars = useMemo(() => ({
     '--left-panel-w': `${leftPanelPx}px`,
     '--right-panel-w': `${rightPanelPx}px`,
-    '--center-panel-min-w': `${MAIN_PANEL_MIN_WIDTH}px`,
+    '--center-panel-min-w': `${centerPanelMinWidth}px`,
     '--center-panel-fit-w': `${Math.round(centerPanelFitWidth)}px`,
     '--timeline-h': `${timelinePx}px`
-  } as CSSProperties), [centerPanelFitWidth, leftPanelPx, rightPanelPx, timelinePx])
+  } as CSSProperties), [
+    centerPanelFitWidth,
+    centerPanelMinWidth,
+    leftPanelPx,
+    rightPanelPx,
+    timelinePx
+  ])
 
   const previewFrameStyle = useMemo(() => {
     if (!previewFrameSize.width || !previewFrameSize.height) return undefined

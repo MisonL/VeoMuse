@@ -1,8 +1,8 @@
 :root {
   color-scheme: light;
-  --ap-font-ui: "Avenir Next", "PingFang SC", "Noto Sans SC", "Segoe UI", sans-serif;
-  --ap-font-display: "Avenir Next Condensed", "DIN Alternate", "PingFang SC", "Noto Sans SC", sans-serif;
-  --ap-font-mono: "SF Mono", "JetBrains Mono", "Fira Code", "Menlo", monospace;
+  --ap-font-ui: "Noto Sans SC", "PingFang SC", "Segoe UI", sans-serif;
+  --ap-font-display: "Barlow Condensed", "Chakra Petch", "Noto Sans SC", sans-serif;
+  --ap-font-mono: "Chakra Petch", "SF Mono", "JetBrains Mono", "Fira Code", "Menlo", monospace;
 
   --ap-bg: #e8eff7;
   --ap-surface: #fdfefe;

@@ -29,6 +29,6 @@ export const ProSlider: React.FC<{ label: string; value: number; min: number; ma
       <label>{label}</label>
       <span className="slider-value">{value.toFixed(1)}</span>
     </div>
-    <input type="range" min={min} max={max} step={0.1} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="pro-range" />
+    <input name={`slider-${label}`} type="range" min={min} max={max} step={0.1} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="pro-range" />
   </div>
 );

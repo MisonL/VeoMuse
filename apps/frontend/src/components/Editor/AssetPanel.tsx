@@ -215,7 +215,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
 
   return (
     <div className="pro-asset-panel">
-      <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="video/*,audio/*" style={{ display: 'none' }} />
+      <input type="file" name="assetUploadFiles" ref={fileInputRef} onChange={handleFileChange} multiple accept="video/*,audio/*" style={{ display: 'none' }} />
 
       {mode === 'assets' ? (
         <>
@@ -272,6 +272,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
 
           <div className="hub-section hub-section-tight">
             <textarea
+              name="directorPrompt"
               className="pro-textarea-mini"
               placeholder="输入脚本，例如：清晨街道上，主角从咖啡店走出..."
               value={directorPrompt}
@@ -310,12 +311,14 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
 
           <div className="hub-section hub-section-tight">
             <input
+              name="actorName"
               className="pro-textarea-mini actor-input"
               placeholder="演员名称，例如：都市女主角"
               value={actorName}
               onChange={(e) => setActorName(e.target.value)}
             />
             <input
+              name="actorRefImage"
               className="pro-textarea-mini actor-input actor-input-spaced"
               placeholder="参考图 URL，例如：https://..."
               value={actorRefImage}
@@ -364,6 +367,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 {isMotionSyncing ? '同步中...' : '同步至演员'}
               </button>
               <select
+                name="motionActorId"
                 className="pro-select-mini motion-actor-select"
                 value={motionActorId}
                 onChange={(e) => setMotionActorId(e.target.value)}

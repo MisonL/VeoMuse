@@ -206,7 +206,7 @@ const PropertyInspector: React.FC = () => {
           <div className="pro-inspector-content">
             <section className="inspector-section">
               <label>片段名称</label>
-              <input type="text" value={current.name} onChange={(e) => handleUpdate({ name: e.target.value })} className="pro-input-mini" />
+              <input name="clipName" type="text" value={current.name} onChange={(e) => handleUpdate({ name: e.target.value })} className="pro-input-mini" />
             </section>
 
             <section className="inspector-section">
@@ -224,6 +224,7 @@ const PropertyInspector: React.FC = () => {
                 <label>风格重塑预设</label>
                 <div className="pro-control-row mt-4">
                   <select
+                    name="stylePreset"
                     className="pro-select-mini"
                     value={stylePreset}
                     onChange={(e) => setStylePreset(e.target.value as 'cinematic' | 'van_gogh' | 'cyberpunk')}
@@ -233,6 +234,7 @@ const PropertyInspector: React.FC = () => {
                     <option value="cyberpunk">Cyberpunk</option>
                   </select>
                   <select
+                    name="styleModel"
                     className="pro-select-mini"
                     value={styleModel}
                     onChange={(e) => setStyleModel(e.target.value as 'luma-dream' | 'kling-v1' | 'veo-3.1')}
@@ -250,6 +252,7 @@ const PropertyInspector: React.FC = () => {
                 <label>神经渲染特效</label>
                 <div className="pro-control-row mt-4">
                   <select
+                    name="vfxType"
                     className="pro-select-mini"
                     value={vfxType}
                     onChange={(e) => setVfxType(e.target.value as 'magic-particles' | 'cyber-glitch' | 'neon-bloom')}
@@ -259,6 +262,7 @@ const PropertyInspector: React.FC = () => {
                     <option value="neon-bloom">Neon Bloom</option>
                   </select>
                   <input
+                    name="vfxIntensity"
                     type="range"
                     min={0.1}
                     max={1}
@@ -279,6 +283,7 @@ const PropertyInspector: React.FC = () => {
                 <div className="pro-control-row mt-4">
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
+                      name="worldLinkEnabled"
                       type="checkbox"
                       checked={Boolean(current.data?.worldLink)}
                       onChange={(e) => handleDataUpdate({ worldLink: e.target.checked })}
@@ -287,6 +292,7 @@ const PropertyInspector: React.FC = () => {
                   </label>
                 </div>
                 <input
+                  name="worldId"
                   type="text"
                   className="pro-input-mini"
                   placeholder="world-id，例如 w-abc123"
@@ -301,6 +307,7 @@ const PropertyInspector: React.FC = () => {
                 <label>虚拟演员与口型同步</label>
                 <div className="pro-control-row mt-4">
                   <select
+                    name="actorId"
                     className="pro-select-mini"
                     value={current.data?.actorId || ''}
                     onChange={(e) => handleDataUpdate({ actorId: e.target.value })}
@@ -311,6 +318,7 @@ const PropertyInspector: React.FC = () => {
                     ))}
                   </select>
                   <select
+                    name="consistencyStrength"
                     className="pro-select-mini"
                     value={String(current.data?.consistencyStrength ?? 1)}
                     onChange={(e) => handleDataUpdate({ consistencyStrength: Number(e.target.value) })}
@@ -323,6 +331,7 @@ const PropertyInspector: React.FC = () => {
                 <div className="pro-control-row mt-4">
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
+                      name="syncLip"
                       type="checkbox"
                       checked={Boolean(current.data?.syncLip)}
                       onChange={(e) => handleDataUpdate({ syncLip: e.target.checked })}
@@ -338,7 +347,7 @@ const PropertyInspector: React.FC = () => {
                 <label>空间 3D 控制 (NeRF)</label>
                 <div className="pro-control-row">
                   <span>水平轴</span>
-                  <input type="range" value={spatialX} onChange={e => setSpatialX(parseInt(e.target.value))} />
+                  <input name="spatialX" type="range" value={spatialX} onChange={e => setSpatialX(parseInt(e.target.value))} />
                 </div>
                 <button className="pro-master-btn" onClick={async () => {
                   setIsProcessing(true);
@@ -362,9 +371,9 @@ const PropertyInspector: React.FC = () => {
             {current.type === 'text' && (
               <section className="inspector-section">
                 <label>TTS 配音控制器</label>
-                <textarea value={current.data?.content || ''} onChange={(e) => handleDataUpdate({ content: e.target.value })} className="pro-textarea-mini" />
+                <textarea name="ttsContent" value={current.data?.content || ''} onChange={(e) => handleDataUpdate({ content: e.target.value })} className="pro-textarea-mini" />
                 <div className="pro-control-row mt-4">
-                  <select className="pro-select-mini">
+                  <select name="ttsVoice" className="pro-select-mini">
                     <option>自然男声 (中文)</option>
                     <option>甜美女声 (中文)</option>
                   </select>
@@ -372,6 +381,7 @@ const PropertyInspector: React.FC = () => {
                 </div>
                 <div className="pro-control-row mt-4">
                   <select
+                    name="textTargetLang"
                     className="pro-select-mini"
                     value={targetLang}
                     onChange={(e) => setTargetLang(e.target.value as 'English' | 'Japanese')}
@@ -391,6 +401,7 @@ const PropertyInspector: React.FC = () => {
                 <label>音频翻译克隆</label>
                 <div className="pro-control-row mt-4">
                   <select
+                    name="audioTargetLang"
                     className="pro-select-mini"
                     value={targetLang}
                     onChange={(e) => setTargetLang(e.target.value as 'English' | 'Japanese')}
@@ -409,7 +420,7 @@ const PropertyInspector: React.FC = () => {
               <label>智能音频辅助</label>
               <div className="pro-control-row">
                 <span>BGM 匹配</span>
-                <input type="range" value={bgmVolume} onChange={e => setBgmVolume(parseInt(e.target.value))} />
+                <input name="bgmVolume" type="range" value={bgmVolume} onChange={e => setBgmVolume(parseInt(e.target.value))} />
               </div>
               <button className="alchemy-mini-btn w-full" onClick={() => handleAlchemy('audio')}>🥁 节奏感应分析</button>
             </section>

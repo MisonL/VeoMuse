@@ -28,11 +28,11 @@
 }
 
 .pro-master-shell {
-  --left-panel-w: 470px;
-  --right-panel-w: 390px;
+  --left-panel-w: 360px;
+  --right-panel-w: 300px;
   --center-panel-min-w: 360px;
-  --center-panel-fit-w: 640px;
-  --timeline-h: 332px;
+  --center-panel-fit-w: 620px;
+  --timeline-h: 272px;
   --split-handle-w: 10px;
   --split-handle-h: 8px;
   height: 100vh;
@@ -106,10 +106,10 @@
 
 .os-header {
   display: grid;
-  grid-template-columns: auto minmax(180px, auto) minmax(0, 1fr);
+  grid-template-columns: max-content minmax(220px, 1fr) max-content;
   align-items: center;
-  padding: 0 14px;
-  gap: 12px;
+  padding: 0 16px;
+  gap: 10px;
 }
 
 .brand-zone {
@@ -146,26 +146,28 @@
 
 .mode-selector {
   display: inline-flex;
-  justify-self: start;
+  justify-self: center;
   align-self: center;
   background: color-mix(in srgb, var(--ap-card) 82%, #ffffff 18%);
   padding: 4px;
   border-radius: 12px;
   gap: 4px;
   border: 1px solid var(--ap-border);
-  width: fit-content;
+  width: max-content;
   max-width: 100%;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .header-actions {
   display: flex;
-  gap: 8px;
+  gap: 7px;
   align-items: center;
   justify-content: flex-end;
   justify-self: end;
   flex-wrap: nowrap;
   min-width: 0;
+  max-width: none;
+  overflow: visible;
 }
 
 .header-actions > * {
@@ -276,6 +278,7 @@
   background: none;
   padding: 7px 14px;
   border-radius: 9px;
+  font-family: var(--ap-font-display);
   font-size: 11px;
   font-weight: 700;
   color: var(--ap-text-dim);
@@ -300,13 +303,14 @@
 .os-main {
   display: grid;
   grid-template-columns:
-    minmax(var(--left-panel-w), 1.4fr)
+    minmax(var(--left-panel-w), 1.75fr)
     var(--split-handle-w)
     minmax(var(--center-panel-min-w), var(--center-panel-fit-w))
     var(--split-handle-w)
-    minmax(var(--right-panel-w), 1.22fr);
+    minmax(var(--right-panel-w), 1.55fr);
   gap: 0;
   min-height: 0;
+  align-items: stretch;
 }
 
 .panel-left {
@@ -316,6 +320,7 @@
 
 .panel-center {
   grid-column: 3;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 85%, #ffffff 15%), color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%));
 }
 
 .panel-right {
@@ -469,6 +474,7 @@ body.resizing-y {
   background: color-mix(in srgb, var(--ap-card) 78%, transparent);
   border: 1px solid color-mix(in srgb, var(--ap-border) 60%, transparent);
   color: var(--ap-text-dim);
+  font-family: var(--ap-font-display);
   font-weight: 800;
   font-size: 11px;
   cursor: pointer;
@@ -518,9 +524,10 @@ body.resizing-y {
   flex: 1;
   min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 10px 8px 6px;
+  padding: 8px 12px 6px;
+  overflow: hidden;
 }
 
 .preview-frame {
@@ -533,6 +540,7 @@ body.resizing-y {
   border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--ap-monitor-border) 55%, rgba(255, 255, 255, 0.45));
   overflow: hidden;
+  margin: 0 auto;
   box-shadow:
     0 2px 5px rgba(2, 6, 23, 0.45),
     0 18px 36px rgba(2, 6, 23, 0.3);
@@ -615,17 +623,17 @@ body.resizing-y {
   font-family: var(--ap-font-mono);
   color: var(--ap-accent);
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: -1.1px;
   line-height: 1;
   text-shadow: 0 0 16px color-mix(in srgb, var(--ap-accent) 45%, transparent);
 }
 
 .transport-controls {
-  height: 74px;
+  height: 82px;
   display: flex;
   justify-content: center;
-  gap: 34px;
+  gap: 26px;
   align-items: center;
   border-top: 1px solid var(--ap-border);
   background:
@@ -644,12 +652,12 @@ body.resizing-y {
   );
   border: 1px solid color-mix(in srgb, var(--ap-border) 82%, #ffffff 18%);
   color: color-mix(in srgb, var(--ap-text) 88%, #0f172a 12%);
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   border-radius: 999px;
   cursor: pointer;
   transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
-  font-size: 17px;
+  font-size: 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -690,9 +698,9 @@ body.resizing-y {
 
 .transport-btn.play {
   color: #ffffff;
-  width: 52px;
-  height: 52px;
-  font-size: 24px;
+  width: 60px;
+  height: 60px;
+  font-size: 26px;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--ap-accent) 92%, #3b82f6 8%) 0%,
@@ -1015,12 +1023,12 @@ body.resizing-y {
 
 @media (max-width: 1320px) {
   .os-header {
-    grid-template-columns: auto minmax(160px, auto) minmax(0, 1fr);
+    grid-template-columns: max-content minmax(180px, 1fr) max-content;
     gap: 10px;
   }
 
   .mode-selector {
-    justify-self: start;
+    justify-self: center;
   }
 
   .mode-tab {
@@ -1105,6 +1113,7 @@ body.resizing-y {
 
   .preview-host {
     padding: 10px 8px 6px;
+    align-items: center;
   }
 
   .timeline-container {
