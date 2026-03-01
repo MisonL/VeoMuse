@@ -19,27 +19,73 @@ export class AiDirectorService extends BaseAiService {
 - scenes: 分镜数组
 `;
 
-  static async analyzeScript(script: string): Promise<DirectorResponse> {
-    const key = ApiKeyService.getNextKey();
-    const url = `${this.API_URL}/${this.MODEL}:generateContent?key=${key}`;
+  private static createWorldId(script: string) {
+    let hash = 2166136261;
+    for (let i = 0; i < script.length; i += 1) {
+      hash ^= script.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    const token = Math.abs(hash).toString(36).slice(0, 8) || 'offline01';
+    return `w-${token}`;
+  }
 
-    const { data } = await this.instance.request<any>(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: `${this.SYSTEM_PROMPT}\n\n脚本内容：${script}` }] }],
-        generationConfig: { response_mime_type: "application/json", thinking_level: "HIGH" }
-      })
-    });
+  private static buildOfflineStoryboard(script: string): DirectorResponse {
+    const chunks = script
+      .split(/[\n。！？!?；;，,]/g)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 4);
 
-    const content = this.instance.parseGeminiJson(data);
-    
-    // 强制校验与兜底生成，确保链路一致性
+    const units = chunks.length ? chunks : [script.trim() || '镜头内容待补充'];
+    const duration = Math.max(2, Math.round(12 / units.length));
+    const storyTitle = (units[0] || '离线故事').slice(0, 20);
+
     return {
       success: true,
-      storyTitle: content.storyTitle || '未命名故事',
-      worldId: content.worldId || `w-${Math.random().toString(36).substring(7)}`,
-      scenes: content.scenes || []
+      storyTitle,
+      worldId: this.createWorldId(script),
+      scenes: units.map((unit, index) => ({
+        title: `镜头 ${index + 1}`,
+        videoPrompt: unit,
+        audioPrompt: `环境氛围：${unit}`,
+        voiceoverText: unit,
+        duration
+      }))
     };
+  }
+
+  static async analyzeScript(script: string): Promise<DirectorResponse> {
+    const availableKeys = ApiKeyService.getAvailableKeys();
+    if (!availableKeys.length) {
+      return this.buildOfflineStoryboard(script);
+    }
+    const key = ApiKeyService.getNextKey();
+
+    const url = `${this.API_URL}/${this.MODEL}:generateContent?key=${key}`;
+    try {
+      const { data } = await this.instance.request<any>(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${this.SYSTEM_PROMPT}\n\n脚本内容：${script}` }] }],
+          generationConfig: { response_mime_type: "application/json", thinking_level: "HIGH" }
+        })
+      });
+
+      const content = this.instance.parseGeminiJson(data);
+      const offline = this.buildOfflineStoryboard(script);
+      const scenes = Array.isArray(content?.scenes) && content.scenes.length
+        ? content.scenes
+        : offline.scenes;
+
+      return {
+        success: true,
+        storyTitle: content?.storyTitle || offline.storyTitle,
+        worldId: content?.worldId || offline.worldId,
+        scenes
+      };
+    } catch {
+      return this.buildOfflineStoryboard(script);
+    }
   }
 }
