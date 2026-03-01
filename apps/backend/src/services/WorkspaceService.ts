@@ -15,6 +15,7 @@ const now = () => new Date().toISOString()
 
 const toWorkspace = (row: any): Workspace => ({
   id: row.id,
+  organizationId: row.organization_id || 'org_default',
   name: row.name,
   createdAt: row.created_at,
   updatedAt: row.updated_at
@@ -23,6 +24,7 @@ const toWorkspace = (row: any): Workspace => ({
 const toMember = (row: any): WorkspaceMember => ({
   id: row.id,
   workspaceId: row.workspace_id,
+  userId: row.user_id || null,
   name: row.name,
   role: row.role,
   createdAt: row.created_at
@@ -30,6 +32,7 @@ const toMember = (row: any): WorkspaceMember => ({
 
 const toProject = (row: any): Project => ({
   id: row.id,
+  organizationId: row.organization_id || 'org_default',
   workspaceId: row.workspace_id,
   name: row.name,
   createdAt: row.created_at,
@@ -38,6 +41,7 @@ const toProject = (row: any): Project => ({
 
 const toAudit = (row: any): AuditLog => ({
   id: row.id,
+  organizationId: row.organization_id || null,
   workspaceId: row.workspace_id || null,
   projectId: row.project_id || null,
   actorName: row.actor_name,
@@ -49,6 +53,7 @@ const toAudit = (row: any): AuditLog => ({
 
 const toInvite = (row: any): WorkspaceInvite => ({
   id: row.id,
+  organizationId: row.organization_id || 'org_default',
   workspaceId: row.workspace_id,
   code: row.code,
   role: row.role,
@@ -61,6 +66,7 @@ const toInvite = (row: any): WorkspaceInvite => ({
 })
 
 const toPresence = (row: any): CollabPresence => ({
+  organizationId: row.organization_id || 'org_default',
   workspaceId: row.workspace_id,
   sessionId: row.session_id,
   memberName: row.member_name,
@@ -71,6 +77,7 @@ const toPresence = (row: any): CollabPresence => ({
 
 const toSnapshot = (row: any): ProjectSnapshot => ({
   id: row.id,
+  organizationId: row.organization_id || 'org_default',
   projectId: row.project_id,
   actorName: row.actor_name,
   content: JSON.parse(row.content_json || '{}'),
@@ -79,6 +86,7 @@ const toSnapshot = (row: any): ProjectSnapshot => ({
 
 const toCollabEvent = (row: any): CollabEvent => ({
   id: row.id,
+  organizationId: row.organization_id || 'org_default',
   workspaceId: row.workspace_id,
   projectId: row.project_id || null,
   actorName: row.actor_name,
@@ -98,20 +106,36 @@ const resolveWorkspaceIdByProject = (projectId: string): string | null => {
   return row?.workspace_id || null
 }
 
+const resolveOrganizationIdByWorkspace = (workspaceId: string): string => {
+  const row = getLocalDb()
+    .prepare(`SELECT organization_id FROM workspaces WHERE id = ? LIMIT 1`)
+    .get(workspaceId) as { organization_id?: string } | null
+  return row?.organization_id || 'org_default'
+}
+
+const resolveOrganizationIdByProject = (projectId: string): string => {
+  const row = getLocalDb()
+    .prepare(`SELECT organization_id FROM projects WHERE id = ? LIMIT 1`)
+    .get(projectId) as { organization_id?: string } | null
+  return row?.organization_id || 'org_default'
+}
+
 export class WorkspaceService {
   private static writeAudit(
     action: string,
     actorName: string,
     detail: Record<string, unknown>,
+    organizationId?: string,
     workspaceId?: string,
     projectId?: string,
     traceId?: string
   ) {
     getLocalDb().prepare(`
-      INSERT INTO audit_logs (id, workspace_id, project_id, actor_name, action, detail_json, trace_id, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO audit_logs (id, organization_id, workspace_id, project_id, actor_name, action, detail_json, trace_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       `audit_${crypto.randomUUID()}`,
+      organizationId || null,
       workspaceId || null,
       projectId || null,
       actorName,
@@ -122,7 +146,12 @@ export class WorkspaceService {
     )
   }
 
-  static createWorkspace(name: string, ownerName: string = 'Owner') {
+  static createWorkspace(
+    name: string,
+    ownerName: string = 'Owner',
+    organizationId: string = 'org_default',
+    ownerUserId?: string
+  ) {
     const workspaceId = `ws_${crypto.randomUUID()}`
     const projectId = `prj_${crypto.randomUUID()}`
     const ownerId = `member_${crypto.randomUUID()}`
@@ -130,21 +159,21 @@ export class WorkspaceService {
     const traceId = `trace_${crypto.randomUUID()}`
 
     getLocalDb().prepare(`
-      INSERT INTO workspaces (id, name, created_at, updated_at)
-      VALUES (?, ?, ?, ?)
-    `).run(workspaceId, name, createdAt, createdAt)
+      INSERT INTO workspaces (id, organization_id, name, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(workspaceId, organizationId, name, createdAt, createdAt)
 
     getLocalDb().prepare(`
-      INSERT INTO workspace_members (id, workspace_id, name, role, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(ownerId, workspaceId, ownerName, 'owner', createdAt)
+      INSERT INTO workspace_members (id, workspace_id, user_id, name, role, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(ownerId, workspaceId, ownerUserId || null, ownerName, 'owner', createdAt)
 
     getLocalDb().prepare(`
-      INSERT INTO projects (id, workspace_id, name, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(projectId, workspaceId, `${name} 默认项目`, createdAt, createdAt)
+      INSERT INTO projects (id, organization_id, workspace_id, name, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(projectId, organizationId, workspaceId, `${name} 默认项目`, createdAt, createdAt)
 
-    this.writeAudit('workspace.created', ownerName, { workspaceId, name }, workspaceId, projectId, traceId)
+    this.writeAudit('workspace.created', ownerName, { workspaceId, name }, organizationId, workspaceId, projectId, traceId)
 
     return {
       workspace: this.getWorkspace(workspaceId),
@@ -181,12 +210,36 @@ export class WorkspaceService {
     return row ? toMember(row) : null
   }
 
+  static getMemberByUserId(workspaceId: string, userId: string): WorkspaceMember | null {
+    const normalizedUserId = userId.trim()
+    if (!normalizedUserId) return null
+    const row = getLocalDb().prepare(`
+      SELECT * FROM workspace_members
+      WHERE workspace_id = ? AND user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(workspaceId, normalizedUserId)
+    return row ? toMember(row) : null
+  }
+
   static getMemberRole(workspaceId: string, name: string): WorkspaceRole | null {
     return this.getMember(workspaceId, name)?.role || null
   }
 
+  static getMemberRoleByUserId(workspaceId: string, userId: string): WorkspaceRole | null {
+    return this.getMemberByUserId(workspaceId, userId)?.role || null
+  }
+
+  static resolveActorNameByUserId(workspaceId: string, userId: string): string | null {
+    return this.getMemberByUserId(workspaceId, userId)?.name || null
+  }
+
   static isMember(workspaceId: string, name: string): boolean {
     return Boolean(this.getMember(workspaceId, name))
+  }
+
+  static isMemberByUserId(workspaceId: string, userId: string): boolean {
+    return Boolean(this.getMemberByUserId(workspaceId, userId))
   }
 
   static projectBelongsToWorkspace(workspaceId: string, projectId: string): boolean {
@@ -203,15 +256,36 @@ export class WorkspaceService {
     return row ? toProject(row) : null
   }
 
-  static addMember(workspaceId: string, name: string, role: WorkspaceRole, actorName: string) {
+  static addMember(
+    workspaceId: string,
+    name: string,
+    role: WorkspaceRole,
+    actorName: string,
+    userId?: string
+  ) {
     const id = `member_${crypto.randomUUID()}`
     const createdAt = now()
     const traceId = `trace_${crypto.randomUUID()}`
+    const normalizedUserId = userId?.trim() || null
+    if (normalizedUserId) {
+      const existing = this.getMemberByUserId(workspaceId, normalizedUserId)
+      if (existing) {
+        throw new Error('该用户已是工作区成员')
+      }
+    }
     getLocalDb().prepare(`
-      INSERT INTO workspace_members (id, workspace_id, name, role, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, workspaceId, name, role, createdAt)
-    this.writeAudit('workspace.member_added', actorName, { workspaceId, memberName: name, role }, workspaceId, undefined, traceId)
+      INSERT INTO workspace_members (id, workspace_id, user_id, name, role, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, workspaceId, normalizedUserId, name, role, createdAt)
+    this.writeAudit(
+      'workspace.member_added',
+      actorName,
+      { workspaceId, memberName: name, role },
+      resolveOrganizationIdByWorkspace(workspaceId),
+      workspaceId,
+      undefined,
+      traceId
+    )
     return this.getMembers(workspaceId)
   }
 
@@ -222,51 +296,94 @@ export class WorkspaceService {
     const expiresAt = new Date(Date.now() + Math.max(1, expiresInHours) * 60 * 60 * 1000).toISOString()
     getLocalDb().prepare(`
       INSERT INTO workspace_invites (
-        id, workspace_id, code, role, inviter, status, expires_at, accepted_by, accepted_at, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(inviteId, workspaceId, code, role, inviter, 'pending', expiresAt, null, null, createdAt)
-    this.writeAudit('workspace.invite_created', inviter, { workspaceId, role, code }, workspaceId)
+        id, organization_id, workspace_id, code, role, inviter, status, expires_at, accepted_by, accepted_at, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(inviteId, resolveOrganizationIdByWorkspace(workspaceId), workspaceId, code, role, inviter, 'pending', expiresAt, null, null, createdAt)
+    this.writeAudit(
+      'workspace.invite_created',
+      inviter,
+      { workspaceId, role, code },
+      resolveOrganizationIdByWorkspace(workspaceId),
+      workspaceId
+    )
     const row = getLocalDb().prepare(`SELECT * FROM workspace_invites WHERE id = ?`).get(inviteId)
     return toInvite(row)
   }
 
-  static acceptInvite(code: string, memberName: string) {
-    const row = getLocalDb().prepare(`
-      SELECT * FROM workspace_invites WHERE code = ? LIMIT 1
-    `).get(code) as any
-    if (!row) return null
-    if (row.status !== 'pending') return null
-    if (new Date(row.expires_at).getTime() < Date.now()) {
-      getLocalDb().prepare(`UPDATE workspace_invites SET status = ? WHERE id = ?`).run('expired', row.id)
-      return null
-    }
+  static acceptInvite(code: string, memberName: string, userId?: string) {
+    const normalizedCode = code.trim()
+    if (!normalizedCode) return null
+    const normalizedUserId = userId?.trim() || null
 
-    const memberId = `member_${crypto.randomUUID()}`
-    const createdAt = now()
-    getLocalDb().prepare(`
-      INSERT INTO workspace_members (id, workspace_id, name, role, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(memberId, row.workspace_id, memberName, row.role, createdAt)
+    const tx = getLocalDb().transaction(() => {
+      const row = getLocalDb().prepare(`
+        SELECT * FROM workspace_invites WHERE code = ? LIMIT 1
+      `).get(normalizedCode) as any
+      if (!row) return null
+      if (row.status !== 'pending') return null
 
-    getLocalDb().prepare(`
-      UPDATE workspace_invites
-      SET status = ?, accepted_by = ?, accepted_at = ?
-      WHERE id = ?
-    `).run('accepted', memberName, createdAt, row.id)
+      const nowTs = Date.now()
+      if (new Date(row.expires_at).getTime() < nowTs) {
+        getLocalDb().prepare(`UPDATE workspace_invites SET status = ? WHERE id = ?`).run('expired', row.id)
+        return null
+      }
 
-    this.writeAudit(
-      'workspace.invite_accepted',
-      memberName,
-      { workspaceId: row.workspace_id, role: row.role, inviteCode: code },
-      row.workspace_id
-    )
+      if (normalizedUserId) {
+        const existingMember = this.getMemberByUserId(row.workspace_id, normalizedUserId)
+        if (existingMember) {
+          getLocalDb().prepare(`
+            UPDATE workspace_invites
+            SET status = ?, accepted_by = ?, accepted_at = ?
+            WHERE id = ?
+          `).run('accepted', existingMember.name, now(), row.id)
+          const inviteRow = getLocalDb().prepare(`SELECT * FROM workspace_invites WHERE id = ?`).get(row.id)
+          return {
+            invite: toInvite(inviteRow),
+            member: existingMember,
+            workspaceId: row.workspace_id,
+            role: existingMember.role
+          }
+        }
+      }
 
-    const inviteRow = getLocalDb().prepare(`SELECT * FROM workspace_invites WHERE id = ?`).get(row.id)
+      const memberId = `member_${crypto.randomUUID()}`
+      const createdAt = now()
+      getLocalDb().prepare(`
+        INSERT INTO workspace_members (id, workspace_id, user_id, name, role, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(memberId, row.workspace_id, normalizedUserId, memberName, row.role, createdAt)
+
+      getLocalDb().prepare(`
+        UPDATE workspace_invites
+        SET status = ?, accepted_by = ?, accepted_at = ?
+        WHERE id = ?
+      `).run('accepted', memberName, createdAt, row.id)
+
+      this.writeAudit(
+        'workspace.invite_accepted',
+        memberName,
+        { workspaceId: row.workspace_id, role: row.role, inviteCode: normalizedCode, userId: normalizedUserId },
+        row.organization_id || resolveOrganizationIdByWorkspace(row.workspace_id),
+        row.workspace_id
+      )
+
+      const inviteRow = getLocalDb().prepare(`SELECT * FROM workspace_invites WHERE id = ?`).get(row.id)
+      const member = getLocalDb().prepare(`SELECT * FROM workspace_members WHERE id = ? LIMIT 1`).get(memberId)
+      return {
+        invite: toInvite(inviteRow),
+        member: member ? toMember(member) : null,
+        workspaceId: row.workspace_id,
+        role: row.role as WorkspaceRole
+      }
+    })
+
+    const result = tx()
+    if (!result) return null
     return {
-      invite: toInvite(inviteRow),
-      member: this.getMembers(row.workspace_id).find(item => item.id === memberId) || null,
-      workspace: this.getWorkspace(row.workspace_id),
-      defaultProject: this.getDefaultProject(row.workspace_id)
+      invite: result.invite,
+      member: result.member,
+      workspace: this.getWorkspace(result.workspaceId),
+      defaultProject: this.getDefaultProject(result.workspaceId)
     }
   }
 
@@ -280,10 +397,12 @@ export class WorkspaceService {
   static upsertPresence(workspaceId: string, sessionId: string, memberName: string, role: WorkspaceRole = 'viewer') {
     const lastSeenAt = now()
     const expiresAt = new Date(Date.now() + 30_000).toISOString()
+    const organizationId = resolveOrganizationIdByWorkspace(workspaceId)
     getLocalDb().prepare(`
-      INSERT INTO workspace_presence (id, workspace_id, session_id, member_name, role, status, last_seen_at, expires_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO workspace_presence (id, organization_id, workspace_id, session_id, member_name, role, status, last_seen_at, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(workspace_id, session_id) DO UPDATE SET
+        organization_id = excluded.organization_id,
         member_name = excluded.member_name,
         role = excluded.role,
         status = excluded.status,
@@ -291,6 +410,7 @@ export class WorkspaceService {
         expires_at = excluded.expires_at
     `).run(
       `presence_${workspaceId}_${sessionId}`,
+      organizationId,
       workspaceId,
       sessionId,
       memberName,
@@ -318,15 +438,30 @@ export class WorkspaceService {
       .map(toPresence)
   }
 
+  static getPresenceBySession(workspaceId: string, sessionId: string): CollabPresence | null {
+    const normalizedWorkspaceId = workspaceId.trim()
+    const normalizedSessionId = sessionId.trim()
+    if (!normalizedWorkspaceId || !normalizedSessionId) return null
+    const nowIso = now()
+    const row = getLocalDb().prepare(`
+      SELECT * FROM workspace_presence
+      WHERE workspace_id = ? AND session_id = ? AND expires_at >= ?
+      ORDER BY last_seen_at DESC
+      LIMIT 1
+    `).get(normalizedWorkspaceId, normalizedSessionId, nowIso)
+    return row ? toPresence(row) : null
+  }
+
   static createProjectSnapshot(projectId: string, actorName: string, content: Record<string, unknown>) {
     const id = `snap_${crypto.randomUUID()}`
     const createdAt = now()
+    const organizationId = resolveOrganizationIdByProject(projectId)
     getLocalDb().prepare(`
-      INSERT INTO project_snapshots (id, project_id, actor_name, content_json, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, projectId, actorName, JSON.stringify(content || {}), createdAt)
+      INSERT INTO project_snapshots (id, organization_id, project_id, actor_name, content_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, organizationId, projectId, actorName, JSON.stringify(content || {}), createdAt)
     const workspaceId = resolveWorkspaceIdByProject(projectId) || undefined
-    this.writeAudit('project.snapshot_created', actorName, { projectId, snapshotId: id }, workspaceId, projectId)
+    this.writeAudit('project.snapshot_created', actorName, { projectId, snapshotId: id }, organizationId, workspaceId, projectId)
     const row = getLocalDb().prepare(`SELECT * FROM project_snapshots WHERE id = ?`).get(id)
     return toSnapshot(row)
   }
@@ -353,12 +488,14 @@ export class WorkspaceService {
   ) {
     const id = `ce_${crypto.randomUUID()}`
     const createdAt = now()
+    const organizationId = resolveOrganizationIdByWorkspace(workspaceId)
     getLocalDb().prepare(`
       INSERT INTO collab_events (
-        id, workspace_id, project_id, actor_name, session_id, event_type, payload_json, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        id, organization_id, workspace_id, project_id, actor_name, session_id, event_type, payload_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id,
+      organizationId,
       workspaceId,
       options?.projectId || null,
       actorName,

@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from '../apps/backend/src/index'
+import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 describe('模型策略治理 API', () => {
   it('应支持策略创建、更新、模拟与执行记录查询', async () => {
+    const session = await createTestSession('policy-api')
     const createResp = await app.handle(
       new Request('http://localhost/api/models/policies', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           name: '测试策略',
           description: '仅允许 veo 与 runway',
@@ -30,7 +35,9 @@ describe('模型策略治理 API', () => {
 
     const policyId = createData.policy.id as string
 
-    const listResp = await app.handle(new Request('http://localhost/api/models/policies'))
+    const listResp = await app.handle(new Request('http://localhost/api/models/policies', {
+      headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
+    }))
     const listData = await listResp.json() as any
     expect(listResp.status).toBe(200)
     expect(listData.success).toBe(true)
@@ -39,7 +46,10 @@ describe('模型策略治理 API', () => {
     const patchResp = await app.handle(
       new Request(`http://localhost/api/models/policies/${policyId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           enabled: true,
           priority: 'cost',
@@ -56,7 +66,10 @@ describe('模型策略治理 API', () => {
     const simulateResp = await app.handle(
       new Request(`http://localhost/api/models/policies/${policyId}/simulate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           prompt: '写实风格商业广告镜头，8秒',
           budgetUsd: 0.9
@@ -71,7 +84,9 @@ describe('模型策略治理 API', () => {
     expect(Array.isArray(simulateData.decision.scoreBreakdown)).toBe(true)
 
     const execResp = await app.handle(
-      new Request(`http://localhost/api/models/policies/${policyId}/executions?limit=10&offset=0`)
+      new Request(`http://localhost/api/models/policies/${policyId}/executions?limit=10&offset=0`, {
+        headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
+      })
     )
     const execData = await execResp.json() as any
     expect(execResp.status).toBe(200)
@@ -85,7 +100,10 @@ describe('模型策略治理 API', () => {
     const invalidFallbackResp = await app.handle(
       new Request('http://localhost/api/models/policies', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           name: '非法回退策略',
           priority: 'quality',
@@ -100,7 +118,10 @@ describe('模型策略治理 API', () => {
     const cycleAToBResp = await app.handle(
       new Request('http://localhost/api/models/policies', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           name: '循环-A',
           priority: 'quality'
@@ -111,7 +132,10 @@ describe('模型策略治理 API', () => {
     const cycleBResp = await app.handle(
       new Request('http://localhost/api/models/policies', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           name: '循环-B',
           priority: 'quality',
@@ -125,7 +149,10 @@ describe('模型策略治理 API', () => {
     const cyclePatchResp = await app.handle(
       new Request(`http://localhost/api/models/policies/${cycleAData.policy.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           fallbackPolicyId: cycleBData.policy.id
         })

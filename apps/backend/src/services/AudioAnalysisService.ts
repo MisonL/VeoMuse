@@ -1,5 +1,7 @@
 // apps/backend/src/services/AudioAnalysisService.ts
 import { BaseAiService } from './BaseAiService';
+import type { ChannelRuntimeContext } from './ChannelConfigService';
+import { ChannelConfigService } from './ChannelConfigService';
 
 export interface AudioBeats {
   success?: boolean;
@@ -13,9 +15,10 @@ export class AudioAnalysisService extends BaseAiService {
   protected serviceName = 'AI-Audio-Analyzer';
   private static instance = new AudioAnalysisService();
 
-  static async analyze(audioUrl: string): Promise<AudioBeats> {
-    const apiUrl = process.env.AUDIO_ANALYSIS_API_URL;
-    const apiKey = process.env.AUDIO_ANALYSIS_API_KEY;
+  static async analyze(audioUrl: string, context?: ChannelRuntimeContext): Promise<AudioBeats> {
+    const channel = context?.organizationId ? ChannelConfigService.resolve('audioAnalysis', context) : null
+    const apiUrl = channel?.baseUrl || process.env.AUDIO_ANALYSIS_API_URL;
+    const apiKey = channel?.apiKey || process.env.AUDIO_ANALYSIS_API_KEY;
 
     if (!apiUrl || !apiKey) {
       return {

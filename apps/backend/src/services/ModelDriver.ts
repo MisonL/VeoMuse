@@ -18,6 +18,11 @@ export interface GenerateParams {
   };
 }
 
+export interface GenerateRuntimeContext {
+  organizationId?: string;
+  workspaceId?: string;
+}
+
 export interface GenerateResult {
   success: boolean;
   status: 'ok' | 'degraded' | 'not_implemented' | 'error';
@@ -30,5 +35,5 @@ export interface GenerateResult {
 export interface VideoModelDriver {
   id: string;
   name: string;
-  generate(params: GenerateParams): Promise<GenerateResult>;
+  generate(params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult>;
 }

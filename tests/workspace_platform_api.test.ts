@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from '../apps/backend/src/index'
 import { WorkspaceService } from '../apps/backend/src/services/WorkspaceService'
+import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 describe('协作平台化 API', () => {
   it('应支持邀请、接受邀请、在线态、快照与上传令牌', async () => {
+    const owner = await createTestSession('workspace-platform-owner')
+    const editor = await createTestSession('workspace-platform-editor')
     const createResp = await app.handle(
       new Request('http://localhost/api/workspaces', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           name: '协作空间 A',
           ownerName: 'Owner A'
@@ -24,10 +30,10 @@ describe('协作平台化 API', () => {
     const inviteResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/invites`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-workspace-actor': 'Owner A'
-        },
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           role: 'editor',
           expiresInHours: 12
@@ -43,7 +49,7 @@ describe('协作平台化 API', () => {
 
     const listInviteResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/invites`, {
-        headers: { 'x-workspace-actor': 'Owner A' }
+        headers: createAuthHeaders(owner.accessToken, { organizationId: owner.organizationId })
       })
     )
     const listInviteData = await listInviteResp.json() as any
@@ -53,7 +59,10 @@ describe('协作平台化 API', () => {
     const acceptResp = await app.handle(
       new Request(`http://localhost/api/workspaces/invites/${code}/accept`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(editor.accessToken, {
+          organizationId: editor.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           memberName: 'Editor B'
         })
@@ -68,7 +77,7 @@ describe('协作平台化 API', () => {
 
     const membersResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/members`, {
-        headers: { 'x-workspace-actor': 'Owner A' }
+        headers: createAuthHeaders(owner.accessToken, { organizationId: owner.organizationId })
       })
     )
     const membersData = await membersResp.json() as any
@@ -79,11 +88,11 @@ describe('协作平台化 API', () => {
     const presenceForbiddenResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/presence`)
     )
-    expect(presenceForbiddenResp.status).toBe(403)
+    expect(presenceForbiddenResp.status).toBe(401)
 
     const presenceResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/presence`, {
-        headers: { 'x-workspace-actor': 'Editor B' }
+        headers: createAuthHeaders(editor.accessToken, { organizationId: editor.organizationId })
       })
     )
     const presenceData = await presenceResp.json() as any
@@ -94,7 +103,10 @@ describe('协作平台化 API', () => {
     const snapshotResp = await app.handle(
       new Request(`http://localhost/api/projects/${projectId}/snapshots`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-workspace-actor': 'Owner A' },
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           content: {
             timelineVersion: 3,
@@ -110,7 +122,7 @@ describe('协作平台化 API', () => {
 
     const listSnapshotResp = await app.handle(
       new Request(`http://localhost/api/projects/${projectId}/snapshots?limit=10`, {
-        headers: { 'x-workspace-actor': 'Editor B' }
+        headers: createAuthHeaders(editor.accessToken, { organizationId: editor.organizationId })
       })
     )
     const listSnapshotData = await listSnapshotResp.json() as any
@@ -130,15 +142,15 @@ describe('协作平台化 API', () => {
         })
       })
     )
-    expect(uploadTokenForbiddenResp.status).toBe(403)
+    expect(uploadTokenForbiddenResp.status).toBe(401)
 
     const uploadTokenResp = await app.handle(
       new Request('http://localhost/api/storage/upload-token', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-workspace-actor': 'Editor B'
-        },
+        headers: createAuthHeaders(editor.accessToken, {
+          organizationId: editor.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           workspaceId,
           projectId,
@@ -158,7 +170,7 @@ describe('协作平台化 API', () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/octet-stream',
-          'x-workspace-actor': 'Editor B'
+          Authorization: `Bearer ${editor.accessToken}`
         },
         body: 'binary-content'
       })

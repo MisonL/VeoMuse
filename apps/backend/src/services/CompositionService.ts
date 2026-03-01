@@ -6,6 +6,63 @@ import type { TimelineData } from '@veomuse/shared';
 type ExportQuality = NonNullable<TimelineData['exportConfig']>['quality']
 
 export class CompositionService {
+  private static getBaseUploadsDir() {
+    return process.env.UPLOADS_PATH
+      ? path.resolve(process.env.UPLOADS_PATH)
+      : path.resolve(process.cwd(), '../../uploads');
+  }
+
+  private static getAllowedRemoteHosts() {
+    return String(process.env.COMPOSITION_ALLOWED_REMOTE_HOSTS || '')
+      .split(',')
+      .map(item => item.trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  private static isPathWithin(base: string, target: string) {
+    const relative = path.relative(base, target);
+    return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+  }
+
+  private static validateInputSource(candidate: string): string {
+    const value = String(candidate || '').trim();
+    if (!value) throw new Error('Empty clip source');
+    if (value.includes('\u0000')) throw new Error('Invalid clip source');
+
+    const lower = value.toLowerCase();
+    if (
+      lower.startsWith('file:')
+      || lower.startsWith('concat:')
+      || lower.startsWith('subfile:')
+      || lower.startsWith('pipe:')
+      || lower.startsWith('tcp:')
+      || lower.startsWith('udp:')
+    ) {
+      throw new Error(`Forbidden clip source protocol: ${value}`);
+    }
+
+    if (/^https?:\/\//i.test(value)) {
+      let host = '';
+      try {
+        host = new URL(value).hostname.trim().toLowerCase();
+      } catch {
+        throw new Error(`Invalid remote clip source: ${value}`);
+      }
+      const allowList = this.getAllowedRemoteHosts();
+      if (!allowList.includes(host)) {
+        throw new Error(`Remote host is not allowed: ${host}`);
+      }
+      return value;
+    }
+
+    const baseUploadsDir = this.getBaseUploadsDir();
+    const resolvedPath = path.resolve(value);
+    if (!this.isPathWithin(baseUploadsDir, resolvedPath)) {
+      throw new Error(`Clip source must stay inside uploads directory: ${value}`);
+    }
+    return resolvedPath;
+  }
+
   static resolveOutputOptions(quality?: ExportQuality) {
     if (quality === 'spatial-vr') {
       return [
@@ -43,9 +100,7 @@ export class CompositionService {
     const outputFileName = `render_${isSpatial ? 'SPATIAL_VR_' : is4kHdr ? '4K_HDR_' : ''}${timestamp}.mp4`;
     
     // 物理路径解耦：优先从环境变量读取，若无则使用绝对路径
-    const baseUploadsDir = process.env.UPLOADS_PATH
-      ? path.resolve(process.env.UPLOADS_PATH)
-      : path.resolve(process.cwd(), '../../uploads');
+    const baseUploadsDir = this.getBaseUploadsDir();
     
     const outputDir = path.join(baseUploadsDir, 'generated');
     
@@ -57,15 +112,24 @@ export class CompositionService {
     return new Promise((resolve, reject) => {
       try {
         const command = ffmpeg();
-        
+        const sources: string[] = [];
+
         timelineData.tracks.forEach(track => {
           if (track.type !== 'text' && track.type !== 'mask') {
             track.clips.forEach(clip => {
               const candidate = (clip as any)?.data?.exportSrc || clip.src
-              if (candidate) command.input(candidate)
+              if (!candidate) return
+              const safeSource = this.validateInputSource(candidate)
+              command.input(safeSource)
+              sources.push(safeSource)
             });
           }
         });
+
+        if (!sources.length) {
+          reject(new Error('未找到可用的安全输入源，请先完成素材导入'))
+          return
+        }
 
         const outputOptions = this.resolveOutputOptions(config)
         if (outputOptions.length > 0) {

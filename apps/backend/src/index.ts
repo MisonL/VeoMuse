@@ -15,6 +15,7 @@ import { SoraDriver } from './services/drivers/SoraDriver'
 import { LumaDriver } from './services/drivers/LumaDriver'
 import { RunwayDriver } from './services/drivers/RunwayDriver'
 import { PikaDriver } from './services/drivers/PikaDriver'
+import { OpenAiCompatibleDriver } from './services/drivers/OpenAiCompatibleDriver'
 import { ModelRouter } from './services/ModelRouter'
 import { AiDirectorService } from './services/AiDirectorService'
 import { InpaintService } from './services/InpaintService'
@@ -35,7 +36,10 @@ import { CreativePipelineService } from './services/CreativePipelineService'
 import { WorkspaceService } from './services/WorkspaceService'
 import { CollaborationService } from './services/CollaborationService'
 import { LocalStorageProvider } from './services/storage/LocalStorageProvider'
-import type { WorkspaceRole } from '@veomuse/shared'
+import { AuthService } from './services/AuthService'
+import { OrganizationService } from './services/OrganizationService'
+import { ChannelConfigService } from './services/ChannelConfigService'
+import type { WorkspaceRole, OrganizationRole } from '@veomuse/shared'
 
 const ensureDriversRegistered = (() => {
   let initialized = false
@@ -49,6 +53,7 @@ const ensureDriversRegistered = (() => {
     VideoOrchestrator.registerDriver(new LumaDriver())
     VideoOrchestrator.registerDriver(new RunwayDriver())
     VideoOrchestrator.registerDriver(new PikaDriver())
+    VideoOrchestrator.registerDriver(new OpenAiCompatibleDriver())
     initialized = true
   }
 })()
@@ -75,15 +80,67 @@ const sanitizeImportFileName = (fileName: string) => {
 }
 const storageProvider = new LocalStorageProvider()
 
+const isDevRuntime = () => {
+  const nodeEnv = String(process.env.NODE_ENV || '').toLowerCase()
+  return nodeEnv === 'development' || nodeEnv === 'test'
+}
+
 const authorizeAdmin = (request: Request, set: { status?: number | string }) => {
   const token = process.env.ADMIN_TOKEN
-  if (!token) return true
+  if (!token) {
+    if (isDevRuntime()) return true
+    set.status = 503
+    return false
+  }
 
   const provided = request.headers.get('x-admin-token')
   if (provided === token) return true
 
   set.status = 401
   return false
+}
+
+const getAuthenticatedUser = (request: Request) => {
+  const authorization = request.headers.get('authorization') || ''
+  const token = authorization.toLowerCase().startsWith('bearer ')
+    ? authorization.slice(7).trim()
+    : ''
+  if (!token) return null
+  return AuthService.verifyAccessToken(token)
+}
+
+const requireAuthenticatedUser = (request: Request, set: { status?: number | string }) => {
+  const user = getAuthenticatedUser(request)
+  if (!user) {
+    set.status = 401
+    return null
+  }
+  return user
+}
+
+const ORGANIZATION_ROLE_ORDER: Record<OrganizationRole, number> = {
+  member: 1,
+  admin: 2,
+  owner: 3
+}
+
+const authorizeOrganizationRole = (
+  organizationId: string,
+  request: Request,
+  set: { status?: number | string },
+  requiredRole: OrganizationRole
+) => {
+  const user = requireAuthenticatedUser(request, set)
+  if (!user) return null
+  const actualRole = OrganizationService.getMemberRole(organizationId, user.id)
+  if (!actualRole || ORGANIZATION_ROLE_ORDER[actualRole] < ORGANIZATION_ROLE_ORDER[requiredRole]) {
+    set.status = 403
+    return null
+  }
+  return {
+    user,
+    role: actualRole
+  }
 }
 
 const WORKSPACE_ROLE_ORDER: Record<WorkspaceRole, number> = {
@@ -98,27 +155,116 @@ const authorizeWorkspaceRole = (
   set: { status?: number | string },
   requiredRole: WorkspaceRole
 ) => {
-  const actorName = request.headers.get('x-workspace-actor')?.trim()
-  if (!actorName) {
+  const user = requireAuthenticatedUser(request, set)
+  if (!user) return null
+
+  const member = WorkspaceService.getMemberByUserId(workspaceId, user.id)
+  if (!member) {
     set.status = 403
     return null
   }
 
-  const actualRole = WorkspaceService.getMemberRole(workspaceId, actorName)
-  if (!actualRole) {
-    set.status = 403
-    return null
-  }
+  const actualRole = member.role
   if (WORKSPACE_ROLE_ORDER[actualRole] < WORKSPACE_ROLE_ORDER[requiredRole]) {
     set.status = 403
     return null
   }
 
   return {
-    actorName,
-    role: actualRole
+    user,
+    actorName: member.name,
+    role: actualRole,
+    member
   }
 }
+
+const resolveOrganizationContext = (
+  request: Request,
+  set: { status?: number | string },
+  requiredRole: OrganizationRole = 'member'
+) => {
+  const user = requireAuthenticatedUser(request, set)
+  if (!user) return null
+  const organizations = OrganizationService.listOrganizationsForUser(user.id)
+  if (!organizations.length) {
+    set.status = 403
+    return null
+  }
+  const headerOrganizationId = request.headers.get('x-organization-id')?.trim()
+  const matchedOrganizationId = headerOrganizationId
+    ? organizations.find(item => item.id === headerOrganizationId)?.id
+    : organizations[0]?.id
+  if (!matchedOrganizationId) {
+    set.status = 403
+    return null
+  }
+  const role = OrganizationService.getMemberRole(matchedOrganizationId, user.id)
+  if (!role || ORGANIZATION_ROLE_ORDER[role] < ORGANIZATION_ROLE_ORDER[requiredRole]) {
+    set.status = 403
+    return null
+  }
+  return {
+    user,
+    organizationId: matchedOrganizationId,
+    role
+  }
+}
+
+const resolveRuntimeContext = (
+  request: Request,
+  set: { status?: number | string },
+  workspaceId?: string
+) => {
+  const user = requireAuthenticatedUser(request, set)
+  if (!user) return null
+  const headerWorkspaceId = request.headers.get('x-workspace-id')?.trim()
+  const finalWorkspaceId = workspaceId?.trim() || headerWorkspaceId || undefined
+
+  if (finalWorkspaceId) {
+    const workspace = WorkspaceService.getWorkspace(finalWorkspaceId)
+    if (!workspace) {
+      set.status = 404
+      return null
+    }
+    const orgRole = OrganizationService.getMemberRole(workspace.organizationId, user.id)
+    if (!orgRole) {
+      set.status = 403
+      return null
+    }
+    const workspaceMember = WorkspaceService.getMemberByUserId(finalWorkspaceId, user.id)
+    if (!workspaceMember) {
+      set.status = 403
+      return null
+    }
+    return {
+      organizationId: workspace.organizationId,
+      workspaceId: finalWorkspaceId,
+      actorName: workspaceMember.name,
+      user
+    }
+  }
+
+  const organizationContext = resolveOrganizationContext(request, set, 'member')
+  if (!organizationContext) return null
+
+  return {
+    organizationId: organizationContext.organizationId,
+    workspaceId: undefined,
+    actorName: organizationContext.user.email.split('@')[0] || 'member',
+    user: organizationContext.user
+  }
+}
+
+const isGeminiNotConfiguredError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error || '')
+  return message.includes('GEMINI_API_KEYS') || message.includes('未配置 Gemini API 密钥')
+}
+
+const buildGeminiNotConfiguredResponse = () => ({
+  success: false,
+  status: 'not_implemented',
+  message: 'Gemini provider 未配置 (GEMINI_API_KEYS)'
+})
 
 const authorizeProjectRole = (
   projectId: string,
@@ -142,7 +288,33 @@ const authorizeProjectRole = (
   }
 }
 
-const getCapabilities = () => {
+const getCapabilities = (request?: Request, workspaceId?: string) => {
+  if (request) {
+    const runtimeContext = resolveRuntimeContext(request, {}, workspaceId)
+    const capabilities = runtimeContext
+      ? ChannelConfigService.getCapabilities({
+        organizationId: runtimeContext.organizationId,
+        workspaceId: runtimeContext.workspaceId
+      })
+      : null
+    const hasConfigured = capabilities
+      ? (Object.values(capabilities.models).some(Boolean) || Object.values(capabilities.services).some(Boolean))
+      : false
+    if (capabilities && hasConfigured) {
+      return {
+        models: capabilities.models,
+        services: {
+          ...capabilities.services,
+          marketplace: true,
+          creativePipeline: true,
+          workspace: true,
+          collaboration: true,
+          storageProvider: storageProvider.type
+        },
+        timestamp: new Date().toISOString()
+      }
+    }
+  }
   const configured = (key?: string) => Boolean(key && key.trim().length > 0)
 
   return {
@@ -152,7 +324,12 @@ const getCapabilities = () => {
       'sora-preview': configured(process.env.SORA_API_URL) && configured(process.env.SORA_API_KEY),
       'luma-dream': configured(process.env.LUMA_API_URL) && configured(process.env.LUMA_API_KEY),
       'runway-gen3': configured(process.env.RUNWAY_API_URL) && configured(process.env.RUNWAY_API_KEY),
-      'pika-1.5': configured(process.env.PIKA_API_URL) && configured(process.env.PIKA_API_KEY)
+      'pika-1.5': configured(process.env.PIKA_API_URL) && configured(process.env.PIKA_API_KEY),
+      'openai-compatible': (
+        configured(process.env.OPENAI_COMPATIBLE_BASE_URL || process.env.OPENAI_BASE_URL)
+        && configured(process.env.OPENAI_COMPATIBLE_API_KEY || process.env.OPENAI_API_KEY)
+        && configured(process.env.OPENAI_COMPATIBLE_MODEL || process.env.OPENAI_MODEL)
+      )
     },
     services: {
       tts: configured(process.env.TTS_API_URL) && configured(process.env.TTS_API_KEY),
@@ -184,9 +361,34 @@ const hasRenderableSources = (timelineData: any) => {
   ))
 }
 
+const WS_AUTH_PROTOCOL_PREFIX = 'veomuse-auth.'
+
+const resolveWsAccessToken = (headers: Record<string, unknown>) => {
+  const protocolHeader = String(
+    headers['sec-websocket-protocol']
+    || headers['Sec-WebSocket-Protocol']
+    || ''
+  )
+  const fromProtocol = protocolHeader
+    .split(',')
+    .map(token => token.trim())
+    .find(token => token.startsWith(WS_AUTH_PROTOCOL_PREFIX))
+  if (fromProtocol) {
+    const token = fromProtocol.slice(WS_AUTH_PROTOCOL_PREFIX.length).trim()
+    if (token) return token
+  }
+  const authorizationHeader = String(headers.authorization || headers.Authorization || '').trim()
+  if (authorizationHeader.toLowerCase().startsWith('bearer ')) {
+    const token = authorizationHeader.slice(7).trim()
+    if (token) return token
+  }
+  return ''
+}
+
 export const createApp = () => {
   ensureDriversRegistered()
   ModelMarketplaceService.ensureInitialized()
+  OrganizationService.ensureDefaultOrganization()
 
   return new Elysia()
     .use(cors())
@@ -206,7 +408,265 @@ export const createApp = () => {
     })
     .get('/', () => 'VeoMuse Backend Active')
     .get('/api/health', () => ({ status: 'ok' }))
-    .get('/api/capabilities', () => getCapabilities())
+    .get('/api/capabilities', ({ request, query }) => {
+      const workspaceId = query.workspaceId?.trim() || undefined
+      return getCapabilities(request, workspaceId)
+    }, {
+      query: t.Object({
+        workspaceId: t.Optional(t.String())
+      })
+    })
+    .post('/api/auth/register', async ({ body, set }) => {
+      try {
+        const user = await AuthService.register(body.email, body.password)
+        const organization = OrganizationService.createOrganization(body.organizationName || `${user.email.split('@')[0]} 的组织`, user.id)
+        const session = AuthService.createSession(user)
+        return {
+          success: true,
+          session,
+          organizations: [organization]
+        }
+      } catch (error: any) {
+        set.status = 400
+        return { success: false, status: 'error', error: error?.message || '注册失败' }
+      }
+    }, {
+      body: t.Object({
+        email: t.String(),
+        password: t.String(),
+        organizationName: t.Optional(t.String())
+      })
+    })
+    .post('/api/auth/login', async ({ body, set }) => {
+      try {
+        const user = await AuthService.login(body.email, body.password)
+        const session = AuthService.createSession(user)
+        const organizations = OrganizationService.listOrganizationsForUser(user.id)
+        return { success: true, session, organizations }
+      } catch (error: any) {
+        set.status = 401
+        return { success: false, status: 'error', error: error?.message || '登录失败' }
+      }
+    }, {
+      body: t.Object({
+        email: t.String(),
+        password: t.String()
+      })
+    })
+    .post('/api/auth/refresh', ({ body, set }) => {
+      try {
+        const session = AuthService.rotateSession(body.refreshToken)
+        const organizations = OrganizationService.listOrganizationsForUser(session.user.id)
+        return { success: true, session, organizations }
+      } catch (error: any) {
+        set.status = 401
+        return { success: false, status: 'error', error: error?.message || '刷新会话失败' }
+      }
+    }, {
+      body: t.Object({
+        refreshToken: t.String()
+      })
+    })
+    .post('/api/auth/logout', ({ body }) => {
+      AuthService.revokeRefreshToken(body.refreshToken || '')
+      return { success: true }
+    }, {
+      body: t.Object({
+        refreshToken: t.Optional(t.String())
+      })
+    })
+    .get('/api/auth/me', ({ request, set }) => {
+      const user = requireAuthenticatedUser(request, set)
+      if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+      return {
+        success: true,
+        user,
+        organizations: OrganizationService.listOrganizationsForUser(user.id)
+      }
+    })
+    .post('/api/organizations', ({ request, body, set }) => {
+      const user = requireAuthenticatedUser(request, set)
+      if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+      try {
+        const organization = OrganizationService.createOrganization(body.name, user.id)
+        return { success: true, organization }
+      } catch (error: any) {
+        set.status = 400
+        return { success: false, status: 'error', error: error?.message || '创建组织失败' }
+      }
+    }, {
+      body: t.Object({
+        name: t.String()
+      })
+    })
+    .get('/api/organizations', ({ request, set }) => {
+      const user = requireAuthenticatedUser(request, set)
+      if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+      return {
+        success: true,
+        organizations: OrganizationService.listOrganizationsForUser(user.id)
+      }
+    })
+    .get('/api/organizations/:id', ({ params, request, set }) => {
+      const authorized = authorizeOrganizationRole(params.id, request, set, 'member')
+      if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+      const organization = OrganizationService.getOrganization(params.id)
+      if (!organization) {
+        set.status = 404
+        return { success: false, status: 'error', error: 'Organization not found' }
+      }
+      return { success: true, organization, role: authorized.role }
+    }, {
+      params: t.Object({ id: t.String() })
+    })
+    .get('/api/organizations/:id/members', ({ params, request, set }) => {
+      const authorized = authorizeOrganizationRole(params.id, request, set, 'member')
+      if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+      return {
+        success: true,
+        members: OrganizationService.listMembers(params.id)
+      }
+    }, {
+      params: t.Object({ id: t.String() })
+    })
+    .post('/api/organizations/:id/members', ({ params, request, body, set }) => {
+      const authorized = authorizeOrganizationRole(params.id, request, set, 'admin')
+      if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+      try {
+        const member = OrganizationService.addMemberByEmail(params.id, body.email, body.role)
+        return { success: true, member }
+      } catch (error: any) {
+        set.status = 400
+        return { success: false, status: 'error', error: error?.message || '添加成员失败' }
+      }
+    }, {
+      params: t.Object({ id: t.String() }),
+      body: t.Object({
+        email: t.String(),
+        role: t.Union([t.Literal('owner'), t.Literal('admin'), t.Literal('member')])
+      })
+    })
+    .get('/api/channel/providers', () => ({
+      success: true,
+      providers: ChannelConfigService.listProviders()
+    }))
+    .post('/api/channels/test', async ({ request, body, set }) => {
+      const organizationContext = resolveOrganizationContext(request, set, 'member')
+      if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+      const requestedWorkspaceId = body.workspaceId?.trim() || ''
+      let resolvedWorkspaceId: string | undefined
+      if (requestedWorkspaceId) {
+        const workspace = WorkspaceService.getWorkspace(requestedWorkspaceId)
+        if (!workspace || workspace.organizationId !== organizationContext.organizationId) {
+          set.status = 404
+          return { success: false, status: 'error', error: 'Workspace not found' }
+        }
+        const authorized = authorizeWorkspaceRole(requestedWorkspaceId, request, set, 'viewer')
+        if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+        resolvedWorkspaceId = requestedWorkspaceId
+      }
+      const tested = await ChannelConfigService.testConfig({
+        ...body,
+        organizationId: organizationContext.organizationId,
+        workspaceId: resolvedWorkspaceId
+      })
+      return tested
+    }, {
+      body: t.Object({
+        providerId: t.String(),
+        baseUrl: t.Optional(t.String()),
+        apiKey: t.Optional(t.String()),
+        workspaceId: t.Optional(t.String()),
+        extra: t.Optional(t.Record(t.String(), t.Any()))
+      })
+    })
+    .get('/api/organizations/:id/channels', ({ params, request, set }) => {
+      const authorized = authorizeOrganizationRole(params.id, request, set, 'member')
+      if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+      return {
+        success: true,
+        configs: ChannelConfigService.listConfigs(params.id),
+        capabilities: getCapabilities(request)
+      }
+    }, {
+      params: t.Object({ id: t.String() })
+    })
+    .put('/api/organizations/:id/channels/:providerId', ({ params, request, body, set }) => {
+      const authorized = authorizeOrganizationRole(params.id, request, set, 'admin')
+      if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+      try {
+        const config = ChannelConfigService.upsertConfig({
+          organizationId: params.id,
+          providerId: params.providerId,
+          baseUrl: body.baseUrl,
+          apiKey: body.apiKey,
+          enabled: body.enabled,
+          extra: body.extra,
+          actorUserId: authorized.user.id
+        })
+        return { success: true, config }
+      } catch (error: any) {
+        set.status = 400
+        return { success: false, status: 'error', error: error?.message || '渠道配置保存失败' }
+      }
+    }, {
+      params: t.Object({ id: t.String(), providerId: t.String() }),
+      body: t.Object({
+        baseUrl: t.Optional(t.String()),
+        apiKey: t.Optional(t.String()),
+        enabled: t.Optional(t.Boolean()),
+        extra: t.Optional(t.Record(t.String(), t.Any()))
+      })
+    })
+    .get('/api/workspaces/:id/channels', ({ params, request, set }) => {
+      const workspace = WorkspaceService.getWorkspace(params.id)
+      if (!workspace) {
+        set.status = 404
+        return { success: false, status: 'error', error: 'Workspace not found' }
+      }
+      const authorized = authorizeOrganizationRole(workspace.organizationId, request, set, 'member')
+      if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+      return {
+        success: true,
+        configs: ChannelConfigService.listConfigs(workspace.organizationId, workspace.id),
+        capabilities: getCapabilities(request, workspace.id)
+      }
+    }, {
+      params: t.Object({ id: t.String() })
+    })
+    .put('/api/workspaces/:id/channels/:providerId', ({ params, request, body, set }) => {
+      const workspace = WorkspaceService.getWorkspace(params.id)
+      if (!workspace) {
+        set.status = 404
+        return { success: false, status: 'error', error: 'Workspace not found' }
+      }
+      const authorized = authorizeOrganizationRole(workspace.organizationId, request, set, 'admin')
+      if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+      try {
+        const config = ChannelConfigService.upsertConfig({
+          organizationId: workspace.organizationId,
+          workspaceId: workspace.id,
+          providerId: params.providerId,
+          baseUrl: body.baseUrl,
+          apiKey: body.apiKey,
+          enabled: body.enabled,
+          extra: body.extra,
+          actorUserId: authorized.user.id
+        })
+        return { success: true, config }
+      } catch (error: any) {
+        set.status = 400
+        return { success: false, status: 'error', error: error?.message || '渠道配置保存失败' }
+      }
+    }, {
+      params: t.Object({ id: t.String(), providerId: t.String() }),
+      body: t.Object({
+        baseUrl: t.Optional(t.String()),
+        apiKey: t.Optional(t.String()),
+        enabled: t.Optional(t.Boolean()),
+        extra: t.Optional(t.Record(t.String(), t.Any()))
+      })
+    })
     .get('/api/admin/metrics', ({ request, set }) => {
       if (!authorizeAdmin(request, set)) {
         return { success: false, status: 'error', error: 'Unauthorized' }
@@ -300,15 +760,21 @@ export const createApp = () => {
       success: true,
       models: ModelMarketplaceService.listMarketplace()
     }))
-    .get('/api/models/policies', () => ({
-      success: true,
-      policies: ModelMarketplaceService.listPolicies()
-    }))
-    .post('/api/models/policies', ({ body, set }) => {
+    .get('/api/models/policies', ({ request, set }) => {
+      const organizationContext = resolveOrganizationContext(request, set, 'member')
+      if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+      return {
+        success: true,
+        policies: ModelMarketplaceService.listPolicies(organizationContext.organizationId)
+      }
+    })
+    .post('/api/models/policies', ({ body, request, set }) => {
+      const organizationContext = resolveOrganizationContext(request, set, 'admin')
+      if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
       try {
         return {
           success: true,
-          policy: ModelMarketplaceService.createPolicy(body)
+          policy: ModelMarketplaceService.createPolicy(organizationContext.organizationId, body)
         }
       } catch (error: any) {
         set.status = 400
@@ -335,9 +801,11 @@ export const createApp = () => {
         fallbackPolicyId: t.Optional(t.String())
       })
     })
-    .patch('/api/models/policies/:id', ({ params, body, set }) => {
+    .patch('/api/models/policies/:id', ({ params, body, request, set }) => {
+      const organizationContext = resolveOrganizationContext(request, set, 'admin')
+      if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
       try {
-        const policy = ModelMarketplaceService.updatePolicy(params.id, body)
+        const policy = ModelMarketplaceService.updatePolicy(organizationContext.organizationId, params.id, body)
         if (!policy) {
           set.status = 404
           return { success: false, status: 'error', error: 'Routing policy not found' }
@@ -369,15 +837,17 @@ export const createApp = () => {
         fallbackPolicyId: t.Optional(t.String())
       })
     })
-    .post('/api/models/policies/:id/simulate', ({ params, body, set }) => {
-      const policy = ModelMarketplaceService.getPolicy(params.id)
+    .post('/api/models/policies/:id/simulate', ({ params, body, request, set }) => {
+      const organizationContext = resolveOrganizationContext(request, set, 'member')
+      if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+      const policy = ModelMarketplaceService.getPolicy(params.id, organizationContext.organizationId)
       if (!policy) {
         set.status = 404
         return { success: false, status: 'error', error: 'Routing policy not found' }
       }
       return {
         success: true,
-        decision: ModelMarketplaceService.simulateDecision(body, params.id)
+        decision: ModelMarketplaceService.simulateDecision(body, params.id, organizationContext.organizationId)
       }
     }, {
       params: t.Object({ id: t.String() }),
@@ -387,8 +857,10 @@ export const createApp = () => {
         priority: t.Optional(t.Union([t.Literal('quality'), t.Literal('speed'), t.Literal('cost')]))
       })
     })
-    .get('/api/models/policies/:id/executions', ({ params, query, set }) => {
-      const policy = ModelMarketplaceService.getPolicy(params.id)
+    .get('/api/models/policies/:id/executions', ({ params, query, request, set }) => {
+      const organizationContext = resolveOrganizationContext(request, set, 'member')
+      if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+      const policy = ModelMarketplaceService.getPolicy(params.id, organizationContext.organizationId)
       if (!policy) {
         set.status = 404
         return { success: false, status: 'error', error: 'Routing policy not found' }
@@ -397,7 +869,7 @@ export const createApp = () => {
       const offset = Number.parseInt(query.offset || '0', 10)
       return {
         success: true,
-        ...ModelMarketplaceService.listPolicyExecutions(params.id, { limit, offset })
+        ...ModelMarketplaceService.listPolicyExecutions(organizationContext.organizationId, params.id, { limit, offset })
       }
     }, {
       params: t.Object({ id: t.String() }),
@@ -416,10 +888,14 @@ export const createApp = () => {
     }, {
       params: t.Object({ id: t.String() })
     })
-    .post('/api/models/policy/simulate', ({ body }) => ({
-      success: true,
-      decision: ModelMarketplaceService.simulateDecision(body)
-    }), {
+    .post('/api/models/policy/simulate', ({ body, request, set }) => {
+      const organizationContext = resolveOrganizationContext(request, set, 'member')
+      if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+      return {
+        success: true,
+        decision: ModelMarketplaceService.simulateDecision(body, undefined, organizationContext.organizationId)
+      }
+    }, {
       body: t.Object({
         prompt: t.String(),
         budgetUsd: t.Optional(t.Number()),
@@ -428,7 +904,11 @@ export const createApp = () => {
     })
     .post('/api/models/recommend', async ({ body }) => await ModelRouter.recommend(body.prompt), { body: t.Object({ prompt: t.String() }) })
 
-    .post('/api/video/generate', async ({ body }) => {
+    .post('/api/video/generate', async ({ body, request, set }) => {
+      const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+      if (!runtimeContext) {
+        return { success: false, status: 'error', error: 'Forbidden' }
+      }
       const normalizedSyncLip = body.syncLip ?? body.sync_lip
       return await VideoOrchestrator.generate(body.modelId || 'veo-3.1', {
         text: body.text,
@@ -441,7 +921,7 @@ export const createApp = () => {
           worldLink: body.worldLink,
           worldId: body.worldId
         }
-      })
+      }, runtimeContext)
     }, {
       body: t.Object({
         text: t.String(),
@@ -453,43 +933,145 @@ export const createApp = () => {
         syncLip: t.Optional(t.Boolean()),
         sync_lip: t.Optional(t.Boolean()),
         worldLink: t.Optional(t.Boolean()),
-        worldId: t.Optional(t.String())
+        worldId: t.Optional(t.String()),
+        workspaceId: t.Optional(t.String())
       })
     })
 
     .group('/api/ai', (group) => group
-      .post('/alchemy/style-transfer', async ({ body }) => await StyleTransferService.transfer(body), {
+      .post('/alchemy/style-transfer', async ({ body, request, set }) => {
+        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+        if (!runtimeContext) return { success: false, status: 'error', error: 'Forbidden' }
+        return await StyleTransferService.transfer(body, runtimeContext)
+      }, {
         body: t.Object({
           clipId: t.String(),
           style: t.String(),
-          referenceModel: t.Optional(t.Union([t.Literal('luma-dream'), t.Literal('kling-v1'), t.Literal('veo-3.1')]))
+          referenceModel: t.Optional(t.Union([t.Literal('luma-dream'), t.Literal('kling-v1'), t.Literal('veo-3.1')])),
+          workspaceId: t.Optional(t.String())
         })
       })
-      .post('/enhance', async ({ body }) => await PromptEnhanceService.enhance(body.prompt), { body: t.Object({ prompt: t.String() }) })
-      .post('/translate', async ({ body }) => await TranslationService.translate(body.text, body.targetLang), { body: t.Object({ text: t.String(), targetLang: t.String() }) })
-      .post('/director/analyze', async ({ body }) => await AiDirectorService.analyzeScript(body.script), { body: t.Object({ script: t.String() }) })
-      .post('/suggest-cuts', async ({ body }) => await AiClipService.suggestCuts(body.description, body.duration), { body: t.Object({ description: t.String(), duration: t.Number() }) })
-      .post('/tts', async ({ body }) => await TtsService.synthesize(body.text), { body: t.Object({ text: t.String() }) })
-      .post('/voice-morph', async ({ body }) => await VoiceMorphService.morph(body.audioUrl, body.targetVoiceId), { body: t.Object({ audioUrl: t.String(), targetVoiceId: t.String() }) })
-      .post('/music-advice', async ({ body }) => await MusicAdviceService.getAdvice(body.description), { body: t.Object({ description: t.String() }) })
-      .post('/repair', async ({ body }) => await InpaintService.getRepairAdvice(body.description), { body: t.Object({ description: t.String() }) })
-      .post('/analyze-audio', async ({ body }) => await AudioAnalysisService.analyze(body.audioUrl), { body: t.Object({ audioUrl: t.String() }) })
-      .post('/spatial/render', async ({ body }) => await SpatialRenderService.reconstruct(body.clipId, body.quality || 'ultra'), { body: t.Object({ clipId: t.String(), quality: t.Optional(t.String()) }) })
-      .post('/vfx/apply', async ({ body }) => await VfxService.applyVfx(body), { body: t.Object({ clipId: t.String(), vfxType: t.String(), intensity: t.Optional(t.Number()) }) })
-      .post('/sync-lip', async ({ body }) => await LipSyncService.sync(body.videoUrl, body.audioUrl, body.precision || 'high'), { body: t.Object({ videoUrl: t.String(), audioUrl: t.String(), precision: t.Optional(t.String()) }) })
-      .post('/relighting/apply', async ({ body }) => await RelightingService.applyRelighting(body.clipId, body.style), { body: t.Object({ clipId: t.String(), style: t.String() }) })
-      .post('/creative/run', ({ body }) => ({
-        success: true,
-        run: CreativePipelineService.createRun(body.script, body.style || 'cinematic', body.context)
-      }), {
+      .post('/enhance', async ({ body, request, set }) => {
+        const user = requireAuthenticatedUser(request, set)
+        if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+        try {
+          return await PromptEnhanceService.enhance(body.prompt)
+        } catch (error) {
+          if (isGeminiNotConfiguredError(error)) return buildGeminiNotConfiguredResponse()
+          throw error
+        }
+      }, { body: t.Object({ prompt: t.String() }) })
+      .post('/translate', async ({ body, request, set }) => {
+        const user = requireAuthenticatedUser(request, set)
+        if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+        try {
+          return await TranslationService.translate(body.text, body.targetLang)
+        } catch (error) {
+          if (isGeminiNotConfiguredError(error)) return buildGeminiNotConfiguredResponse()
+          throw error
+        }
+      }, { body: t.Object({ text: t.String(), targetLang: t.String() }) })
+      .post('/director/analyze', async ({ body, request, set }) => {
+        const user = requireAuthenticatedUser(request, set)
+        if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+        return await AiDirectorService.analyzeScript(body.script)
+      }, { body: t.Object({ script: t.String() }) })
+      .post('/suggest-cuts', async ({ body, request, set }) => {
+        const user = requireAuthenticatedUser(request, set)
+        if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+        return await AiClipService.suggestCuts(body.description, body.duration)
+      }, { body: t.Object({ description: t.String(), duration: t.Number() }) })
+      .post('/tts', async ({ body, request, set }) => {
+        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+        if (!runtimeContext) return { success: false, status: 'error', error: 'Forbidden' }
+        return await TtsService.synthesize(body.text, runtimeContext)
+      }, {
+        body: t.Object({ text: t.String(), workspaceId: t.Optional(t.String()) })
+      })
+      .post('/voice-morph', async ({ body, request, set }) => {
+        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+        if (!runtimeContext) return { success: false, status: 'error', error: 'Forbidden' }
+        return await VoiceMorphService.morph(body.audioUrl, body.targetVoiceId, runtimeContext)
+      }, {
+        body: t.Object({ audioUrl: t.String(), targetVoiceId: t.String(), workspaceId: t.Optional(t.String()) })
+      })
+      .post('/music-advice', async ({ body, request, set }) => {
+        const user = requireAuthenticatedUser(request, set)
+        if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+        try {
+          return await MusicAdviceService.getAdvice(body.description)
+        } catch (error) {
+          if (isGeminiNotConfiguredError(error)) return buildGeminiNotConfiguredResponse()
+          throw error
+        }
+      }, { body: t.Object({ description: t.String() }) })
+      .post('/repair', async ({ body, request, set }) => {
+        const user = requireAuthenticatedUser(request, set)
+        if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+        try {
+          return await InpaintService.getRepairAdvice(body.description)
+        } catch (error) {
+          if (isGeminiNotConfiguredError(error)) return buildGeminiNotConfiguredResponse()
+          throw error
+        }
+      }, { body: t.Object({ description: t.String() }) })
+      .post('/analyze-audio', async ({ body, request, set }) => {
+        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+        if (!runtimeContext) return { success: false, status: 'error', error: 'Forbidden' }
+        return await AudioAnalysisService.analyze(body.audioUrl, runtimeContext)
+      }, {
+        body: t.Object({ audioUrl: t.String(), workspaceId: t.Optional(t.String()) })
+      })
+      .post('/spatial/render', async ({ body, request, set }) => {
+        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+        if (!runtimeContext) return { success: false, status: 'error', error: 'Forbidden' }
+        return await SpatialRenderService.reconstruct(body.clipId, body.quality || 'ultra', runtimeContext)
+      }, {
+        body: t.Object({ clipId: t.String(), quality: t.Optional(t.String()), workspaceId: t.Optional(t.String()) })
+      })
+      .post('/vfx/apply', async ({ body, request, set }) => {
+        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+        if (!runtimeContext) return { success: false, status: 'error', error: 'Forbidden' }
+        return await VfxService.applyVfx(body, runtimeContext)
+      }, {
+        body: t.Object({ clipId: t.String(), vfxType: t.String(), intensity: t.Optional(t.Number()), workspaceId: t.Optional(t.String()) })
+      })
+      .post('/sync-lip', async ({ body, request, set }) => {
+        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+        if (!runtimeContext) return { success: false, status: 'error', error: 'Forbidden' }
+        return await LipSyncService.sync(body.videoUrl, body.audioUrl, body.precision || 'high', runtimeContext)
+      }, {
+        body: t.Object({ videoUrl: t.String(), audioUrl: t.String(), precision: t.Optional(t.String()), workspaceId: t.Optional(t.String()) })
+      })
+      .post('/relighting/apply', async ({ body, request, set }) => {
+        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+        if (!runtimeContext) return { success: false, status: 'error', error: 'Forbidden' }
+        return await RelightingService.applyRelighting(body.clipId, body.style, runtimeContext)
+      }, {
+        body: t.Object({ clipId: t.String(), style: t.String(), workspaceId: t.Optional(t.String()) })
+      })
+      .post('/creative/run', ({ body, request, set }) => {
+        const organizationContext = resolveOrganizationContext(request, set, 'member')
+        if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+        return {
+          success: true,
+          run: CreativePipelineService.createRun(body.script, body.style || 'cinematic', {
+            ...(body.context || {}),
+            organizationId: organizationContext.organizationId,
+            actorUserId: organizationContext.user.id
+          })
+        }
+      }, {
         body: t.Object({
           script: t.String(),
           style: t.Optional(t.String()),
           context: t.Optional(t.Record(t.String(), t.Any()))
         })
       })
-      .get('/creative/run/:id', ({ params, set }) => {
-        const run = CreativePipelineService.getRun(params.id)
+      .get('/creative/run/:id', ({ params, request, set }) => {
+        const organizationContext = resolveOrganizationContext(request, set, 'member')
+        if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+        const run = CreativePipelineService.getRun(params.id, organizationContext.organizationId)
         if (!run) {
           set.status = 404
           return { success: false, status: 'error', error: 'Creative run not found' }
@@ -498,8 +1080,15 @@ export const createApp = () => {
       }, {
         params: t.Object({ id: t.String() })
       })
-      .post('/creative/run/:id/regenerate', ({ params, body, set }) => {
-        const run = CreativePipelineService.regenerateScene(params.id, body.sceneId, body.feedback)
+      .post('/creative/run/:id/regenerate', ({ params, body, request, set }) => {
+        const organizationContext = resolveOrganizationContext(request, set, 'member')
+        if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+        const run = CreativePipelineService.regenerateScene(
+          params.id,
+          body.sceneId,
+          body.feedback,
+          organizationContext.organizationId
+        )
         if (!run) {
           set.status = 404
           return { success: false, status: 'error', error: 'Creative scene not found' }
@@ -512,8 +1101,10 @@ export const createApp = () => {
           feedback: t.Optional(t.String())
         })
       })
-      .post('/creative/run/:id/feedback', ({ params, body, set }) => {
-        const result = CreativePipelineService.applyFeedback(params.id, body)
+      .post('/creative/run/:id/feedback', ({ params, body, request, set }) => {
+        const organizationContext = resolveOrganizationContext(request, set, 'member')
+        if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+        const result = CreativePipelineService.applyFeedback(params.id, body, organizationContext.organizationId)
         if (!result?.run) {
           set.status = 404
           return { success: false, status: 'error', error: 'Creative run not found' }
@@ -529,8 +1120,14 @@ export const createApp = () => {
           })))
         })
       })
-      .post('/creative/run/:id/commit', ({ params, body, set }) => {
-        const run = CreativePipelineService.commitRun(params.id, body || undefined)
+      .post('/creative/run/:id/commit', ({ params, body, request, set }) => {
+        const organizationContext = resolveOrganizationContext(request, set, 'member')
+        if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+        const run = CreativePipelineService.commitRun(
+          params.id,
+          body || undefined,
+          organizationContext.organizationId
+        )
         if (!run) {
           set.status = 404
           return { success: false, status: 'error', error: 'Creative run not found' }
@@ -543,8 +1140,10 @@ export const createApp = () => {
           notes: t.Optional(t.Record(t.String(), t.Any()))
         }))
       })
-      .get('/creative/run/:id/versions', ({ params, set }) => {
-        const versions = CreativePipelineService.getRunVersions(params.id)
+      .get('/creative/run/:id/versions', ({ params, request, set }) => {
+        const organizationContext = resolveOrganizationContext(request, set, 'member')
+        if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+        const versions = CreativePipelineService.getRunVersions(params.id, organizationContext.organizationId)
         if (!versions.length) {
           set.status = 404
           return { success: false, status: 'error', error: 'Creative run not found' }
@@ -554,17 +1153,32 @@ export const createApp = () => {
         params: t.Object({ id: t.String() })
       })
       .group('/actors', (actorsGroup) => actorsGroup
-        .get('/', () => ({ success: true, actors: ActorConsistencyService.getAllActors() }))
-        .post('/', ({ body }) => ({
-          success: true,
-          actor: ActorConsistencyService.createActor(body.name, body.refImage)
-        }), {
+        .get('/', ({ request, set }) => {
+          const organizationContext = resolveOrganizationContext(request, set, 'member')
+          if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+          return {
+            success: true,
+            actors: ActorConsistencyService.getAllActors(organizationContext.organizationId)
+          }
+        })
+        .post('/', ({ body, request, set }) => {
+          const organizationContext = resolveOrganizationContext(request, set, 'member')
+          if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+          return {
+            success: true,
+            actor: ActorConsistencyService.createActor(body.name, body.refImage, organizationContext.organizationId)
+          }
+        }, {
           body: t.Object({
             name: t.String(),
             refImage: t.String()
           })
         })
-        .post('/motion-sync', ({ body }) => ActorConsistencyService.syncMotion(body.actorId, body.motionData), {
+        .post('/motion-sync', ({ body, request, set }) => {
+          const organizationContext = resolveOrganizationContext(request, set, 'member')
+          if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+          return ActorConsistencyService.syncMotion(body.actorId, body.motionData, organizationContext.organizationId)
+        }, {
           body: t.Object({
             actorId: t.String(),
             motionData: t.Object({
@@ -581,17 +1195,36 @@ export const createApp = () => {
             })
           })
         })
-        .post('/generate', async ({ body }) => ({ success: true, status: 'ok', message: 'Actor generation started', actorId: body.actorId }), { body: t.Object({ prompt: t.String(), actorId: t.String(), modelId: t.Optional(t.String()) }) })
+        .post('/generate', async ({ body, request, set }) => {
+          const organizationContext = resolveOrganizationContext(request, set, 'member')
+          if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+          return { success: true, status: 'ok', message: 'Actor generation started', actorId: body.actorId }
+        }, { body: t.Object({ prompt: t.String(), actorId: t.String(), modelId: t.Optional(t.String()) }) })
       )
     )
 
-    .post('/api/workspaces', ({ body }) => ({
-      success: true,
-      ...WorkspaceService.createWorkspace(body.name, body.ownerName || 'Owner')
-    }), {
+    .post('/api/workspaces', ({ body, request, set }) => {
+      const user = requireAuthenticatedUser(request, set)
+      if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+      const organizationId = body.organizationId?.trim() || OrganizationService.listOrganizationsForUser(user.id)[0]?.id || ''
+      if (!organizationId) {
+        set.status = 403
+        return { success: false, status: 'error', error: 'Forbidden: organization membership required' }
+      }
+      const authorized = authorizeOrganizationRole(organizationId, request, set, 'member')
+      if (!authorized) {
+        return { success: false, status: 'error', error: 'Forbidden: organization membership required' }
+      }
+      const fallbackOwnerName = user.email.split('@')[0] || 'Owner'
+      return {
+        success: true,
+        ...WorkspaceService.createWorkspace(body.name, body.ownerName || fallbackOwnerName, organizationId, user.id)
+      }
+    }, {
       body: t.Object({
         name: t.String(),
-        ownerName: t.Optional(t.String())
+        ownerName: t.Optional(t.String()),
+        organizationId: t.Optional(t.String())
       })
     })
     .get('/api/workspaces/:id/invites', ({ params, request, set }) => {
@@ -622,8 +1255,11 @@ export const createApp = () => {
         expiresInHours: t.Optional(t.Number())
       })
     })
-    .post('/api/workspaces/invites/:code/accept', ({ params, body, set }) => {
-      const accepted = WorkspaceService.acceptInvite(params.code, body.memberName)
+    .post('/api/workspaces/invites/:code/accept', ({ params, body, request, set }) => {
+      const user = requireAuthenticatedUser(request, set)
+      if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+      const memberName = body.memberName?.trim() || user.email.split('@')[0] || 'Member'
+      const accepted = WorkspaceService.acceptInvite(params.code, memberName, user.id)
       if (!accepted) {
         set.status = 404
         return { success: false, status: 'error', error: 'Invite not found or expired' }
@@ -632,7 +1268,7 @@ export const createApp = () => {
     }, {
       params: t.Object({ code: t.String() }),
       body: t.Object({
-        memberName: t.String()
+        memberName: t.Optional(t.String())
       })
     })
     .get('/api/workspaces/:id/members', ({ params, request, set }) => {
@@ -693,13 +1329,14 @@ export const createApp = () => {
       }
       return {
         success: true,
-        members: WorkspaceService.addMember(params.id, body.name, body.role, authorized.actorName)
+        members: WorkspaceService.addMember(params.id, body.name, body.role, authorized.actorName, body.userId)
       }
     }, {
       params: t.Object({ id: t.String() }),
       body: t.Object({
         name: t.String(),
-        role: t.Union([t.Literal('owner'), t.Literal('editor'), t.Literal('viewer')])
+        role: t.Union([t.Literal('owner'), t.Literal('editor'), t.Literal('viewer')]),
+        userId: t.Optional(t.String())
       })
     })
     .get('/api/projects/:id/audit', ({ params, request, set }) => {
@@ -718,25 +1355,20 @@ export const createApp = () => {
       params: t.Object({ id: t.String() })
     })
     .post('/api/projects/:id/snapshots', ({ params, body, request, set }) => {
-      const project = WorkspaceService.getProject(params.id)
-      if (!project) {
-        set.status = 404
-        return { success: false, status: 'error', error: 'Project not found' }
-      }
-      const actorName = (request.headers.get('x-workspace-actor') || body.actorName || '').trim()
-      const actorRole = WorkspaceService.getMemberRole(project.workspaceId, actorName)
-      if (!actorRole || WORKSPACE_ROLE_ORDER[actorRole] < WORKSPACE_ROLE_ORDER.editor) {
-        set.status = 403
+      const authorized = authorizeProjectRole(params.id, request, set, 'editor')
+      if (!authorized) {
+        if (set.status === 404) {
+          return { success: false, status: 'error', error: 'Project not found' }
+        }
         return { success: false, status: 'error', error: 'Forbidden: editor membership required' }
       }
       return {
         success: true,
-        snapshot: WorkspaceService.createProjectSnapshot(params.id, actorName, body.content || {})
+        snapshot: WorkspaceService.createProjectSnapshot(params.id, authorized.actorName, body.content || {})
       }
     }, {
       params: t.Object({ id: t.String() }),
       body: t.Object({
-        actorName: t.Optional(t.String()),
         content: t.Optional(t.Record(t.String(), t.Any()))
       })
     })
@@ -758,7 +1390,9 @@ export const createApp = () => {
         limit: t.Optional(t.String())
       })
     })
-    .post('/api/storage/local-import', async ({ body, set }) => {
+    .post('/api/storage/local-import', async ({ body, request, set }) => {
+      const user = requireAuthenticatedUser(request, set)
+      if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
       try {
         const rawBase64 = (body.base64Data || '').trim()
         if (!rawBase64) {
@@ -766,14 +1400,25 @@ export const createApp = () => {
           return { success: false, status: 'error', error: 'base64Data is required' }
         }
 
-        const bytes = Buffer.from(rawBase64, 'base64')
+        const maxBytes = Number.parseInt(process.env.LOCAL_IMPORT_MAX_BYTES || '', 10)
+        const hardLimit = Number.isFinite(maxBytes) && maxBytes > 0 ? maxBytes : 200 * 1024 * 1024
+        const normalizedBase64 = rawBase64.replace(/\s+/g, '')
+        const estimatedBytes = Math.ceil(normalizedBase64.length * 0.75)
+        if (estimatedBytes > hardLimit) {
+          set.status = 413
+          return {
+            success: false,
+            status: 'error',
+            error: `file is too large (estimated): ${estimatedBytes} bytes (max ${hardLimit} bytes)`
+          }
+        }
+
+        const bytes = Buffer.from(normalizedBase64, 'base64')
         if (!bytes.length) {
           set.status = 400
           return { success: false, status: 'error', error: 'base64Data is invalid' }
         }
 
-        const maxBytes = Number.parseInt(process.env.LOCAL_IMPORT_MAX_BYTES || '', 10)
-        const hardLimit = Number.isFinite(maxBytes) && maxBytes > 0 ? maxBytes : 200 * 1024 * 1024
         if (bytes.length > hardLimit) {
           set.status = 413
           return {
@@ -841,11 +1486,24 @@ export const createApp = () => {
           set.status = 400
           return { success: false, status: 'error', error: 'workspaceId is required in objectKey' }
         }
+
+        const maxUploadBytesRaw = Number.parseInt(process.env.LOCAL_UPLOAD_MAX_BYTES || '', 10)
+        const maxUploadBytes = Number.isFinite(maxUploadBytesRaw) && maxUploadBytesRaw > 0 ? maxUploadBytesRaw : 200 * 1024 * 1024
+        const contentLength = Number.parseInt(request.headers.get('content-length') || '0', 10)
+        if (Number.isFinite(contentLength) && contentLength > maxUploadBytes) {
+          set.status = 413
+          return { success: false, status: 'error', error: `payload too large: ${contentLength} bytes (max ${maxUploadBytes})` }
+        }
+
         const authorized = authorizeWorkspaceRole(workspaceId, request, set, 'editor')
         if (!authorized) {
           return { success: false, status: 'error', error: 'Forbidden: editor membership required' }
         }
         const bytes = new Uint8Array(await request.arrayBuffer())
+        if (bytes.byteLength > maxUploadBytes) {
+          set.status = 413
+          return { success: false, status: 'error', error: `payload too large: ${bytes.byteLength} bytes (max ${maxUploadBytes})` }
+        }
         const result = storageProvider.storeObject(decodedObjectKey, bytes)
         set.status = 201
         return {
@@ -866,7 +1524,11 @@ export const createApp = () => {
       })
     })
 
-    .post('/api/video/compose', async ({ body, set }) => {
+    .post('/api/video/compose', async ({ body, request, set }) => {
+      const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+      if (!runtimeContext) {
+        return { success: false, status: 'error', error: 'Forbidden' }
+      }
       if (!hasRenderableSources(body.timelineData)) {
         set.status = 400
         return {
@@ -878,30 +1540,43 @@ export const createApp = () => {
       }
 
       return await CompositionService.compose(body.timelineData)
-    }, { body: t.Object({ timelineData: t.Any() }) })
+    }, {
+      body: t.Object({
+        timelineData: t.Any(),
+        workspaceId: t.Optional(t.String())
+      })
+    })
 
     .ws('/ws/generation', { open(ws) { ws.send({ message: '已连接到旗舰级总线' }) } })
     .ws('/ws/collab/:workspaceId', {
       open(ws) {
         const params = (ws.data as any)?.params || {}
         const query = (ws.data as any)?.query || {}
+        const headers = (ws.data as any)?.headers || {}
         const workspaceId = String(params.workspaceId || query.workspaceId || '')
-        const memberName = String(query.memberName || 'Guest')
         if (!workspaceId) {
           ws.send(JSON.stringify({ type: 'error', error: 'workspaceId is required' }))
           ws.close()
           return
         }
-        const memberRole = WorkspaceService.getMemberRole(workspaceId, memberName)
-        if (!memberRole) {
+        const accessToken = resolveWsAccessToken(headers)
+        const user = accessToken ? AuthService.verifyAccessToken(accessToken) : null
+        if (!user) {
+          ws.send(JSON.stringify({ type: 'error', error: 'Unauthorized websocket request' }))
+          ws.close()
+          return
+        }
+        const member = WorkspaceService.getMemberByUserId(workspaceId, user.id)
+        if (!member) {
           ws.send(JSON.stringify({ type: 'error', error: 'Member is not part of workspace' }))
           ws.close()
           return
         }
         const joined = CollaborationService.join(ws as any, {
           workspaceId,
-          memberName,
-          role: memberRole,
+          memberName: member.name,
+          userId: user.id,
+          role: member.role,
           sessionId: query.sessionId ? String(query.sessionId) : undefined
         })
         if (!joined) {
@@ -941,6 +1616,12 @@ const parseMs = (value: string | undefined, fallback: number) => {
 }
 
 if (import.meta.main) {
+  if (String(process.env.NODE_ENV || '').toLowerCase() === 'production' && !process.env.JWT_SECRET?.trim()) {
+    throw new Error('JWT_SECRET 未配置，生产环境拒绝启动')
+  }
+  if (!isDevRuntime() && !process.env.ADMIN_TOKEN?.trim()) {
+    console.error('[Security] ADMIN_TOKEN 未配置，管理接口已在生产模式禁用。请设置 ADMIN_TOKEN 后重启服务。')
+  }
   app.listen({ port: parseInt(process.env.PORT || '33117', 10), hostname: '0.0.0.0' })
   const generatedDir = resolveGeneratedDir()
   const cleanupIntervalMs = parseMs(process.env.CLEANUP_INTERVAL_MS, 86_400_000)

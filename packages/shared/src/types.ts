@@ -189,6 +189,7 @@ export type WorkspaceRole = 'owner' | 'editor' | 'viewer';
 
 export interface Workspace {
   id: string;
+  organizationId: string;
   name: string;
   createdAt: string;
   updatedAt: string;
@@ -197,6 +198,7 @@ export interface Workspace {
 export interface WorkspaceMember {
   id: string;
   workspaceId: string;
+  userId?: string | null;
   name: string;
   role: WorkspaceRole;
   createdAt: string;
@@ -204,6 +206,7 @@ export interface WorkspaceMember {
 
 export interface Project {
   id: string;
+  organizationId: string;
   workspaceId: string;
   name: string;
   createdAt: string;
@@ -212,6 +215,7 @@ export interface Project {
 
 export interface AuditLog {
   id: string;
+  organizationId: string | null;
   workspaceId: string | null;
   projectId: string | null;
   actorName: string;
@@ -223,6 +227,7 @@ export interface AuditLog {
 
 export interface WorkspaceInvite {
   id: string;
+  organizationId: string;
   workspaceId: string;
   code: string;
   role: WorkspaceRole;
@@ -235,6 +240,7 @@ export interface WorkspaceInvite {
 }
 
 export interface CollabPresence {
+  organizationId: string;
   workspaceId: string;
   sessionId: string;
   memberName: string;
@@ -245,6 +251,7 @@ export interface CollabPresence {
 
 export interface ProjectSnapshot {
   id: string;
+  organizationId: string;
   projectId: string;
   actorName: string;
   content: Record<string, unknown>;
@@ -255,6 +262,7 @@ export type StorageProviderType = 'local' | 's3';
 
 export interface CollabEvent {
   id: string;
+  organizationId: string;
   workspaceId: string;
   projectId: string | null;
   actorName: string;
@@ -262,4 +270,63 @@ export interface CollabEvent {
   eventType: 'presence.join' | 'presence.leave' | 'project.patch' | 'timeline.patch' | 'cursor.update';
   payload: Record<string, unknown>;
   createdAt: string;
+}
+
+export type OrganizationRole = 'owner' | 'admin' | 'member';
+
+export interface User {
+  id: string;
+  email: string;
+  status: 'active' | 'disabled';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  ownerUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrganizationMember {
+  id: string;
+  organizationId: string;
+  userId: string;
+  role: OrganizationRole;
+  email: string;
+  createdAt: string;
+}
+
+export interface AuthSession {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
+  user: User;
+}
+
+export type AiChannelScope = 'organization' | 'workspace';
+
+export interface AiChannelProvider {
+  id: string;
+  label: string;
+  category: 'model' | 'service';
+  defaultBaseUrl?: string;
+}
+
+export interface AiChannelConfig {
+  id: string;
+  organizationId: string;
+  workspaceId: string | null;
+  providerId: string;
+  baseUrl: string;
+  enabled: boolean;
+  extra: Record<string, unknown>;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+  hasSecret: boolean;
+  secretMasked: string;
 }

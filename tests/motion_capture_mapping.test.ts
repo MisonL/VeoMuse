@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'bun:test';
 import { app } from '../apps/backend/src/index';
+import { createAuthHeaders, createTestSession } from './helpers/auth';
 
 describe('动捕映射链路验证', () => {
   it('应将动捕数据同步到演员驱动并返回映射摘要', async () => {
+    const session = await createTestSession('motion-sync')
     const response = await app.handle(
       new Request('http://localhost/api/ai/actors/motion-sync', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           actorId: 'hero-man',
           motionData: {

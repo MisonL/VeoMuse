@@ -1,13 +1,16 @@
 // apps/backend/src/services/LipSyncService.ts
 import { BaseAiService } from './BaseAiService';
+import type { ChannelRuntimeContext } from './ChannelConfigService';
+import { ChannelConfigService } from './ChannelConfigService';
 
 export class LipSyncService extends BaseAiService {
   protected serviceName = 'AI-Lip-Sync';
   private static instance = new LipSyncService();
 
-  static async sync(videoUrl: string, audioUrl: string, precision: string = 'high'): Promise<any> {
-    const apiUrl = process.env.LIP_SYNC_API_URL;
-    const apiKey = process.env.LIP_SYNC_API_KEY;
+  static async sync(videoUrl: string, audioUrl: string, precision: string = 'high', context?: ChannelRuntimeContext): Promise<any> {
+    const channel = context?.organizationId ? ChannelConfigService.resolve('lipSync', context) : null
+    const apiUrl = channel?.baseUrl || process.env.LIP_SYNC_API_URL;
+    const apiKey = channel?.apiKey || process.env.LIP_SYNC_API_KEY;
 
     if (!apiUrl || !apiKey) {
       return {

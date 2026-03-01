@@ -77,6 +77,12 @@ const parsePositiveInt = (value: string | undefined, fallback = 0) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 const RECOVERY_TABLES = [
+  'users',
+  'organizations',
+  'organization_members',
+  'auth_refresh_tokens',
+  'ai_channel_configs',
+  'ai_channel_audits',
   'model_profiles',
   'model_runtime_metrics',
   'routing_policies',
@@ -240,6 +246,83 @@ const ensureColumn = (db: Database, table: string, column: string, ddl: string) 
 
 const migrate = (db: Database) => {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'active',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS organizations (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      owner_user_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS organization_members (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'member',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS auth_refresh_tokens (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      revoked_at TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ai_channel_configs (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL,
+      workspace_id TEXT,
+      provider_id TEXT NOT NULL,
+      base_url TEXT NOT NULL DEFAULT '',
+      secret_encrypted TEXT NOT NULL DEFAULT '',
+      extra_json TEXT NOT NULL DEFAULT '{}',
+      enabled INTEGER NOT NULL DEFAULT 1,
+      created_by TEXT NOT NULL,
+      updated_by TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ai_channel_audits (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL,
+      workspace_id TEXT,
+      actor_user_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      provider_id TEXT NOT NULL,
+      detail_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    );
+  `)
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS model_profiles (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -271,6 +354,7 @@ const migrate = (db: Database) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS routing_policies (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       name TEXT NOT NULL,
       description TEXT NOT NULL,
       priority TEXT NOT NULL,
@@ -283,6 +367,7 @@ const migrate = (db: Database) => {
       updated_at TEXT NOT NULL
     );
   `)
+  ensureColumn(db, 'routing_policies', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
   ensureColumn(db, 'routing_policies', 'enabled', 'INTEGER NOT NULL DEFAULT 1')
   ensureColumn(db, 'routing_policies', 'allowed_models_json', `TEXT NOT NULL DEFAULT '[]'`)
   ensureColumn(db, 'routing_policies', 'weights_json', `TEXT NOT NULL DEFAULT '{}'`)
@@ -291,6 +376,7 @@ const migrate = (db: Database) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS routing_executions (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       policy_id TEXT NOT NULL,
       prompt TEXT NOT NULL,
       priority TEXT NOT NULL,
@@ -306,10 +392,12 @@ const migrate = (db: Database) => {
       FOREIGN KEY(policy_id) REFERENCES routing_policies(id) ON DELETE CASCADE
     );
   `)
+  ensureColumn(db, 'routing_executions', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS creative_runs (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       script TEXT NOT NULL,
       style TEXT NOT NULL DEFAULT 'cinematic',
       status TEXT NOT NULL,
@@ -322,6 +410,7 @@ const migrate = (db: Database) => {
       FOREIGN KEY(parent_run_id) REFERENCES creative_runs(id) ON DELETE SET NULL
     );
   `)
+  ensureColumn(db, 'creative_runs', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
   ensureColumn(db, 'creative_runs', 'version', 'INTEGER NOT NULL DEFAULT 1')
   ensureColumn(db, 'creative_runs', 'parent_run_id', 'TEXT')
   ensureColumn(db, 'creative_runs', 'quality_score', 'REAL NOT NULL DEFAULT 0')
@@ -330,6 +419,7 @@ const migrate = (db: Database) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS storyboard_scenes (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       run_id TEXT NOT NULL,
       order_idx INTEGER NOT NULL,
       title TEXT NOT NULL,
@@ -346,6 +436,7 @@ const migrate = (db: Database) => {
       FOREIGN KEY(run_id) REFERENCES creative_runs(id) ON DELETE CASCADE
     );
   `)
+  ensureColumn(db, 'storyboard_scenes', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
   ensureColumn(db, 'storyboard_scenes', 'revision', 'INTEGER NOT NULL DEFAULT 1')
   ensureColumn(db, 'storyboard_scenes', 'last_feedback', `TEXT NOT NULL DEFAULT ''`)
   ensureColumn(db, 'storyboard_scenes', 'generation_meta_json', `TEXT NOT NULL DEFAULT '{}'`)
@@ -353,6 +444,7 @@ const migrate = (db: Database) => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS creative_feedback_events (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       run_id TEXT NOT NULL,
       scene_id TEXT,
       scope TEXT NOT NULL,
@@ -361,30 +453,37 @@ const migrate = (db: Database) => {
       FOREIGN KEY(run_id) REFERENCES creative_runs(id) ON DELETE CASCADE
     );
   `)
+  ensureColumn(db, 'creative_feedback_events', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS workspaces (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       name TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
   `)
+  ensureColumn(db, 'workspaces', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS workspace_members (
       id TEXT PRIMARY KEY,
       workspace_id TEXT NOT NULL,
+      user_id TEXT,
       name TEXT NOT NULL,
       role TEXT NOT NULL,
       created_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL,
       FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
     );
   `)
+  ensureColumn(db, 'workspace_members', 'user_id', 'TEXT')
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       workspace_id TEXT NOT NULL,
       name TEXT NOT NULL,
       created_at TEXT NOT NULL,
@@ -392,10 +491,12 @@ const migrate = (db: Database) => {
       FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
     );
   `)
+  ensureColumn(db, 'projects', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS audit_logs (
       id TEXT PRIMARY KEY,
+      organization_id TEXT,
       workspace_id TEXT,
       project_id TEXT,
       actor_name TEXT NOT NULL,
@@ -405,11 +506,13 @@ const migrate = (db: Database) => {
       created_at TEXT NOT NULL
     );
   `)
+  ensureColumn(db, 'audit_logs', 'organization_id', 'TEXT')
   ensureColumn(db, 'audit_logs', 'trace_id', 'TEXT')
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS workspace_invites (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       workspace_id TEXT NOT NULL,
       code TEXT NOT NULL UNIQUE,
       role TEXT NOT NULL,
@@ -422,10 +525,12 @@ const migrate = (db: Database) => {
       FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
     );
   `)
+  ensureColumn(db, 'workspace_invites', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS workspace_presence (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       workspace_id TEXT NOT NULL,
       session_id TEXT NOT NULL,
       member_name TEXT NOT NULL,
@@ -436,10 +541,12 @@ const migrate = (db: Database) => {
       FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
     );
   `)
+  ensureColumn(db, 'workspace_presence', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS project_snapshots (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       project_id TEXT NOT NULL,
       actor_name TEXT NOT NULL,
       content_json TEXT NOT NULL,
@@ -447,10 +554,12 @@ const migrate = (db: Database) => {
       FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
     );
   `)
+  ensureColumn(db, 'project_snapshots', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS collab_events (
       id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
       workspace_id TEXT NOT NULL,
       project_id TEXT,
       actor_name TEXT NOT NULL,
@@ -461,6 +570,7 @@ const migrate = (db: Database) => {
       FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
     );
   `)
+  ensureColumn(db, 'collab_events', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS db_repair_logs (
@@ -497,6 +607,41 @@ const migrate = (db: Database) => {
   `)
 
   db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_organization_members_unique_user
+    ON organization_members(organization_id, user_id);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_organization_members_user
+    ON organization_members(user_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_user
+    ON auth_refresh_tokens(user_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_expires
+    ON auth_refresh_tokens(expires_at DESC);
+  `)
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_ai_channel_configs_unique_scope
+    ON ai_channel_configs(organization_id, IFNULL(workspace_id, ''), provider_id);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_ai_channel_configs_org_provider
+    ON ai_channel_configs(organization_id, provider_id, workspace_id);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_ai_channel_audits_org_created
+    ON ai_channel_audits(organization_id, created_at DESC);
+  `)
+
+  db.exec(`
     CREATE INDEX IF NOT EXISTS idx_creative_feedback_events_run_created
     ON creative_feedback_events(run_id, created_at DESC);
   `)
@@ -512,6 +657,16 @@ const migrate = (db: Database) => {
   `)
 
   db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_workspace_members_workspace_user
+    ON workspace_members(workspace_id, user_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_workspace_members_workspace_name
+    ON workspace_members(workspace_id, name, created_at DESC);
+  `)
+
+  db.exec(`
     CREATE INDEX IF NOT EXISTS idx_workspace_presence_workspace_expires
     ON workspace_presence(workspace_id, expires_at DESC);
   `)
@@ -524,6 +679,11 @@ const migrate = (db: Database) => {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_collab_events_workspace_created
     ON collab_events(workspace_id, created_at DESC);
+  `)
+
+  db.exec(`
+    INSERT OR IGNORE INTO organizations (id, name, owner_user_id, created_at, updated_at)
+    VALUES ('org_default', '默认组织', 'system', datetime('now'), datetime('now'));
   `)
 }
 

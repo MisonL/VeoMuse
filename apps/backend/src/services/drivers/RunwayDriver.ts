@@ -1,13 +1,20 @@
 // apps/backend/src/services/drivers/RunwayDriver.ts
-import type { VideoModelDriver, GenerateParams, GenerateResult } from '../ModelDriver';
+import type { VideoModelDriver, GenerateParams, GenerateResult, GenerateRuntimeContext } from '../ModelDriver';
+import { ChannelConfigService } from '../ChannelConfigService';
 
 export class RunwayDriver implements VideoModelDriver {
   id = 'runway-gen3';
   name = 'Runway Gen-3 Alpha';
 
-  async generate(params: GenerateParams): Promise<GenerateResult> {
-    const apiUrl = process.env.RUNWAY_API_URL;
-    const apiKey = process.env.RUNWAY_API_KEY;
+  async generate(params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult> {
+    const channel = context?.organizationId
+      ? ChannelConfigService.resolve(this.id, {
+        organizationId: context.organizationId,
+        workspaceId: context.workspaceId
+      })
+      : null
+    const apiUrl = channel?.baseUrl || process.env.RUNWAY_API_URL;
+    const apiKey = channel?.apiKey || process.env.RUNWAY_API_KEY;
 
     if (!apiUrl || !apiKey) {
       return {

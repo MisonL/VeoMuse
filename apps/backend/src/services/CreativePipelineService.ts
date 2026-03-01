@@ -2,6 +2,10 @@ import type { CreativeFeedbackPayload, CreativeRun, CreativeScene } from '@veomu
 import { getLocalDb } from './LocalDatabaseService'
 
 const toIso = () => new Date().toISOString()
+const normalizeOrganizationId = (value: unknown) => {
+  const normalized = String(value || '').trim()
+  return normalized || 'org_default'
+}
 
 const parseJson = <T>(raw: unknown, fallback: T): T => {
   try {
@@ -61,12 +65,19 @@ const parseScenesFromScript = (script: string) => {
 }
 
 export class CreativePipelineService {
-  private static insertFeedbackEvent(runId: string, scope: 'run' | 'scene', feedback: Record<string, unknown>, sceneId?: string) {
+  private static insertFeedbackEvent(
+    organizationId: string,
+    runId: string,
+    scope: 'run' | 'scene',
+    feedback: Record<string, unknown>,
+    sceneId?: string
+  ) {
     getLocalDb().prepare(`
-      INSERT INTO creative_feedback_events (id, run_id, scene_id, scope, feedback_json, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO creative_feedback_events (id, organization_id, run_id, scene_id, scope, feedback_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(
       `feedback_${crypto.randomUUID()}`,
+      organizationId,
       runId,
       sceneId || null,
       scope,
@@ -75,8 +86,8 @@ export class CreativePipelineService {
     )
   }
 
-  private static cloneRunWithScenes(runId: string, runFeedback: string = '') {
-    const base = this.getRun(runId)
+  private static cloneRunWithScenes(runId: string, organizationId: string, runFeedback: string = '') {
+    const base = this.getRun(runId, organizationId)
     if (!base) return null
 
     const nextRunId = `run_${crypto.randomUUID()}`
@@ -90,11 +101,12 @@ export class CreativePipelineService {
 
     getLocalDb().prepare(`
       INSERT INTO creative_runs (
-        id, script, style, status, version, parent_run_id, quality_score, notes_json, created_at, updated_at
+        id, organization_id, script, style, status, version, parent_run_id, quality_score, notes_json, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       nextRunId,
+      organizationId,
       base.script,
       base.style,
       'generated',
@@ -108,9 +120,9 @@ export class CreativePipelineService {
 
     const insertScene = getLocalDb().prepare(`
       INSERT INTO storyboard_scenes (
-        id, run_id, order_idx, title, video_prompt, audio_prompt, voiceover_text, duration, status,
+        id, organization_id, run_id, order_idx, title, video_prompt, audio_prompt, voiceover_text, duration, status,
         revision, last_feedback, generation_meta_json, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 
     base.scenes.forEach((scene) => {
@@ -119,6 +131,7 @@ export class CreativePipelineService {
         : {}
       insertScene.run(
         `scene_${crypto.randomUUID()}`,
+        organizationId,
         nextRunId,
         scene.order,
         scene.title,
@@ -139,33 +152,35 @@ export class CreativePipelineService {
       )
     })
 
-    return this.getRun(nextRunId)
+    return this.getRun(nextRunId, organizationId)
   }
 
   static createRun(script: string, style: string = 'cinematic', context?: Record<string, unknown>): CreativeRun {
     const runId = `run_${crypto.randomUUID()}`
     const createdAt = toIso()
+    const organizationId = normalizeOrganizationId(context?.organizationId)
     const notes = context && Object.keys(context).length > 0
       ? { context }
       : {}
     getLocalDb().prepare(`
       INSERT INTO creative_runs (
-        id, script, style, status, version, parent_run_id, quality_score, notes_json, created_at, updated_at
+        id, organization_id, script, style, status, version, parent_run_id, quality_score, notes_json, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(runId, script, style, 'generated', 1, null, 0, JSON.stringify(notes), createdAt, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(runId, organizationId, script, style, 'generated', 1, null, 0, JSON.stringify(notes), createdAt, createdAt)
 
     const insertScene = getLocalDb().prepare(`
       INSERT INTO storyboard_scenes (
-        id, run_id, order_idx, title, video_prompt, audio_prompt, voiceover_text, duration, status,
+        id, organization_id, run_id, order_idx, title, video_prompt, audio_prompt, voiceover_text, duration, status,
         revision, last_feedback, generation_meta_json, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
 
     const scenes = parseScenesFromScript(script).map((scene) => {
       const id = `scene_${crypto.randomUUID()}`
       insertScene.run(
         id,
+        organizationId,
         runId,
         scene.order,
         scene.title,
@@ -213,18 +228,26 @@ export class CreativePipelineService {
     }
   }
 
-  static getRun(runId: string): CreativeRun | null {
-    const run = getLocalDb().prepare(`SELECT * FROM creative_runs WHERE id = ?`).get(runId)
+  static getRun(runId: string, organizationId: string = 'org_default'): CreativeRun | null {
+    const orgId = normalizeOrganizationId(organizationId)
+    const run = getLocalDb().prepare(`
+      SELECT * FROM creative_runs WHERE id = ? AND organization_id = ? LIMIT 1
+    `).get(runId, orgId)
     if (!run) return null
     const scenes = getLocalDb()
-      .prepare(`SELECT * FROM storyboard_scenes WHERE run_id = ? ORDER BY order_idx ASC`)
-      .all(runId)
+      .prepare(`
+        SELECT * FROM storyboard_scenes
+        WHERE run_id = ? AND organization_id = ?
+        ORDER BY order_idx ASC
+      `)
+      .all(runId, orgId)
       .map(sceneFromRow)
     return runFromRow(run, scenes)
   }
 
-  static getRunVersions(runId: string): CreativeRun[] {
-    const base = this.getRun(runId)
+  static getRunVersions(runId: string, organizationId: string = 'org_default'): CreativeRun[] {
+    const orgId = normalizeOrganizationId(organizationId)
+    const base = this.getRun(runId, orgId)
     if (!base) return []
     let rootId = base.id
     let currentParentId = base.parentRunId
@@ -232,8 +255,13 @@ export class CreativePipelineService {
     while (currentParentId && guard < 128) {
       guard += 1
       const parent = getLocalDb()
-        .prepare(`SELECT id, parent_run_id FROM creative_runs WHERE id = ? LIMIT 1`)
-        .get(currentParentId) as { id: string; parent_run_id: string | null } | null
+        .prepare(`
+          SELECT id, parent_run_id
+          FROM creative_runs
+          WHERE id = ? AND organization_id = ?
+          LIMIT 1
+        `)
+        .get(currentParentId, orgId) as { id: string; parent_run_id: string | null } | null
       if (!parent) break
       rootId = parent.id
       currentParentId = parent.parent_run_id
@@ -242,25 +270,30 @@ export class CreativePipelineService {
     const rows = getLocalDb()
       .prepare(`
         WITH RECURSIVE run_chain(id) AS (
-          SELECT id FROM creative_runs WHERE id = ?
+          SELECT id FROM creative_runs WHERE id = ? AND organization_id = ?
           UNION ALL
           SELECT child.id
           FROM creative_runs child
           JOIN run_chain parent ON child.parent_run_id = parent.id
+          WHERE child.organization_id = ?
         )
         SELECT *
         FROM creative_runs
-        WHERE id IN (SELECT id FROM run_chain)
+        WHERE id IN (SELECT id FROM run_chain) AND organization_id = ?
         ORDER BY version ASC, created_at ASC
       `)
-      .all(rootId)
-    return rows.map((row: any) => this.getRun(row.id)).filter(Boolean) as CreativeRun[]
+      .all(rootId, orgId, orgId, orgId)
+    return rows.map((row: any) => this.getRun(row.id, orgId)).filter(Boolean) as CreativeRun[]
   }
 
-  static regenerateScene(runId: string, sceneId: string, feedback: string = '') {
+  static regenerateScene(runId: string, sceneId: string, feedback: string = '', organizationId: string = 'org_default') {
+    const orgId = normalizeOrganizationId(organizationId)
     const row = getLocalDb()
-      .prepare(`SELECT * FROM storyboard_scenes WHERE id = ? AND run_id = ?`)
-      .get(sceneId, runId) as any
+      .prepare(`
+        SELECT * FROM storyboard_scenes
+        WHERE id = ? AND run_id = ? AND organization_id = ?
+      `)
+      .get(sceneId, runId, orgId) as any
     if (!row) return null
 
     const updatedAt = toIso()
@@ -272,7 +305,7 @@ export class CreativePipelineService {
     getLocalDb().prepare(`
       UPDATE storyboard_scenes
       SET video_prompt = ?, audio_prompt = ?, status = ?, revision = ?, last_feedback = ?, generation_meta_json = ?, updated_at = ?
-      WHERE id = ? AND run_id = ?
+      WHERE id = ? AND run_id = ? AND organization_id = ?
     `).run(
       enhancedPrompt,
       audioPrompt,
@@ -286,29 +319,31 @@ export class CreativePipelineService {
       }),
       updatedAt,
       sceneId,
-      runId
+      runId,
+      orgId
     )
 
     getLocalDb().prepare(`
-      UPDATE creative_runs SET status = ?, updated_at = ? WHERE id = ?
-    `).run('generated', updatedAt, runId)
+      UPDATE creative_runs SET status = ?, updated_at = ? WHERE id = ? AND organization_id = ?
+    `).run('generated', updatedAt, runId, orgId)
 
-    this.insertFeedbackEvent(runId, 'scene', {
+    this.insertFeedbackEvent(orgId, runId, 'scene', {
       feedback: normalizedFeedback,
       sceneId
     }, sceneId)
 
-    return this.getRun(runId)
+    return this.getRun(runId, orgId)
   }
 
-  static applyFeedback(runId: string, payload: CreativeFeedbackPayload) {
-    const nextRun = this.cloneRunWithScenes(runId, payload.runFeedback || '')
+  static applyFeedback(runId: string, payload: CreativeFeedbackPayload, organizationId: string = 'org_default') {
+    const orgId = normalizeOrganizationId(organizationId)
+    const nextRun = this.cloneRunWithScenes(runId, orgId, payload.runFeedback || '')
     if (!nextRun) return null
 
     const updatedAt = toIso()
 
     if (payload.runFeedback?.trim()) {
-      this.insertFeedbackEvent(nextRun.id, 'run', {
+      this.insertFeedbackEvent(orgId, nextRun.id, 'run', {
         feedback: payload.runFeedback.trim()
       })
       const notes = {
@@ -326,12 +361,18 @@ export class CreativePipelineService {
 
     sceneFeedbacks.forEach((item) => {
       let row = getLocalDb()
-        .prepare(`SELECT * FROM storyboard_scenes WHERE id = ? AND run_id = ?`)
-        .get(item.sceneId, nextRun.id) as any
+        .prepare(`
+          SELECT * FROM storyboard_scenes
+          WHERE id = ? AND run_id = ? AND organization_id = ?
+        `)
+        .get(item.sceneId, nextRun.id, orgId) as any
       if (!row) {
         const rows = getLocalDb()
-          .prepare(`SELECT * FROM storyboard_scenes WHERE run_id = ?`)
-          .all(nextRun.id) as any[]
+          .prepare(`
+            SELECT * FROM storyboard_scenes
+            WHERE run_id = ? AND organization_id = ?
+          `)
+          .all(nextRun.id, orgId) as any[]
         row = rows.find((candidate) => {
           const meta = parseJson<Record<string, unknown>>(candidate.generation_meta_json, {})
           return meta.sourceSceneId === item.sceneId
@@ -343,7 +384,7 @@ export class CreativePipelineService {
       getLocalDb().prepare(`
         UPDATE storyboard_scenes
         SET video_prompt = ?, status = ?, revision = ?, last_feedback = ?, generation_meta_json = ?, updated_at = ?
-        WHERE id = ? AND run_id = ?
+        WHERE id = ? AND run_id = ? AND organization_id = ?
       `).run(
         nextVideoPrompt,
         'regenerated',
@@ -356,10 +397,11 @@ export class CreativePipelineService {
         }),
         updatedAt,
         row.id,
-        nextRun.id
+        nextRun.id,
+        orgId
       )
 
-      this.insertFeedbackEvent(nextRun.id, 'scene', {
+      this.insertFeedbackEvent(orgId, nextRun.id, 'scene', {
         feedback: item.feedback.trim(),
         sceneId: row.id,
         sourceSceneId: item.sceneId
@@ -367,17 +409,22 @@ export class CreativePipelineService {
     })
 
     getLocalDb().prepare(`
-      UPDATE creative_runs SET status = ?, updated_at = ? WHERE id = ?
-    `).run('generated', updatedAt, nextRun.id)
+      UPDATE creative_runs SET status = ?, updated_at = ? WHERE id = ? AND organization_id = ?
+    `).run('generated', updatedAt, nextRun.id, orgId)
 
     return {
       previousRunId: runId,
-      run: this.getRun(nextRun.id)
+      run: this.getRun(nextRun.id, orgId)
     }
   }
 
-  static commitRun(runId: string, options?: { qualityScore?: number; notes?: Record<string, unknown> }) {
-    const current = this.getRun(runId)
+  static commitRun(
+    runId: string,
+    options?: { qualityScore?: number; notes?: Record<string, unknown> },
+    organizationId: string = 'org_default'
+  ) {
+    const orgId = normalizeOrganizationId(organizationId)
+    const current = this.getRun(runId, orgId)
     if (!current) return null
     const updatedAt = toIso()
     const qualityScore = options?.qualityScore === undefined
@@ -392,14 +439,14 @@ export class CreativePipelineService {
     getLocalDb().prepare(`
       UPDATE creative_runs
       SET status = ?, quality_score = ?, notes_json = ?, updated_at = ?
-      WHERE id = ?
-    `).run('completed', qualityScore, JSON.stringify(notes), updatedAt, runId)
+      WHERE id = ? AND organization_id = ?
+    `).run('completed', qualityScore, JSON.stringify(notes), updatedAt, runId, orgId)
 
-    this.insertFeedbackEvent(runId, 'run', {
+    this.insertFeedbackEvent(orgId, runId, 'run', {
       type: 'commit',
       qualityScore
     })
 
-    return this.getRun(runId)
+    return this.getRun(runId, orgId)
   }
 }

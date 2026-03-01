@@ -132,7 +132,14 @@ const profileFromRow = (row: any): ModelProfile => ({
   id: row.id,
   name: row.name,
   provider: row.provider,
-  capabilities: JSON.parse(row.capabilities_json || '[]'),
+  capabilities: (() => {
+    try {
+      const value = JSON.parse(row.capabilities_json || '[]')
+      return Array.isArray(value) ? value.map(String) : []
+    } catch {
+      return []
+    }
+  })(),
   costPerSecond: row.cost_per_second,
   maxDurationSec: row.max_duration_sec,
   supports4k: Boolean(row.supports_4k),
@@ -276,13 +283,17 @@ export class ModelMarketplaceService {
     return normalized.length > 0 ? normalized : null
   }
 
-  private static assertFallbackPolicyValid(policyId: string, fallbackPolicyId: string | null) {
+  private static assertFallbackPolicyValid(
+    organizationId: string,
+    policyId: string,
+    fallbackPolicyId: string | null
+  ) {
     if (!fallbackPolicyId) return
     if (fallbackPolicyId === policyId) {
       throw new Error('fallbackPolicyId cannot reference itself')
     }
 
-    const fallbackPolicy = this.getPolicy(fallbackPolicyId)
+    const fallbackPolicy = this.getPolicy(fallbackPolicyId, organizationId)
     if (!fallbackPolicy) {
       throw new Error('fallbackPolicyId does not exist')
     }
@@ -298,8 +309,13 @@ export class ModelMarketplaceService {
         throw new Error('fallbackPolicyId chain is too deep')
       }
       const row = getLocalDb()
-        .prepare(`SELECT fallback_policy_id FROM routing_policies WHERE id = ? LIMIT 1`)
-        .get(cursor) as { fallback_policy_id?: string | null } | null
+        .prepare(`
+          SELECT fallback_policy_id
+          FROM routing_policies
+          WHERE id = ? AND organization_id = ?
+          LIMIT 1
+        `)
+        .get(cursor, organizationId) as { fallback_policy_id?: string | null } | null
       cursor = row?.fallback_policy_id ? String(row.fallback_policy_id) : null
     }
   }
@@ -346,10 +362,11 @@ export class ModelMarketplaceService {
 
     db.prepare(`
       INSERT INTO routing_policies (
-        id, name, description, priority, max_budget_usd, enabled, allowed_models_json, weights_json, fallback_policy_id, created_at, updated_at
+        id, organization_id, name, description, priority, max_budget_usd, enabled, allowed_models_json, weights_json, fallback_policy_id, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
+        organization_id = excluded.organization_id,
         name = excluded.name,
         description = excluded.description,
         priority = excluded.priority,
@@ -361,6 +378,7 @@ export class ModelMarketplaceService {
         updated_at = excluded.updated_at
     `).run(
       'default-auto',
+      'org_default',
       '默认智能路由',
       '按成功率/时延/成本自动平衡',
       'quality',
@@ -441,33 +459,45 @@ export class ModelMarketplaceService {
     }))
   }
 
-  static listPolicies(): RoutingPolicy[] {
+  static listPolicies(organizationId: string = 'org_default'): RoutingPolicy[] {
     this.ensureInitialized()
     const rows = getLocalDb()
-      .prepare(`SELECT * FROM routing_policies ORDER BY updated_at DESC, created_at DESC`)
-      .all()
+      .prepare(`
+        SELECT * FROM routing_policies
+        WHERE organization_id = ?
+        ORDER BY updated_at DESC, created_at DESC
+      `)
+      .all(organizationId)
     return rows.map(policyFromRow)
   }
 
-  static getPolicy(policyId: string): RoutingPolicy | null {
+  static getPolicy(policyId: string, organizationId: string = 'org_default'): RoutingPolicy | null {
     this.ensureInitialized()
-    const row = getLocalDb().prepare(`SELECT * FROM routing_policies WHERE id = ?`).get(policyId)
+    const row = getLocalDb()
+      .prepare(`SELECT * FROM routing_policies WHERE id = ? AND organization_id = ?`)
+      .get(policyId, organizationId)
     return row ? policyFromRow(row) : null
   }
 
-  static createPolicy(payload: PolicyMutationPayload) {
+  static createPolicy(organizationId: string, payload: PolicyMutationPayload) {
     this.ensureInitialized()
     const id = `policy_${crypto.randomUUID()}`
     const now = nowIso()
     const priority = payload.priority || 'quality'
     const fallbackPolicyId = this.normalizeFallbackPolicyId(payload.fallbackPolicyId) ?? null
-    this.assertFallbackPolicyValid(id, fallbackPolicyId)
+    this.assertFallbackPolicyValid(organizationId, id, fallbackPolicyId)
+    const maxBudget = payload.maxBudgetUsd === undefined
+      ? 0
+      : Number(payload.maxBudgetUsd)
+    if (!Number.isFinite(maxBudget)) {
+      throw new Error('maxBudgetUsd must be a finite number')
+    }
     const policy: RoutingPolicy = {
       id,
       name: payload.name?.trim() || '未命名策略',
       description: payload.description?.trim() || '自定义路由策略',
       priority,
-      maxBudgetUsd: Number.isFinite(payload.maxBudgetUsd) ? Math.max(0, Number(payload.maxBudgetUsd)) : 0,
+      maxBudgetUsd: Math.max(0, maxBudget),
       enabled: payload.enabled !== false,
       allowedModels: Array.isArray(payload.allowedModels) ? payload.allowedModels.map(String) : [],
       weights: normalizeWeights(priority, payload.weights || {}),
@@ -478,10 +508,11 @@ export class ModelMarketplaceService {
 
     getLocalDb().prepare(`
       INSERT INTO routing_policies (
-        id, name, description, priority, max_budget_usd, enabled, allowed_models_json, weights_json, fallback_policy_id, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, organization_id, name, description, priority, max_budget_usd, enabled, allowed_models_json, weights_json, fallback_policy_id, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       policy.id,
+      organizationId,
       policy.name,
       policy.description,
       policy.priority,
@@ -497,14 +528,17 @@ export class ModelMarketplaceService {
     return policy
   }
 
-  static updatePolicy(policyId: string, patch: PolicyMutationPayload) {
-    const current = this.getPolicy(policyId)
+  static updatePolicy(organizationId: string, policyId: string, patch: PolicyMutationPayload) {
+    const current = this.getPolicy(policyId, organizationId)
     if (!current) return null
     const priority = patch.priority || current.priority
     const fallbackPolicyId = patch.fallbackPolicyId === undefined
       ? current.fallbackPolicyId
       : this.normalizeFallbackPolicyId(patch.fallbackPolicyId) ?? null
-    this.assertFallbackPolicyValid(policyId, fallbackPolicyId)
+    this.assertFallbackPolicyValid(organizationId, policyId, fallbackPolicyId)
+    if (patch.maxBudgetUsd !== undefined && !Number.isFinite(Number(patch.maxBudgetUsd))) {
+      throw new Error('maxBudgetUsd must be a finite number')
+    }
     const next: RoutingPolicy = {
       ...current,
       name: patch.name?.trim() || current.name,
@@ -521,7 +555,7 @@ export class ModelMarketplaceService {
     getLocalDb().prepare(`
       UPDATE routing_policies
       SET name = ?, description = ?, priority = ?, max_budget_usd = ?, enabled = ?, allowed_models_json = ?, weights_json = ?, fallback_policy_id = ?, updated_at = ?
-      WHERE id = ?
+      WHERE id = ? AND organization_id = ?
     `).run(
       next.name,
       next.description,
@@ -532,13 +566,18 @@ export class ModelMarketplaceService {
       JSON.stringify(next.weights),
       next.fallbackPolicyId,
       next.updatedAt,
-      next.id
+      next.id,
+      organizationId
     )
 
     return next
   }
 
-  static listPolicyExecutions(policyId: string, query: PolicyExecutionQuery = {}) {
+  static listPolicyExecutions(
+    organizationId: string,
+    policyId: string,
+    query: PolicyExecutionQuery = {}
+  ) {
     this.ensureInitialized()
     const safeLimit = Number.isFinite(query.limit) && (query.limit || 0) > 0
       ? Math.min(100, Math.floor(query.limit as number))
@@ -548,19 +587,23 @@ export class ModelMarketplaceService {
       : 0
 
     const totalRow = getLocalDb()
-      .prepare(`SELECT COUNT(1) AS total FROM routing_executions WHERE policy_id = ?`)
-      .get(policyId) as { total?: number } | null
+      .prepare(`
+        SELECT COUNT(1) AS total
+        FROM routing_executions
+        WHERE policy_id = ? AND organization_id = ?
+      `)
+      .get(policyId, organizationId) as { total?: number } | null
     const total = Number(totalRow?.total || 0)
 
     const rows = getLocalDb()
       .prepare(`
         SELECT * FROM routing_executions
-        WHERE policy_id = ?
+        WHERE policy_id = ? AND organization_id = ?
         ORDER BY created_at DESC
         LIMIT ${safeLimit}
         OFFSET ${safeOffset}
       `)
-      .all(policyId)
+      .all(policyId, organizationId)
 
     return {
       executions: rows.map(executionFromRow),
@@ -606,7 +649,7 @@ export class ModelMarketplaceService {
       const quality = calcQualityScore(item.profile)
       const speed = calcSpeedScore(estimatedLatencyMs)
       const cost = calcCostScore(estimatedCostUsd)
-      const reliability = Number((item.metrics.successRate || 0.9).toFixed(4))
+      const reliability = Number((item.metrics.successRate ?? 0.9).toFixed(4))
       const finalScore = Number((
         quality * weights.quality +
         speed * weights.speed +
@@ -704,14 +747,20 @@ export class ModelMarketplaceService {
     }
   }
 
-  private static recordExecution(policyId: string, prompt: string, decision: RoutingDecision) {
+  private static recordExecution(
+    organizationId: string,
+    policyId: string,
+    prompt: string,
+    decision: RoutingDecision
+  ) {
     getLocalDb().prepare(`
       INSERT INTO routing_executions (
-        id, policy_id, prompt, priority, recommended_model_id, estimated_cost_usd, estimated_latency_ms,
+        id, organization_id, policy_id, prompt, priority, recommended_model_id, estimated_cost_usd, estimated_latency_ms,
         confidence, reason, candidates_json, score_breakdown_json, fallback_used, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       `exec_${crypto.randomUUID()}`,
+      organizationId,
       policyId,
       prompt,
       decision.priority,
@@ -727,11 +776,15 @@ export class ModelMarketplaceService {
     )
   }
 
-  static simulateDecision(payload: SimulatePayload, specificPolicyId?: string): RoutingDecision {
+  static simulateDecision(
+    payload: SimulatePayload,
+    specificPolicyId?: string,
+    organizationId: string = 'org_default'
+  ): RoutingDecision {
     this.ensureInitialized()
     const policy = specificPolicyId
-      ? this.getPolicy(specificPolicyId)
-      : this.listPolicies().find(item => item.enabled) || null
+      ? this.getPolicy(specificPolicyId, organizationId)
+      : this.listPolicies(organizationId).find(item => item.enabled) || null
 
     const effectivePolicy = policy || {
       id: 'default-auto',
@@ -755,7 +808,7 @@ export class ModelMarketplaceService {
       effectivePolicy.fallbackPolicyId !== effectivePolicy.id &&
       decision.candidates.length === 0
     ) {
-      const fallbackPolicy = this.getPolicy(effectivePolicy.fallbackPolicyId)
+      const fallbackPolicy = this.getPolicy(effectivePolicy.fallbackPolicyId, organizationId)
       if (fallbackPolicy && fallbackPolicy.enabled) {
         const fallbackResult = this.evaluateWithPolicy(payload, fallbackPolicy)
         if (fallbackResult.decision.candidates.length > 0) {
@@ -775,7 +828,7 @@ export class ModelMarketplaceService {
       fallbackUsed: fallbackUsed || decision.fallbackUsed
     }
 
-    this.recordExecution(effectivePolicy.id, payload.prompt || '', finalDecision)
+    this.recordExecution(organizationId, effectivePolicy.id, payload.prompt || '', finalDecision)
     return finalDecision
   }
 

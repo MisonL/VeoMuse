@@ -1,4 +1,6 @@
 import { BaseAiService } from './BaseAiService';
+import type { ChannelRuntimeContext } from './ChannelConfigService';
+import { ChannelConfigService } from './ChannelConfigService';
 
 export interface StyleTransferParams {
   clipId: string;
@@ -19,9 +21,10 @@ export class StyleTransferService extends BaseAiService {
   protected serviceName = 'AI-Style-Transfer';
   private static instance = new StyleTransferService();
 
-  static async transfer(params: StyleTransferParams): Promise<StyleTransferResult> {
-    const apiUrl = process.env.ALCHEMY_API_URL;
-    const apiKey = process.env.ALCHEMY_API_KEY;
+  static async transfer(params: StyleTransferParams, context?: ChannelRuntimeContext): Promise<StyleTransferResult> {
+    const channel = context?.organizationId ? ChannelConfigService.resolve('styleTransfer', context) : null
+    const apiUrl = channel?.baseUrl || process.env.ALCHEMY_API_URL;
+    const apiKey = channel?.apiKey || process.env.ALCHEMY_API_KEY;
 
     if (!apiUrl || !apiKey) {
       return {

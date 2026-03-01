@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from '../apps/backend/src/index'
+import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 describe('工作区协作 API 回归', () => {
   it('应支持创建工作区、成员管理与项目审计查询', async () => {
+    const owner = await createTestSession('workspace-owner')
     const createResp = await app.handle(
       new Request('http://localhost/api/workspaces', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           name: 'VeoMuse 团队空间',
           ownerName: 'Owner A'
@@ -26,13 +31,11 @@ describe('工作区协作 API 回归', () => {
     const membersUnauthorizedResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/members`)
     )
-    expect(membersUnauthorizedResp.status).toBe(403)
+    expect(membersUnauthorizedResp.status).toBe(401)
 
     const membersResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/members`, {
-        headers: {
-          'x-workspace-actor': 'Owner A'
-        }
+        headers: createAuthHeaders(owner.accessToken, { organizationId: owner.organizationId })
       })
     )
     const membersData = await membersResp.json() as any
@@ -50,15 +53,15 @@ describe('工作区协作 API 回归', () => {
         })
       })
     )
-    expect(forbiddenResp.status).toBe(403)
+    expect(forbiddenResp.status).toBe(401)
 
     const addResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/members`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-workspace-actor': 'Owner A'
-        },
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           name: 'Editor B',
           role: 'editor'
@@ -72,9 +75,7 @@ describe('工作区协作 API 回归', () => {
 
     const projectsResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/projects`, {
-        headers: {
-          'x-workspace-actor': 'Owner A'
-        }
+        headers: createAuthHeaders(owner.accessToken, { organizationId: owner.organizationId })
       })
     )
     const projectsData = await projectsResp.json() as any
@@ -84,9 +85,7 @@ describe('工作区协作 API 回归', () => {
 
     const auditResp = await app.handle(
       new Request(`http://localhost/api/projects/${projectId}/audit`, {
-        headers: {
-          'x-workspace-actor': 'Owner A'
-        }
+        headers: createAuthHeaders(owner.accessToken, { organizationId: owner.organizationId })
       })
     )
     const auditData = await auditResp.json() as any

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { app } from '../apps/backend/src/index';
+import { createAuthHeaders, createTestSession } from './helpers/auth';
 
 describe('World-Link 一致性参数验证', () => {
   const envBackup: Record<string, string | undefined> = {}
@@ -20,6 +21,7 @@ describe('World-Link 一致性参数验证', () => {
   })
 
   it('生成接口应透传 worldLink + worldId，并保持跨请求一致', async () => {
+    const session = await createTestSession('world-link')
     process.env.LUMA_API_URL = 'https://mock.luma.local'
     process.env.LUMA_API_KEY = 'mock-token'
 
@@ -41,7 +43,10 @@ describe('World-Link 一致性参数验证', () => {
     const response = await app.handle(
       new Request('http://localhost/api/video/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           modelId: 'luma-dream',
           text: '夜景街道，主角连续跨镜头出现',
@@ -53,7 +58,10 @@ describe('World-Link 一致性参数验证', () => {
     const response2 = await app.handle(
       new Request('http://localhost/api/video/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           modelId: 'luma-dream',
           text: '同一世界观下的第二镜头',

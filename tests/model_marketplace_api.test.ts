@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from '../apps/backend/src/index'
+import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 describe('模型超市 API 回归', () => {
   it('应返回模型超市列表与运行指标', async () => {
@@ -31,10 +32,14 @@ describe('模型超市 API 回归', () => {
   })
 
   it('应返回策略模拟决策与候选模型', async () => {
+    const session = await createTestSession('marketplace-api')
     const response = await app.handle(
       new Request('http://localhost/api/models/policy/simulate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
         body: JSON.stringify({
           prompt: '写实风格都市夜景追车镜头，8秒',
           budgetUsd: 0.9,
