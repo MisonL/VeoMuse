@@ -237,12 +237,14 @@ NeRF 空间重构。未配置 provider 时返回 `not_implemented`。
 
 ### POST `/api/storage/upload-token`
 签发上传令牌（当前为 `local` provider，接口形态兼容云存储）。
-- **Params**: `workspaceId`(optional), `projectId`(optional), `fileName`(required), `contentType`(optional)
+- **Params**: `workspaceId`(required), `projectId`(optional), `fileName`(required), `contentType`(optional)
+- **权限**: 需请求头 `x-workspace-actor`，且该成员在目标工作区中真实角色至少为 `editor`，否则 `403`。
 - **Response**: `token`（含 `provider`、`objectKey`、`uploadUrl`、`publicUrl`）
 
 ### PUT `/api/storage/local-upload/:objectKey`
 本地对象存储上传落盘接口（与 `upload-token` 搭配使用）。
 - **Body**: 原始二进制内容。
+- **权限**: 需请求头 `x-workspace-actor`，且该成员在 `objectKey` 对应工作区中角色至少为 `editor`，否则 `403`。
 - `objectKey` 非法时返回 `400`。
 - 成功返回 `201` 与 `uploaded`（`objectKey`、`bytes`、`publicUrl`）。
 

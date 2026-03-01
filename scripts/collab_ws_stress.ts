@@ -56,7 +56,7 @@ const parsePositiveInt = (value: string | undefined, fallback: number) => {
 }
 
 const parseConfig = (): StressConfig => {
-  const apiBase = (process.env.API_BASE_URL || 'http://127.0.0.1:33117').replace(/\/+$/, '')
+  const apiBase = String(process.env.API_BASE_URL || '').trim().replace(/\/+$/, '')
   return {
     selfHost: process.env.SELF_HOST === '1' || process.env.SELF_HOST === 'true',
     apiBase,
@@ -207,10 +207,42 @@ const closeClient = (client: StressClient) => {
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
+const canReachApiBase = async (apiBase: string) => {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 1200)
+  try {
+    const response = await fetch(`${apiBase}/api/health`, {
+      method: 'GET',
+      signal: controller.signal
+    })
+    return response.ok
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+const resolveApiBase = async (configuredApiBase: string) => {
+  if (configuredApiBase) return configuredApiBase
+  const candidates = [
+    'http://127.0.0.1:18081', // Docker 网关入口
+    'http://127.0.0.1:33117' // 直连后端监听
+  ]
+
+  for (const candidate of candidates) {
+    if (await canReachApiBase(candidate)) {
+      return candidate
+    }
+  }
+
+  return candidates[0]
+}
+
 const run = async () => {
   const config = parseConfig()
   const startedAt = performance.now()
-  let apiBase = config.apiBase
+  let apiBase = await resolveApiBase(config.apiBase)
   let runtimeApp: any = null
 
   if (config.selfHost) {

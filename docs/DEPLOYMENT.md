@@ -56,10 +56,13 @@ curl -s http://127.0.0.1:18081/api/health
 curl -s http://127.0.0.1:18081/api/capabilities
 curl -s http://127.0.0.1:18081/api/models/marketplace | jq '.models | length'
 curl -s http://127.0.0.1:18081/api/models/policies | jq '.policies | length'
-TOKEN_JSON=$(curl -s http://127.0.0.1:18081/api/storage/upload-token -X POST -H 'Content-Type: application/json' -d '{"fileName":"demo.mp4"}')
-echo "$TOKEN_JSON" | jq '.token.provider'
+WS_JSON=$(curl -s http://127.0.0.1:18081/api/workspaces -X POST -H 'Content-Type: application/json' -d '{"name":"smoke-ws","ownerName":"OwnerSmoke"}')
+WORKSPACE_ID=$(echo "$WS_JSON" | jq -r '.workspace.id')
+PROJECT_ID=$(echo "$WS_JSON" | jq -r '.defaultProject.id')
+TOKEN_JSON=$(curl -s http://127.0.0.1:18081/api/storage/upload-token -X POST -H 'Content-Type: application/json' -H 'x-workspace-actor: OwnerSmoke' -d "{\"workspaceId\":\"${WORKSPACE_ID}\",\"projectId\":\"${PROJECT_ID}\",\"fileName\":\"demo.mp4\"}")
+echo "$TOKEN_JSON" | jq '.token.provider, .token.objectKey'
 UPLOAD_URL=$(echo "$TOKEN_JSON" | jq -r '.token.uploadUrl')
-curl -s "http://127.0.0.1:18081${UPLOAD_URL}" -X PUT -H 'Content-Type: application/octet-stream' --data-binary 'demo' | jq '.uploaded.bytes'
+curl -s "http://127.0.0.1:18081${UPLOAD_URL}" -X PUT -H 'Content-Type: application/octet-stream' -H 'x-workspace-actor: OwnerSmoke' --data-binary 'demo' | jq '.uploaded.bytes'
 curl -s http://127.0.0.1:18081/api/admin/db/health -H "x-admin-token: $ADMIN_TOKEN" | jq '.health.status'
 curl -s http://127.0.0.1:18081/api/admin/db/runtime -H "x-admin-token: $ADMIN_TOKEN" | jq '.runtime'
 curl -I http://127.0.0.1:18081 | grep -E "Content-Security-Policy|X-Frame-Options|Referrer-Policy|Permissions-Policy"
@@ -86,6 +89,8 @@ COLLAB_STRESS_CLIENTS=24 COLLAB_STRESS_ROUNDS=20 bun run stress:collab-ws
 
 返回摘要包括：`ackRate`、`avgAckMs`、`p95AckMs`、`errors`、`broadcasts`。  
 当 `ackRate < 0.99` 或存在 `errors` 时，脚本将以非 0 状态退出。
+
+说明：未显式配置 `API_BASE_URL` 时，脚本会自动优先探测 `http://127.0.0.1:18081`（Docker 网关）并回退到 `http://127.0.0.1:33117`（直连后端）。
 
 ---
 **VeoMuse - 工业级稳定性，旗舰级表现。**
