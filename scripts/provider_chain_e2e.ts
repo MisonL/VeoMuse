@@ -178,7 +178,7 @@ const run = async () => {
   const server = startMockProvider()
   const stamp = Date.now()
   const email = `e2e-${stamp}@example.com`
-  const password = 'Passw0rd!'
+  const password = `E2E!${crypto.randomUUID()}Aa1`
   let orgId = ''
   let workspaceId = ''
   let projectId = ''

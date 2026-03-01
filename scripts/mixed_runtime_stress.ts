@@ -95,7 +95,7 @@ const run = async () => {
   const server = startMockProvider()
   const stamp = Date.now()
   const email = `stress-${stamp}@example.com`
-  const password = 'Passw0rd!'
+  const password = `Stress!${crypto.randomUUID()}Aa1`
 
   try {
     const registerData = await requestJson<any>('/api/auth/register', {
