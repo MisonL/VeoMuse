@@ -4,11 +4,13 @@ interface ResizeHandleProps {
   axis: 'x' | 'y'
   onDrag: (delta: number) => void
   ariaLabel: string
+  hint?: string
+  guideKey?: string
   className?: string
   disabled?: boolean
 }
 
-const ResizeHandle: React.FC<ResizeHandleProps> = ({ axis, onDrag, ariaLabel, className, disabled = false }) => {
+const ResizeHandle: React.FC<ResizeHandleProps> = ({ axis, onDrag, ariaLabel, hint, guideKey, className, disabled = false }) => {
   const pointerIdRef = useRef<number | null>(null)
   const lastOffsetRef = useRef(0)
 
@@ -68,6 +70,8 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({ axis, onDrag, ariaLabel, cl
       role="separator"
       aria-label={ariaLabel}
       aria-orientation={axis === 'x' ? 'vertical' : 'horizontal'}
+      data-hint={hint || ariaLabel}
+      data-guide={guideKey}
       className={`resize-handle resize-handle-${axis} ${className || ''} ${disabled ? 'disabled' : ''}`.trim()}
       tabIndex={disabled ? -1 : 0}
       onPointerDown={handlePointerDown}

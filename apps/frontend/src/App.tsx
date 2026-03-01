@@ -40,6 +40,16 @@ const HORIZONTAL_HANDLE_SIZE = 10
 const VERTICAL_HANDLE_SIZE = 8
 const SHELL_VERTICAL_PADDING = 20
 const SHELL_VERTICAL_GAP = 30
+const GUIDE_STORAGE_KEY = 'veomuse-onboarding-v1'
+
+interface GuideStep {
+  title: string
+  description: string
+  target: string
+  actionLabel?: string
+  onAction?: () => void
+  onEnter?: () => void
+}
 
 const formatTimecode = (seconds: number) => {
   const safe = Math.max(0, seconds)
@@ -114,6 +124,9 @@ function App() {
     return window.innerWidth > DESKTOP_BREAKPOINT
   })
   const [previewFrameSize, setPreviewFrameSize] = useState({ width: 0, height: 0 })
+  const [isGuideOpen, setIsGuideOpen] = useState(false)
+  const [guideStepIndex, setGuideStepIndex] = useState(0)
+  const [guideAnchorRect, setGuideAnchorRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
   const [optimisticScenes, setOptimisticScenes] = useOptimistic<any[], any[]>(directorScenes, (_prev, next) => next)
   const [optimisticExportStatus, setOptimisticExportStatus] = useOptimistic<'idle' | 'pending' | 'done' | 'error', 'idle' | 'pending' | 'done' | 'error'>('idle', (_prev, next) => next)
   const shellRef = useRef<HTMLDivElement | null>(null)
@@ -202,11 +215,82 @@ function App() {
     }
   }, [isTimelineReady])
 
-  const ensureTimelineReady = () => {
-    if (isTimelineReady) return
-    setIsTimelineReady(true)
-    void loadVideoEditor()
-  }
+  const ensureTimelineReady = useCallback(() => {
+    setIsTimelineReady(prev => {
+      if (prev) return prev
+      void loadVideoEditor()
+      return true
+    })
+  }, [])
+
+  const focusImportAction = useCallback(() => {
+    setTimeout(() => {
+      const importBtn = document.getElementById('btn-import') as HTMLButtonElement | null
+      if (importBtn) importBtn.focus()
+    }, 40)
+  }, [])
+
+  const openImportFromAnywhere = useCallback(() => {
+    setActiveMode('edit')
+    setActiveSidebar('assets')
+    focusImportAction()
+  }, [focusImportAction])
+
+  const openDirectorFromAnywhere = useCallback(() => {
+    setActiveMode('edit')
+    setActiveSidebar('director')
+  }, [])
+
+  const guideSteps = useMemo<GuideStep[]>(() => ([
+    {
+      title: '切换工作模式',
+      description: '先在这里切换剪辑、实验室和音频大师，主工作区会随模式变化。',
+      target: '[data-guide=\"mode-selector\"]',
+      onEnter: () => setActiveMode('edit')
+    },
+    {
+      title: '先导入素材',
+      description: '点击导入按钮选择本地视频或音频，素材会进入左侧资源区。',
+      target: '#btn-import',
+      actionLabel: '聚焦导入按钮',
+      onAction: () => openImportFromAnywhere(),
+      onEnter: () => {
+        setActiveMode('edit')
+        setActiveSidebar('assets')
+      }
+    },
+    {
+      title: '拖动调整布局',
+      description: '拖动这个手柄可调整左侧宽度；右侧和时间轴也有同类手柄。',
+      target: '[data-guide=\"left-resize-handle\"]',
+      onEnter: () => setActiveMode('edit')
+    },
+    {
+      title: '时间轴工具区',
+      description: '在这里执行撤销、重做、选择、切割、平移等剪辑操作。',
+      target: '[data-guide=\"timeline-tools\"]',
+      onEnter: () => {
+        setActiveMode('edit')
+        ensureTimelineReady()
+      }
+    },
+    {
+      title: '实验室模式',
+      description: '在实验室里做模型对比、策略治理、创意闭环和协作流程。',
+      target: '[data-guide=\"lab-toolbar\"]',
+      actionLabel: '切到实验室',
+      onAction: () => setActiveMode('color'),
+      onEnter: () => {
+        setActiveMode('color')
+        void loadComparisonLab()
+      }
+    },
+    {
+      title: '最终导出',
+      description: '确认时间轴后，在右上角选择导出规格并执行导出。',
+      target: '#btn-export'
+    }
+  ]), [ensureTimelineReady, openImportFromAnywhere])
 
   const handleDirector = async () => {
     if (!directorPrompt.trim()) return showToast('请输入脚本', 'info')
@@ -303,6 +387,59 @@ function App() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const hasOnboarded = window.localStorage.getItem(GUIDE_STORAGE_KEY) === 'done'
+    if (!hasOnboarded) {
+      setGuideStepIndex(0)
+      setIsGuideOpen(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isGuideOpen) return
+    const step = guideSteps[guideStepIndex]
+    step?.onEnter?.()
+  }, [guideStepIndex, guideSteps, isGuideOpen])
+
+  useEffect(() => {
+    if (!isGuideOpen) {
+      setGuideAnchorRect(null)
+      return
+    }
+
+    const updateAnchorRect = () => {
+      const step = guideSteps[guideStepIndex]
+      if (!step) {
+        setGuideAnchorRect(null)
+        return
+      }
+      const el = document.querySelector(step.target) as HTMLElement | null
+      if (!el) {
+        setGuideAnchorRect(null)
+        return
+      }
+      const rect = el.getBoundingClientRect()
+      setGuideAnchorRect({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height
+      })
+    }
+
+    const timerId = window.setTimeout(updateAnchorRect, 80)
+    updateAnchorRect()
+    window.addEventListener('resize', updateAnchorRect)
+    window.addEventListener('scroll', updateAnchorRect, true)
+
+    return () => {
+      window.clearTimeout(timerId)
+      window.removeEventListener('resize', updateAnchorRect)
+      window.removeEventListener('scroll', updateAnchorRect, true)
+    }
+  }, [guideStepIndex, guideSteps, isGuideOpen, activeMode, activeSidebar, isDesktopLayout, leftPanelPx, rightPanelPx, timelinePx])
 
   useEffect(() => {
     if (activeMode !== 'edit') return
@@ -425,6 +562,54 @@ function App() {
     } as CSSProperties
   }, [previewFrameSize.height, previewFrameSize.width])
 
+  const closeGuide = useCallback((completed: boolean) => {
+    setIsGuideOpen(false)
+    if (completed && typeof window !== 'undefined') {
+      window.localStorage.setItem(GUIDE_STORAGE_KEY, 'done')
+    }
+  }, [])
+
+  const currentGuideStep = guideSteps[guideStepIndex]
+
+  const goGuidePrev = () => {
+    setGuideStepIndex(prev => Math.max(0, prev - 1))
+  }
+
+  const goGuideNext = () => {
+    if (guideStepIndex >= guideSteps.length - 1) {
+      closeGuide(true)
+      return
+    }
+    setGuideStepIndex(prev => Math.min(guideSteps.length - 1, prev + 1))
+  }
+
+  const guideHighlightStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!guideAnchorRect) return undefined
+    return {
+      top: `${Math.round(guideAnchorRect.top - 6)}px`,
+      left: `${Math.round(guideAnchorRect.left - 6)}px`,
+      width: `${Math.round(guideAnchorRect.width + 12)}px`,
+      height: `${Math.round(guideAnchorRect.height + 12)}px`
+    }
+  }, [guideAnchorRect])
+
+  const guideCardStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!guideAnchorRect || typeof window === 'undefined') return undefined
+    const cardW = 320
+    const cardH = 220
+    const viewportW = window.innerWidth
+    const viewportH = window.innerHeight
+    let top = guideAnchorRect.top + guideAnchorRect.height + 14
+    if (top + cardH > viewportH - 12) top = Math.max(12, guideAnchorRect.top - cardH - 14)
+    let left = guideAnchorRect.left
+    if (left + cardW > viewportW - 12) left = viewportW - cardW - 12
+    left = Math.max(12, left)
+    return {
+      top: `${Math.round(top)}px`,
+      left: `${Math.round(left)}px`
+    }
+  }, [guideAnchorRect])
+
   return (
     <div className="pro-master-shell" ref={shellRef} style={shellLayoutVars}>
       <Suspense fallback={null}>
@@ -436,7 +621,7 @@ function App() {
           <div className="brand-logo">V</div>
           <span className="brand-title">VEOMUSE PRO</span>
         </div>
-        <div className="mode-selector">
+        <div className="mode-selector" data-guide="mode-selector">
           {['edit', 'color', 'audio'].map(m => (
             <button
               key={m}
@@ -455,6 +640,17 @@ function App() {
           ))}
         </div>
         <div className="header-actions">
+          <button
+            id="btn-open-guide"
+            aria-label="打开使用引导"
+            className="guide-toggle-btn"
+            onClick={() => {
+              setGuideStepIndex(0)
+              setIsGuideOpen(true)
+            }}
+          >
+            使用引导
+          </button>
           <ThemeSwitcher />
           <button id="btn-reset-layout" aria-label="重置布局" className="layout-reset-btn" onClick={resetLayout}>
             重置布局
@@ -505,6 +701,8 @@ function App() {
             axis="x"
             className="main-resize-handle"
             ariaLabel="调整左侧功能区宽度"
+            hint="拖动调整左侧功能区宽度"
+            guideKey="left-resize-handle"
             onDrag={handleLeftPanelResize}
           />
         ) : null}
@@ -531,7 +729,10 @@ function App() {
                   </div>
 
                   <Suspense fallback={<LazyFallback label="预览器加载中..." />}>
-                    <MultiVideoPlayer />
+                    <MultiVideoPlayer
+                      onOpenAssets={openImportFromAnywhere}
+                      onOpenDirector={openDirectorFromAnywhere}
+                    />
                   </Suspense>
                 </div>
               </div>
@@ -544,12 +745,20 @@ function App() {
             </div>
           ) : activeMode === 'color' ? (
             <Suspense fallback={<LazyFallback label="实验室加载中..." />}>
-              <ComparisonLab />
+              <ComparisonLab onOpenAssets={openImportFromAnywhere} />
             </Suspense>
           ) : (
             <div className="audio-master-state">
               <div className="audio-master-icon">🎚️</div>
               <div className="audio-master-title">AUDIO MASTER 引擎已就绪</div>
+              <div className="audio-master-actions">
+                <button type="button" className="audio-master-btn primary" onClick={openImportFromAnywhere}>
+                  导入素材开始处理
+                </button>
+                <button type="button" className="audio-master-btn" onClick={() => setActiveMode('color')}>
+                  切换到实验室对比
+                </button>
+              </div>
             </div>
           )}
         </section>
@@ -559,6 +768,7 @@ function App() {
             axis="x"
             className="main-resize-handle"
             ariaLabel="调整右侧功能区宽度"
+            hint="拖动调整右侧功能区宽度"
             onDrag={handleRightPanelResize}
           />
         ) : null}
@@ -578,13 +788,14 @@ function App() {
           axis="y"
           className="timeline-resize-handle"
           ariaLabel="调整时间轴高度"
+          hint="拖动调整时间轴高度"
           onDrag={handleTimelineResize}
         />
       ) : null}
 
       <footer className="pro-panel timeline-container" onMouseEnter={ensureTimelineReady} onFocusCapture={ensureTimelineReady}>
         <div className="timeline-actions">
-          <div className="timeline-tools">
+          <div className="timeline-tools" data-guide="timeline-tools">
             <span className="timeline-section-title">编辑工具</span>
             <div className="undo-group">
               <button id="tool-undo" aria-label="撤销" className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0}>↩</button>
@@ -621,6 +832,32 @@ function App() {
           )}
         </div>
       </footer>
+
+      {isGuideOpen && currentGuideStep ? (
+        <div className="guide-overlay" role="dialog" aria-modal="true" aria-label="新手引导">
+          <div className="guide-dim" />
+          {guideHighlightStyle ? <div className="guide-highlight" style={guideHighlightStyle} /> : null}
+          <section className="guide-card" style={guideCardStyle}>
+            <div className="guide-card-head">
+              <span className="guide-step">步骤 {guideStepIndex + 1} / {guideSteps.length}</span>
+              <button type="button" className="guide-close" onClick={() => closeGuide(true)}>跳过</button>
+            </div>
+            <h3>{currentGuideStep.title}</h3>
+            <p>{currentGuideStep.description}</p>
+            <div className="guide-actions">
+              {currentGuideStep.actionLabel && currentGuideStep.onAction ? (
+                <button type="button" className="guide-action" onClick={currentGuideStep.onAction}>
+                  {currentGuideStep.actionLabel}
+                </button>
+              ) : null}
+              <button type="button" className="guide-nav" onClick={goGuidePrev} disabled={guideStepIndex === 0}>上一步</button>
+              <button type="button" className="guide-nav primary" onClick={goGuideNext}>
+                {guideStepIndex === guideSteps.length - 1 ? '完成引导' : '下一步'}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   )
 }

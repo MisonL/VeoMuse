@@ -46,7 +46,8 @@
   justify-content: center;
   gap: 10px;
   z-index: 4;
-  pointer-events: none;
+  pointer-events: auto;
+  padding: 14px;
   background:
     radial-gradient(circle at 70% 30%, rgba(11, 102, 255, 0.16), transparent 36%),
     radial-gradient(circle at 20% 80%, rgba(22, 163, 74, 0.12), transparent 40%);
@@ -64,6 +65,38 @@
   font-weight: 500;
   color: rgba(226, 232, 240, 0.84);
   text-align: center;
+}
+
+.player-empty-actions {
+  margin-top: 4px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.player-empty-btn {
+  border: 1px solid rgba(191, 219, 254, 0.42);
+  background: rgba(10, 20, 38, 0.72);
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 150ms ease, filter 150ms ease, border-color 150ms ease;
+}
+
+.player-empty-btn.primary {
+  background: linear-gradient(165deg, #0b66ff, #0a4bd1);
+  border-color: rgba(191, 219, 254, 0.75);
+  color: #ffffff;
+}
+
+.player-empty-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  border-color: rgba(191, 219, 254, 0.72);
 }
 
 /* 神经渲染 VFX 样式模拟 */

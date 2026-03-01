@@ -15,6 +15,9 @@ import './ComparisonLab.css'
 
 type LabMode = 'compare' | 'marketplace' | 'creative' | 'collab'
 type PolicyPriority = 'quality' | 'speed' | 'cost'
+interface ComparisonLabProps {
+  onOpenAssets?: () => void
+}
 
 const POLICY_EXEC_PAGE_SIZE = 12
 const defaultWeights = {
@@ -54,7 +57,7 @@ const requestJson = async <T,>(path: string, init?: RequestInit): Promise<T> => 
   return payload as T
 }
 
-const ComparisonLab: React.FC = () => {
+const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const allAssets = useEditorStore(state => state.assets)
   const { showToast } = useToastStore()
 
@@ -836,7 +839,18 @@ const ComparisonLab: React.FC = () => {
           </div>
         </div>
         <div className="pane-viewport">
-          {leftAsset?.src ? <video ref={leftVideoRef} src={leftAsset.src} controls playsInline /> : <div className="empty-pane">请选择左侧素材</div>}
+          {leftAsset?.src ? (
+            <video ref={leftVideoRef} src={leftAsset.src} controls playsInline />
+          ) : (
+            <div className="empty-pane">
+              <span>请选择左侧素材</span>
+              {onOpenAssets ? (
+                <button type="button" className="empty-pane-cta" onClick={onOpenAssets}>
+                  去左侧导入素材
+                </button>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
 
@@ -863,7 +877,18 @@ const ComparisonLab: React.FC = () => {
           </div>
         </div>
         <div className="pane-viewport">
-          {rightAsset?.src ? <video ref={rightVideoRef} src={rightAsset.src} controls playsInline /> : <div className="empty-pane">请选择右侧素材</div>}
+          {rightAsset?.src ? (
+            <video ref={rightVideoRef} src={rightAsset.src} controls playsInline />
+          ) : (
+            <div className="empty-pane">
+              <span>请选择右侧素材</span>
+              {onOpenAssets ? (
+                <button type="button" className="empty-pane-cta" onClick={onOpenAssets}>
+                  去左侧导入素材
+                </button>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1308,7 +1333,7 @@ const ComparisonLab: React.FC = () => {
 
   return (
     <div className="comparison-lab-pro">
-      <div className="lab-toolbar">
+      <div className="lab-toolbar" data-guide="lab-toolbar">
         <div className="lab-status">
           <span className="live-dot">●</span> 实验室在线
         </div>
