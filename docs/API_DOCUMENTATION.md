@@ -7,6 +7,12 @@
   - `not_implemented`: 当前环境未配置该 provider
   - `error`: 请求失败或 provider 返回异常
 
+## 鉴权约定（V3.2）
+- 用户鉴权统一使用 `Authorization: Bearer <accessToken>`（`/api/auth/register|login|refresh` 除外）。
+- 组织作用域接口支持请求头 `x-organization-id` 指定组织；不传时默认使用当前用户第一个组织。
+- 工作区/项目接口基于“当前 Bearer 用户在目标工作区中的真实成员角色”做鉴权，不再信任 `x-workspace-actor`。
+- 协作 WebSocket 鉴权推荐使用子协议 `Sec-WebSocket-Protocol: veomuse-auth.<accessToken>`，服务端同时兼容 `Authorization: Bearer <accessToken>`（便于压测/后端脚本接入）。
+
 ## 1. 基础与能力发现
 
 ### GET `/api/health`
@@ -192,12 +198,12 @@ NeRF 空间重构。未配置 provider 时返回 `not_implemented`。
 
 ### GET `/api/workspaces/:id/invites`
 获取邀请列表。
-- **权限**: 需请求头 `x-workspace-actor`，且该成员在目标工作区内真实角色为 `owner`，否则 `403`。
+- **权限**: Bearer 用户在目标工作区中角色需为 `owner`，否则 `403`。
 
 ### POST `/api/workspaces/:id/invites`
 创建成员邀请。
 - **Params**: `role`(`owner`/`editor`/`viewer`), `expiresInHours`(optional)
-- **权限**: 需请求头 `x-workspace-actor`，且该成员在目标工作区内真实角色为 `owner`，否则 `403`。
+- **权限**: Bearer 用户在目标工作区中角色需为 `owner`，否则 `403`。
 
 ### POST `/api/workspaces/invites/:code/accept`
 接受邀请并加入工作区。
@@ -210,8 +216,8 @@ NeRF 空间重构。未配置 provider 时返回 `not_implemented`。
 
 ### POST `/api/workspaces/:id/members`
 添加工作区成员。
-- **Params**: `name`, `role`(`owner`/`editor`/`viewer`)
-- **权限**: 需请求头 `x-workspace-actor`，且该成员在目标工作区内真实角色为 `owner`，否则 `403`。
+- **Params**: `name`, `role`(`owner`/`editor`/`viewer`), `userId`(optional)
+- **权限**: Bearer 用户在目标工作区中角色需为 `owner`，否则 `403`。
 
 ### GET `/api/workspaces/:id/projects`
 获取工作区项目列表。
@@ -228,8 +234,8 @@ NeRF 空间重构。未配置 provider 时返回 `not_implemented`。
 
 ### POST `/api/projects/:id/snapshots`
 创建项目快照。
-- **Params**: `content`(optional), `actorName`(optional)
-- **权限**: 实际成员角色需至少为 `editor`（通过 `x-workspace-actor` 或 `body.actorName` 解析），否则 `403`。
+- **Params**: `content`(optional)
+- **权限**: Bearer 用户在项目所属工作区中角色需至少为 `editor`，否则 `403`。
 
 ### GET `/api/projects/:id/snapshots`
 查询项目快照历史。
@@ -238,20 +244,21 @@ NeRF 空间重构。未配置 provider 时返回 `not_implemented`。
 ### POST `/api/storage/upload-token`
 签发上传令牌（当前为 `local` provider，接口形态兼容云存储）。
 - **Params**: `workspaceId`(required), `projectId`(optional), `fileName`(required), `contentType`(optional)
-- **权限**: 需请求头 `x-workspace-actor`，且该成员在目标工作区中真实角色至少为 `editor`，否则 `403`。
+- **权限**: Bearer 用户在目标工作区中角色需至少为 `editor`，否则 `403`。
 - **Response**: `token`（含 `provider`、`objectKey`、`uploadUrl`、`publicUrl`）
 
 ### PUT `/api/storage/local-upload/:objectKey`
 本地对象存储上传落盘接口（与 `upload-token` 搭配使用）。
 - **Body**: 原始二进制内容。
-- **权限**: 需请求头 `x-workspace-actor`，且该成员在 `objectKey` 对应工作区中角色至少为 `editor`，否则 `403`。
+- **权限**: Bearer 用户在 `objectKey` 对应工作区中的角色需至少为 `editor`，否则 `403`。
 - `objectKey` 非法时返回 `400`。
 - 成功返回 `201` 与 `uploaded`（`objectKey`、`bytes`、`publicUrl`）。
 
 ### WS `/ws/collab/:workspaceId`
 多人协作实时通道。
-- **Query**: `memberName`(optional), `role`(optional), `sessionId`(optional)
-- **安全约束**: `memberName` 必须是该工作区真实成员，否则握手后立即返回错误并断开；`role` 仅作为前端意图，最终以服务端成员角色为准。
+- **Query**: `sessionId`(optional)
+- **鉴权**: 推荐通过 `Sec-WebSocket-Protocol: veomuse-auth.<accessToken>` 传入访问令牌；服务端兼容 `Authorization: Bearer <accessToken>`。
+- **安全约束**: Bearer 用户必须是该工作区真实成员，否则握手后立即返回错误并断开。
 - **消息类型**: `presence.heartbeat`、`presence.leave`、`timeline.patch`、`project.patch`、`cursor.update`
 
 ## 8. 导出与合成
