@@ -60,7 +60,10 @@ export class CompositionService {
         
         timelineData.tracks.forEach(track => {
           if (track.type !== 'text' && track.type !== 'mask') {
-            track.clips.forEach(clip => { if (clip.src) command.input(clip.src); });
+            track.clips.forEach(clip => {
+              const candidate = (clip as any)?.data?.exportSrc || clip.src
+              if (candidate) command.input(candidate)
+            });
           }
         });
 

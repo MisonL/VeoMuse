@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia'
 import { cors } from '@elysiajs/cors'
 import path from 'path'
+import fs from 'fs/promises'
 import { ApiKeyService } from './services/ApiKeyService'
 import { PromptEnhanceService } from './services/PromptEnhanceService'
 import { AiClipService } from './services/AiClipService'
@@ -57,6 +58,20 @@ const resolveGeneratedDir = () => {
     ? path.resolve(process.env.UPLOADS_PATH)
     : path.resolve(process.cwd(), '../../uploads')
   return path.join(baseUploadsDir, 'generated')
+}
+
+const resolveImportDir = () => {
+  const baseUploadsDir = process.env.UPLOADS_PATH
+    ? path.resolve(process.env.UPLOADS_PATH)
+    : path.resolve(process.cwd(), '../../uploads')
+  return path.join(baseUploadsDir, 'imports')
+}
+
+const sanitizeImportFileName = (fileName: string) => {
+  const base = path.basename(fileName || '').trim()
+  const safe = base.replace(/[^a-zA-Z0-9._-]/g, '_')
+  if (safe) return safe
+  return `asset-${Date.now()}.bin`
 }
 const storageProvider = new LocalStorageProvider()
 
@@ -741,6 +756,55 @@ export const createApp = () => {
       params: t.Object({ id: t.String() }),
       query: t.Object({
         limit: t.Optional(t.String())
+      })
+    })
+    .post('/api/storage/local-import', async ({ body, set }) => {
+      try {
+        const rawBase64 = (body.base64Data || '').trim()
+        if (!rawBase64) {
+          set.status = 400
+          return { success: false, status: 'error', error: 'base64Data is required' }
+        }
+
+        const bytes = Buffer.from(rawBase64, 'base64')
+        if (!bytes.length) {
+          set.status = 400
+          return { success: false, status: 'error', error: 'base64Data is invalid' }
+        }
+
+        const maxBytes = Number.parseInt(process.env.LOCAL_IMPORT_MAX_BYTES || '', 10)
+        const hardLimit = Number.isFinite(maxBytes) && maxBytes > 0 ? maxBytes : 200 * 1024 * 1024
+        if (bytes.length > hardLimit) {
+          set.status = 413
+          return {
+            success: false,
+            status: 'error',
+            error: `file is too large: ${bytes.length} bytes (max ${hardLimit} bytes)`
+          }
+        }
+
+        const importDir = resolveImportDir()
+        await fs.mkdir(importDir, { recursive: true })
+        const safeName = sanitizeImportFileName(body.fileName)
+        const filePath = path.join(importDir, `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`)
+        await fs.writeFile(filePath, bytes)
+
+        return {
+          success: true,
+          imported: {
+            localPath: filePath,
+            bytes: bytes.length
+          }
+        }
+      } catch (error: any) {
+        set.status = 400
+        return { success: false, status: 'error', error: error?.message || 'local import failed' }
+      }
+    }, {
+      body: t.Object({
+        fileName: t.String(),
+        base64Data: t.String(),
+        contentType: t.Optional(t.String())
       })
     })
     .post('/api/storage/upload-token', ({ body, request, set }) => {
