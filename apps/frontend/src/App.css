@@ -30,15 +30,18 @@
 .pro-master-shell {
   --left-panel-w: 360px;
   --right-panel-w: 300px;
+  --left-panel-flex: 1.75fr;
+  --right-panel-flex: 1.55fr;
   --center-panel-min-w: 360px;
   --center-panel-fit-w: 620px;
   --timeline-h: 272px;
+  --header-h: 62px;
   --split-handle-w: 10px;
   --split-handle-h: 8px;
   height: 100vh;
   width: 100vw;
   display: grid;
-  grid-template-rows: 62px minmax(0, 1fr) var(--split-handle-h) var(--timeline-h);
+  grid-template-rows: var(--header-h) minmax(0, 1fr) var(--split-handle-h) var(--timeline-h);
   gap: 8px;
   background:
     radial-gradient(980px 340px at 18% -8%, color-mix(in srgb, var(--ap-accent) 10%, transparent), transparent 72%),
@@ -112,6 +115,15 @@
   gap: 10px;
 }
 
+.pro-master-shell[data-topbar-density='compact'] {
+  --header-h: 56px;
+}
+
+.pro-master-shell[data-topbar-density='compact'] .os-header {
+  padding: 0 12px;
+  gap: 8px;
+}
+
 .brand-zone {
   display: flex;
   align-items: center;
@@ -144,6 +156,10 @@
   white-space: nowrap;
 }
 
+.pro-master-shell[data-topbar-density='compact'] .brand-title {
+  font-size: 19px;
+}
+
 .mode-selector {
   display: inline-flex;
   justify-self: center;
@@ -158,6 +174,10 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
+.pro-master-shell[data-topbar-density='compact'] .mode-tab {
+  padding: 6px 11px;
+}
+
 .header-actions {
   display: flex;
   gap: 7px;
@@ -167,11 +187,56 @@
   flex-wrap: nowrap;
   min-width: 0;
   max-width: none;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: thin;
+}
+
+.pro-master-shell[data-topbar-density='compact'] .header-actions {
+  gap: 6px;
 }
 
 .header-actions > * {
   flex-shrink: 0;
+}
+
+.header-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 68%, #ffffff 32%);
+  background: color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+}
+
+.header-segment-btn {
+  border: none;
+  background: transparent;
+  color: var(--ap-text-dim);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: var(--ap-transition-fast);
+}
+
+.header-segment-btn:hover {
+  color: var(--ap-text);
+  background: color-mix(in srgb, var(--ap-surface) 75%, #ffffff 25%);
+}
+
+.header-segment-btn.active {
+  color: var(--ap-accent);
+  background: color-mix(in srgb, var(--ap-accent-soft) 72%, #ffffff 28%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ap-accent) 40%, transparent);
+}
+
+.pro-master-shell[data-topbar-density='compact'] .header-segment-btn {
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 .channel-entry-btn,
@@ -247,6 +312,18 @@
 
 .header-select:focus-visible {
   border-color: color-mix(in srgb, var(--ap-accent) 65%, #ffffff 35%);
+}
+
+.pro-master-shell[data-topbar-density='compact'] .header-select,
+.pro-master-shell[data-topbar-density='compact'] .layout-reset-btn,
+.pro-master-shell[data-topbar-density='compact'] .channel-entry-btn,
+.pro-master-shell[data-topbar-density='compact'] .guide-toggle-btn {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.preview-aspect-select {
+  min-width: 106px;
 }
 
 .export-btn {
@@ -403,11 +480,11 @@
 .os-main {
   display: grid;
   grid-template-columns:
-    minmax(var(--left-panel-w), 1.75fr)
+    minmax(var(--left-panel-w), var(--left-panel-flex))
     var(--split-handle-w)
     minmax(var(--center-panel-min-w), var(--center-panel-fit-w))
     var(--split-handle-w)
-    minmax(var(--right-panel-w), 1.55fr);
+    minmax(var(--right-panel-w), var(--right-panel-flex));
   gap: 0;
   min-height: 0;
   align-items: stretch;
@@ -1140,6 +1217,15 @@ body.resizing-y {
     padding: 8px 10px;
   }
 
+  .header-segment-btn {
+    padding: 6px 7px;
+    font-size: 10px;
+  }
+
+  .preview-aspect-select {
+    min-width: 96px;
+  }
+
   .export-btn {
     padding: 9px 14px;
   }
@@ -1271,6 +1357,11 @@ body.resizing-y {
   .layout-reset-btn,
   .export-btn,
   .guide-toggle-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-segment {
     width: 100%;
     justify-content: center;
   }
