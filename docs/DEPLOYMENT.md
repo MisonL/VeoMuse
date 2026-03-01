@@ -9,6 +9,8 @@
 cat > .env <<'ENV'
 GEMINI_API_KEYS=key1,key2
 # 可选：ADMIN_TOKEN=your_admin_token
+# 建议：为 Redis 设置强口令
+REDIS_PASSWORD=replace-with-strong-password
 ENV
 
 # 2. 启动集群
@@ -29,6 +31,7 @@ docker-compose up -d --build
 | Key | Default | Note |
 |---|---|---|
 | `PORT` | 33117 | 后端端口 |
+| `REDIS_PASSWORD` | `veomuse-redis-change-me` | Redis `requirepass` 口令，生产环境务必覆盖 |
 | `UPLOADS_PATH` | `/app/uploads` | 导出与上传统一根目录 |
 | `VEOMUSE_DB_PATH` | `/app/data/veomuse.sqlite` | 本地 SQLite 存储路径（模型超市、创意闭环、协作审计） |
 | `DB_AUTO_REPAIR` | `true` | 启动时发现 SQLite 损坏自动尝试修复（`false` 时关闭） |

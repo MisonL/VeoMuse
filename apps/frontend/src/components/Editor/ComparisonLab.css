@@ -189,6 +189,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .model-pane {
@@ -197,6 +198,7 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   background: color-mix(in srgb, var(--ap-panel) 86%, #ffffff 14%);
+  overflow: hidden;
 }
 
 .pane-head {
@@ -270,7 +272,7 @@
   width: 100%;
   height: 100%;
   position: relative;
-  min-height: 220px;
+  min-height: 0;
 }
 
 .pane-viewport video {
@@ -953,7 +955,7 @@
   }
 }
 
-@container lab-frame (max-width: 760px) {
+@container lab-frame (max-width: 720px) {
   .lab-toolbar {
     grid-template-columns: 1fr;
     align-items: flex-start;
@@ -965,7 +967,8 @@
 
   .lab-split-engine {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(220px, 1fr) 26px minmax(220px, 1fr);
+    grid-template-rows: minmax(0, 1fr) 26px minmax(0, 1fr);
+    min-height: 0;
   }
 
   .lab-axis {
