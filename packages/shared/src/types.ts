@@ -100,6 +100,13 @@ export interface RoutingDecision {
   priority: ModelRoutingPriority;
   policyId?: string;
   fallbackUsed?: boolean;
+  budgetGuard?: {
+    budgetUsd: number;
+    alertThresholdRatio: number;
+    status: 'ok' | 'warning' | 'critical' | 'degraded';
+    message: string;
+    autoDegraded: boolean;
+  };
   scoreBreakdown?: Array<{
     modelId: string;
     quality: number;
@@ -299,6 +306,37 @@ export interface OrganizationMember {
   createdAt: string;
 }
 
+export interface OrganizationQuota {
+  organizationId: string;
+  requestLimit: number;
+  storageLimitBytes: number;
+  concurrencyLimit: number;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface OrganizationUsage {
+  organizationId: string;
+  requestCount: number;
+  storageBytes: number;
+  lastRequestAt: string | null;
+  updatedAt: string;
+  activeRequests: number;
+}
+
+export interface OrganizationAuditRecord {
+  id: string;
+  source: 'channel' | 'workspace';
+  organizationId: string;
+  workspaceId: string | null;
+  actor: string;
+  action: string;
+  providerId: string | null;
+  traceId: string | null;
+  createdAt: string;
+  detail: Record<string, unknown>;
+}
+
 export interface AuthSession {
   accessToken: string;
   refreshToken: string;
@@ -329,4 +367,49 @@ export interface AiChannelConfig {
   updatedAt: string;
   hasSecret: boolean;
   secretMasked: string;
+}
+
+export type DbIntegrityMode = 'quick' | 'full';
+export type DbRepairCheckMode = DbIntegrityMode;
+
+export interface DbIntegrityReport {
+  dbPath: string;
+  mode: DbIntegrityMode;
+  status: 'ok' | 'corrupted' | 'error';
+  messages: string[];
+  checkedAt: string;
+}
+
+export interface DbRepairSalvageDetail {
+  table: string;
+  copiedRows: number;
+  status: 'copied' | 'skipped' | 'failed';
+  reason?: string;
+}
+
+export interface DbRepairReport {
+  dbPath: string;
+  status: 'ok' | 'repaired' | 'failed';
+  repaired: boolean;
+  forced: boolean;
+  checkMode: DbRepairCheckMode;
+  reason: string;
+  timestamp: string;
+  actions: string[];
+  before: DbIntegrityReport;
+  after?: DbIntegrityReport;
+  backupPath?: string;
+  quarantinePath?: string;
+  salvage: {
+    attempted: boolean;
+    copiedRows: number;
+    tableDetails: DbRepairSalvageDetail[];
+  };
+  error?: string;
+}
+
+export interface DbRepairRequestPayload {
+  force?: boolean;
+  reason?: string;
+  checkMode?: DbRepairCheckMode;
 }

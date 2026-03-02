@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from '../apps/backend/src/index'
+import { buildTestPassword } from './helpers/credentials'
 
 const callApi = async (path: string, init?: RequestInit) => {
   const response = await app.handle(new Request(`http://localhost${path}`, init))
@@ -10,7 +11,7 @@ const callApi = async (path: string, init?: RequestInit) => {
 describe('多租户渠道与权限回归', () => {
   it('应隔离组织数据并支持工作区渠道覆写命中', async () => {
     const stamp = Date.now()
-    const password = 'Passw0rd!'
+    const password = buildTestPassword(`tenant-a-${stamp}`)
 
     const registerA = await callApi('/api/auth/register', {
       method: 'POST',
@@ -189,7 +190,7 @@ describe('多租户渠道与权限回归', () => {
 
   it('应支持 OpenAI 兼容渠道并命中工作区覆写', async () => {
     const stamp = Date.now()
-    const password = 'Passw0rd!'
+    const password = buildTestPassword(`tenant-openai-${stamp}`)
     const orgCalls: Array<{ path: string; auth: string; body: any }> = []
     const workspaceCalls: Array<{ path: string; auth: string; body: any }> = []
 
@@ -363,7 +364,7 @@ describe('多租户渠道与权限回归', () => {
 
   it('渠道测试应支持复用已保存密钥（组织级与工作区覆写）', async () => {
     const stamp = Date.now()
-    const password = 'Passw0rd!'
+    const password = buildTestPassword(`tenant-test-${stamp}`)
 
     const register = await callApi('/api/auth/register', {
       method: 'POST',

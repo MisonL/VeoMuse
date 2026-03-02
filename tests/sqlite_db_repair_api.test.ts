@@ -32,7 +32,31 @@ describe('数据库修复 API', () => {
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)
     expect(['ok', 'repaired']).toContain(data.repair.status)
+    expect(data.repair.checkMode).toBe('quick')
     expect(typeof data.repair.dbPath).toBe('string')
     expect(Array.isArray(data.repair.actions)).toBe(true)
-  })
+  }, 15_000)
+
+  it('应支持管理员显式指定 full 检查模式', async () => {
+    const response = await app.handle(
+      new Request('http://localhost/api/admin/db/repair', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': 'unit-test-admin-token'
+        },
+        body: JSON.stringify({
+          force: false,
+          checkMode: 'full',
+          reason: 'unit-test-full-check'
+        })
+      })
+    )
+    const data = await response.json() as any
+
+    expect(response.status).toBe(200)
+    expect(data.success).toBe(true)
+    expect(['ok', 'repaired']).toContain(data.repair.status)
+    expect(data.repair.checkMode).toBe('full')
+  }, 20_000)
 })

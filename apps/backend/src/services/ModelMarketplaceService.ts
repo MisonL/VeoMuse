@@ -33,6 +33,30 @@ interface PolicyExecutionQuery {
   offset?: number
 }
 
+interface ScoreBreakdownRow {
+  modelId: string
+  quality: number
+  speed: number
+  cost: number
+  reliability: number
+  finalScore: number
+}
+
+interface ScoredCandidate {
+  modelId: string
+  score: number
+  estimatedCostUsd: number
+  estimatedLatencyMs: number
+}
+
+interface EvaluatePolicyResult {
+  decision: RoutingDecision
+  scoreBreakdown: ScoreBreakdownRow[]
+  scoredCandidates: ScoredCandidate[]
+  hasBudgetMiss: boolean
+  budgetUsd: number
+}
+
 const nowIso = () => new Date().toISOString()
 
 const DEFAULT_WEIGHTS: Record<ModelRoutingPriority, RoutingWeightConfig> = {
@@ -272,6 +296,12 @@ const calcQualityScore = (profile: ModelProfile) => {
 const calcSpeedScore = (latencyMs: number) => Number(Math.max(0, 1 - latencyMs / 4000).toFixed(4))
 
 const calcCostScore = (estimatedCostUsd: number) => Number(Math.max(0, 1 - estimatedCostUsd / 2).toFixed(4))
+
+const resolveBudgetAlertRatio = () => {
+  const value = Number.parseFloat(String(process.env.MODEL_POLICY_BUDGET_ALERT_RATIO || ''))
+  if (!Number.isFinite(value)) return 0.8
+  return Math.min(0.99, Math.max(0.5, value))
+}
 
 export class ModelMarketplaceService {
   private static initialized = false
@@ -619,18 +649,7 @@ export class ModelMarketplaceService {
   private static evaluateWithPolicy(
     payload: SimulatePayload,
     policy: RoutingPolicy
-  ): {
-    decision: RoutingDecision
-    scoreBreakdown: Array<{
-      modelId: string
-      quality: number
-      speed: number
-      cost: number
-      reliability: number
-      finalScore: number
-    }>
-    hasBudgetMiss: boolean
-  } {
+  ): EvaluatePolicyResult {
     const prompt = payload.prompt || ''
     const priority = payload.priority || policy.priority
     const durationSec = estimateDurationFromPrompt(prompt)
@@ -669,7 +688,7 @@ export class ModelMarketplaceService {
       }
     })
 
-    const scoredCandidates = scoreBreakdown
+    const scoredCandidates: ScoredCandidate[] = scoreBreakdown
       .map(item => ({
         modelId: item.modelId,
         score: item.finalScore,
@@ -698,22 +717,26 @@ export class ModelMarketplaceService {
           fallbackUsed: false,
           scoreBreakdown: [],
           candidates: []
-        } as RoutingDecision,
-        scoreBreakdown: [] as Array<{
-          modelId: string
-          quality: number
-          speed: number
-          cost: number
-          reliability: number
-          finalScore: number
-        }>,
-        hasBudgetMiss: budgetUsd > 0
+        },
+        scoreBreakdown: [],
+        scoredCandidates: [],
+        hasBudgetMiss: budgetUsd > 0,
+        budgetUsd
       }
     }
 
     const reason = underBudget.length
       ? `命中策略 ${policy.name}，按${priority}权重评分最优`
       : `策略 ${policy.name} 下预算不足，退化为全候选评分`
+
+    const normalizedScoreBreakdown: ScoreBreakdownRow[] = scoreBreakdown.map(item => ({
+      modelId: item.modelId,
+      quality: item.quality,
+      speed: item.speed,
+      cost: item.cost,
+      reliability: item.reliability,
+      finalScore: item.finalScore
+    }))
 
     return {
       decision: {
@@ -725,25 +748,65 @@ export class ModelMarketplaceService {
         priority,
         policyId: policy.id,
         fallbackUsed: false,
-        scoreBreakdown: scoreBreakdown.map(item => ({
-          modelId: item.modelId,
-          quality: item.quality,
-          speed: item.speed,
-          cost: item.cost,
-          reliability: item.reliability,
-          finalScore: item.finalScore
-        })),
+        scoreBreakdown: normalizedScoreBreakdown,
         candidates: selectedPool.slice(0, 5)
-      } as RoutingDecision,
-      scoreBreakdown: scoreBreakdown.map(item => ({
-        modelId: item.modelId,
-        quality: item.quality,
-        speed: item.speed,
-        cost: item.cost,
-        reliability: item.reliability,
-        finalScore: item.finalScore
-      })),
-      hasBudgetMiss: Boolean(budgetUsd > 0 && underBudget.length === 0 && scoredCandidates.length > 0)
+      },
+      scoreBreakdown: normalizedScoreBreakdown,
+      scoredCandidates,
+      hasBudgetMiss: Boolean(budgetUsd > 0 && underBudget.length === 0 && scoredCandidates.length > 0),
+      budgetUsd
+    }
+  }
+
+  private static isOverBudget(decision: RoutingDecision, budgetUsd: number) {
+    return budgetUsd > 0 && decision.estimatedCostUsd > budgetUsd
+  }
+
+  private static buildBudgetGuard(
+    decision: RoutingDecision,
+    budgetUsd: number,
+    autoDegraded: boolean
+  ): RoutingDecision['budgetGuard'] | undefined {
+    if (!(budgetUsd > 0)) return undefined
+    const alertThresholdRatio = resolveBudgetAlertRatio()
+    const usageRatio = budgetUsd > 0 ? decision.estimatedCostUsd / budgetUsd : 0
+
+    if (autoDegraded) {
+      return {
+        budgetUsd,
+        alertThresholdRatio,
+        status: 'degraded',
+        message: `预算保护已触发自动降级，当前估算成本 $${decision.estimatedCostUsd.toFixed(4)}（预算 $${budgetUsd.toFixed(4)}）`,
+        autoDegraded: true
+      }
+    }
+
+    if (usageRatio >= 1) {
+      return {
+        budgetUsd,
+        alertThresholdRatio,
+        status: 'critical',
+        message: `预算超限告警：估算成本 $${decision.estimatedCostUsd.toFixed(4)} 已超过预算 $${budgetUsd.toFixed(4)}`,
+        autoDegraded: false
+      }
+    }
+
+    if (usageRatio >= alertThresholdRatio) {
+      return {
+        budgetUsd,
+        alertThresholdRatio,
+        status: 'warning',
+        message: `预算阈值告警：当前成本占用 ${(usageRatio * 100).toFixed(1)}%（阈值 ${(alertThresholdRatio * 100).toFixed(0)}%）`,
+        autoDegraded: false
+      }
+    }
+
+    return {
+      budgetUsd,
+      alertThresholdRatio,
+      status: 'ok',
+      message: '预算占用处于安全区间',
+      autoDegraded: false
     }
   }
 
@@ -800,35 +863,70 @@ export class ModelMarketplaceService {
       updatedAt: nowIso()
     }
 
-    let { decision } = this.evaluateWithPolicy(payload, effectivePolicy)
+    let evaluated = this.evaluateWithPolicy(payload, effectivePolicy)
+    let decision = evaluated.decision
     let fallbackUsed = false
 
+    const shouldTryFallback =
+      evaluated.hasBudgetMiss
+      || this.isOverBudget(evaluated.decision, evaluated.budgetUsd)
+      || evaluated.decision.candidates.length === 0
+
     if (
+      shouldTryFallback &&
       effectivePolicy.fallbackPolicyId &&
-      effectivePolicy.fallbackPolicyId !== effectivePolicy.id &&
-      decision.candidates.length === 0
+      effectivePolicy.fallbackPolicyId !== effectivePolicy.id
     ) {
       const fallbackPolicy = this.getPolicy(effectivePolicy.fallbackPolicyId, organizationId)
       if (fallbackPolicy && fallbackPolicy.enabled) {
         const fallbackResult = this.evaluateWithPolicy(payload, fallbackPolicy)
-        if (fallbackResult.decision.candidates.length > 0) {
+        const fallbackBetterCost = fallbackResult.decision.estimatedCostUsd <= decision.estimatedCostUsd
+        const fallbackBackInBudget = evaluated.budgetUsd > 0 && fallbackResult.decision.estimatedCostUsd <= evaluated.budgetUsd
+        const fallbackHasCandidate = fallbackResult.decision.candidates.length > 0
+        if (fallbackHasCandidate && (fallbackBetterCost || fallbackBackInBudget || decision.candidates.length === 0)) {
+          evaluated = fallbackResult
           decision = {
             ...fallbackResult.decision,
-            reason: `${decision.reason}；已回退到策略 ${fallbackPolicy.name}`,
-            fallbackUsed: true
+            reason: `${fallbackResult.decision.reason}；预算保护回退到策略 ${fallbackPolicy.name}`,
+            fallbackUsed: true,
+            policyId: fallbackResult.decision.policyId || fallbackPolicy.id
           }
           fallbackUsed = true
         }
       }
     }
 
+    let autoDegraded = false
+    if (this.isOverBudget(decision, evaluated.budgetUsd) && evaluated.scoredCandidates.length > 0) {
+      const cheapest = [...evaluated.scoredCandidates]
+        .sort((a, b) => (a.estimatedCostUsd - b.estimatedCostUsd) || (b.score - a.score))[0]
+      if (cheapest && cheapest.modelId !== decision.recommendedModelId) {
+        decision = {
+          ...decision,
+          recommendedModelId: cheapest.modelId,
+          estimatedCostUsd: cheapest.estimatedCostUsd,
+          estimatedLatencyMs: cheapest.estimatedLatencyMs,
+          confidence: Number(Math.max(0.35, decision.confidence - 0.12).toFixed(2)),
+          reason: `${decision.reason}；触发预算保护自动降级至最低成本模型 ${cheapest.modelId}`
+        }
+        autoDegraded = true
+      }
+    }
+
+    const budgetGuard = this.buildBudgetGuard(decision, evaluated.budgetUsd, autoDegraded)
+
     const finalDecision: RoutingDecision = {
       ...decision,
       policyId: decision.policyId || effectivePolicy.id,
-      fallbackUsed: fallbackUsed || decision.fallbackUsed
+      fallbackUsed: fallbackUsed || decision.fallbackUsed,
+      budgetGuard
     }
 
-    this.recordExecution(organizationId, effectivePolicy.id, payload.prompt || '', finalDecision)
+    if (budgetGuard && budgetGuard.status !== 'ok' && !finalDecision.reason.includes(budgetGuard.message)) {
+      finalDecision.reason = `${finalDecision.reason}；${budgetGuard.message}`
+    }
+
+    this.recordExecution(organizationId, finalDecision.policyId || effectivePolicy.id, payload.prompt || '', finalDecision)
     return finalDecision
   }
 

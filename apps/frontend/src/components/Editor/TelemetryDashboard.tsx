@@ -235,7 +235,8 @@ const TelemetryDashboard: React.FC = () => {
     try {
       await adminPostJson('/api/admin/db/repair', {
         force,
-        reason: force ? 'dashboard-force-repair' : 'dashboard-repair'
+        reason: force ? 'dashboard-force-repair' : 'dashboard-repair',
+        checkMode: force ? 'full' : 'quick'
       })
       await fetchDbHealth('full')
       await fetchDbRuntime()

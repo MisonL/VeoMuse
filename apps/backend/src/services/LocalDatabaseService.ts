@@ -3,6 +3,7 @@ import path from 'path'
 import { Database } from 'bun:sqlite'
 
 export type DbIntegrityMode = 'quick' | 'full'
+export type DbRepairCheckMode = DbIntegrityMode
 
 export interface DbIntegrityReport {
   dbPath: string
@@ -17,6 +18,7 @@ export interface DbRepairReport {
   status: 'ok' | 'repaired' | 'failed'
   repaired: boolean
   forced: boolean
+  checkMode: DbRepairCheckMode
   reason: string
   timestamp: string
   actions: string[]
@@ -80,6 +82,8 @@ const RECOVERY_TABLES = [
   'users',
   'organizations',
   'organization_members',
+  'organization_quotas',
+  'organization_usage_counters',
   'auth_refresh_tokens',
   'ai_channel_configs',
   'ai_channel_audits',
@@ -204,6 +208,7 @@ const normalizeRepairReport = (raw: any): DbRepairReport => {
     status: raw?.status === 'failed' ? 'failed' : raw?.status === 'ok' ? 'ok' : 'repaired',
     repaired: Boolean(raw?.repaired),
     forced: Boolean(raw?.forced),
+    checkMode: raw?.checkMode === 'quick' ? 'quick' : 'full',
     reason: String(raw?.reason || 'unknown'),
     timestamp: String(raw?.timestamp || nowIso()),
     actions: Array.isArray(raw?.actions) ? raw.actions.map(String) : [],
@@ -275,6 +280,29 @@ const migrate = (db: Database) => {
       created_at TEXT NOT NULL,
       FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS organization_quotas (
+      organization_id TEXT PRIMARY KEY,
+      request_limit INTEGER NOT NULL DEFAULT 0,
+      storage_limit_bytes INTEGER NOT NULL DEFAULT 0,
+      concurrency_limit INTEGER NOT NULL DEFAULT 0,
+      updated_by TEXT NOT NULL DEFAULT 'system',
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS organization_usage_counters (
+      organization_id TEXT PRIMARY KEY,
+      request_count INTEGER NOT NULL DEFAULT 0,
+      storage_bytes INTEGER NOT NULL DEFAULT 0,
+      last_request_at TEXT,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
     );
   `)
 
@@ -617,6 +645,16 @@ const migrate = (db: Database) => {
   `)
 
   db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_organization_quotas_updated
+    ON organization_quotas(updated_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_organization_usage_updated
+    ON organization_usage_counters(updated_at DESC);
+  `)
+
+  db.exec(`
     CREATE INDEX IF NOT EXISTS idx_auth_refresh_tokens_user
     ON auth_refresh_tokens(user_id, created_at DESC);
   `)
@@ -806,21 +844,29 @@ const salvageFromBackup = (db: Database, backupPath: string | undefined) => {
   return summary
 }
 
-const repairDatabaseFile = (dbPath: string, options?: { force?: boolean; reason?: string }): DbRepairReport => {
+const repairDatabaseFile = (
+  dbPath: string,
+  options?: { force?: boolean; reason?: string; checkMode?: DbRepairCheckMode }
+): DbRepairReport => {
   ensureDbDirectory(dbPath)
 
   const forced = Boolean(options?.force)
+  const checkMode: DbRepairCheckMode = options?.checkMode === 'quick' || options?.checkMode === 'full'
+    ? options.checkMode
+    : forced
+      ? 'full'
+      : 'quick'
   const reason = options?.reason || 'manual'
-  const actions: string[] = []
+  const actions: string[] = [`integrity-check-mode:${checkMode}`]
 
   let probeDb: Database | null = null
   let before: DbIntegrityReport
 
   try {
     probeDb = createDbConnection(dbPath)
-    before = checkIntegrityOnDb(probeDb, dbPath, 'full')
+    before = checkIntegrityOnDb(probeDb, dbPath, checkMode)
   } catch (error: any) {
-    before = buildIntegrityReport(dbPath, 'full', 'error', [error?.message || 'Failed to open database'])
+    before = buildIntegrityReport(dbPath, checkMode, 'error', [error?.message || 'Failed to open database'])
   } finally {
     closeQuietly(probeDb)
   }
@@ -833,6 +879,7 @@ const repairDatabaseFile = (dbPath: string, options?: { force?: boolean; reason?
       status: 'ok',
       repaired: false,
       forced,
+      checkMode,
       reason,
       timestamp: nowIso(),
       actions: ['integrity-check:ok'],
@@ -848,6 +895,7 @@ const repairDatabaseFile = (dbPath: string, options?: { force?: boolean; reason?
       status: 'failed',
       repaired: false,
       forced,
+      checkMode,
       reason,
       timestamp: nowIso(),
       actions: ['integrity-check:unknown-error'],
@@ -882,6 +930,7 @@ const repairDatabaseFile = (dbPath: string, options?: { force?: boolean; reason?
         status: 'failed',
         repaired: false,
         forced,
+        checkMode,
         reason,
         timestamp: nowIso(),
         actions,
@@ -899,6 +948,7 @@ const repairDatabaseFile = (dbPath: string, options?: { force?: boolean; reason?
       status: 'repaired',
       repaired: true,
       forced,
+      checkMode,
       reason,
       timestamp: nowIso(),
       actions,
@@ -915,6 +965,7 @@ const repairDatabaseFile = (dbPath: string, options?: { force?: boolean; reason?
       status: 'failed',
       repaired: false,
       forced,
+      checkMode,
       reason,
       timestamp: nowIso(),
       actions,
@@ -1027,7 +1078,7 @@ export class LocalDatabaseService {
     return checkIntegrityOnDb(instance.db, instance.dbPath, mode)
   }
 
-  static repair(options?: { force?: boolean; reason?: string }) {
+  static repair(options?: { force?: boolean; reason?: string; checkMode?: DbRepairCheckMode }) {
     const instance = this.getInstance()
     const report = repairDatabaseFile(instance.dbPath, options)
     if (report.status === 'repaired') {
@@ -1040,7 +1091,7 @@ export class LocalDatabaseService {
     return report
   }
 
-  static repairDatabaseFile(dbPath: string, options?: { force?: boolean; reason?: string }) {
+  static repairDatabaseFile(dbPath: string, options?: { force?: boolean; reason?: string; checkMode?: DbRepairCheckMode }) {
     return repairDatabaseFile(dbPath, options)
   }
 
