@@ -77,7 +77,13 @@
 ### POST `/api/models/policy/simulate`
 基于预算与优先级模拟智能路由结果。
 - **Params**: `prompt`(required), `budgetUsd`(optional), `priority`(optional: `quality`/`speed`/`cost`)
-- **Response**: `decision`，包含 `policyId`、`recommendedModelId`、`estimatedCostUsd`、`estimatedLatencyMs`、`confidence`、`scoreBreakdown[]`、`candidates[]`。
+- **Response**: `decision`，包含 `policyId`、`recommendedModelId`、`estimatedCostUsd`、`estimatedLatencyMs`、`confidence`、`scoreBreakdown[]`、`candidates[]`、`budgetGuard`。
+- `budgetGuard` 字段说明：
+  - `budgetUsd`: 本次模拟预算
+  - `alertThresholdRatio`: 阈值比例（默认 0.8，可由 `MODEL_POLICY_BUDGET_ALERT_RATIO` 覆盖）
+  - `status`: `ok` / `warning` / `critical` / `degraded`
+  - `message`: 预算保护提示
+  - `autoDegraded`: 是否触发自动降级至低成本模型
 
 ### GET `/api/models/policies`
 获取路由治理策略列表。
@@ -93,6 +99,7 @@
 
 ### POST `/api/models/policies/:id/simulate`
 按指定策略执行模拟。策略不存在返回 `404`。
+- **Response**: 与 `/api/models/policy/simulate` 一致，包含 `decision.budgetGuard`（预算阈值告警与自动降级结果）。
 
 ### GET `/api/models/policies/:id/executions`
 获取策略执行记录（分页）。
@@ -103,6 +110,7 @@
 向模型驱动提交生成任务。
 - **Params**: `modelId` (optional), `text`, `negativePrompt`, `options`, `actorId` (optional), `consistencyStrength` (optional), `syncLip` (optional), `sync_lip` (optional, 兼容字段), `worldLink` (optional), `worldId` (optional)
 - `sync_lip` 会在服务端标准化为 `syncLip` 后继续透传到模型驱动。
+- **配额治理**: 若组织请求额度或并发额度超限，返回 `429` 与 `code: QUOTA_EXCEEDED`。
 - **注意**: 未配置 provider 时将返回 `status: not_implemented`，不会再返回“假成功”。
 
 ### POST `/api/models/recommend`
@@ -253,6 +261,13 @@ NeRF 空间重构。未配置 provider 时返回 `not_implemented`。
 - **权限**: Bearer 用户在 `objectKey` 对应工作区中的角色需至少为 `editor`，否则 `403`。
 - `objectKey` 非法时返回 `400`。
 - 成功返回 `201` 与 `uploaded`（`objectKey`、`bytes`、`publicUrl`）。
+- **配额治理**: 若组织存储额度超限，返回 `429` 与 `code: QUOTA_EXCEEDED`。
+
+### POST `/api/storage/local-import`
+本地导入接口（Base64 文件内容转存至服务端导入目录）。
+- **Params**: `fileName`(required), `base64Data`(required), `contentType`(optional)
+- **权限**: 需 Bearer 登录且具备组织成员身份。
+- **配额治理**: 若组织存储额度超限，返回 `429` 与 `code: QUOTA_EXCEEDED`。
 
 ### WS `/ws/collab/:workspaceId`
 多人协作实时通道。
@@ -266,6 +281,29 @@ NeRF 空间重构。未配置 provider 时返回 `not_implemented`。
 ### POST `/api/video/compose`
 提交时间轴合成任务，返回导出文件路径。
 - `timelineData.exportConfig.quality` 支持：`standard`、`4k-hdr`、`spatial-vr`。
+- **配额治理**: 若组织请求额度、并发额度或存储额度超限，返回 `429` 与 `code: QUOTA_EXCEEDED`。
+
+## 9. 组织治理与审计导出
+
+### GET `/api/organizations/:id/quota`
+读取组织级配额与当前使用量。
+- **权限**: 组织 `member` 及以上可读。
+- **Response**: `quota` + `usage`。
+
+### PUT `/api/organizations/:id/quota`
+更新组织级配额。
+- **权限**: 组织 `admin` 及以上可写。
+- **Params**: `requestLimit`(optional), `storageLimitBytes`(optional), `concurrencyLimit`(optional)
+- 数值为 `0` 代表“不限制”。
+
+### GET `/api/organizations/:id/audits/export`
+导出组织审计日志（渠道配置审计 + 工作区关键操作审计）。
+- **权限**: 组织 `admin` 及以上可导出。
+- **Query**:
+  - `format`: `json` / `csv`
+  - `scope`: `all` / `channel` / `workspace`
+  - `from`(optional), `to`(optional), `limit`(optional, 最大 `5000`)
+- `format=csv` 时返回下载文件流（`text/csv`）；`format=json` 时返回结构化 JSON。
 
 ---
 **说明**：V3.1+ 所有 provider 能力默认“显式状态返回”，避免误判成功。

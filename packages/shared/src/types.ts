@@ -100,6 +100,13 @@ export interface RoutingDecision {
   priority: ModelRoutingPriority;
   policyId?: string;
   fallbackUsed?: boolean;
+  budgetGuard?: {
+    budgetUsd: number;
+    alertThresholdRatio: number;
+    status: 'ok' | 'warning' | 'critical' | 'degraded';
+    message: string;
+    autoDegraded: boolean;
+  };
   scoreBreakdown?: Array<{
     modelId: string;
     quality: number;
@@ -297,6 +304,37 @@ export interface OrganizationMember {
   role: OrganizationRole;
   email: string;
   createdAt: string;
+}
+
+export interface OrganizationQuota {
+  organizationId: string;
+  requestLimit: number;
+  storageLimitBytes: number;
+  concurrencyLimit: number;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface OrganizationUsage {
+  organizationId: string;
+  requestCount: number;
+  storageBytes: number;
+  lastRequestAt: string | null;
+  updatedAt: string;
+  activeRequests: number;
+}
+
+export interface OrganizationAuditRecord {
+  id: string;
+  source: 'channel' | 'workspace';
+  organizationId: string;
+  workspaceId: string | null;
+  actor: string;
+  action: string;
+  providerId: string | null;
+  traceId: string | null;
+  createdAt: string;
+  detail: Record<string, unknown>;
 }
 
 export interface AuthSession {

@@ -476,6 +476,55 @@
   font-size: 11px;
 }
 
+.policy-budget-guard {
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%);
+}
+
+.policy-budget-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.policy-budget-head strong {
+  font-size: 11px;
+}
+
+.policy-budget-head span {
+  font-family: var(--ap-font-mono);
+  font-size: 10px;
+  color: var(--ap-text-dim);
+}
+
+.policy-budget-guard.ok {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.policy-budget-guard.warning {
+  border-color: rgba(245, 158, 11, 0.42);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.policy-budget-guard.critical {
+  border-color: rgba(239, 68, 68, 0.48);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.policy-budget-guard.degraded {
+  border-color: rgba(59, 130, 246, 0.48);
+  background: rgba(59, 130, 246, 0.12);
+}
+
 .market-right-stack {
   min-height: 0;
   display: grid;

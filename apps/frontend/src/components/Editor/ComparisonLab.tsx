@@ -5,8 +5,11 @@ import type {
   CollabPresence,
   CreativeRun,
   Organization,
+  OrganizationQuota,
+  OrganizationUsage,
   OrganizationMember,
   OrganizationRole,
+  RoutingDecision,
   RoutingExecution,
   RoutingPolicy,
   WorkspaceInvite,
@@ -56,6 +59,12 @@ interface ChannelFormState {
   scope: 'organization' | 'workspace'
 }
 
+interface QuotaFormState {
+  requestLimit: string
+  storageLimitMb: string
+  concurrencyLimit: string
+}
+
 interface ModelRecommendation {
   recommendedModelId?: string
 }
@@ -82,6 +91,12 @@ const SERVICE_CAPABILITY_ROWS: Array<{ id: string; label: string; env: string }>
 ]
 
 const POLICY_EXEC_PAGE_SIZE = 12
+const POLICY_BUDGET_GUARD_LABELS: Record<'ok' | 'warning' | 'critical' | 'degraded', string> = {
+  ok: '预算安全',
+  warning: '预算预警',
+  critical: '预算超限',
+  degraded: '自动降级'
+}
 const defaultWeights = {
   quality: 0.45,
   speed: 0.2,
@@ -145,7 +160,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const [policyPrompt, setPolicyPrompt] = useState('')
   const [policyBudget, setPolicyBudget] = useState<number>(0.8)
   const [policyPriority, setPolicyPriority] = useState<PolicyPriority>('quality')
-  const [policyDecision, setPolicyDecision] = useState<any>(null)
+  const [policyDecision, setPolicyDecision] = useState<RoutingDecision | null>(null)
   const [policyExecutions, setPolicyExecutions] = useState<RoutingExecution[]>([])
   const [policyExecOffset, setPolicyExecOffset] = useState(0)
   const [policyExecHasMore, setPolicyExecHasMore] = useState(false)
@@ -193,6 +208,13 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const [channelConfigs, setChannelConfigs] = useState<AiChannelConfig[]>([])
   const [channelForms, setChannelForms] = useState<Record<string, ChannelFormState>>({})
   const [activeChannelScope, setActiveChannelScope] = useState<'organization' | 'workspace'>('organization')
+  const [organizationQuota, setOrganizationQuota] = useState<OrganizationQuota | null>(null)
+  const [organizationUsage, setOrganizationUsage] = useState<OrganizationUsage | null>(null)
+  const [quotaForm, setQuotaForm] = useState<QuotaFormState>({
+    requestLimit: '0',
+    storageLimitMb: '0',
+    concurrencyLimit: '0'
+  })
 
   const wsRef = useRef<WebSocket | null>(null)
   const heartbeatRef = useRef<number | null>(null)
@@ -389,6 +411,108 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     }
   }
 
+  const applyQuotaForm = useCallback((quota: OrganizationQuota) => {
+    setQuotaForm({
+      requestLimit: String(quota.requestLimit || 0),
+      storageLimitMb: String(Math.round((quota.storageLimitBytes || 0) / (1024 * 1024))),
+      concurrencyLimit: String(quota.concurrencyLimit || 0)
+    })
+  }, [])
+
+  const refreshOrganizationQuota = useCallback(async () => {
+    if (!effectiveOrganizationId) {
+      setOrganizationQuota(null)
+      setOrganizationUsage(null)
+      return
+    }
+    try {
+      const payload = await requestJson<{
+        success: boolean
+        quota: OrganizationQuota
+        usage: OrganizationUsage
+      }>(`/api/organizations/${effectiveOrganizationId}/quota`)
+      setOrganizationQuota(payload.quota || null)
+      setOrganizationUsage(payload.usage || null)
+      if (payload.quota) applyQuotaForm(payload.quota)
+    } catch (error: any) {
+      setOrganizationQuota(null)
+      setOrganizationUsage(null)
+      showToast(error.message || '加载组织配额失败', 'error')
+    }
+  }, [applyQuotaForm, effectiveOrganizationId, showToast])
+
+  const saveOrganizationQuota = async () => {
+    if (!effectiveOrganizationId) {
+      showToast('请先选择组织', 'info')
+      return
+    }
+    const requestLimit = Number.parseInt(quotaForm.requestLimit.trim() || '0', 10)
+    const storageLimitMb = Number.parseInt(quotaForm.storageLimitMb.trim() || '0', 10)
+    const concurrencyLimit = Number.parseInt(quotaForm.concurrencyLimit.trim() || '0', 10)
+    if (!Number.isFinite(requestLimit) || requestLimit < 0) {
+      showToast('请求配额必须是大于等于 0 的整数', 'warning')
+      return
+    }
+    if (!Number.isFinite(storageLimitMb) || storageLimitMb < 0) {
+      showToast('存储配额（MB）必须是大于等于 0 的整数', 'warning')
+      return
+    }
+    if (!Number.isFinite(concurrencyLimit) || concurrencyLimit < 0) {
+      showToast('并发配额必须是大于等于 0 的整数', 'warning')
+      return
+    }
+    try {
+      const payload = await requestJson<{
+        success: boolean
+        quota: OrganizationQuota
+        usage: OrganizationUsage
+      }>(`/api/organizations/${effectiveOrganizationId}/quota`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          requestLimit,
+          storageLimitBytes: storageLimitMb * 1024 * 1024,
+          concurrencyLimit
+        })
+      })
+      if (payload.quota) {
+        setOrganizationQuota(payload.quota)
+        applyQuotaForm(payload.quota)
+      }
+      if (payload.usage) setOrganizationUsage(payload.usage)
+      showToast('组织配额已更新', 'success')
+    } catch (error: any) {
+      showToast(error.message || '更新组织配额失败', 'error')
+    }
+  }
+
+  const exportOrganizationAudits = async (format: 'json' | 'csv') => {
+    if (!effectiveOrganizationId) {
+      showToast('请先选择组织', 'info')
+      return
+    }
+    const headers = buildAuthHeaders()
+    const url = `${resolveApiBase()}/api/organizations/${encodeURIComponent(effectiveOrganizationId)}/audits/export?format=${format}&scope=all&limit=2000`
+    try {
+      const response = await fetch(url, { method: 'GET', headers })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null) as any
+        throw new Error(payload?.error || `HTTP ${response.status}`)
+      }
+      const blob = await response.blob()
+      const downloadUrl = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = downloadUrl
+      anchor.download = `veomuse-${effectiveOrganizationId}-audits-${Date.now()}.${format}`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(downloadUrl)
+      showToast(`审计记录已导出（${format.toUpperCase()}）`, 'success')
+    } catch (error: any) {
+      showToast(error.message || '导出审计记录失败', 'error')
+    }
+  }
+
   const applyChannelForms = useCallback((configs: AiChannelConfig[]) => {
     const next: Record<string, ChannelFormState> = {}
     for (const row of configs) {
@@ -562,7 +686,8 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     if (!effectiveOrganizationId) return
     setOrganizationId(effectiveOrganizationId)
     void refreshOrganizationMembers()
-  }, [effectiveOrganizationId, refreshOrganizationMembers])
+    void refreshOrganizationQuota()
+  }, [effectiveOrganizationId, refreshOrganizationMembers, refreshOrganizationQuota])
 
   useEffect(() => {
     if (!selectedPolicyId) return
@@ -638,7 +763,8 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     void loadCapabilities()
     void refreshChannelConfigs()
     void refreshOrganizationMembers()
-  }, [loadCapabilities, refreshChannelConfigs, refreshOrganizationMembers])
+    void refreshOrganizationQuota()
+  }, [loadCapabilities, refreshChannelConfigs, refreshOrganizationMembers, refreshOrganizationQuota])
 
   useEffect(() => {
     const handleOpenChannelPanel = () => {
@@ -657,7 +783,8 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     if (!showChannelPanel || !authProfile) return
     void refreshChannelConfigs()
     void loadCapabilities()
-  }, [showChannelPanel, authProfile, activeChannelScope, workspaceId, effectiveOrganizationId, refreshChannelConfigs, loadCapabilities])
+    void refreshOrganizationQuota()
+  }, [showChannelPanel, authProfile, activeChannelScope, workspaceId, effectiveOrganizationId, refreshChannelConfigs, loadCapabilities, refreshOrganizationQuota])
 
   const refreshMarketplace = async (notify: boolean) => {
     try {
@@ -842,7 +969,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       const endpoint = policyIdAtRequest
         ? `/api/models/policies/${policyIdAtRequest}/simulate`
         : '/api/models/policy/simulate'
-      const payload = await requestJson<{ success: boolean; decision: any }>(endpoint, {
+      const payload = await requestJson<{ success: boolean; decision: RoutingDecision }>(endpoint, {
         method: 'POST',
         body: JSON.stringify({
           prompt,
@@ -1485,9 +1612,21 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
             <div>预计成本：${policyDecision.estimatedCostUsd}</div>
             <div>预计时延：{policyDecision.estimatedLatencyMs}ms</div>
             <div>原因：{policyDecision.reason}</div>
+            {policyDecision.budgetGuard ? (
+              <div className={`policy-budget-guard ${policyDecision.budgetGuard.status}`}>
+                <div className="policy-budget-head">
+                  <strong>{POLICY_BUDGET_GUARD_LABELS[policyDecision.budgetGuard.status]}</strong>
+                  <span>
+                    预算 ${policyDecision.budgetGuard.budgetUsd.toFixed(4)} ·
+                    阈值 {(policyDecision.budgetGuard.alertThresholdRatio * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <div>{policyDecision.budgetGuard.message}</div>
+              </div>
+            ) : null}
             {Array.isArray(policyDecision.scoreBreakdown) && policyDecision.scoreBreakdown.length > 0 ? (
               <div className="policy-breakdown">
-                {policyDecision.scoreBreakdown.map((item: any) => (
+                {policyDecision.scoreBreakdown.map(item => (
                   <div key={item.modelId}>
                     {item.modelId}: Q{item.quality.toFixed(2)} / S{item.speed.toFixed(2)} / C{item.cost.toFixed(2)} / R{item.reliability.toFixed(2)} {'=>'} <b>{item.finalScore.toFixed(2)}</b>
                   </div>
@@ -2088,6 +2227,59 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
                         <span className="channel-hint">
                           当前工作区：{workspaceId || '未选择'}
                         </span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="channel-card">
+                  <h4>组织配额与审计</h4>
+                  <div className="channel-list">
+                    <div className="capability-row">
+                      <div className="channel-row-controls">
+                        <input
+                          name="quotaRequestLimit"
+                          value={quotaForm.requestLimit}
+                          onChange={(event) => setQuotaForm(prev => ({ ...prev, requestLimit: event.target.value }))}
+                          placeholder="请求配额（0 为不限制）"
+                        />
+                        <input
+                          name="quotaStorageLimitMb"
+                          value={quotaForm.storageLimitMb}
+                          onChange={(event) => setQuotaForm(prev => ({ ...prev, storageLimitMb: event.target.value }))}
+                          placeholder="存储配额 MB（0 为不限制）"
+                        />
+                        <input
+                          name="quotaConcurrencyLimit"
+                          value={quotaForm.concurrencyLimit}
+                          onChange={(event) => setQuotaForm(prev => ({ ...prev, concurrencyLimit: event.target.value }))}
+                          placeholder="并发配额（0 为不限制）"
+                        />
+                        <div className="lab-inline-actions">
+                          <button type="button" onClick={() => void saveOrganizationQuota()} data-testid="btn-save-org-quota">保存配额</button>
+                          <button type="button" onClick={() => void refreshOrganizationQuota()} data-testid="btn-refresh-org-quota">刷新配额</button>
+                        </div>
+                        <div className="lab-inline-actions">
+                          <button type="button" onClick={() => void exportOrganizationAudits('json')} data-testid="btn-export-org-audit-json">导出审计 JSON</button>
+                          <button type="button" onClick={() => void exportOrganizationAudits('csv')} data-testid="btn-export-org-audit-csv">导出审计 CSV</button>
+                        </div>
+                        <div className="capability-meta">
+                          <span>
+                            已用请求：{organizationUsage?.requestCount ?? 0}
+                            {organizationQuota?.requestLimit ? ` / ${organizationQuota.requestLimit}` : ' / 不限制'}
+                          </span>
+                          <span>
+                            已用存储：{Math.round((organizationUsage?.storageBytes || 0) / (1024 * 1024))} MB
+                            {organizationQuota?.storageLimitBytes
+                              ? ` / ${Math.round(organizationQuota.storageLimitBytes / (1024 * 1024))} MB`
+                              : ' / 不限制'}
+                          </span>
+                          <span>
+                            当前并发：{organizationUsage?.activeRequests ?? 0}
+                            {organizationQuota?.concurrencyLimit ? ` / ${organizationQuota.concurrencyLimit}` : ' / 不限制'}
+                          </span>
+                          <span>上次请求：{organizationUsage?.lastRequestAt ? new Date(organizationUsage.lastRequestAt).toLocaleString() : '-'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>

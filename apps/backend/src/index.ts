@@ -39,6 +39,7 @@ import { LocalStorageProvider } from './services/storage/LocalStorageProvider'
 import { AuthService } from './services/AuthService'
 import { OrganizationService } from './services/OrganizationService'
 import { ChannelConfigService } from './services/ChannelConfigService'
+import { OrganizationGovernanceService } from './services/OrganizationGovernanceService'
 import type { WorkspaceRole, OrganizationRole } from '@veomuse/shared'
 
 const ensureDriversRegistered = (() => {
@@ -361,6 +362,40 @@ const hasRenderableSources = (timelineData: any) => {
   ))
 }
 
+const buildQuotaExceededResponse = (
+  reason: 'request' | 'storage' | 'concurrency',
+  check: {
+    limit: number
+    current: number
+    upcoming: number
+    remaining: number
+    usage: unknown
+    quota: unknown
+  }
+) => {
+  const reasonMessage = reason === 'request'
+    ? '组织请求配额已达上限'
+    : reason === 'storage'
+      ? '组织存储配额已达上限'
+      : '组织并发配额已达上限'
+  return {
+    success: false,
+    status: 'error',
+    code: 'QUOTA_EXCEEDED',
+    reason,
+    error: `${reasonMessage}（limit=${check.limit}, current=${check.current}, upcoming=${check.upcoming}）`,
+    quota: check.quota,
+    usage: check.usage,
+    remaining: Number.isFinite(check.remaining) ? check.remaining : null
+  }
+}
+
+const parseBoundedLimit = (value: string | undefined, fallback: number, max: number) => {
+  const parsed = Number.parseInt(String(value || ''), 10)
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
+  return Math.min(max, parsed)
+}
+
 const WS_AUTH_PROTOCOL_PREFIX = 'veomuse-auth.'
 
 const resolveWsAccessToken = (headers: Record<string, unknown>) => {
@@ -544,6 +579,85 @@ export const createApp = () => {
       body: t.Object({
         email: t.String(),
         role: t.Union([t.Literal('owner'), t.Literal('admin'), t.Literal('member')])
+      })
+    })
+    .get('/api/organizations/:id/quota', ({ params, request, set }) => {
+      const authorized = authorizeOrganizationRole(params.id, request, set, 'member')
+      if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+      return {
+        success: true,
+        quota: OrganizationGovernanceService.getQuota(params.id),
+        usage: OrganizationGovernanceService.getUsage(params.id)
+      }
+    }, {
+      params: t.Object({ id: t.String() })
+    })
+    .put('/api/organizations/:id/quota', ({ params, request, body, set }) => {
+      const authorized = authorizeOrganizationRole(params.id, request, set, 'admin')
+      if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+      try {
+        const quota = OrganizationGovernanceService.upsertQuota({
+          organizationId: params.id,
+          requestLimit: body.requestLimit,
+          storageLimitBytes: body.storageLimitBytes,
+          concurrencyLimit: body.concurrencyLimit,
+          updatedBy: authorized.user.id
+        })
+        return {
+          success: true,
+          quota,
+          usage: OrganizationGovernanceService.getUsage(params.id)
+        }
+      } catch (error: any) {
+        set.status = 400
+        return {
+          success: false,
+          status: 'error',
+          error: error?.message || '组织配额更新失败'
+        }
+      }
+    }, {
+      params: t.Object({ id: t.String() }),
+      body: t.Object({
+        requestLimit: t.Optional(t.Number({ minimum: 0 })),
+        storageLimitBytes: t.Optional(t.Number({ minimum: 0 })),
+        concurrencyLimit: t.Optional(t.Number({ minimum: 0 }))
+      })
+    })
+    .get('/api/organizations/:id/audits/export', ({ params, query, request, set }) => {
+      const authorized = authorizeOrganizationRole(params.id, request, set, 'admin')
+      if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
+
+      const result = OrganizationGovernanceService.exportAudits(params.id, {
+        from: query.from,
+        to: query.to,
+        scope: query.scope,
+        format: query.format,
+        limit: parseBoundedLimit(query.limit, 1000, 5000)
+      })
+
+      if (result.format === 'csv') {
+        const fileName = `veomuse-audits-${params.id}-${Date.now()}.csv`
+        return new Response(result.csv || '', {
+          headers: {
+            'content-type': 'text/csv; charset=utf-8',
+            'content-disposition': `attachment; filename=\"${fileName}\"`
+          }
+        })
+      }
+
+      return {
+        success: true,
+        ...result
+      }
+    }, {
+      params: t.Object({ id: t.String() }),
+      query: t.Object({
+        from: t.Optional(t.String()),
+        to: t.Optional(t.String()),
+        scope: t.Optional(t.Union([t.Literal('all'), t.Literal('channel'), t.Literal('workspace')])),
+        format: t.Optional(t.Union([t.Literal('json'), t.Literal('csv')])),
+        limit: t.Optional(t.String())
       })
     })
     .get('/api/channel/providers', () => ({
@@ -910,18 +1024,43 @@ export const createApp = () => {
         return { success: false, status: 'error', error: 'Forbidden' }
       }
       const normalizedSyncLip = body.syncLip ?? body.sync_lip
-      return await VideoOrchestrator.generate(body.modelId || 'veo-3.1', {
-        text: body.text,
-        negativePrompt: body.negativePrompt,
-        options: {
-          ...(body.options || {}),
-          actorId: body.actorId,
-          consistencyStrength: body.consistencyStrength,
-          syncLip: normalizedSyncLip,
-          worldLink: body.worldLink,
-          worldId: body.worldId
+      try {
+        let requestDenied: ReturnType<typeof OrganizationGovernanceService.consumeRequestQuota> | null = null
+        const output = await OrganizationGovernanceService.withConcurrencyLimit(runtimeContext.organizationId, async () => {
+          const quotaConsumed = OrganizationGovernanceService.consumeRequestQuota(runtimeContext.organizationId, 1)
+          if (!quotaConsumed.allowed) {
+            requestDenied = quotaConsumed
+            return null
+          }
+
+          return await VideoOrchestrator.generate(body.modelId || 'veo-3.1', {
+            text: body.text,
+            negativePrompt: body.negativePrompt,
+            options: {
+              ...(body.options || {}),
+              actorId: body.actorId,
+              consistencyStrength: body.consistencyStrength,
+              syncLip: normalizedSyncLip,
+              worldLink: body.worldLink,
+              worldId: body.worldId
+            }
+          }, runtimeContext)
+        })
+
+        if (requestDenied) {
+          set.status = 429
+          return buildQuotaExceededResponse('request', requestDenied)
         }
-      }, runtimeContext)
+        return output
+      } catch (error: any) {
+        const message = String(error?.message || '')
+        if (message.includes('并发配额')) {
+          const check = OrganizationGovernanceService.checkConcurrencyAllowed(runtimeContext.organizationId)
+          set.status = 429
+          return buildQuotaExceededResponse('concurrency', check)
+        }
+        throw error
+      }
     }, {
       body: t.Object({
         text: t.String(),
@@ -1391,8 +1530,8 @@ export const createApp = () => {
       })
     })
     .post('/api/storage/local-import', async ({ body, request, set }) => {
-      const user = requireAuthenticatedUser(request, set)
-      if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+      const organizationContext = resolveOrganizationContext(request, set, 'member')
+      if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
       try {
         const rawBase64 = (body.base64Data || '').trim()
         if (!rawBase64) {
@@ -1428,18 +1567,29 @@ export const createApp = () => {
           }
         }
 
+        const storageCheck = OrganizationGovernanceService.checkStorageAllowed(
+          organizationContext.organizationId,
+          bytes.length
+        )
+        if (!storageCheck.allowed) {
+          set.status = 429
+          return buildQuotaExceededResponse('storage', storageCheck)
+        }
+
         const importDir = resolveImportDir()
         await fs.mkdir(importDir, { recursive: true })
         const safeName = sanitizeImportFileName(body.fileName)
         const filePath = path.join(importDir, `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`)
         await fs.writeFile(filePath, bytes)
+        const usage = OrganizationGovernanceService.addStorageUsage(organizationContext.organizationId, bytes.length)
 
         return {
           success: true,
           imported: {
             localPath: filePath,
             bytes: bytes.length
-          }
+          },
+          usage
         }
       } catch (error: any) {
         set.status = 400
@@ -1486,6 +1636,11 @@ export const createApp = () => {
           set.status = 400
           return { success: false, status: 'error', error: 'workspaceId is required in objectKey' }
         }
+        const workspace = WorkspaceService.getWorkspace(workspaceId)
+        if (!workspace) {
+          set.status = 404
+          return { success: false, status: 'error', error: 'Workspace not found' }
+        }
 
         const maxUploadBytesRaw = Number.parseInt(process.env.LOCAL_UPLOAD_MAX_BYTES || '', 10)
         const maxUploadBytes = Number.isFinite(maxUploadBytesRaw) && maxUploadBytesRaw > 0 ? maxUploadBytesRaw : 200 * 1024 * 1024
@@ -1504,7 +1659,16 @@ export const createApp = () => {
           set.status = 413
           return { success: false, status: 'error', error: `payload too large: ${bytes.byteLength} bytes (max ${maxUploadBytes})` }
         }
+        const storageCheck = OrganizationGovernanceService.checkStorageAllowed(
+          workspace.organizationId,
+          bytes.byteLength
+        )
+        if (!storageCheck.allowed) {
+          set.status = 429
+          return buildQuotaExceededResponse('storage', storageCheck)
+        }
         const result = storageProvider.storeObject(decodedObjectKey, bytes)
+        const usage = OrganizationGovernanceService.addStorageUsage(workspace.organizationId, result.bytes)
         set.status = 201
         return {
           success: true,
@@ -1512,7 +1676,8 @@ export const createApp = () => {
             objectKey: result.objectKey,
             bytes: result.bytes,
             publicUrl: result.publicUrl
-          }
+          },
+          usage
         }
       } catch (error: any) {
         set.status = 400
@@ -1538,8 +1703,59 @@ export const createApp = () => {
           code: 'VALIDATION'
         }
       }
+      try {
+        let requestDenied: ReturnType<typeof OrganizationGovernanceService.consumeRequestQuota> | null = null
+        const composed = await OrganizationGovernanceService.withConcurrencyLimit(runtimeContext.organizationId, async () => {
+          const quotaConsumed = OrganizationGovernanceService.consumeRequestQuota(runtimeContext.organizationId, 1)
+          if (!quotaConsumed.allowed) {
+            requestDenied = quotaConsumed
+            return null
+          }
+          return await CompositionService.compose(body.timelineData)
+        })
 
-      return await CompositionService.compose(body.timelineData)
+        if (requestDenied) {
+          set.status = 429
+          return buildQuotaExceededResponse('request', requestDenied)
+        }
+
+        if (composed?.success && composed?.outputPath) {
+          let outputBytes = 0
+          try {
+            const stat = await fs.stat(composed.outputPath)
+            outputBytes = Number(stat.size || 0)
+          } catch {
+            outputBytes = 0
+          }
+
+          if (outputBytes > 0) {
+            const storageCheck = OrganizationGovernanceService.checkStorageAllowed(
+              runtimeContext.organizationId,
+              outputBytes
+            )
+            if (!storageCheck.allowed) {
+              try {
+                await fs.unlink(composed.outputPath)
+              } catch {
+                // noop
+              }
+              set.status = 429
+              return buildQuotaExceededResponse('storage', storageCheck)
+            }
+            OrganizationGovernanceService.addStorageUsage(runtimeContext.organizationId, outputBytes)
+          }
+        }
+
+        return composed
+      } catch (error: any) {
+        const message = String(error?.message || '')
+        if (message.includes('并发配额')) {
+          const check = OrganizationGovernanceService.checkConcurrencyAllowed(runtimeContext.organizationId)
+          set.status = 429
+          return buildQuotaExceededResponse('concurrency', check)
+        }
+        throw error
+      }
     }, {
       body: t.Object({
         timelineData: t.Any(),

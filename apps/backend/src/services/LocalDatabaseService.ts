@@ -80,6 +80,8 @@ const RECOVERY_TABLES = [
   'users',
   'organizations',
   'organization_members',
+  'organization_quotas',
+  'organization_usage_counters',
   'auth_refresh_tokens',
   'ai_channel_configs',
   'ai_channel_audits',
@@ -275,6 +277,29 @@ const migrate = (db: Database) => {
       created_at TEXT NOT NULL,
       FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS organization_quotas (
+      organization_id TEXT PRIMARY KEY,
+      request_limit INTEGER NOT NULL DEFAULT 0,
+      storage_limit_bytes INTEGER NOT NULL DEFAULT 0,
+      concurrency_limit INTEGER NOT NULL DEFAULT 0,
+      updated_by TEXT NOT NULL DEFAULT 'system',
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS organization_usage_counters (
+      organization_id TEXT PRIMARY KEY,
+      request_count INTEGER NOT NULL DEFAULT 0,
+      storage_bytes INTEGER NOT NULL DEFAULT 0,
+      last_request_at TEXT,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
     );
   `)
 
@@ -614,6 +639,16 @@ const migrate = (db: Database) => {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_organization_members_user
     ON organization_members(user_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_organization_quotas_updated
+    ON organization_quotas(updated_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_organization_usage_updated
+    ON organization_usage_counters(updated_at DESC);
   `)
 
   db.exec(`

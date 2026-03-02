@@ -162,4 +162,180 @@ describe('模型策略治理 API', () => {
     expect(cyclePatchResp.status).toBe(400)
     expect(cyclePatchData.success).toBe(false)
   })
+
+  it('应在预算接近阈值时返回 warning 预算告警', async () => {
+    const session = await createTestSession('policy-budget-warning')
+    const createResp = await app.handle(
+      new Request('http://localhost/api/models/policies', {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          name: '预算阈值告警策略',
+          priority: 'quality',
+          maxBudgetUsd: 1,
+          allowedModels: ['luma-dream'],
+          weights: {
+            quality: 0.5,
+            speed: 0.2,
+            cost: 0.1,
+            reliability: 0.2
+          }
+        })
+      })
+    )
+    const createData = await createResp.json() as any
+    expect(createResp.status).toBe(200)
+    const policyId = createData.policy.id as string
+
+    const simulateResp = await app.handle(
+      new Request(`http://localhost/api/models/policies/${policyId}/simulate`, {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          prompt: '电影级夜景镜头，8秒',
+          budgetUsd: 0.642,
+          priority: 'quality'
+        })
+      })
+    )
+    const simulateData = await simulateResp.json() as any
+    expect(simulateResp.status).toBe(200)
+    expect(simulateData.success).toBe(true)
+    expect(simulateData.decision.recommendedModelId).toBe('luma-dream')
+    expect(simulateData.decision.budgetGuard?.status).toBe('warning')
+    expect(simulateData.decision.budgetGuard?.autoDegraded).toBe(false)
+  })
+
+  it('应在预算超限时触发自动降级并返回 degraded 状态', async () => {
+    const session = await createTestSession('policy-budget-degrade')
+    const createResp = await app.handle(
+      new Request('http://localhost/api/models/policies', {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          name: '预算自动降级策略',
+          priority: 'quality',
+          maxBudgetUsd: 1,
+          allowedModels: ['sora-preview', 'pika-1.5'],
+          weights: {
+            quality: 0.65,
+            speed: 0.1,
+            cost: 0.05,
+            reliability: 0.2
+          }
+        })
+      })
+    )
+    const createData = await createResp.json() as any
+    expect(createResp.status).toBe(200)
+    const policyId = createData.policy.id as string
+
+    const simulateResp = await app.handle(
+      new Request(`http://localhost/api/models/policies/${policyId}/simulate`, {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          prompt: '写实产品短片，8秒',
+          budgetUsd: 0.5,
+          priority: 'quality'
+        })
+      })
+    )
+    const simulateData = await simulateResp.json() as any
+    expect(simulateResp.status).toBe(200)
+    expect(simulateData.success).toBe(true)
+    expect(simulateData.decision.recommendedModelId).toBe('pika-1.5')
+    expect(simulateData.decision.budgetGuard?.status).toBe('degraded')
+    expect(simulateData.decision.budgetGuard?.autoDegraded).toBe(true)
+    expect(String(simulateData.decision.reason || '')).toContain('自动降级')
+  })
+
+  it('应在预算保护场景优先回退到 fallback 策略', async () => {
+    const session = await createTestSession('policy-budget-fallback')
+
+    const fallbackResp = await app.handle(
+      new Request('http://localhost/api/models/policies', {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          name: 'Fallback-Runway',
+          priority: 'cost',
+          maxBudgetUsd: 1.2,
+          allowedModels: ['runway-gen3'],
+          weights: {
+            quality: 0.2,
+            speed: 0.2,
+            cost: 0.4,
+            reliability: 0.2
+          }
+        })
+      })
+    )
+    const fallbackData = await fallbackResp.json() as any
+    expect(fallbackResp.status).toBe(200)
+    const fallbackPolicyId = fallbackData.policy.id as string
+
+    const primaryResp = await app.handle(
+      new Request('http://localhost/api/models/policies', {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          name: 'Primary-Sora',
+          priority: 'quality',
+          maxBudgetUsd: 1.2,
+          allowedModels: ['sora-preview'],
+          fallbackPolicyId: fallbackPolicyId,
+          weights: {
+            quality: 0.7,
+            speed: 0.1,
+            cost: 0.05,
+            reliability: 0.15
+          }
+        })
+      })
+    )
+    const primaryData = await primaryResp.json() as any
+    expect(primaryResp.status).toBe(200)
+    const primaryPolicyId = primaryData.policy.id as string
+
+    const simulateResp = await app.handle(
+      new Request(`http://localhost/api/models/policies/${primaryPolicyId}/simulate`, {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          prompt: '电影质感广告镜头，8秒',
+          budgetUsd: 0.8,
+          priority: 'quality'
+        })
+      })
+    )
+    const simulateData = await simulateResp.json() as any
+    expect(simulateResp.status).toBe(200)
+    expect(simulateData.success).toBe(true)
+    expect(simulateData.decision.fallbackUsed).toBe(true)
+    expect(simulateData.decision.policyId).toBe(fallbackPolicyId)
+    expect(simulateData.decision.recommendedModelId).toBe('runway-gen3')
+    expect(String(simulateData.decision.reason || '')).toContain('预算保护回退到策略')
+  })
 })
