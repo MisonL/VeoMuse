@@ -8,7 +8,7 @@ on:
 
 jobs:
   gate:
-    name: Typecheck + Build + E2E Smoke
+    name: Typecheck + Build + E2E + SLO Gate
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -34,14 +34,52 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Run Playwright smoke suite
-        run: bun run e2e:smoke
+        run: bun run e2e:smoke -- --workers=1
+
+      - name: Run Playwright regression suite (Mock)
+        run: bun run e2e:regression:mock -- --workers=1
+
+      - name: Run SLO gate (PR soft / main hard)
+        env:
+          RELEASE_SLO_MODE: ${{ github.ref == 'refs/heads/main' && 'hard' || 'soft' }}
+          SLO_GATE_OUTPUT: artifacts/slo-report.json
+          SLO_GATE_MIN_NON_AI_SAMPLES: "1"
+          SLO_GATE_MIN_JOURNEY_SAMPLES: "0"
+          ADMIN_TOKEN: ci-admin-token
+        run: |
+          mkdir -p artifacts
+          bun run --cwd apps/backend dev > artifacts/backend-slo.log 2>&1 &
+          BACKEND_PID=$!
+
+          cleanup() {
+            kill "${BACKEND_PID}" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:33117/api/health >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          if ! curl -fsS http://127.0.0.1:33117/api/health >/dev/null; then
+            echo "backend failed to start for slo-gate"
+            tail -n 200 artifacts/backend-slo.log || true
+            exit 1
+          fi
+
+          curl -fsS http://127.0.0.1:33117/api/channel/providers >/dev/null || true
+          bun run scripts/slo_gate.ts --mode "${RELEASE_SLO_MODE}" --api-base http://127.0.0.1:33117
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: quality-gate-artifacts
           path: |
             playwright-report/
             test-results/playwright/
+            artifacts/slo-report.json
+            artifacts/backend-slo.log
           retention-days: 14

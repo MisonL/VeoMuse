@@ -45,6 +45,14 @@ const mockProviderBaseUrl = (
   `http://host.docker.internal:${mockPort}`
 ).trim().replace(/\/+$/, '')
 const mockApiKey = 'mock-key'
+const flowVersion = (process.env.PROVIDER_CHAIN_FLOW_VERSION || 'v3.2.0').trim() || 'v3.2.0'
+const scenarioId = (process.env.E2E_SCENARIO_ID || 'provider-chain-mock').trim() || 'provider-chain-mock'
+const buildRef = (
+  process.env.BUILD_REF
+  || process.env.GITHUB_SHA
+  || process.env.CI_COMMIT_SHA
+  || `local-${Date.now()}`
+).trim()
 
 const jsonResponse = (payload: unknown, status = 200) => new Response(JSON.stringify(payload), {
   status,
@@ -212,6 +220,9 @@ const reportE2EJourney = async (params: {
         sessionId,
         meta: {
           flow: 'provider_chain_e2e',
+          flowVersion,
+          scenarioId,
+          buildRef,
           failedSteps,
           failedCount: params.failedCount
         }
@@ -417,6 +428,9 @@ const run = async () => {
     apiBase,
     mockProviderBaseUrl,
     mockBindHost: `${mockBindHost}:${mockPort}`,
+    flowVersion,
+    scenarioId,
+    buildRef,
     total: steps.length,
     passed: steps.length - failed.length,
     failed: failed.length,
