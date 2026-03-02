@@ -53,6 +53,18 @@ bun run e2e:smoke
 # 浏览器级回归套件
 bun run e2e:regression
 
+# 浏览器级回归（稳定 Mock 主链路）
+bun run e2e:regression:mock
+
+# 浏览器级回归（真实渠道，需配置 E2E_REAL_CHANNELS=true + GEMINI_API_KEYS）
+bun run e2e:regression:real
+
+# 一键发布门禁（security + build + unit + e2e smoke + e2e regression mock）
+bun run release:gate
+
+# 一键发布门禁（含真实渠道回归）
+bun run release:gate:real
+
 # 安装 pre-push 安全钩子
 bun run hooks:install
 ```
@@ -62,7 +74,7 @@ bun run hooks:install
 - `apps/backend`: 工业级 AI 路由总线 (Elysia)。
 - `apps/frontend`: 旗舰版编辑器 UI (React 19)。
 - `packages/shared`: 100% E2E 类型定义与工具。
-- `conductor/`: 项目规格说明与执行计划存档。
+- `docs/requirements`: 项目需求总册与资产转换映射（由历史 conductor 资产收敛）。
 
 ## 🚀 三平台一键部署
 

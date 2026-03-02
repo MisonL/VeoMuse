@@ -1,8 +1,0 @@
-{
-  "track_id": "multi_model_orchestrator_20260225",
-  "type": "feature",
-  "status": "completed",
-  "created_at": "2026-02-25T19:00:00Z",
-  "updated_at": "2026-02-28T08:30:00Z",
-  "description": "全球模型总线：多模型架构抽象、Sora/Kling 对接与智能对比实验室"
-}
