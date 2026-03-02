@@ -73,10 +73,11 @@ curl -s http://127.0.0.1:18081/api/health
 curl -s http://127.0.0.1:18081/api/capabilities
 
 STAMP=$(date +%s)
+SMOKE_PASSWORD="Vm${STAMP}Ab#9"
 SESSION_JSON=$(curl -s http://127.0.0.1:18081/api/auth/register \
   -X POST \
   -H 'Content-Type: application/json' \
-  -d "{\"email\":\"smoke-${STAMP}@veomuse.local\",\"password\":\"Passw0rd!123\",\"organizationName\":\"SmokeOrg-${STAMP}\"}")
+  -d "{\"email\":\"smoke-${STAMP}@veomuse.local\",\"password\":\"${SMOKE_PASSWORD}\",\"organizationName\":\"SmokeOrg-${STAMP}\"}")
 ACCESS_TOKEN=$(echo "$SESSION_JSON" | jq -r '.session.accessToken')
 ORG_ID=$(echo "$SESSION_JSON" | jq -r '.organizations[0].id')
 
@@ -114,6 +115,19 @@ curl -s http://127.0.0.1:18081/api/admin/db/runtime -H "x-admin-token: $ADMIN_TO
 curl -I http://127.0.0.1:18081 | grep -E "Content-Security-Policy|X-Frame-Options|Referrer-Policy|Permissions-Policy"
 curl -s http://127.0.0.1:18081/api/admin/metrics -H "x-admin-token: $ADMIN_TOKEN" | jq '.api["System-Cleanup"]'
 ```
+
+## 🚦 发布门禁
+```bash
+# 标准发布门禁（默认包含稳定 Mock 回归）
+bun run release:gate
+
+# 含真实渠道回归（需要真实 AI 凭据）
+bun run release:gate:real
+```
+
+真实渠道回归启用条件：
+- `E2E_REAL_CHANNELS=true`
+- `GEMINI_API_KEYS` 已配置（用于真实导演生成链路）
 
 ## 🛡️ Secrets 防泄漏
 ```bash

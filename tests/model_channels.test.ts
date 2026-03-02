@@ -1,14 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { app } from '../apps/backend/src/index';
+import { buildTestPassword } from './helpers/credentials'
 
 const createAccessToken = async () => {
   const suffix = Math.random().toString(36).slice(2, 10)
+  const password = buildTestPassword(suffix)
   const response = await app.handle(new Request('http://localhost/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email: `channels-${suffix}@veomuse.test`,
-      password: 'Passw0rd!123',
+      password,
       organizationName: `渠道组织-${suffix}`
     })
   }))
