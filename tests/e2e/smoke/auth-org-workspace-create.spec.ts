@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
+import { buildTestPassword } from '../../helpers/credentials'
 
 const uniq = () => `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
 
 test('可通过实验室 UI 完成注册、登录、创建工作区', async ({ page }) => {
   const suffix = uniq()
   const email = `ui_${suffix}@veomuse.test`
-  const password = `VM_TEST_PASSWORD`
+  const password = buildTestPassword(suffix)
 
   await page.goto('/')
   await page.getByTestId('btn-mode-color').click()

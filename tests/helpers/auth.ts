@@ -1,4 +1,5 @@
 import { app } from '../../apps/backend/src/index'
+import { buildTestPassword } from './credentials'
 
 export const callApi = async (path: string, init?: RequestInit) => {
   const response = await app.handle(new Request(`http://localhost${path}`, init))
@@ -26,12 +27,13 @@ export const createAuthHeaders = (
 export const createTestSession = async (label: string = 'test-user') => {
   const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const email = `${label}-${stamp}@example.com`
+  const password = buildTestPassword(stamp)
   const register = await callApi('/api/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       email,
-      password: 'VM_TEST_PASSWORD',
+      password,
       organizationName: `${label}-org-${stamp}`
     })
   })

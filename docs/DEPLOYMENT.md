@@ -73,10 +73,11 @@ curl -s http://127.0.0.1:18081/api/health
 curl -s http://127.0.0.1:18081/api/capabilities
 
 STAMP=$(date +%s)
+SMOKE_PASSWORD="Vm${STAMP}Ab#9"
 SESSION_JSON=$(curl -s http://127.0.0.1:18081/api/auth/register \
   -X POST \
   -H 'Content-Type: application/json' \
-  -d "{\"email\":\"smoke-${STAMP}@veomuse.local\",\"password\":\"VM_TEST_PASSWORD\",\"organizationName\":\"SmokeOrg-${STAMP}\"}")
+  -d "{\"email\":\"smoke-${STAMP}@veomuse.local\",\"password\":\"${SMOKE_PASSWORD}\",\"organizationName\":\"SmokeOrg-${STAMP}\"}")
 ACCESS_TOKEN=$(echo "$SESSION_JSON" | jq -r '.session.accessToken')
 ORG_ID=$(echo "$SESSION_JSON" | jq -r '.organizations[0].id')
 
