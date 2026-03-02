@@ -7,7 +7,7 @@
 - **`apps/backend` (ElysiaJS)**: 工业级 AI 路由总线。集成了 Telemetry 实时遥测、Multi-Driver 视频生成及 FFmpeg 异步合成引擎。
 - **`apps/frontend` (React 19)**: 顶级多轨编辑器。采用 **Native SyncController** 驱动播放，强制使用 **useShallow** 拦截渲染熵值，主布局遵循 **Apple Pro Master Grid** 规范。
 - **`packages/shared`**: 强类型契约层。统一定义 Clip, Track, Asset 等 E2E 接口。
-- **`conductor/archive/`**: 全量开发审计档案。包含 21 个核心功能的规格说明 (`spec.md`) 与执行记录 (`plan.md`)。
+- **`docs/requirements/`**: 项目正式需求基线与资产转换映射，包含总需求文档与全量来源追溯清单。
 
 ## 🛠️ 构建、部署与运维
 | 命令 | 说明 |

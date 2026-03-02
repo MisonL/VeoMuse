@@ -1,8 +1,0 @@
-{
-  "track_id": "migrate_core_logic_20260225",
-  "type": "feature",
-  "status": "completed",
-  "created_at": "2026-02-25T11:00:00Z",
-  "updated_at": "2026-02-28T08:30:00Z",
-  "description": "核心业务迁移与 AI 创意引擎实现：重构 Video 逻辑并实现 AI 智能翻译层"
-}

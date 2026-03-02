@@ -62,7 +62,7 @@ bun run hooks:install
 - `apps/backend`: 工业级 AI 路由总线 (Elysia)。
 - `apps/frontend`: 旗舰版编辑器 UI (React 19)。
 - `packages/shared`: 100% E2E 类型定义与工具。
-- `conductor/`: 项目规格说明与执行计划存档。
+- `docs/requirements`: 项目需求总册与资产转换映射（由历史 conductor 资产收敛）。
 
 ## 🚀 三平台一键部署
 

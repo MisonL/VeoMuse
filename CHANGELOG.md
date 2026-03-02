@@ -18,9 +18,9 @@
 - `package.json` 新增一键部署命令：
   - `deploy:oneclick`
   - `deploy:oneclick:win`
-- 增加 V3.2 下一阶段规划文档与轨道登记：
-  - `conductor/v3_2_next_phase_plan_20260302.md`
-  - `conductor/tracks.md`（新增 V3.2 待执行轨道）
+- 增加 V3.2 下一阶段规划与需求基线文档：
+  - `docs/requirements/PROJECT_REQUIREMENTS.md`
+  - `docs/requirements/CONDUCTOR_ASSET_CONVERSION_MAP.md`
 
 ### Changed
 - 发布文档与入口说明升级为“三平台一键部署”：
