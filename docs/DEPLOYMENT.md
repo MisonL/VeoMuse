@@ -134,20 +134,36 @@ bun run release:gate:real
 ```
 
 SLO 门禁说明：
-- `release:gate` 默认执行 `SLO Check (soft)`，仅生成报告并告警，不阻断发布。
+- `release:gate` 会自动按分支选择模式：`main=hard`，其他分支=`soft`。
+- `soft`：仅告警，不阻断发布；`hard`：任何未达标将阻断发布。
 - 报告输出默认路径：`artifacts/slo-report.json`。
-- 若需硬门禁，请在执行前设置：
+- 仍兼容历史开关 `SLO_GATE_ENFORCE=true`，等价于 `mode=hard`。
+- 若需手动覆盖模式，请在执行前设置：
 
 ```bash
-SLO_GATE_ENFORCE=true bun run release:gate
+RELEASE_SLO_MODE=soft bun run release:gate
 ```
 
 可选参数与环境变量：
 - `API_BASE_URL` / `--api-base`：SLO 拉取地址（默认 `http://127.0.0.1:18081`）
+- `SLO_GATE_MODE` / `--mode`：门禁模式（`soft`/`hard`）
 - `SLO_GATE_WINDOW_MINUTES` / `--window`：统计窗口（默认 `1440`）
 - `SLO_GATE_CATEGORY` / `--category`：分解维度（默认 `non_ai`）
 - `SLO_GATE_LIMIT` / `--limit`：分解条数（默认 `8`）
+- `SLO_GATE_MIN_NON_AI_SAMPLES` / `--min-non-ai-samples`：非 AI 最小样本阈值（默认 `0`）
+- `SLO_GATE_MIN_JOURNEY_SAMPLES` / `--min-journey-samples`：旅程最小样本阈值（默认 `0`）
+- `SLO_GATE_REPORT_SCHEMA_VERSION` / `--schema-version`：报告 schema 版本号（默认 `1.0`）
 - `SLO_GATE_ADMIN_TOKEN`：可覆盖 `ADMIN_TOKEN` 用于脚本鉴权
+
+样本不足策略：
+- 当样本低于阈值时，报告会在 `sampleChecks` 与 `failedRules` 明确标记不足项。
+- `soft` 模式返回 `warn`；`hard` 模式返回 `fail` 并阻断流水线。
+- 当阈值设为 `0` 时，脚本会输出改进建议，但不会因“缺样本”直接失败。
+
+CI 质量门禁策略（`.github/workflows/ci-quality-gate.yml`）：
+- PR：`soft` 模式执行 SLO 门禁。
+- `main`：`hard` 模式执行 SLO 门禁。
+- 产物统一上传：`playwright-report/`、`test-results/playwright/`、`artifacts/slo-report.json`。
 
 真实渠道回归启用条件：
 - `E2E_REAL_CHANNELS=true`

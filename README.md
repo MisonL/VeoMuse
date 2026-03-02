@@ -65,9 +65,22 @@ bun run release:gate
 # 一键发布门禁（含真实渠道回归）
 bun run release:gate:real
 
+# 单独运行 SLO 门禁（默认 soft，可用 --mode hard）
+bun run scripts/slo_gate.ts --mode soft
+
 # 安装 pre-push 安全钩子
 bun run hooks:install
 ```
+
+## 📈 SLO 门禁策略
+
+- `release:gate` 自动按分支选择模式：`main=hard`，其他分支=`soft`。
+- `soft` 模式只告警；`hard` 模式会阻断发版。
+- SLO 报告默认写入 `artifacts/slo-report.json`，包含 `schemaVersion`、`sampleChecks`、`recommendations`。
+- 可通过环境变量调优样本阈值：
+  - `SLO_GATE_MIN_NON_AI_SAMPLES`
+  - `SLO_GATE_MIN_JOURNEY_SAMPLES`
+  - `SLO_GATE_REPORT_SCHEMA_VERSION`
 
 ## 🏗️ 仓库结构
 

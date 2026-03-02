@@ -16,12 +16,25 @@
 - `package.json` 新增 E2E 分层命令：
   - `e2e:regression:mock`
   - `e2e:regression:real`
+- 新增 `tests/slo_gate_script.test.ts`，覆盖：
+  - SLO API 不可达时 `soft/hard` 差异行为
+  - 样本阈值不足门禁
+  - 报告 schema 字段完整性
 
 ### Changed
 - 数据库修复 API 支持 `checkMode`（`quick`/`full`）并引入默认策略：
   - `force=false` 默认 `quick`，降低非强制巡检耗时
   - `force=true` 默认 `full`，提升强制修复前判断精度
 - 更新数据库修复相关文档与共享类型定义，增强前后端契约可读性。
+- `scripts/slo_gate.ts` 升级为模式化门禁：
+  - 新增 `--mode soft|hard`、`SLO_GATE_MODE`
+  - 新增样本阈值 `SLO_GATE_MIN_NON_AI_SAMPLES`、`SLO_GATE_MIN_JOURNEY_SAMPLES`
+  - 报告新增 `schemaVersion`、`sampleChecks`、`recommendations`
+- `scripts/release_gate.ts` 改为按分支自动选择 SLO 模式：
+  - 默认 `main=hard`，其他分支=`soft`
+  - 支持 `RELEASE_SLO_MODE` 手动覆盖
+- CI 质量门禁接入 Mock 回归与 SLO 门禁，并上传 `artifacts/slo-report.json`
+- `scripts/provider_chain_e2e.ts` 旅程埋点 meta 新增 `flowVersion`、`scenarioId`、`buildRef`
 
 ### Fixed
 - 修复 `tests/sqlite_db_repair_api.test.ts` 中“非强制修复检查”超时问题（原因为默认全量完整性检查耗时过高）。
