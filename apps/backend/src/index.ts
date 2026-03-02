@@ -40,6 +40,7 @@ import { AuthService } from './services/AuthService'
 import { OrganizationService } from './services/OrganizationService'
 import { ChannelConfigService } from './services/ChannelConfigService'
 import { OrganizationGovernanceService } from './services/OrganizationGovernanceService'
+import { SloService } from './services/SloService'
 import type { WorkspaceRole, OrganizationRole } from '@veomuse/shared'
 
 const ensureDriversRegistered = (() => {
@@ -80,6 +81,53 @@ const sanitizeImportFileName = (fileName: string) => {
   return `asset-${Date.now()}.bin`
 }
 const storageProvider = new LocalStorageProvider()
+
+const isLikelyDynamicSegment = (segment: string) => {
+  if (!segment) return false
+  if (/^\d+$/.test(segment)) return true
+  if (/^[a-f0-9]{8,}$/i.test(segment)) return true
+  if (/^[a-f0-9-]{16,}$/i.test(segment)) return true
+  if (/^(ws|prj|project|policy|scene|run|invite|member|audit|dbr|org|user)_[a-z0-9_-]+$/i.test(segment)) return true
+  if (/^[A-Za-z0-9_-]{20,}$/.test(segment)) return true
+  return false
+}
+
+const normalizeRoutePath = (pathname: string) => {
+  const cleaned = pathname.trim()
+  if (!cleaned) return '/'
+  return cleaned
+    .split('/')
+    .map((segment, index) => {
+      if (index === 0 || !segment) return segment
+      return isLikelyDynamicSegment(segment) ? ':id' : segment
+    })
+    .join('/')
+}
+
+const resolveMetricCategory = (pathname: string) => {
+  if (!pathname.startsWith('/api/')) return 'system' as const
+  if (pathname === '/api/health') return 'system' as const
+  if (pathname.startsWith('/api/admin/')) return 'system' as const
+  if (pathname.startsWith('/api/telemetry/')) return 'system' as const
+  if (
+    pathname.startsWith('/api/ai/')
+    || pathname === '/api/video/generate'
+    || pathname === '/api/video/compose'
+    || pathname === '/api/models/recommend'
+  ) {
+    return 'ai' as const
+  }
+  return 'non_ai' as const
+}
+
+const resolveStatusCode = (status: number | string | undefined) => {
+  if (typeof status === 'number' && Number.isFinite(status)) return status
+  if (typeof status === 'string') {
+    const parsed = Number.parseInt(status, 10)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return 200
+}
 
 const isDevRuntime = () => {
   const nodeEnv = String(process.env.NODE_ENV || '').toLowerCase()
@@ -424,9 +472,48 @@ export const createApp = () => {
   ensureDriversRegistered()
   ModelMarketplaceService.ensureInitialized()
   OrganizationService.ensureDefaultOrganization()
+  const requestStartAt = new WeakMap<Request, number>()
+  const requestPathname = new WeakMap<Request, string>()
+
+  const finalizeRequestMetric = (request: Request | null | undefined, status: number | string | undefined) => {
+    if (!request) return
+    const startedAt = requestStartAt.get(request)
+    if (!startedAt) return
+    requestStartAt.delete(request)
+    const pathname = requestPathname.get(request) || (() => {
+      try {
+        return new URL(request.url).pathname || '/'
+      } catch {
+        return '/'
+      }
+    })()
+    requestPathname.delete(request)
+    const durationMs = Math.max(0, Number((performance.now() - startedAt).toFixed(2)))
+    const statusCode = resolveStatusCode(status)
+    const category = resolveMetricCategory(pathname)
+    SloService.recordRequestMetric({
+      requestId: request.headers.get('x-request-id') || undefined,
+      routeKey: normalizeRoutePath(pathname),
+      method: request.method || 'GET',
+      category,
+      statusCode,
+      durationMs,
+      success: statusCode < 400
+    })
+  }
 
   return new Elysia()
     .use(cors())
+    .onRequest((context) => {
+      const request = (context as any)?.request as Request | undefined
+      if (!request) return
+      requestStartAt.set(request, performance.now())
+      try {
+        requestPathname.set(request, new URL(request.url).pathname || '/')
+      } catch {
+        requestPathname.set(request, '/')
+      }
+    })
     .trace(async ({ onHandle, set }) => {
       onHandle(({ begin, onStop }) => {
         onStop(({ end }) => {
@@ -434,10 +521,20 @@ export const createApp = () => {
         })
       })
     })
-    .onError(({ code, error, set }) => {
+    .onAfterHandle((context) => {
+      const request = (context as any)?.request as Request | undefined
+      const status = (context as any)?.set?.status as number | string | undefined
+      finalizeRequestMetric(request, status)
+    })
+    .onError((context) => {
+      const code = (context as any)?.code as string
+      const error = (context as any)?.error
+      const set = (context as any)?.set as { status?: number | string; headers?: Record<string, string> }
+      const request = (context as any)?.request as Request | undefined
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       const currentStatus = typeof set.status === 'number' ? set.status : 500
       set.status = currentStatus >= 400 ? currentStatus : 500
+      finalizeRequestMetric(request, set.status)
       console.error(`🚨 [Global Guard] ${code}: ${errorMessage}`)
       return { success: false, status: 'error', error: errorMessage, code }
     })
@@ -787,6 +884,38 @@ export const createApp = () => {
       }
       return TelemetryService.getInstance().getSummary()
     })
+    .get('/api/admin/slo/summary', ({ request, query, set }) => {
+      if (!authorizeAdmin(request, set)) {
+        return { success: false, status: 'error', error: 'Unauthorized' }
+      }
+      const windowMinutes = Number.parseInt(query.windowMinutes || '1440', 10)
+      return {
+        success: true,
+        summary: SloService.getSloSummary(windowMinutes)
+      }
+    }, {
+      query: t.Object({
+        windowMinutes: t.Optional(t.String())
+      })
+    })
+    .get('/api/admin/slo/breakdown', ({ request, query, set }) => {
+      if (!authorizeAdmin(request, set)) {
+        return { success: false, status: 'error', error: 'Unauthorized' }
+      }
+      const windowMinutes = Number.parseInt(query.windowMinutes || '1440', 10)
+      const category = query.category || 'non_ai'
+      const limit = Number.parseInt(query.limit || '80', 10)
+      return {
+        success: true,
+        breakdown: SloService.getSloBreakdown(windowMinutes, category, limit)
+      }
+    }, {
+      query: t.Object({
+        windowMinutes: t.Optional(t.String()),
+        category: t.Optional(t.Union([t.Literal('ai'), t.Literal('non_ai'), t.Literal('system')])),
+        limit: t.Optional(t.String())
+      })
+    })
     .get('/api/admin/db/health', ({ request, query, set }) => {
       if (!authorizeAdmin(request, set)) {
         return { success: false, status: 'error', error: 'Unauthorized' }
@@ -868,6 +997,68 @@ export const createApp = () => {
         to: t.Optional(t.String()),
         status: t.Optional(t.String()),
         reason: t.Optional(t.String())
+      })
+    })
+    .post('/api/telemetry/journey', ({ body, request, set }) => {
+      const user = requireAuthenticatedUser(request, set)
+      if (!user) return { success: false, status: 'error', error: 'Unauthorized' }
+      const flowType = body.flowType
+      const source = body.source === 'e2e' ? 'e2e' : 'frontend'
+      const workspaceId = body.workspaceId?.trim() || ''
+      const organizationFromHeader = request.headers.get('x-organization-id')?.trim() || ''
+      const organizationFromBody = body.organizationId?.trim() || ''
+      let organizationId = organizationFromBody || organizationFromHeader || ''
+
+      if (!Number.isFinite(body.stepCount) || body.stepCount < 1) {
+        set.status = 400
+        return { success: false, status: 'error', error: 'stepCount must be >= 1' }
+      }
+
+      if (workspaceId) {
+        const member = WorkspaceService.getMemberByUserId(workspaceId, user.id)
+        if (!member) {
+          set.status = 403
+          return { success: false, status: 'error', error: 'Forbidden: workspace membership required' }
+        }
+        const workspace = WorkspaceService.getWorkspace(workspaceId)
+        if (workspace?.organizationId) organizationId = workspace.organizationId
+      }
+
+      if (organizationId) {
+        const role = OrganizationService.getMemberRole(organizationId, user.id)
+        if (!role) {
+          set.status = 403
+          return { success: false, status: 'error', error: 'Forbidden: organization membership required' }
+        }
+      } else {
+        organizationId = OrganizationService.listOrganizationsForUser(user.id)[0]?.id || ''
+      }
+
+      const journey = SloService.recordJourneyRun({
+        flowType,
+        source,
+        userId: user.id,
+        organizationId: organizationId || null,
+        workspaceId: workspaceId || null,
+        sessionId: body.sessionId?.trim() || null,
+        stepCount: body.stepCount,
+        success: body.success,
+        durationMs: body.durationMs,
+        meta: body.meta
+      })
+
+      return { success: true, journey }
+    }, {
+      body: t.Object({
+        flowType: t.Union([t.Literal('first_success_path')]),
+        source: t.Optional(t.Union([t.Literal('frontend'), t.Literal('e2e')])),
+        stepCount: t.Number(),
+        success: t.Boolean(),
+        durationMs: t.Optional(t.Number()),
+        organizationId: t.Optional(t.String()),
+        workspaceId: t.Optional(t.String()),
+        sessionId: t.Optional(t.String()),
+        meta: t.Optional(t.Record(t.String(), t.Any()))
       })
     })
 
@@ -1864,11 +2055,16 @@ if (import.meta.main) {
   const generatedDir = resolveGeneratedDir()
   const cleanupIntervalMs = parseMs(process.env.CLEANUP_INTERVAL_MS, 86_400_000)
   const cleanupRetentionMs = parseMs(process.env.CLEANUP_RETENTION_MS, 86_400_000)
+  const sloCleanupIntervalMs = parseMs(process.env.SLO_CLEANUP_INTERVAL_MS, 86_400_000)
   const marketplaceMetricIntervalMs = parseMs(process.env.MARKETPLACE_METRIC_INTERVAL_MS, 300_000)
   const dbHealthcheckIntervalMs = parseMs(process.env.DB_HEALTHCHECK_INTERVAL_MS, 0)
   let dbRepairing = false
   void cleanupGeneratedFiles(generatedDir, { maxAgeMs: cleanupRetentionMs, retries: 2 })
+  SloService.cleanupExpiredData()
   const cleanupTask = startCleanupScheduler(generatedDir, cleanupIntervalMs, cleanupRetentionMs)
+  const sloCleanupTask = setInterval(() => {
+    SloService.cleanupExpiredData()
+  }, sloCleanupIntervalMs)
   const metricTask = setInterval(() => ModelMarketplaceService.collectAndPersistMetrics(), marketplaceMetricIntervalMs)
   const dbHealthTask = dbHealthcheckIntervalMs > 0
     ? setInterval(() => {
@@ -1899,6 +2095,7 @@ if (import.meta.main) {
 
   const dispose = () => {
     clearInterval(cleanupTask)
+    clearInterval(sloCleanupTask)
     clearInterval(metricTask)
     if (dbHealthTask) clearInterval(dbHealthTask)
   }

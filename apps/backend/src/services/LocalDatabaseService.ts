@@ -89,6 +89,7 @@ const RECOVERY_TABLES = [
   'ai_channel_audits',
   'model_profiles',
   'model_runtime_metrics',
+  'request_metrics',
   'routing_policies',
   'routing_executions',
   'creative_runs',
@@ -101,6 +102,7 @@ const RECOVERY_TABLES = [
   'projects',
   'project_snapshots',
   'collab_events',
+  'journey_runs',
   'audit_logs'
 ] as const
 
@@ -380,6 +382,20 @@ const migrate = (db: Database) => {
   `)
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS request_metrics (
+      id TEXT PRIMARY KEY,
+      request_id TEXT NOT NULL,
+      route_key TEXT NOT NULL,
+      method TEXT NOT NULL,
+      category TEXT NOT NULL,
+      status_code INTEGER NOT NULL,
+      success INTEGER NOT NULL DEFAULT 0,
+      duration_ms REAL NOT NULL,
+      created_at TEXT NOT NULL
+    );
+  `)
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS routing_policies (
       id TEXT PRIMARY KEY,
       organization_id TEXT NOT NULL DEFAULT 'org_default',
@@ -601,6 +617,23 @@ const migrate = (db: Database) => {
   ensureColumn(db, 'collab_events', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS journey_runs (
+      id TEXT PRIMARY KEY,
+      flow_type TEXT NOT NULL,
+      source TEXT NOT NULL,
+      user_id TEXT,
+      organization_id TEXT,
+      workspace_id TEXT,
+      session_id TEXT,
+      step_count INTEGER NOT NULL DEFAULT 0,
+      success INTEGER NOT NULL DEFAULT 0,
+      duration_ms REAL NOT NULL DEFAULT 0,
+      meta_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL
+    );
+  `)
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS db_repair_logs (
       id TEXT PRIMARY KEY,
       status TEXT NOT NULL,
@@ -627,6 +660,36 @@ const migrate = (db: Database) => {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_db_repair_logs_reason
     ON db_repair_logs(reason);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_request_metrics_created_at
+    ON request_metrics(created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_request_metrics_category_created
+    ON request_metrics(category, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_request_metrics_route_created
+    ON request_metrics(route_key, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_journey_runs_created_at
+    ON journey_runs(created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_journey_runs_flow_created
+    ON journey_runs(flow_type, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_journey_runs_source_created
+    ON journey_runs(source, created_at DESC);
   `)
 
   db.exec(`
