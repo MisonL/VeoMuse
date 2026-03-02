@@ -2,12 +2,26 @@ import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'fs'
 import path from 'path'
 
-const labPath = path.resolve(process.cwd(), 'apps/frontend/src/components/Editor/ComparisonLab.tsx')
 const labCssPath = path.resolve(process.cwd(), 'apps/frontend/src/components/Editor/ComparisonLab.css')
+const labSourceFiles = [
+  'apps/frontend/src/components/Editor/ComparisonLab.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/types.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/constants.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/LabToolbar.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/ChannelAccessPanel.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/CompareModePanel.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/MarketplaceModePanel.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
+]
+
+const readLabSources = () => labSourceFiles
+  .map(file => readFileSync(path.resolve(process.cwd(), file), 'utf8'))
+  .join('\n')
 
 describe('P2 实验室前端对齐验证', () => {
   it('应包含 P2 三大模式入口', () => {
-    const content = readFileSync(labPath, 'utf8')
+    const content = readLabSources()
     expect(content).toContain('策略治理')
     expect(content).toContain('创意闭环')
     expect(content).toContain('协作平台')
@@ -15,7 +29,7 @@ describe('P2 实验室前端对齐验证', () => {
   })
 
   it('应接入模型策略治理接口与执行记录分页', () => {
-    const content = readFileSync(labPath, 'utf8')
+    const content = readLabSources()
     expect(content).toContain('/api/models/policies')
     expect(content).toContain('/executions?limit=')
     expect(content).toContain('scoreBreakdown')
@@ -23,7 +37,7 @@ describe('P2 实验室前端对齐验证', () => {
   })
 
   it('应接入创意闭环版本链与提交接口', () => {
-    const content = readFileSync(labPath, 'utf8')
+    const content = readLabSources()
     expect(content).toContain('/api/ai/creative/run')
     expect(content).toContain('/feedback')
     expect(content).toContain('/versions')
@@ -33,7 +47,7 @@ describe('P2 实验室前端对齐验证', () => {
   })
 
   it('应接入协作平台 REST + WebSocket 闭环', () => {
-    const content = readFileSync(labPath, 'utf8')
+    const content = readLabSources()
     expect(content).toContain('/api/workspaces')
     expect(content).toContain('/api/storage/upload-token')
     expect(content).toContain('/ws/collab/')
@@ -46,7 +60,7 @@ describe('P2 实验室前端对齐验证', () => {
   })
 
   it('协作与策略动作应具备加载态/防重入保护', () => {
-    const content = readFileSync(labPath, 'utf8')
+    const content = readLabSources()
     expect(content).toContain('isPolicyLoading')
     expect(content).toContain('isPolicySimulating')
     expect(content).toContain('isCreativeBusy')

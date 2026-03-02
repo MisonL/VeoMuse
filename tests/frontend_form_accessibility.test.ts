@@ -4,10 +4,14 @@ import path from 'path'
 
 describe('前端表单可访问性回归', () => {
   it('ComparisonLab 关键表单字段应具备 name 属性', () => {
-    const content = readFileSync(
-      path.resolve(process.cwd(), 'apps/frontend/src/components/Editor/ComparisonLab.tsx'),
-      'utf8'
-    )
+    const content = [
+      'apps/frontend/src/components/Editor/ComparisonLab.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/LabToolbar.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CompareModePanel.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/MarketplaceModePanel.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
+    ].map(file => readFileSync(path.resolve(process.cwd(), file), 'utf8')).join('\n')
     expect(content).toContain('name="leftModel"')
     expect(content).toContain('name="selectedPolicyId"')
     expect(content).toContain('name="creativeScript"')
