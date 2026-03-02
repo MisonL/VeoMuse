@@ -55,6 +55,12 @@ scripts\\one-click-deploy.cmd
 | `ALCHEMY_API_KEY` | (empty) | 风格迁移服务密钥 |
 | `CLEANUP_INTERVAL_MS` | `86400000` | 自动清理任务调度间隔（毫秒） |
 | `CLEANUP_RETENTION_MS` | `86400000` | 文件保留时长（毫秒），超时自动删除 |
+| `SLO_CLEANUP_INTERVAL_MS` | `86400000` | SLO 指标清理调度间隔（毫秒） |
+| `SLO_REQUEST_RETENTION_DAYS` | `14` | 请求级 SLO 指标保留天数 |
+| `SLO_JOURNEY_RETENTION_DAYS` | `30` | 旅程级 SLO 指标保留天数 |
+| `SLO_TARGET_PRIMARY_SUCCESS_RATE` | `0.995` | 主链路成功率目标 |
+| `SLO_TARGET_NON_AI_P95_MS` | `400` | 非 AI API P95 目标（毫秒） |
+| `SLO_TARGET_FIRST_SUCCESS_MAX_STEPS` | `8` | 首次成功平均步数目标上限 |
 | `MARKETPLACE_METRIC_INTERVAL_MS` | `300000` | 模型运行指标聚合入库间隔（毫秒） |
 | `STORAGE_PROVIDER` | `local` | 上传令牌 provider，当前推荐 `local`（已预留云兼容接口） |
 | `LOCAL_STORAGE_ROOT` | `/app/uploads/workspace` | 本地对象存储根目录 |
@@ -112,6 +118,8 @@ curl -s "http://127.0.0.1:18081${UPLOAD_URL}" \
 
 curl -s http://127.0.0.1:18081/api/admin/db/health -H "x-admin-token: $ADMIN_TOKEN" | jq '.health.status'
 curl -s http://127.0.0.1:18081/api/admin/db/runtime -H "x-admin-token: $ADMIN_TOKEN" | jq '.runtime'
+curl -s http://127.0.0.1:18081/api/admin/slo/summary -H "x-admin-token: $ADMIN_TOKEN" | jq '.summary.passFlags'
+curl -s "http://127.0.0.1:18081/api/admin/slo/breakdown?category=non_ai&limit=5" -H "x-admin-token: $ADMIN_TOKEN" | jq '.breakdown.items'
 curl -I http://127.0.0.1:18081 | grep -E "Content-Security-Policy|X-Frame-Options|Referrer-Policy|Permissions-Policy"
 curl -s http://127.0.0.1:18081/api/admin/metrics -H "x-admin-token: $ADMIN_TOKEN" | jq '.api["System-Cleanup"]'
 ```
@@ -124,6 +132,22 @@ bun run release:gate
 # 含真实渠道回归（需要真实 AI 凭据）
 bun run release:gate:real
 ```
+
+SLO 门禁说明：
+- `release:gate` 默认执行 `SLO Check (soft)`，仅生成报告并告警，不阻断发布。
+- 报告输出默认路径：`artifacts/slo-report.json`。
+- 若需硬门禁，请在执行前设置：
+
+```bash
+SLO_GATE_ENFORCE=true bun run release:gate
+```
+
+可选参数与环境变量：
+- `API_BASE_URL` / `--api-base`：SLO 拉取地址（默认 `http://127.0.0.1:18081`）
+- `SLO_GATE_WINDOW_MINUTES` / `--window`：统计窗口（默认 `1440`）
+- `SLO_GATE_CATEGORY` / `--category`：分解维度（默认 `non_ai`）
+- `SLO_GATE_LIMIT` / `--limit`：分解条数（默认 `8`）
+- `SLO_GATE_ADMIN_TOKEN`：可覆盖 `ADMIN_TOKEN` 用于脚本鉴权
 
 真实渠道回归启用条件：
 - `E2E_REAL_CHANNELS=true`

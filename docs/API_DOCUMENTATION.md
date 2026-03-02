@@ -27,6 +27,26 @@
 - 可选安全：若配置 `ADMIN_TOKEN`，需在请求头携带 `x-admin-token`。
 - 包含自动清理任务指标：`api["System-Cleanup"]`（调用次数、耗时、成功率）。
 
+### GET `/api/admin/slo/summary`
+返回北极星 SLO 摘要（主链路成功率、非 AI API P95、首次成功平均步数）。
+- **Query**: `windowMinutes`(optional, 默认 `1440`，范围 `5-10080`)
+- **权限**: 若配置 `ADMIN_TOKEN`，需请求头 `x-admin-token`。
+- **Response**:
+  - `summary.targets`：SLO 阈值（可由环境变量覆盖）
+  - `summary.current`：当前窗口观测值
+  - `summary.passFlags`：三项达标布尔位
+  - `summary.counts`：样本量（journey/non-ai 请求）
+  - `summary.sourceBreakdown`：旅程来源分解（`frontend` / `e2e`）
+
+### GET `/api/admin/slo/breakdown`
+按接口输出 SLO 分解明细（聚合到 `method + routeKey` 维度）。
+- **Query**:
+  - `windowMinutes`(optional, 默认 `1440`)
+  - `category`(optional: `ai` / `non_ai` / `system`，默认 `non_ai`)
+  - `limit`(optional, 默认 `80`，最大 `200`)
+- **权限**: 若配置 `ADMIN_TOKEN`，需请求头 `x-admin-token`。
+- **Response**: `breakdown.items[]`（`count`、`successRate`、`avgMs`、`p95Ms`、`p99Ms`、`lastSeenAt`）
+
 ### GET `/api/admin/db/health`
 返回 SQLite 健康状态（`quick_check`/`integrity_check`）。
 - **Query**: `mode`(optional: `quick`/`full`，默认 `quick`)
@@ -271,6 +291,23 @@ NeRF 空间重构。未配置 provider 时返回 `not_implemented`。
 - **Params**: `fileName`(required), `base64Data`(required), `contentType`(optional)
 - **权限**: 需 Bearer 登录且具备组织成员身份。
 - **配额治理**: 若组织存储额度超限，返回 `429` 与 `code: QUOTA_EXCEEDED`。
+
+### POST `/api/telemetry/journey`
+写入用户旅程埋点（用于北极星 SLO 统计）。
+- **权限**: 必须 Bearer 登录。
+- **Body**:
+  - `flowType`: 当前固定为 `first_success_path`
+  - `source`: `frontend` / `e2e`（默认 `frontend`）
+  - `stepCount`: 必填，且 `>= 1`
+  - `success`: 是否成功
+  - `durationMs`(optional)
+  - `organizationId`(optional)
+  - `workspaceId`(optional, 传入时要求调用者是该工作区成员)
+  - `sessionId`(optional)
+  - `meta`(optional)
+- **安全约束**:
+  - 传 `workspaceId` 时会校验真实工作区成员身份
+  - 传 `organizationId` 时会校验真实组织成员身份
 
 ### WS `/ws/collab/:workspaceId`
 多人协作实时通道。

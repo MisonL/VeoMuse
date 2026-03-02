@@ -13,7 +13,8 @@ const steps: GateStep[] = [
   { name: 'Build', command: 'bun run build' },
   { name: 'Unit Tests', command: 'bun run test -- --max-concurrency 1' },
   { name: 'E2E Smoke', command: 'bun run e2e:smoke -- --workers=1', retries: 1 },
-  { name: 'E2E Regression (Mock)', command: 'bun run e2e:regression:mock -- --workers=1', retries: 1 }
+  { name: 'E2E Regression (Mock)', command: 'bun run e2e:regression:mock -- --workers=1', retries: 1 },
+  { name: 'SLO Check (soft)', command: 'bun run scripts/slo_gate.ts' }
 ]
 
 if (runRealE2E) {

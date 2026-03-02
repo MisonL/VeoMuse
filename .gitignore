@@ -21,6 +21,7 @@ test-results/
 *.pid.lock
 dump.rdb
 data/
+artifacts/
 
 # OS & IDE
 .vscode/

@@ -26,6 +26,12 @@ interface StepResult {
   detail?: string
 }
 
+interface E2ETelemetryResult {
+  reported: boolean
+  error?: string
+  sessionId?: string
+}
+
 const parseIntSafe = (value: string | undefined, fallback: number) => {
   const parsed = Number.parseInt(String(value || ''), 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
@@ -170,6 +176,58 @@ const timed = async (name: string, fn: () => Promise<void>, steps: StepResult[])
       durationMs: Number((performance.now() - started).toFixed(2)),
       detail: error?.message || String(error)
     })
+  }
+}
+
+const reportE2EJourney = async (params: {
+  authHeaders: Record<string, string>
+  organizationId: string
+  workspaceId: string
+  steps: StepResult[]
+  failedCount: number
+}): Promise<E2ETelemetryResult> => {
+  const accessToken = String(params.authHeaders.Authorization || '').trim()
+  if (!accessToken) {
+    return {
+      reported: false,
+      error: 'missing-access-token'
+    }
+  }
+
+  const sessionId = `provider-chain-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  const totalDurationMs = Number(params.steps.reduce((sum, item) => sum + Number(item.durationMs || 0), 0).toFixed(2))
+  const failedSteps = params.steps.filter(item => !item.ok).map(item => item.name)
+
+  try {
+    await requestJson('/api/telemetry/journey', {
+      method: 'POST',
+      body: JSON.stringify({
+        flowType: 'first_success_path',
+        source: 'e2e',
+        stepCount: Math.max(1, params.steps.length),
+        success: params.failedCount === 0,
+        durationMs: totalDurationMs,
+        organizationId: params.organizationId || undefined,
+        workspaceId: params.workspaceId || undefined,
+        sessionId,
+        meta: {
+          flow: 'provider_chain_e2e',
+          failedSteps,
+          failedCount: params.failedCount
+        }
+      })
+    }, params.authHeaders)
+
+    return {
+      reported: true,
+      sessionId
+    }
+  } catch (error: any) {
+    return {
+      reported: false,
+      error: error?.message || String(error),
+      sessionId
+    }
   }
 }
 
@@ -347,6 +405,13 @@ const run = async () => {
   }
 
   const failed = steps.filter((step) => !step.ok)
+  const telemetry = await reportE2EJourney({
+    authHeaders,
+    organizationId: orgId,
+    workspaceId,
+    steps,
+    failedCount: failed.length
+  })
   const summary = {
     timestamp: new Date().toISOString(),
     apiBase,
@@ -355,6 +420,7 @@ const run = async () => {
     total: steps.length,
     passed: steps.length - failed.length,
     failed: failed.length,
+    telemetry,
     steps
   }
 
