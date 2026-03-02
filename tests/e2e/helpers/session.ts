@@ -1,4 +1,5 @@
 import type { APIRequestContext, Page } from '@playwright/test'
+import { buildTestPassword } from '../../helpers/credentials'
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:33117'
 
@@ -46,7 +47,7 @@ export const seedAuthSession = async (
 ): Promise<SeededSession> => {
   const suffix = uniqueSuffix()
   const email = `e2e_${suffix}@veomuse.test`
-  const password = `Passw0rd!${suffix}`
+  const password = buildTestPassword(suffix)
   const organizationName = `E2E组织_${suffix}`
 
   const registerPayload = await postJson<{

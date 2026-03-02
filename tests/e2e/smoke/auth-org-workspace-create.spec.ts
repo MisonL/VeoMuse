@@ -1,11 +1,14 @@
 import { expect, test } from '@playwright/test'
+import { buildTestPassword } from '../../helpers/credentials'
+import { attachPageDebug } from '../helpers/debug'
 
 const uniq = () => `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
 
 test('可通过实验室 UI 完成注册、登录、创建工作区', async ({ page }) => {
+  attachPageDebug(page, 'auth-org-workspace-create')
   const suffix = uniq()
   const email = `ui_${suffix}@veomuse.test`
-  const password = `Passw0rd!${suffix}`
+  const password = buildTestPassword(suffix)
 
   await page.goto('/')
   await page.getByTestId('btn-mode-color').click()

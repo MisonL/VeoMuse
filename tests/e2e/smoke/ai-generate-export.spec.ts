@@ -1,10 +1,12 @@
 import { expect, test } from '@playwright/test'
 import path from 'path'
 import { injectAuthSession, seedAuthSession } from '../helpers/session'
+import { attachPageDebug } from '../helpers/debug'
 
 const fixtureFile = path.resolve(process.cwd(), 'tests/e2e/fixtures/sample.mp4')
 
 test('可完成导演生成并导出（稳定桩）', async ({ page, request }) => {
+  attachPageDebug(page, 'ai-generate-export')
   const session = await seedAuthSession(request, { withWorkspace: true })
   await injectAuthSession(page, session)
 

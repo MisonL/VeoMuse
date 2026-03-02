@@ -2,9 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
+const isPlaywrightRuntime = process.env.PLAYWRIGHT_TEST === 'true'
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  cacheDir: isPlaywrightRuntime ? 'node_modules/.vite-playwright' : undefined,
   build: {
     minify: 'oxc',
     chunkSizeWarningLimit: 450,
@@ -22,7 +25,8 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'zustand', 'framer-motion']
+    include: ['react', 'react-dom', 'zustand', 'framer-motion'],
+    force: isPlaywrightRuntime
   },
   resolve: {
     alias: {
@@ -33,6 +37,7 @@ export default defineConfig({
   server: {
     port: 42873,
     strictPort: true,
+    hmr: isPlaywrightRuntime ? false : undefined,
     // 彻底移除 proxy，避免干扰根路径
     proxy: {}
   }

@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
+import { attachPageDebug } from '../helpers/debug'
 
 test('主布局三区域不重叠且可交互', async ({ page }) => {
+  attachPageDebug(page, 'layout-no-overlap')
   await page.goto('/')
 
   const left = page.getByTestId('area-left-panel')

@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { attachPageDebug } from '../helpers/debug'
 
 const TARGET_RATIO = 16 / 9
 
 test('预览区保持 16:9 比例', async ({ page }) => {
+  attachPageDebug(page, 'preview-16x9')
   await page.goto('/')
   await page.getByTestId('btn-mode-edit').click()
 
