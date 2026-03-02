@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import { useAdminMetricsPolling, useAdminMetricsStore } from './store/adminMetricsStore'
+import { useJourneyTelemetryStore } from './store/journeyTelemetryStore'
 import { LAYOUT_LIMITS, useLayoutStore } from './store/layoutStore'
 import { useThemeSync } from './hooks/useThemeSync'
 import { buildAuthHeaders, resolveApiBase } from './utils/eden'
@@ -30,16 +31,16 @@ const ToastContainer = lazy(loadToastContainer)
 
 const fps = 30
 const DESKTOP_BREAKPOINT = 980
-const MAIN_PANEL_MIN_WIDTH = 360
+const MAIN_PANEL_MIN_WIDTH = 340
 const MAIN_PANEL_MIN_HEIGHT = 260
-const CENTER_PANEL_FALLBACK_WIDTH = 560
-const CENTER_PANEL_EDIT_WIDTH = 540
-const CENTER_PANEL_LAB_WIDTH = 980
-const CENTER_PANEL_AUDIO_WIDTH = 740
-const CENTER_PANEL_FRAME_GUTTER = 12
-const CENTER_PANEL_EDIT_MAX_WIDTH = 680
-const CENTER_PANEL_AUDIO_MAX_WIDTH = 900
-const CENTER_PANEL_LAB_MAX_WIDTH = 1120
+const CENTER_PANEL_FALLBACK_WIDTH = 520
+const CENTER_PANEL_EDIT_WIDTH = 500
+const CENTER_PANEL_LAB_WIDTH = 720
+const CENTER_PANEL_AUDIO_WIDTH = 620
+const CENTER_PANEL_FRAME_GUTTER = 10
+const CENTER_PANEL_EDIT_MAX_WIDTH = 700
+const CENTER_PANEL_AUDIO_MAX_WIDTH = 860
+const CENTER_PANEL_LAB_MAX_WIDTH = 940
 const HEADER_HEIGHT = 62
 const HORIZONTAL_HANDLE_SIZE = 10
 const VERTICAL_HANDLE_SIZE = 8
@@ -52,7 +53,7 @@ const PREVIEW_ASPECT_RATIO_MAP: Record<PreviewAspect, number> = {
 }
 const CENTER_MODE_WIDTH_BOOST: Record<CenterPanelMode, number> = {
   fit: 0,
-  focus: 84
+  focus: 56
 }
 type ExportUiStatus = 'idle' | 'pending' | 'done' | 'error'
 type ExportProgressStage = 'idle' | 'validating' | 'composing' | 'packaging' | 'done' | 'error'
@@ -118,6 +119,8 @@ function App() {
   useThemeSync()
   useAdminMetricsPolling()
   const { showToast } = useToastStore()
+  const markJourneyStep = useJourneyTelemetryStore(state => state.markStep)
+  const reportJourney = useJourneyTelemetryStore(state => state.reportJourney)
   const metrics = useAdminMetricsStore(state => state.metrics)
   const renderLoadHistory = useAdminMetricsStore(state => state.renderLoadHistory)
 
@@ -431,6 +434,7 @@ function App() {
 
   const handleDirector = async () => {
     if (!directorPrompt.trim()) return showToast('请输入脚本', 'info')
+    markJourneyStep('generation_triggered')
     setIsProcessing(true)
     applyOptimisticScenes([{ title: 'AI 正在分析脚本...', duration: 1 }])
 
@@ -510,6 +514,7 @@ function App() {
   }
 
   const handleExport = () => {
+    markJourneyStep('export_triggered')
     if (!hasRenderableClips) {
       resetExportFeedback('idle')
       showToast('请先导入并放置至少一个可渲染片段后再导出', 'info')
@@ -530,6 +535,7 @@ function App() {
       setExportProgress(100)
       setExportStage('done')
       setLastExportOutput(exportState.message || '')
+      void reportJourney(true)
       if (typeof window !== 'undefined') {
         exportFeedbackResetTimerRef.current = window.setTimeout(() => {
           resetExportFeedback('idle')
@@ -541,6 +547,7 @@ function App() {
       setExportUiStatus('error')
       applyOptimisticExportStatus('error')
       setExportStage('error')
+      void reportJourney(false, { reason: 'export-error' })
       showRecoverableToast(
         exportState.message || '导出失败',
         () => {
@@ -556,7 +563,7 @@ function App() {
         }
       )
     }
-  }, [applyOptimisticExportStatus, clearExportFeedbackTimers, dispatchExportAction, exportState, exportQuality, resetExportFeedback, showToast, startExportProgressFeedback])
+  }, [applyOptimisticExportStatus, clearExportFeedbackTimers, dispatchExportAction, exportState, exportQuality, reportJourney, resetExportFeedback, showToast, startExportProgressFeedback])
 
   useEffect(() => () => clearExportFeedbackTimers(), [clearExportFeedbackTimers])
 
@@ -683,10 +690,64 @@ function App() {
   const centerPanelMinWidth = useMemo(() => {
     if (!isDesktopLayout) return MAIN_PANEL_MIN_WIDTH
     const boost = CENTER_MODE_WIDTH_BOOST[centerMode]
-    if (activeMode === 'color') return 420 + boost
-    if (activeMode === 'audio') return 390 + boost
+    if (activeMode === 'color') return 340 + boost
+    if (activeMode === 'audio') return 320 + boost
     return MAIN_PANEL_MIN_WIDTH + boost
   }, [activeMode, centerMode, isDesktopLayout])
+
+  const normalizeDesktopPanelWidths = useCallback(() => {
+    if (!isDesktopLayout) return
+    const mainWidth = mainLayoutRef.current?.clientWidth || 0
+    if (!mainWidth) return
+
+    const availableForSidePanels = mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - centerPanelMinWidth
+    if (availableForSidePanels <= 0) return
+
+    const leftMin = LAYOUT_LIMITS.leftPanelPx.min
+    const rightMin = LAYOUT_LIMITS.rightPanelPx.min
+    const leftMax = Math.min(LAYOUT_LIMITS.leftPanelPx.max, availableForSidePanels - rightMin)
+    const rightMax = Math.min(LAYOUT_LIMITS.rightPanelPx.max, availableForSidePanels - leftMin)
+    if (leftMax < leftMin || rightMax < rightMin) return
+
+    const layoutState = useLayoutStore.getState()
+    let nextLeft = clamp(layoutState.leftPanelPx, leftMin, leftMax)
+    let nextRight = clamp(layoutState.rightPanelPx, rightMin, rightMax)
+
+    const overflow = nextLeft + nextRight - availableForSidePanels
+    if (overflow > 0) {
+      if (nextLeft >= nextRight) {
+        nextLeft = Math.max(leftMin, nextLeft - overflow)
+      } else {
+        nextRight = Math.max(rightMin, nextRight - overflow)
+      }
+    }
+
+    const remainingOverflow = nextLeft + nextRight - availableForSidePanels
+    if (remainingOverflow > 0) {
+      nextRight = Math.max(rightMin, nextRight - remainingOverflow)
+    }
+
+    if (nextLeft !== layoutState.leftPanelPx) {
+      layoutState.setLeftPanelPx(nextLeft)
+    }
+    if (nextRight !== layoutState.rightPanelPx) {
+      layoutState.setRightPanelPx(nextRight)
+    }
+  }, [centerPanelMinWidth, isDesktopLayout])
+
+  useEffect(() => {
+    if (!isDesktopLayout || !mainLayoutRef.current) return
+
+    normalizeDesktopPanelWidths()
+    const resizeObserver = new ResizeObserver(() => {
+      normalizeDesktopPanelWidths()
+    })
+    resizeObserver.observe(mainLayoutRef.current)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [isDesktopLayout, normalizeDesktopPanelWidths])
 
   const handleLeftPanelResize = useCallback((delta: number) => {
     if (!isDesktopLayout) return
@@ -699,7 +760,7 @@ function App() {
     const currentRight = rightPanelRef.current?.clientWidth || layoutState.rightPanelPx
     const maxLeft = Math.min(
       LAYOUT_LIMITS.leftPanelPx.max,
-      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - currentRight - centerPanelMinWidth
+      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - Math.max(currentRight, LAYOUT_LIMITS.rightPanelPx.min) - centerPanelMinWidth
     )
 
     layoutState.setLeftPanelPx(
@@ -718,7 +779,7 @@ function App() {
     const currentRight = rightPanelRef.current?.clientWidth || layoutState.rightPanelPx
     const maxRight = Math.min(
       LAYOUT_LIMITS.rightPanelPx.max,
-      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - currentLeft - centerPanelMinWidth
+      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - Math.max(currentLeft, LAYOUT_LIMITS.leftPanelPx.min) - centerPanelMinWidth
     )
 
     layoutState.setRightPanelPx(
@@ -746,7 +807,7 @@ function App() {
 
   const centerPanelFitWidth = useMemo(() => {
     if (!isDesktopLayout) return CENTER_PANEL_FALLBACK_WIDTH
-    const maxBoost = centerMode === 'focus' ? 180 : 0
+    const maxBoost = centerMode === 'focus' ? 96 : 0
     if (activeMode === 'color') {
       return clamp(CENTER_PANEL_LAB_WIDTH + maxBoost, centerPanelMinWidth, CENTER_PANEL_LAB_MAX_WIDTH + maxBoost)
     }
@@ -765,8 +826,8 @@ function App() {
     '--right-panel-w': `${rightPanelPx}px`,
     '--center-panel-min-w': `${centerPanelMinWidth}px`,
     '--center-panel-fit-w': `${Math.round(centerPanelFitWidth)}px`,
-    '--left-panel-flex': centerMode === 'focus' ? '1.18fr' : '1.75fr',
-    '--right-panel-flex': centerMode === 'focus' ? '1.08fr' : '1.55fr',
+    '--left-panel-flex': centerMode === 'focus' ? '1.42fr' : '2.05fr',
+    '--right-panel-flex': centerMode === 'focus' ? '1.28fr' : '1.86fr',
     '--timeline-h': `${timelinePx}px`
   } as CSSProperties), [
     centerMode,
@@ -864,120 +925,126 @@ function App() {
           ))}
         </div>
         <div className="header-actions" data-testid="area-header-actions">
-          <div className="header-segment" data-testid="group-center-mode">
+          <div className="header-actions-group header-actions-layout" data-testid="group-header-layout">
+            <div className="header-segment" data-testid="group-center-mode">
+              <button
+                type="button"
+                className={`header-segment-btn ${centerMode === 'fit' ? 'active' : ''}`}
+                onClick={() => setCenterMode('fit')}
+                data-testid="btn-center-mode-fit"
+              >
+                均衡
+              </button>
+              <button
+                type="button"
+                className={`header-segment-btn ${centerMode === 'focus' ? 'active' : ''}`}
+                onClick={() => setCenterMode('focus')}
+                data-testid="btn-center-mode-focus"
+              >
+                聚焦
+              </button>
+            </div>
+            <div className="header-segment" data-testid="group-topbar-density">
+              <button
+                type="button"
+                className={`header-segment-btn ${topBarDensity === 'comfortable' ? 'active' : ''}`}
+                onClick={() => setTopBarDensity('comfortable')}
+                data-testid="btn-density-comfortable"
+              >
+                舒展
+              </button>
+              <button
+                type="button"
+                className={`header-segment-btn ${topBarDensity === 'compact' ? 'active' : ''}`}
+                onClick={() => setTopBarDensity('compact')}
+                data-testid="btn-density-compact"
+              >
+                紧凑
+              </button>
+            </div>
+          </div>
+          <div className="header-actions-group header-actions-quick" data-testid="group-header-quick-actions">
             <button
-              type="button"
-              className={`header-segment-btn ${centerMode === 'fit' ? 'active' : ''}`}
-              onClick={() => setCenterMode('fit')}
-              data-testid="btn-center-mode-fit"
+              id="btn-open-channel-access"
+              aria-label="打开 AI 渠道接入"
+              className="channel-entry-btn"
+              onClick={openChannelAccess}
+              data-testid="btn-open-channel-access"
             >
-              均衡
+              AI接入
             </button>
             <button
-              type="button"
-              className={`header-segment-btn ${centerMode === 'focus' ? 'active' : ''}`}
-              onClick={() => setCenterMode('focus')}
-              data-testid="btn-center-mode-focus"
+              id="btn-open-guide"
+              aria-label="打开使用引导"
+              className="guide-toggle-btn"
+              onClick={() => {
+                setGuideStepIndex(0)
+                setIsGuideOpen(true)
+              }}
+              data-testid="btn-open-guide"
             >
-              聚焦
+              使用引导
+            </button>
+            <ThemeSwitcher />
+            <button id="btn-reset-layout" aria-label="重置布局" className="layout-reset-btn" onClick={resetLayout} data-testid="btn-reset-layout">
+              重置布局
             </button>
           </div>
-          <div className="header-segment" data-testid="group-topbar-density">
-            <button
-              type="button"
-              className={`header-segment-btn ${topBarDensity === 'comfortable' ? 'active' : ''}`}
-              onClick={() => setTopBarDensity('comfortable')}
-              data-testid="btn-density-comfortable"
+          <div className="header-actions-group header-actions-export" data-testid="group-header-export">
+            <select
+              id="export-quality"
+              name="exportQuality"
+              value={exportQuality}
+              onChange={(e) => setExportQuality(e.target.value as 'standard' | '4k-hdr' | 'spatial-vr')}
+              className="header-select"
+              data-testid="select-export-quality"
             >
-              舒展
-            </button>
-            <button
-              type="button"
-              className={`header-segment-btn ${topBarDensity === 'compact' ? 'active' : ''}`}
-              onClick={() => setTopBarDensity('compact')}
-              data-testid="btn-density-compact"
+              <option value="standard">标准导出</option>
+              <option value="4k-hdr">4K HDR</option>
+              <option value="spatial-vr">空间视频</option>
+            </select>
+            <select
+              id="preview-aspect"
+              name="previewAspect"
+              value={previewAspect}
+              onChange={(e) => setPreviewAspect(e.target.value as PreviewAspect)}
+              className="header-select preview-aspect-select"
+              data-testid="select-preview-aspect"
             >
-              紧凑
-            </button>
-          </div>
-          <button
-            id="btn-open-channel-access"
-            aria-label="打开 AI 渠道接入"
-            className="channel-entry-btn"
-            onClick={openChannelAccess}
-            data-testid="btn-open-channel-access"
-          >
-            AI接入
-          </button>
-          <button
-            id="btn-open-guide"
-            aria-label="打开使用引导"
-            className="guide-toggle-btn"
-            onClick={() => {
-              setGuideStepIndex(0)
-              setIsGuideOpen(true)
-            }}
-            data-testid="btn-open-guide"
-          >
-            使用引导
-          </button>
-          <ThemeSwitcher />
-          <button id="btn-reset-layout" aria-label="重置布局" className="layout-reset-btn" onClick={resetLayout} data-testid="btn-reset-layout">
-            重置布局
-          </button>
-          <select
-            id="export-quality"
-            name="exportQuality"
-            value={exportQuality}
-            onChange={(e) => setExportQuality(e.target.value as 'standard' | '4k-hdr' | 'spatial-vr')}
-            className="header-select"
-            data-testid="select-export-quality"
-          >
-            <option value="standard">标准导出</option>
-            <option value="4k-hdr">4K HDR</option>
-            <option value="spatial-vr">空间视频</option>
-          </select>
-          <select
-            id="preview-aspect"
-            name="previewAspect"
-            value={previewAspect}
-            onChange={(e) => setPreviewAspect(e.target.value as PreviewAspect)}
-            className="header-select preview-aspect-select"
-            data-testid="select-preview-aspect"
-          >
-            <option value="16:9">预览 16:9</option>
-            <option value="21:9">预览 21:9</option>
-          </select>
-          <div className="export-action-wrap">
-            <button
-              id="btn-export"
-              aria-label="导出视频"
-              className={`export-btn ${exportUiStatus === 'pending' ? 'is-pending' : ''} ${exportUiStatus === 'done' ? 'is-done' : ''} ${exportUiStatus === 'error' ? 'is-error' : ''}`}
-              onClick={handleExport}
-              disabled={isProcessing || isExportPending}
-              data-testid="btn-export"
-            >
-              {getExportButtonLabel(isExportPending, optimisticExportStatus, exportProgress)}
-            </button>
-            {exportUiStatus !== 'idle' ? (
-              <div className={`export-feedback-pop ${exportUiStatus}`} role="status" aria-live="polite">
-                <div className="export-feedback-top">
-                  <span className="export-feedback-title">{exportFeedbackTitle}</span>
+              <option value="16:9">预览 16:9</option>
+              <option value="21:9">预览 21:9</option>
+            </select>
+            <div className="export-action-wrap">
+              <button
+                id="btn-export"
+                aria-label="导出视频"
+                className={`export-btn ${exportUiStatus === 'pending' ? 'is-pending' : ''} ${exportUiStatus === 'done' ? 'is-done' : ''} ${exportUiStatus === 'error' ? 'is-error' : ''}`}
+                onClick={handleExport}
+                disabled={isProcessing || isExportPending}
+                data-testid="btn-export"
+              >
+                {getExportButtonLabel(isExportPending, optimisticExportStatus, exportProgress)}
+              </button>
+              {exportUiStatus !== 'idle' ? (
+                <div className={`export-feedback-pop ${exportUiStatus}`} role="status" aria-live="polite">
+                  <div className="export-feedback-top">
+                    <span className="export-feedback-title">{exportFeedbackTitle}</span>
+                    {exportUiStatus === 'pending' ? (
+                      <span className="export-feedback-percent">{Math.round(exportProgress)}%</span>
+                    ) : null}
+                  </div>
+                  <div className="export-feedback-subtitle">{exportFeedbackSubtitle}</div>
                   {exportUiStatus === 'pending' ? (
-                    <span className="export-feedback-percent">{Math.round(exportProgress)}%</span>
+                    <div className="export-progress-track">
+                      <span className="export-progress-fill" style={{ width: `${Math.max(6, Math.min(100, exportProgress))}%` }} />
+                    </div>
+                  ) : null}
+                  {exportUiStatus === 'done' && lastExportOutput ? (
+                    <div className="export-feedback-path" title={lastExportOutput}>{lastExportOutput}</div>
                   ) : null}
                 </div>
-                <div className="export-feedback-subtitle">{exportFeedbackSubtitle}</div>
-                {exportUiStatus === 'pending' ? (
-                  <div className="export-progress-track">
-                    <span className="export-progress-fill" style={{ width: `${Math.max(6, Math.min(100, exportProgress))}%` }} />
-                  </div>
-                ) : null}
-                {exportUiStatus === 'done' && lastExportOutput ? (
-                  <div className="export-feedback-path" title={lastExportOutput}>{lastExportOutput}</div>
-                ) : null}
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
         </div>
       </header>

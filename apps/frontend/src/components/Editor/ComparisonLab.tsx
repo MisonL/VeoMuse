@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useEditorStore } from '../../store/editorStore'
 import { useToastStore } from '../../store/toastStore'
+import { useJourneyTelemetryStore } from '../../store/journeyTelemetryStore'
 import {
   api,
   buildAuthHeaders,
@@ -50,6 +51,8 @@ import './ComparisonLab.css'
 const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const allAssets = useEditorStore(state => state.assets)
   const { showToast } = useToastStore()
+  const markJourneyStep = useJourneyTelemetryStore(state => state.markStep)
+  const resetJourney = useJourneyTelemetryStore(state => state.resetJourney)
 
   const [labMode, setLabMode] = useState<LabMode>('compare')
 
@@ -221,6 +224,9 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
         })
         applySession(payload)
         await loadPolicies(false)
+        const organizationId = payload.organizations?.[0]?.id || ''
+        markJourneyStep('register_or_login', { organizationId })
+        markJourneyStep('organization_ready', { organizationId })
         showToast('注册并登录成功', 'success')
       } else {
         const payload = await requestJson<{
@@ -236,6 +242,9 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
         })
         applySession(payload)
         await loadPolicies(false)
+        const organizationId = payload.organizations?.[0]?.id || ''
+        markJourneyStep('register_or_login', { organizationId })
+        markJourneyStep('organization_ready', { organizationId })
         showToast('登录成功', 'success')
       }
     } catch (error: any) {
@@ -262,6 +271,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     setOrganizations([])
     setSelectedOrganizationId('')
     setOrgMembers([])
+    resetJourney()
     showToast('已退出登录', 'success')
   }
 
@@ -280,6 +290,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       setNewOrgName('')
       setSelectedOrganizationId(payload.organization.id)
       setOrganizationId(payload.organization.id)
+      markJourneyStep('organization_ready', { organizationId: payload.organization.id })
       showToast('组织创建成功', 'success')
     } catch (error: any) {
       showToast(error.message || '创建组织失败', 'error')
@@ -1109,6 +1120,10 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       const ownerName = payload.owner?.name || workspaceOwner.trim() || 'Owner'
       setMemberName(ownerName)
       setCollabRole(payload.owner?.role || 'owner')
+      markJourneyStep('workspace_ready', {
+        organizationId: payload.workspace.organizationId || effectiveOrganizationId,
+        workspaceId: payload.workspace.id
+      })
       showToast('协作空间创建成功', 'success')
       await refreshWorkspaceState(payload.workspace.id, payload.defaultProject.id)
     } catch (error: any) {
@@ -1168,6 +1183,10 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       }
       if (payload.defaultProject?.id) setProjectId(payload.defaultProject.id)
       if (payload.member?.role) setCollabRole(payload.member.role)
+      markJourneyStep('workspace_ready', {
+        organizationId: payload.workspace?.organizationId || effectiveOrganizationId,
+        workspaceId: payload.workspace?.id || ''
+      })
       showToast('已接受邀请并加入空间', 'success')
       await refreshWorkspaceState(payload.workspace?.id || undefined, payload.defaultProject?.id || undefined)
     } catch (error: any) {

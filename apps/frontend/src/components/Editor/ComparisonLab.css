@@ -11,14 +11,14 @@
 }
 
 .lab-toolbar {
-  min-height: 56px;
+  min-height: 60px;
   border-bottom: 1px solid var(--ap-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 8px 10px;
+  padding: 9px 12px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 72%, var(--ap-panel) 28%), color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%));
   z-index: 10;
 }
@@ -51,7 +51,7 @@
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 6px 7px;
   min-width: 0;
   flex: 1;
 }
@@ -89,7 +89,7 @@
 
 .lab-mode-switch {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   border: 1px solid var(--ap-border);
   border-radius: 9px;
@@ -97,6 +97,12 @@
   gap: 2px;
   max-width: 100%;
   background: color-mix(in srgb, var(--ap-surface) 84%, var(--ap-panel) 16%);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.lab-mode-switch::-webkit-scrollbar {
+  display: none;
 }
 
 .lab-mode-btn {
@@ -190,7 +196,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
   overflow: auto;
   scrollbar-gutter: stable;
 }
@@ -259,7 +265,7 @@
   min-width: 0;
   display: grid;
   width: 100%;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
   gap: 6px;
 }
 
@@ -325,7 +331,7 @@
 }
 
 .lab-axis {
-  width: 24px;
+  width: 20px;
   position: relative;
   z-index: 8;
 }
@@ -342,8 +348,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   background: color-mix(in srgb, var(--ap-surface) 88%, var(--ap-panel) 12%);
   border: 1px solid color-mix(in srgb, var(--ap-border) 62%, var(--ap-accent) 38%);
   border-radius: 50%;
@@ -360,9 +366,9 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-  gap: 12px;
-  padding: 12px;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
   overflow: auto;
   align-content: start;
 }
@@ -528,16 +534,16 @@
 .market-right-stack {
   min-height: 0;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) minmax(220px, 300px);
-  gap: 12px;
+  grid-template-rows: minmax(0, 1fr) minmax(200px, 280px);
+  gap: 10px;
 }
 
 .market-grid {
   min-height: 0;
   overflow: auto;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 9px;
   padding-right: 2px;
 }
 
@@ -650,11 +656,11 @@
 .creative-shell {
   flex: 1;
   min-height: 0;
-  padding: 12px;
+  padding: 10px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  grid-auto-rows: minmax(190px, auto);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-auto-rows: minmax(210px, auto);
+  gap: 10px;
   overflow: auto;
   align-content: start;
 }
@@ -756,11 +762,11 @@
 .collab-shell {
   flex: 1;
   min-height: 0;
-  padding: 12px;
+  padding: 10px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   grid-auto-rows: minmax(240px, auto);
-  gap: 12px;
+  gap: 10px;
   overflow: auto;
   align-content: start;
 }
@@ -815,6 +821,7 @@
   gap: 8px;
   font-size: 11px;
   color: var(--ap-text-dim);
+  align-items: center;
 }
 
 .collab-list-item > span {
@@ -910,7 +917,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 10px;
   padding: 10px 14px 14px;
 }
@@ -940,6 +947,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .channel-row-controls {
@@ -980,6 +988,7 @@
 
 .capability-badge {
   flex-shrink: 0;
+  margin-left: auto;
   border-radius: 999px;
   padding: 4px 8px;
   font-size: 10px;
@@ -1008,6 +1017,14 @@
 }
 
 @container lab-frame (max-width: 1380px) {
+  .marketplace-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .market-right-stack {
+    grid-template-rows: minmax(240px, 1fr) minmax(220px, auto);
+  }
+
   .pane-controls {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
@@ -1026,14 +1043,6 @@
 }
 
 @container lab-frame (max-width: 1260px) {
-  .marketplace-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .market-right-stack {
-    grid-template-rows: minmax(260px, 1fr) minmax(220px, auto);
-  }
-
   .creative-shell {
     grid-template-columns: 1fr;
   }
