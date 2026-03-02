@@ -6,7 +6,7 @@
   font-size: 12px;
 }
 
-.metrics-section label, .api-metrics label, .db-ops-panel > label {
+.metrics-section label, .api-metrics label, .slo-panel > label, .db-ops-panel > label {
   display: block;
   color: var(--text-sub);
   margin-bottom: 8px;
@@ -54,6 +54,100 @@
 .api-success { color: var(--success-color); font-weight: 600; text-align: right; }
 .api-avg { color: var(--text-sub); text-align: right; }
 .api-empty { color: var(--text-sub); font-size: 11px; }
+
+.slo-panel {
+  border: 1px solid var(--ap-border);
+  border-radius: 12px;
+  background: var(--ap-surface);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.slo-card {
+  border: 1px solid var(--ap-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.slo-card .slo-name {
+  color: var(--ap-text-dim);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.slo-card strong {
+  color: var(--ap-text);
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.slo-card .slo-target {
+  color: var(--ap-text-dim);
+  font-size: 10px;
+}
+
+.slo-card.pass {
+  border-color: color-mix(in srgb, var(--success-color) 35%, var(--ap-border));
+}
+
+.slo-card.pass strong {
+  color: var(--success-color);
+}
+
+.slo-card.fail {
+  border-color: color-mix(in srgb, var(--danger-color) 35%, var(--ap-border));
+}
+
+.slo-card.fail strong {
+  color: var(--danger-color);
+}
+
+.slo-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ap-text-dim);
+  font-size: 10px;
+}
+
+.slo-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slo-breakdown-item {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 64px 86px 72px;
+  gap: 8px;
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: color-mix(in srgb, var(--ap-panel) 92%, #ffffff 8%);
+  color: var(--ap-text-dim);
+  font-size: 10px;
+  align-items: center;
+}
+
+.slo-breakdown-item .route {
+  color: var(--ap-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .db-ops-panel {
   border: 1px solid var(--ap-border);
@@ -267,6 +361,22 @@
 }
 
 @media (max-width: 768px) {
+  .slo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .slo-summary-row {
+    flex-direction: column;
+  }
+
+  .slo-breakdown-item {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .slo-breakdown-item .route {
+    grid-column: 1 / -1;
+  }
+
   .db-token-row,
   .db-actions-row,
   .db-search-row {

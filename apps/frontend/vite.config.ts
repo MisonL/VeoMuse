@@ -12,6 +12,9 @@ export default defineConfig({
     minify: 'oxc',
     chunkSizeWarningLimit: 450,
     rolldownOptions: {
+      checks: {
+        pluginTimings: false
+      },
       output: {
         codeSplitting: true,
         manualChunks(id) {

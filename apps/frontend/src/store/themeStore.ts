@@ -1,7 +1,19 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+
+const createSafeStorage = () => createJSONStorage(() => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return window.localStorage
+  }
+
+  return {
+    getItem: () => null,
+    setItem: (_name, _value) => {},
+    removeItem: (_name) => {}
+  }
+})
 
 interface ThemeState {
   mode: ThemeMode;
@@ -29,6 +41,7 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'veomuse-theme-storage',
+      storage: createSafeStorage(),
       // 仅在浏览器环境下执行持久化
       skipHydration: typeof window === 'undefined'
     }
