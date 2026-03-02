@@ -6,7 +6,7 @@ useDefault = true
 [[allowlists]]
 description = "VeoMuse test placeholders"
 regexes = [
-  '''(?i)(replace-with-strong-password|veomuse-redis-change-me|unit-test-admin-token|unit-admin-token|mock-token|stress-key|org-level-key|org-b-only-key|workspace-key|org-openai-compatible-key|workspace-openai-compatible-key|VM_TEST_PASSWORD'''
+  '''(?i)(replace-with-strong-password|veomuse-redis-change-me|unit-test-admin-token|unit-admin-token|mock-token|stress-key|org-level-key|org-b-only-key|workspace-key|org-openai-compatible-key|workspace-openai-compatible-key)'''
 ]
 paths = [
   '''^tests/helpers/auth\.ts$''',

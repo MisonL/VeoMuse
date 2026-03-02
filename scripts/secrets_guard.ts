@@ -16,6 +16,7 @@ const rules: Array<{ id: string; pattern: RegExp }> = [
   { id: 'github-pat', pattern: /\bghp_[A-Za-z0-9]{36}\b/g },
   { id: 'slack-token', pattern: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g },
   { id: 'private-key', pattern: /-----BEGIN (RSA|EC|DSA|OPENSSH|PGP) PRIVATE KEY-----/g },
+  { id: 'weak-password-pattern', pattern: /\bpassw(?:0)rd(?:[!@#$%^&*0-9][A-Za-z0-9!@#$%^&*()_+\-=[\]{};:,.<>/?]{0,24})?\b/gi },
   { id: 'suspicious-assignment', pattern: /\b(api[_-]?key|token|secret|password)\b\s*[:=]\s*['"][^'"\r\n]{10,}['"]/gi }
 ]
 
@@ -33,8 +34,7 @@ const allowRegexes: RegExp[] = [
   /org-b-only-key/i,
   /workspace-key/i,
   /org-openai-compatible-key/i,
-  /workspace-openai-compatible-key/i,
-  /VM_TEST_PASSWORD
+  /workspace-openai-compatible-key/i
 ]
 
 const args = new Set(process.argv.slice(2))
