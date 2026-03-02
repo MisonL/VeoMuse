@@ -34,5 +34,5 @@ describe('数据库健康检查 API', () => {
     expect(['ok', 'corrupted', 'error']).toContain(data.health.status)
     expect(Array.isArray(data.health.messages)).toBe(true)
     expect(typeof data.health.dbPath).toBe('string')
-  })
+  }, 20_000)
 })

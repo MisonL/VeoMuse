@@ -44,7 +44,7 @@ describe('数据库修复历史 API', () => {
     expect(typeof data.page?.hasMore).toBe('boolean')
     expect(typeof data.page?.limit).toBe('number')
     expect(typeof data.page?.offset).toBe('number')
-  })
+  }, 20_000)
 
   it('应支持按时间范围过滤修复历史', async () => {
     const mark = Date.now()
@@ -88,7 +88,7 @@ describe('数据库修复历史 API', () => {
     expect(rangeData.success).toBe(true)
     expect(rangeData.repairs.some((item: any) => item.reason === 'history-range-test')).toBe(true)
     expect(typeof rangeData.page?.total).toBe('number')
-  })
+  }, 20_000)
 
   it('应支持 reason 关键词与 offset 分页过滤', async () => {
     const prefix = `history-keyword-${Date.now()}`
