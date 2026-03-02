@@ -1,4 +1,4 @@
-import { useState, memo, useEffect, useActionState, useOptimistic, lazy, Suspense, useMemo, useRef, useCallback } from 'react'
+import { useState, memo, useEffect, useActionState, useOptimistic, lazy, Suspense, useMemo, useRef, useCallback, startTransition } from 'react'
 import type { CSSProperties } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore } from './store/editorStore'
@@ -283,11 +283,31 @@ function App() {
   const resetExportFeedback = useCallback((status: ExportUiStatus = 'idle') => {
     clearExportFeedbackTimers()
     setExportUiStatus(status)
-    setOptimisticExportStatus(status)
+    startTransition(() => {
+      setOptimisticExportStatus(status)
+    })
     setExportProgress(0)
     setExportStage(status === 'error' ? 'error' : status === 'done' ? 'done' : 'idle')
     if (status === 'idle') setLastExportOutput('')
   }, [clearExportFeedbackTimers, setOptimisticExportStatus])
+
+  const applyOptimisticScenes = useCallback((next: any[]) => {
+    startTransition(() => {
+      setOptimisticScenes(next)
+    })
+  }, [setOptimisticScenes])
+
+  const applyOptimisticExportStatus = useCallback((status: ExportUiStatus) => {
+    startTransition(() => {
+      setOptimisticExportStatus(status)
+    })
+  }, [setOptimisticExportStatus])
+
+  const dispatchExportAction = useCallback((quality: ExportQuality) => {
+    startTransition(() => {
+      void runExportAction(quality)
+    })
+  }, [runExportAction])
 
   useEffect(() => {
     // 空闲时预热非首屏模块，降低首次切换等待
@@ -412,7 +432,7 @@ function App() {
   const handleDirector = async () => {
     if (!directorPrompt.trim()) return showToast('请输入脚本', 'info')
     setIsProcessing(true)
-    setOptimisticScenes([{ title: 'AI 正在分析脚本...', duration: 1 }])
+    applyOptimisticScenes([{ title: 'AI 正在分析脚本...', duration: 1 }])
 
     try {
       const response = await fetch(`${resolveApiBase()}/api/ai/director/analyze`, {
@@ -427,7 +447,7 @@ function App() {
 
       if (data && 'scenes' in data) {
         setDirectorScenes(data.scenes || [])
-        setOptimisticScenes(data.scenes || [])
+        applyOptimisticScenes(data.scenes || [])
 
         const latestTracks = useEditorStore.getState().tracks
         const primaryTrack = latestTracks.find(track => track.id === 'track-v1')
@@ -468,11 +488,11 @@ function App() {
         e.message || '导演分析失败',
         () => { void handleDirector() },
         () => {
-          setOptimisticScenes(fallbackScenes)
+          applyOptimisticScenes(fallbackScenes)
           showToast('已降级为手动编排模式，可继续剪辑', 'warning')
         }
       )
-      setOptimisticScenes(fallbackScenes)
+      applyOptimisticScenes(fallbackScenes)
     } finally {
       setIsProcessing(false)
     }
@@ -497,16 +517,16 @@ function App() {
     }
     setLastExportOutput('')
     setExportUiStatus('pending')
-    setOptimisticExportStatus('pending')
+    applyOptimisticExportStatus('pending')
     startExportProgressFeedback()
-    void runExportAction(exportQuality)
+    dispatchExportAction(exportQuality)
   }
 
   useEffect(() => {
     if (exportState.status === 'done') {
       clearExportFeedbackTimers()
       setExportUiStatus('done')
-      setOptimisticExportStatus('done')
+      applyOptimisticExportStatus('done')
       setExportProgress(100)
       setExportStage('done')
       setLastExportOutput(exportState.message || '')
@@ -519,16 +539,16 @@ function App() {
     if (exportState.status === 'error') {
       clearExportFeedbackTimers()
       setExportUiStatus('error')
-      setOptimisticExportStatus('error')
+      applyOptimisticExportStatus('error')
       setExportStage('error')
       showRecoverableToast(
         exportState.message || '导出失败',
         () => {
           setExportUiStatus('pending')
-          setOptimisticExportStatus('pending')
+          applyOptimisticExportStatus('pending')
           setLastExportOutput('')
           startExportProgressFeedback()
-          void runExportAction(exportQuality)
+          dispatchExportAction(exportQuality)
         },
         () => {
           resetExportFeedback('idle')
@@ -536,7 +556,7 @@ function App() {
         }
       )
     }
-  }, [clearExportFeedbackTimers, exportState, exportQuality, resetExportFeedback, runExportAction, setOptimisticExportStatus, showToast, startExportProgressFeedback])
+  }, [applyOptimisticExportStatus, clearExportFeedbackTimers, dispatchExportAction, exportState, exportQuality, resetExportFeedback, showToast, startExportProgressFeedback])
 
   useEffect(() => () => clearExportFeedbackTimers(), [clearExportFeedbackTimers])
 

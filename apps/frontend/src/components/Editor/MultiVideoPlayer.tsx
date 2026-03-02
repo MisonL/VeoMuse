@@ -59,26 +59,35 @@ const MultiVideoPlayer: React.FC<MultiVideoPlayerProps> = ({ onOpenAssets, onOpe
           transform: `perspective(1200px) rotateX(${spatialCamera.pitch}deg) rotateY(${spatialCamera.yaw}deg) scale(${spatialCamera.scale})`
         } : undefined}
       >
-        {tracks.map(track => 
-          track.clips.map(clip => (
-            track.type === 'video' ? (
-              <video
-                key={clip.id}
-                ref={el => syncController.registerVideo(clip.id, el)}
-                src={clip.src}
-                className={`player-video-instance ${clip.data?.vfxType || ''}`}
-                style={{ '--vfx-intensity': String(clip.data?.vfxIntensity ?? 0.8) } as React.CSSProperties}
-                muted={false}
-                playsInline
-              />
-            ) : track.type === 'audio' ? (
-              <audio
-                key={clip.id}
-                ref={el => syncController.registerAudio(clip.id, el)}
-                src={clip.src}
-              />
-            ) : null
-          ))
+        {tracks.map(track =>
+          track.clips.map(clip => {
+            const normalizedSrc = (clip.src || '').trim()
+            if (track.type === 'video') {
+              if (!normalizedSrc) return null
+              return (
+                <video
+                  key={clip.id}
+                  ref={el => syncController.registerVideo(clip.id, el)}
+                  src={normalizedSrc}
+                  className={`player-video-instance ${clip.data?.vfxType || ''}`}
+                  style={{ '--vfx-intensity': String(clip.data?.vfxIntensity ?? 0.8) } as React.CSSProperties}
+                  muted={false}
+                  playsInline
+                />
+              )
+            }
+            if (track.type === 'audio') {
+              if (!normalizedSrc) return null
+              return (
+                <audio
+                  key={clip.id}
+                  ref={el => syncController.registerAudio(clip.id, el)}
+                  src={normalizedSrc}
+                />
+              )
+            }
+            return null
+          })
         )}
         {!hasPlayableVideo ? (
           <div className="player-empty-state">

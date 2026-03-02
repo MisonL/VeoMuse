@@ -1,20 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type {
-  AiChannelConfig,
-  CollabEvent,
-  CollabPresence,
-  CreativeRun,
-  Organization,
-  OrganizationQuota,
-  OrganizationUsage,
-  OrganizationMember,
-  OrganizationRole,
-  RoutingDecision,
-  RoutingExecution,
-  RoutingPolicy,
-  WorkspaceInvite,
-  WorkspaceRole
-} from '@veomuse/shared'
 import { useEditorStore } from '../../store/editorStore'
 import { useToastStore } from '../../store/toastStore'
 import {
@@ -29,110 +13,39 @@ import {
   setOrganizationId,
   setRefreshToken
 } from '../../utils/eden'
+import type {
+  AiChannelConfig,
+  CollabEvent,
+  CollabPresence,
+  ComparisonLabProps,
+  CreativeRun,
+  LabMode,
+  ModelRecommendation,
+  Organization,
+  OrganizationMember,
+  OrganizationRole,
+  OrganizationQuota,
+  OrganizationUsage,
+  PolicyPriority,
+  QuotaFormState,
+  RoutingDecision,
+  RoutingExecution,
+  RoutingPolicy,
+  WorkspaceInvite,
+  WorkspaceRole,
+  CapabilityPayload,
+  AuthProfile,
+  ChannelFormState
+} from './comparison-lab/types'
+import { DEFAULT_POLICY_WEIGHTS, POLICY_EXEC_PAGE_SIZE } from './comparison-lab/constants'
+import { requestJson, wsBaseFromApi } from './comparison-lab/api'
+import LabToolbar from './comparison-lab/LabToolbar'
+import CompareModePanel from './comparison-lab/modes/CompareModePanel'
+import MarketplaceModePanel from './comparison-lab/modes/MarketplaceModePanel'
+import CreativeModePanel from './comparison-lab/modes/CreativeModePanel'
+import CollabModePanel from './comparison-lab/modes/CollabModePanel'
+import ChannelAccessPanel from './comparison-lab/ChannelAccessPanel'
 import './ComparisonLab.css'
-
-type LabMode = 'compare' | 'marketplace' | 'creative' | 'collab'
-type PolicyPriority = 'quality' | 'speed' | 'cost'
-interface ComparisonLabProps {
-  onOpenAssets?: () => void
-}
-
-interface CapabilityPayload {
-  models?: Record<string, boolean>
-  services?: Record<string, boolean | string>
-  timestamp?: string
-}
-
-interface AuthProfile {
-  id: string
-  email: string
-}
-
-interface ChannelFormState {
-  providerId: string
-  baseUrl: string
-  apiKey: string
-  model: string
-  path: string
-  temperature: string
-  enabled: boolean
-  scope: 'organization' | 'workspace'
-}
-
-interface QuotaFormState {
-  requestLimit: string
-  storageLimitMb: string
-  concurrencyLimit: string
-}
-
-interface ModelRecommendation {
-  recommendedModelId?: string
-}
-
-const MODEL_CAPABILITY_ROWS: Array<{ id: string; label: string; env: string }> = [
-  { id: 'veo-3.1', label: 'Gemini Veo 3.1', env: 'GEMINI_API_KEYS' },
-  { id: 'kling-v1', label: 'Kling V1', env: 'KLING_API_URL + KLING_API_KEY' },
-  { id: 'sora-preview', label: 'Sora Preview', env: 'SORA_API_URL + SORA_API_KEY' },
-  { id: 'luma-dream', label: 'Luma Dream', env: 'LUMA_API_URL + LUMA_API_KEY' },
-  { id: 'runway-gen3', label: 'Runway Gen-3', env: 'RUNWAY_API_URL + RUNWAY_API_KEY' },
-  { id: 'pika-1.5', label: 'Pika 1.5', env: 'PIKA_API_URL + PIKA_API_KEY' },
-  { id: 'openai-compatible', label: 'OpenAI 兼容（自定义）', env: 'Base URL + API Key + model' }
-]
-
-const SERVICE_CAPABILITY_ROWS: Array<{ id: string; label: string; env: string }> = [
-  { id: 'tts', label: 'TTS 配音', env: 'TTS_API_URL + TTS_API_KEY' },
-  { id: 'voiceMorph', label: '音色迁移', env: 'VOICE_MORPH_API_URL + VOICE_MORPH_API_KEY' },
-  { id: 'spatialRender', label: '空间重构', env: 'SPATIAL_API_URL + SPATIAL_API_KEY' },
-  { id: 'vfx', label: 'VFX 特效', env: 'VFX_API_URL + VFX_API_KEY' },
-  { id: 'lipSync', label: '口型同步', env: 'LIP_SYNC_API_URL + LIP_SYNC_API_KEY' },
-  { id: 'audioAnalysis', label: '音频分析', env: 'AUDIO_ANALYSIS_API_URL + AUDIO_ANALYSIS_API_KEY' },
-  { id: 'relighting', label: '重光照', env: 'RELIGHT_API_URL + RELIGHT_API_KEY' },
-  { id: 'styleTransfer', label: '风格迁移', env: 'ALCHEMY_API_URL + ALCHEMY_API_KEY' }
-]
-
-const POLICY_EXEC_PAGE_SIZE = 12
-const POLICY_BUDGET_GUARD_LABELS: Record<'ok' | 'warning' | 'critical' | 'degraded', string> = {
-  ok: '预算安全',
-  warning: '预算预警',
-  critical: '预算超限',
-  degraded: '自动降级'
-}
-const defaultWeights = {
-  quality: 0.45,
-  speed: 0.2,
-  cost: 0.15,
-  reliability: 0.2
-}
-
-const wsBaseFromApi = (base: string) => {
-  if (base.startsWith('https://')) return base.replace('https://', 'wss://')
-  if (base.startsWith('http://')) return base.replace('http://', 'ws://')
-  return base
-}
-
-const requestJson = async <T,>(path: string, init?: RequestInit): Promise<T> => {
-  const headers: Record<string, string> = buildAuthHeaders()
-  const customHeaders = init?.headers
-  if (customHeaders && typeof customHeaders === 'object' && !Array.isArray(customHeaders)) {
-    Object.assign(headers, customHeaders as Record<string, string>)
-  }
-  const method = (init?.method || 'GET').toUpperCase()
-  const isFormDataBody = typeof FormData !== 'undefined' && init?.body instanceof FormData
-  if (method !== 'GET' && method !== 'HEAD' && !isFormDataBody) {
-    const hasContentType = Object.keys(headers).some(key => key.toLowerCase() === 'content-type')
-    if (!hasContentType) headers['Content-Type'] = 'application/json'
-  }
-
-  const response = await fetch(`${resolveApiBase()}${path}`, {
-    ...init,
-    headers
-  })
-  const payload = await response.json().catch(() => null)
-  if (!response.ok) {
-    throw new Error(payload?.error || payload?.repair?.error || `HTTP ${response.status}`)
-  }
-  return payload as T
-}
 
 const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const allAssets = useEditorStore(state => state.assets)
@@ -156,7 +69,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const [policyCreatePriority, setPolicyCreatePriority] = useState<PolicyPriority>('quality')
   const [policyCreateBudget, setPolicyCreateBudget] = useState(1.2)
   const [policyAllowedModels, setPolicyAllowedModels] = useState<string[]>([])
-  const [policyWeights, setPolicyWeights] = useState(defaultWeights)
+  const [policyWeights, setPolicyWeights] = useState(DEFAULT_POLICY_WEIGHTS)
   const [policyPrompt, setPolicyPrompt] = useState('')
   const [policyBudget, setPolicyBudget] = useState<number>(0.8)
   const [policyPriority, setPolicyPriority] = useState<PolicyPriority>('quality')
@@ -1419,894 +1332,188 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     setCollabEvents(prev => [optimisticEvent, ...prev].slice(0, 100))
   }
 
-  const renderCompareMode = () => (
-    <div className="lab-split-engine">
-      <div className="model-pane">
-        <div className="pane-head">
-          <div className="pane-overlay">
-            <span className="model-name">{availableModels.find(m => m.id === leftModel)?.name || leftModel}</span>
-            <div className="metric-chip">A 通道</div>
-          </div>
-          <div className="pane-controls">
-            <select name="leftModel" value={leftModel} onChange={e => setLeftModel(e.target.value)}>
-              {availableModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
-            <select name="leftAssetId" value={leftAssetId} onChange={e => setLeftAssetId(e.target.value)}>
-              <option value="">选择素材</option>
-              {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
-            <button onClick={() => requestRecommendation('left')}>推荐</button>
-          </div>
-        </div>
-        <div className="pane-viewport">
-          {leftAsset?.src ? (
-            <video ref={leftVideoRef} src={leftAsset.src} controls playsInline />
-          ) : (
-            <div className="empty-pane">
-              <span>请选择左侧素材</span>
-              {onOpenAssets ? (
-                <button type="button" className="empty-pane-cta" onClick={onOpenAssets}>
-                  去左侧导入素材
-                </button>
-              ) : null}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="lab-axis">
-        <div className="axis-line" />
-        <div className="axis-handle">VS</div>
-      </div>
-
-      <div className="model-pane">
-        <div className="pane-head">
-          <div className="pane-overlay">
-            <span className="model-name">{availableModels.find(m => m.id === rightModel)?.name || rightModel}</span>
-            <div className="metric-chip secondary">B 通道</div>
-          </div>
-          <div className="pane-controls">
-            <select name="rightModel" value={rightModel} onChange={e => setRightModel(e.target.value)}>
-              {availableModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
-            <select name="rightAssetId" value={rightAssetId} onChange={e => setRightAssetId(e.target.value)}>
-              <option value="">选择素材</option>
-              {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
-            <button onClick={() => requestRecommendation('right')}>推荐</button>
-          </div>
-        </div>
-        <div className="pane-viewport">
-          {rightAsset?.src ? (
-            <video ref={rightVideoRef} src={rightAsset.src} controls playsInline />
-          ) : (
-            <div className="empty-pane">
-              <span>请选择右侧素材</span>
-              {onOpenAssets ? (
-                <button type="button" className="empty-pane-cta" onClick={onOpenAssets}>
-                  去左侧导入素材
-                </button>
-              ) : null}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderMarketplaceMode = () => (
-    <div className="marketplace-shell">
-      <div className="marketplace-policy">
-        <h4>策略治理中心</h4>
-        <label className="lab-field">
-          <span>策略</span>
-          <select name="selectedPolicyId" value={selectedPolicyId} onChange={(event) => setSelectedPolicyId(event.target.value)}>
-            <option value="">未选择（使用默认策略）</option>
-            {policies.map(item => (
-              <option key={item.id} value={item.id}>
-                {item.name} · {item.priority} · ${item.maxBudgetUsd}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="policy-create-grid">
-          <label className="lab-field">
-            <span>新策略名称</span>
-            <input
-              type="text"
-              name="policyCreateName"
-              value={policyCreateName}
-              onChange={(event) => setPolicyCreateName(event.target.value)}
-            />
-          </label>
-          <label className="lab-field">
-            <span>优先级</span>
-            <select name="policyCreatePriority" value={policyCreatePriority} onChange={(event) => setPolicyCreatePriority(event.target.value as PolicyPriority)}>
-              <option value="quality">质量</option>
-              <option value="speed">速度</option>
-              <option value="cost">成本</option>
-            </select>
-          </label>
-          <label className="lab-field">
-            <span>预算上限（USD）</span>
-            <input
-              type="number"
-              name="policyCreateBudget"
-              min={0}
-              step={0.1}
-              value={policyCreateBudget}
-              onChange={(event) => setPolicyCreateBudget(Number(event.target.value || 0))}
-            />
-          </label>
-          <div className="policy-weight-grid">
-            {(['quality', 'speed', 'cost', 'reliability'] as const).map(key => (
-              <label key={key} className="lab-field">
-                <span>{key}</span>
-                <input
-                  type="number"
-                  name={`policyWeight-${key}`}
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={policyWeights[key]}
-                  onChange={(event) => {
-                    const next = Math.max(0, Math.min(1, Number(event.target.value || 0)))
-                    setPolicyWeights(prev => ({ ...prev, [key]: next }))
-                  }}
-                />
-              </label>
-            ))}
-          </div>
-          <div className="policy-model-list">
-            {availableModels.map(model => (
-              <label key={model.id} className="policy-model-chip">
-                <input
-                  type="checkbox"
-                  name={`policyAllowed-${model.id}`}
-                  checked={policyAllowedModels.includes(model.id)}
-                  onChange={() => toggleAllowedModel(model.id)}
-                />
-                <span>{model.name}</span>
-              </label>
-            ))}
-          </div>
-          <div className="lab-inline-actions">
-            <button disabled={isPolicyLoading} onClick={() => void createPolicy()}>创建策略</button>
-            <button disabled={isPolicyLoading} onClick={() => void loadPolicies(true)}>
-              {isPolicyLoading ? '刷新中...' : '刷新策略'}
-            </button>
-            <button disabled={!selectedPolicy || isPolicyLoading} onClick={() => void updateSelectedPolicy()}>
-              {selectedPolicy?.enabled ? '停用策略' : '启用策略'}
-            </button>
-          </div>
-        </div>
-
-        <h4>路由模拟</h4>
-        <textarea
-          name="policyPrompt"
-          value={policyPrompt}
-          onChange={(e) => setPolicyPrompt(e.target.value)}
-          placeholder="输入生成意图，例如：写实风格的都市夜景追车镜头，8秒"
-        />
-        <div className="policy-controls">
-          <label>
-            预算 $
-            <input name="policyBudget" type="number" min={0} step={0.1} value={policyBudget} onChange={(e) => setPolicyBudget(Number(e.target.value || 0))} />
-          </label>
-          <label>
-            优先级
-            <select name="policyPriority" value={policyPriority} onChange={(e) => setPolicyPriority(e.target.value as PolicyPriority)}>
-              <option value="quality">质量</option>
-              <option value="speed">速度</option>
-              <option value="cost">成本</option>
-            </select>
-          </label>
-          <button disabled={isPolicySimulating} onClick={() => void simulatePolicy()}>
-            {isPolicySimulating ? '模拟中...' : '模拟路由'}
-          </button>
-        </div>
-        {policyDecision ? (
-          <div className="policy-result">
-            <div>推荐模型：<b>{policyDecision.recommendedModelId}</b></div>
-            <div>预计成本：${policyDecision.estimatedCostUsd}</div>
-            <div>预计时延：{policyDecision.estimatedLatencyMs}ms</div>
-            <div>原因：{policyDecision.reason}</div>
-            {policyDecision.budgetGuard ? (
-              <div className={`policy-budget-guard ${policyDecision.budgetGuard.status}`}>
-                <div className="policy-budget-head">
-                  <strong>{POLICY_BUDGET_GUARD_LABELS[policyDecision.budgetGuard.status]}</strong>
-                  <span>
-                    预算 ${policyDecision.budgetGuard.budgetUsd.toFixed(4)} ·
-                    阈值 {(policyDecision.budgetGuard.alertThresholdRatio * 100).toFixed(0)}%
-                  </span>
-                </div>
-                <div>{policyDecision.budgetGuard.message}</div>
-              </div>
-            ) : null}
-            {Array.isArray(policyDecision.scoreBreakdown) && policyDecision.scoreBreakdown.length > 0 ? (
-              <div className="policy-breakdown">
-                {policyDecision.scoreBreakdown.map(item => (
-                  <div key={item.modelId}>
-                    {item.modelId}: Q{item.quality.toFixed(2)} / S{item.speed.toFixed(2)} / C{item.cost.toFixed(2)} / R{item.reliability.toFixed(2)} {'=>'} <b>{item.finalScore.toFixed(2)}</b>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      <div className="market-right-stack">
-        <div className="market-grid">
-          {marketplace.map((item: any) => (
-            <div key={item.profile.id} className="market-card">
-              <div className="market-head">
-                <strong>{item.profile.name}</strong>
-                <span>{item.profile.provider}</span>
-              </div>
-              <div className="market-tags">
-                {item.profile.capabilities.map((tag: string) => <span key={tag}>{tag}</span>)}
-              </div>
-              <div className="market-metrics">
-                <div>成功率：{Math.round((item.metrics.successRate || 0) * 100)}%</div>
-                <div>P95：{item.metrics.p95LatencyMs}ms</div>
-                <div>均价：${item.profile.costPerSecond}/s</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="execution-panel">
-          <div className="execution-head">
-            <h4>策略执行记录</h4>
-            <button disabled={!selectedPolicyId || policyExecLoading} onClick={() => void loadPolicyExecutions(true)}>
-              刷新
-            </button>
-          </div>
-          <div className="execution-list">
-            {policyExecutions.map(row => (
-              <div key={row.id} className="execution-item">
-                <div className="execution-title">{row.recommendedModelId} · {row.priority}</div>
-                <div className="execution-meta">
-                  <span>${row.estimatedCostUsd}</span>
-                  <span>{row.estimatedLatencyMs}ms</span>
-                  <span>{new Date(row.createdAt).toLocaleString()}</span>
-                </div>
-                <div className="execution-reason">{row.reason}</div>
-              </div>
-            ))}
-            {policyExecutions.length === 0 ? <div className="api-empty">暂无策略执行记录</div> : null}
-          </div>
-          {policyExecHasMore ? (
-            <button
-              className="execution-load-more"
-              disabled={policyExecLoading}
-              onClick={() => void loadPolicyExecutions(false)}
-            >
-              {policyExecLoading ? '加载中...' : '加载更多'}
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderCreativeMode = () => (
-    <div className="creative-shell">
-      <section className="creative-card">
-        <h4>创意闭环引擎</h4>
-        <label className="lab-field">
-          <span>脚本</span>
-          <textarea
-            name="creativeScript"
-            value={creativeScript}
-            onChange={(event) => setCreativeScript(event.target.value)}
-            placeholder="输入剧情脚本，系统将自动拆解分镜并支持版本闭环反馈"
-          />
-        </label>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>风格</span>
-            <select name="creativeStyle" value={creativeStyle} onChange={(event) => setCreativeStyle(event.target.value)}>
-              <option value="cinematic">cinematic</option>
-              <option value="realistic">realistic</option>
-              <option value="anime">anime</option>
-              <option value="commercial">commercial</option>
-            </select>
-          </label>
-          <label className="lab-field">
-            <span>质量分</span>
-            <input
-              type="number"
-              name="commitScore"
-              min={0}
-              max={1}
-              step={0.05}
-              value={commitScore}
-              onChange={(event) => setCommitScore(Math.max(0, Math.min(1, Number(event.target.value || 0))))}
-            />
-          </label>
-        </div>
-        <div className="lab-inline-actions">
-          <button disabled={isCreativeBusy} onClick={() => void createCreativeRun()}>
-            {isCreativeBusy ? '处理中...' : '创建 Run'}
-          </button>
-          <button disabled={!creativeRun?.id || isCreativeBusy} onClick={() => void applyCreativeFeedback()}>应用反馈</button>
-          <button disabled={!creativeRun?.id || isCreativeBusy} onClick={() => void commitCreativeRun()}>提交完成</button>
-          <button disabled={!creativeRun?.id || isCreativeBusy} onClick={() => void refreshCreativeVersions()}>刷新版本链</button>
-        </div>
-      </section>
-
-      <section className="creative-card">
-        <h4>运行详情</h4>
-        {creativeRun ? (
-          <>
-            <div className="creative-summary">
-              <div>ID: {creativeRun.id}</div>
-              <div>状态: {creativeRun.status}</div>
-              <div>版本: v{creativeRun.version || 1}</div>
-              <div>父版本: {creativeRun.parentRunId || '-'}</div>
-            </div>
-            <label className="lab-field">
-              <span>整片反馈</span>
-              <textarea
-                name="creativeRunFeedback"
-                value={creativeRunFeedback}
-                onChange={(event) => setCreativeRunFeedback(event.target.value)}
-                placeholder="例如：节奏更紧凑，镜头 2 需要更强反差"
-              />
-            </label>
-            <div className="creative-scene-list">
-              {creativeRun.scenes.map(scene => (
-                <div key={scene.id} className="creative-scene-item">
-                  <div className="scene-headline">
-                    <strong>{scene.order + 1}. {scene.title}</strong>
-                    <span>rev {scene.revision || 1} · {scene.status}</span>
-                  </div>
-                  <div className="scene-meta-line">
-                    <span>{scene.duration}s</span>
-                    <span>{scene.lastFeedback || '暂无反馈'}</span>
-                  </div>
-                  <input
-                    type="text"
-                    name={`sceneFeedback-${scene.id}`}
-                    value={sceneFeedbackMap[scene.id] || ''}
-                    onChange={(event) => setSceneFeedbackMap(prev => ({ ...prev, [scene.id]: event.target.value }))}
-                    placeholder="该分镜反馈"
-                  />
-                </div>
-              ))}
-            </div>
-          </>
-        ) : <div className="api-empty">尚未创建创意 run</div>}
-      </section>
-
-      <section className="creative-card">
-        <h4>版本链</h4>
-        <div className="creative-version-list">
-          {creativeVersions.map(version => (
-            <button
-              key={version.id}
-              className={`creative-version-item ${creativeRun?.id === version.id ? 'active' : ''}`}
-              onClick={() => setCreativeRun(version)}
-            >
-              <span>v{version.version || 1} · {version.status}</span>
-              <span>{new Date(version.updatedAt).toLocaleString()}</span>
-            </button>
-          ))}
-          {creativeVersions.length === 0 ? <div className="api-empty">暂无版本链记录</div> : null}
-        </div>
-      </section>
-    </div>
-  )
-
-  const renderCollabMode = () => (
-    <div className="collab-shell" data-testid="area-collab-shell">
-      <section className="collab-card" data-testid="area-collab-workspace-card">
-        <h4>团队空间</h4>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>空间名</span>
-            <input name="workspaceName" value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} data-testid="input-workspace-name" />
-          </label>
-          <label className="lab-field">
-            <span>Owner</span>
-            <input name="workspaceOwner" value={workspaceOwner} onChange={(event) => setWorkspaceOwner(event.target.value)} data-testid="input-workspace-owner" />
-          </label>
-        </div>
-        <div className="lab-inline-actions">
-          <button onClick={() => void createWorkspace()} data-testid="btn-create-workspace">创建工作区</button>
-          <button disabled={!workspaceId} onClick={() => void refreshWorkspaceState()} data-testid="btn-refresh-workspace-state">刷新状态</button>
-        </div>
-        <div className="collab-meta">
-          <span data-testid="text-workspace-id">workspace: {workspaceId || '-'}</span>
-          <span>project: {projectId || '-'}</span>
-        </div>
-      </section>
-
-      <section className="collab-card" data-testid="area-collab-invite-card">
-        <h4>邀请与加入</h4>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>邀请角色</span>
-            <select name="inviteRole" value={inviteRole} onChange={(event) => setInviteRole(event.target.value as WorkspaceRole)}>
-              <option value="editor">editor</option>
-              <option value="viewer">viewer</option>
-              <option value="owner">owner</option>
-            </select>
-          </label>
-          <label className="lab-field">
-            <span>成员名</span>
-            <input name="memberName" value={memberName} onChange={(event) => setMemberName(event.target.value)} />
-          </label>
-          <label className="lab-field">
-            <span>协作角色</span>
-            <select name="collabRole" value={collabRole} onChange={(event) => setCollabRole(event.target.value as WorkspaceRole)}>
-              <option value="editor">editor</option>
-              <option value="viewer">viewer</option>
-              <option value="owner">owner</option>
-            </select>
-          </label>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>邀请码</span>
-            <input name="inviteCode" value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} data-testid="input-invite-code" />
-          </label>
-        </div>
-        <div className="lab-inline-actions">
-          <button disabled={!workspaceId || collabRole !== 'owner'} onClick={() => void createInvite()} data-testid="btn-create-invite">生成邀请</button>
-          <button onClick={() => void acceptInvite()} data-testid="btn-accept-invite">接受邀请</button>
-        </div>
-        <div className="collab-list">
-          {invites.slice(0, 6).map(item => (
-            <div key={item.id} className="collab-list-item">
-              <span>{item.code}</span>
-              <span>{item.role}</span>
-              <span>{item.status}</span>
-            </div>
-          ))}
-          {invites.length === 0 ? <div className="api-empty">暂无邀请记录</div> : null}
-        </div>
-      </section>
-
-      <section className="collab-card">
-        <h4>多人协同通道</h4>
-        <div className="lab-inline-actions">
-          <button aria-label="连接协作通道" disabled={isWsConnected || !workspaceId} onClick={() => connectWs()}>连接 WS</button>
-          <button aria-label="断开协作通道" disabled={!isWsConnected} onClick={() => disconnectWs()}>断开 WS</button>
-          <button aria-label="发送时间轴补丁" disabled={!isWsConnected} onClick={() => sendCollabEvent('timeline.patch')}>发送 Timeline Patch</button>
-          <button aria-label="发送光标更新" disabled={!isWsConnected} onClick={() => sendCollabEvent('cursor.update')}>发送 Cursor 更新</button>
-        </div>
-        <div className="collab-meta">
-          <span>连接状态：{isWsConnected ? '已连接' : '未连接'}</span>
-          <span>在线人数：{presence.length}</span>
-        </div>
-        <div className="collab-split">
-          <div className="collab-column">
-            <h5>在线成员</h5>
-            <div className="collab-list">
-              {presence.map(item => (
-                <div key={`${item.workspaceId}-${item.sessionId}`} className="collab-list-item">
-                  <span>{item.memberName}</span>
-                  <span>{item.role}</span>
-                  <span>{item.status}</span>
-                </div>
-              ))}
-              {presence.length === 0 ? <div className="api-empty">暂无在线成员</div> : null}
-            </div>
-          </div>
-          <div className="collab-column">
-            <h5>协作事件</h5>
-            <div className="collab-list">
-              {collabEvents.slice(0, 20).map(item => (
-                <div key={item.id} className="collab-list-item">
-                  <span>{item.eventType}</span>
-                  <span>{item.actorName}</span>
-                  <span>{new Date(item.createdAt).toLocaleTimeString()}</span>
-                </div>
-              ))}
-              {collabEvents.length === 0 ? <div className="api-empty">暂无协作事件</div> : null}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="collab-card">
-        <h4>云存储与快照</h4>
-        <div className="lab-inline-actions">
-          <button disabled={!projectId} onClick={() => void createSnapshot()}>创建快照</button>
-          <button disabled={!workspaceId} onClick={() => void refreshWorkspaceState()}>刷新列表</button>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>文件名</span>
-            <input name="uploadFileName" value={uploadFileName} onChange={(event) => setUploadFileName(event.target.value)} />
-          </label>
-          <button className="inline-fill-btn" onClick={() => void requestUploadToken()}>生成上传令牌</button>
-        </div>
-        <div className="collab-meta">
-          <span>令牌对象：{uploadToken || '-'}</span>
-        </div>
-        <div className="collab-list">
-          {snapshots.map(item => (
-            <div key={item.id} className="collab-list-item">
-              <span>{item.id.slice(0, 12)}</span>
-              <span>{item.actorName}</span>
-              <span>{new Date(item.createdAt).toLocaleString()}</span>
-            </div>
-          ))}
-          {snapshots.length === 0 ? <div className="api-empty">暂无项目快照</div> : null}
-        </div>
-      </section>
-    </div>
-  )
-
-  const channelConfigMap = useMemo(() => {
-    const map = new Map<string, AiChannelConfig>()
-    for (const row of channelConfigs) map.set(row.providerId, row)
-    return map
-  }, [channelConfigs])
-
-  const renderChannelRows = (
-    rows: Array<{ id: string; label: string; env: string }>,
-    source: Record<string, boolean | string> | undefined
-  ) => rows.map((row) => {
-    const raw = source?.[row.id]
-    const enabled = raw === true || (typeof raw === 'string' && raw.trim().length > 0)
-    const form = channelForms[row.id] || {
-      providerId: row.id,
-      baseUrl: '',
-      apiKey: '',
-      model: '',
-      path: '',
-      temperature: '',
-      enabled: true,
-      scope: activeChannelScope
-    }
-    const savedConfig = channelConfigMap.get(row.id)
-    return (
-      <div key={row.id} className="capability-row">
-        <div className="capability-meta">
-          <strong>{row.label}</strong>
-          <span>{row.env}</span>
-          {row.id === 'openai-compatible' ? <span>支持 OpenAI SDK 兼容网关与第三方模型</span> : null}
-          {savedConfig?.secretMasked ? <span>已存密钥：{savedConfig.secretMasked}</span> : null}
-        </div>
-        <form
-          className="channel-row-controls"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void saveChannelConfig(row.id)
-          }}
-        >
-          <span className={`capability-badge ${enabled ? 'ok' : 'off'}`}>
-            {enabled ? '已接入' : '未接入'}
-          </span>
-          <input
-            name={`channelBaseUrl-${row.id}`}
-            value={form.baseUrl}
-            onChange={(event) => updateChannelForm(row.id, { baseUrl: event.target.value })}
-            placeholder="Base URL（可选）"
-          />
-          <input
-            name={`channelApiKey-${row.id}`}
-            value={form.apiKey}
-            onChange={(event) => updateChannelForm(row.id, { apiKey: event.target.value })}
-            placeholder="填写 API Key"
-            type="password"
-            autoComplete="off"
-          />
-          {row.id === 'openai-compatible' ? (
-            <>
-              <input
-                name={`channelModel-${row.id}`}
-                value={form.model}
-                onChange={(event) => updateChannelForm(row.id, { model: event.target.value })}
-                placeholder="模型 ID（必填）"
-              />
-              <input
-                name={`channelPath-${row.id}`}
-                value={form.path}
-                onChange={(event) => updateChannelForm(row.id, { path: event.target.value })}
-                placeholder="兼容路径（默认 /v1/chat/completions）"
-              />
-              <input
-                name={`channelTemperature-${row.id}`}
-                value={form.temperature}
-                onChange={(event) => updateChannelForm(row.id, { temperature: event.target.value })}
-                placeholder="temperature（可选，0~2）"
-              />
-            </>
-          ) : null}
-          <label className="sync-toggle">
-            <input
-              name={`channelEnabled-${row.id}`}
-              type="checkbox"
-              checked={form.enabled}
-              onChange={(event) => updateChannelForm(row.id, { enabled: event.target.checked })}
-            />
-            <span>启用</span>
-          </label>
-          <div className="lab-inline-actions">
-            <button type="button" onClick={() => void testChannelConfig(row.id)}>测试</button>
-            <button type="submit">保存</button>
-          </div>
-        </form>
-      </div>
-    )
-  })
-
   return (
     <div className="comparison-lab-pro" data-testid="area-comparison-lab">
-      <div className="lab-toolbar" data-guide="lab-toolbar" data-testid="area-lab-toolbar">
-        <div className="lab-status">
-          <span className="live-dot">●</span> 实验室在线
-        </div>
-        <div className="lab-actions">
-          {labMode === 'compare' ? (
-            <label className="sync-toggle">
-              <input name="syncPlayback" type="checkbox" checked={syncPlayback} onChange={e => setSyncPlayback(e.target.checked)} />
-              <span>同步预览</span>
-            </label>
-          ) : null}
-          <div className="lab-mode-switch">
-            <button className={`lab-mode-btn ${labMode === 'compare' ? 'active' : ''}`} onClick={() => setLabMode('compare')} data-testid="btn-lab-mode-compare">对比</button>
-            <button className={`lab-mode-btn ${labMode === 'marketplace' ? 'active' : ''}`} onClick={() => setLabMode('marketplace')} data-testid="btn-lab-mode-marketplace">策略治理</button>
-            <button className={`lab-mode-btn ${labMode === 'creative' ? 'active' : ''}`} onClick={() => setLabMode('creative')} data-testid="btn-lab-mode-creative">创意闭环</button>
-            <button className={`lab-mode-btn ${labMode === 'collab' ? 'active' : ''}`} onClick={() => setLabMode('collab')} data-testid="btn-lab-mode-collab">协作平台</button>
-          </div>
-          {labMode === 'compare' ? (
-            <button id="btn-export-compare-report" className="lab-btn" onClick={() => void exportReport()}>导出对比报告</button>
-          ) : (
-            <button className="lab-btn" onClick={() => void refreshMarketplace(true)}>刷新超市</button>
-          )}
-          <button className="lab-btn" onClick={openChannelPanel} data-testid="btn-open-channel-panel">渠道接入</button>
-        </div>
-      </div>
+      <LabToolbar
+        labMode={labMode}
+        syncPlayback={syncPlayback}
+        onSyncPlaybackChange={setSyncPlayback}
+        onModeChange={setLabMode}
+        onExportReport={() => void exportReport()}
+        onRefreshMarketplace={() => void refreshMarketplace(true)}
+        onOpenChannelPanel={openChannelPanel}
+      />
 
-      {labMode === 'compare' ? renderCompareMode() : null}
-      {labMode === 'marketplace' ? renderMarketplaceMode() : null}
-      {labMode === 'creative' ? renderCreativeMode() : null}
-      {labMode === 'collab' ? renderCollabMode() : null}
-
-      {showChannelPanel ? (
-        <div className="channel-panel-mask" role="dialog" aria-modal="true" aria-label="AI 渠道接入状态" data-testid="area-channel-panel-mask">
-          <section className="channel-panel" data-testid="area-channel-panel">
-            <header className="channel-panel-head">
-              <div>
-                <h3>AI 渠道接入中心</h3>
-                <p>支持多租户组织级共享与工作区覆写，配置即时生效。</p>
-              </div>
-              <button type="button" className="channel-close-btn" onClick={() => setShowChannelPanel(false)} data-testid="btn-close-channel-panel">关闭</button>
-            </header>
-
-            <div className="channel-panel-actions">
-              <button type="button" className="channel-refresh-btn" onClick={() => void loadCapabilities()} disabled={isCapabilitiesLoading}>
-                {isCapabilitiesLoading ? '刷新中...' : '刷新状态'}
-              </button>
-              <button type="button" className="channel-refresh-btn" onClick={() => void refreshChannelConfigs()} disabled={!effectiveOrganizationId}>
-                刷新配置
-              </button>
-              <code className="channel-hint">{authProfile ? `当前账号：${authProfile.email}` : '请先登录后再管理渠道'}</code>
-            </div>
-
-            {!authProfile ? (
-              <div className="channel-grid">
-                <section className="channel-card">
-                  <h4>{registerMode ? '注册并创建组织' : '登录账号'}</h4>
-                  <div className="channel-list">
-                    <div className="capability-row">
-                      <form
-                        className="channel-row-controls"
-                        onSubmit={(event) => {
-                          event.preventDefault()
-                          void submitAuth()
-                        }}
-                      >
-                        <input
-                          name="loginEmail"
-                          value={loginEmail}
-                          onChange={(event) => setLoginEmail(event.target.value)}
-                          placeholder="邮箱"
-                          autoComplete="email"
-                          data-testid="input-login-email"
-                        />
-                        <input
-                          name="loginPassword"
-                          type="password"
-                          value={loginPassword}
-                          onChange={(event) => setLoginPassword(event.target.value)}
-                          placeholder="密码（至少 8 位）"
-                          autoComplete={registerMode ? 'new-password' : 'current-password'}
-                          data-testid="input-login-password"
-                        />
-                        {registerMode ? (
-                          <input
-                            name="registerOrgName"
-                            value={registerOrgName}
-                            onChange={(event) => setRegisterOrgName(event.target.value)}
-                            placeholder="初始组织名"
-                            data-testid="input-register-organization"
-                          />
-                        ) : null}
-                        <div className="lab-inline-actions">
-                          <button type="submit" disabled={isAuthBusy} data-testid="btn-submit-auth">
-                            {isAuthBusy ? '提交中...' : registerMode ? '注册并登录' : '登录'}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isAuthBusy}
-                            onClick={() => setRegisterMode(prev => !prev)}
-                            data-testid="btn-toggle-register-mode"
-                          >
-                            {registerMode ? '切换到登录' : '切换到注册'}
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </section>
-              </div>
-            ) : (
-              <div className="channel-grid">
-                <section className="channel-card">
-                  <h4>组织与成员</h4>
-                  <div className="channel-list">
-                    <div className="capability-row">
-                      <div className="channel-row-controls">
-                        <select
-                          name="selectedOrganizationId"
-                          value={effectiveOrganizationId}
-                          onChange={(event) => {
-                            setSelectedOrganizationId(event.target.value)
-                            setOrganizationId(event.target.value)
-                          }}
-                          data-testid="select-organization"
-                        >
-                          {organizations.map(item => (
-                            <option key={item.id} value={item.id}>{item.name}</option>
-                          ))}
-                        </select>
-                        <input
-                          name="newOrganizationName"
-                          value={newOrgName}
-                          onChange={(event) => setNewOrgName(event.target.value)}
-                          placeholder="新组织名称"
-                          data-testid="input-new-organization-name"
-                        />
-                        <div className="lab-inline-actions">
-                          <button onClick={() => void createOrganization()} data-testid="btn-create-organization">创建组织</button>
-                          <button onClick={() => void logoutAuth()} data-testid="btn-logout-auth">退出登录</button>
-                        </div>
-                        <input
-                          name="inviteMemberEmail"
-                          value={inviteMemberEmail}
-                          onChange={(event) => setInviteMemberEmail(event.target.value)}
-                          placeholder="成员邮箱（需已注册）"
-                          autoComplete="email"
-                        />
-                        <select
-                          name="inviteOrganizationRole"
-                          value={inviteOrgRole}
-                          onChange={(event) => setInviteOrgRole(event.target.value as OrganizationRole)}
-                        >
-                          <option value="member">member</option>
-                          <option value="admin">admin</option>
-                          <option value="owner">owner</option>
-                        </select>
-                        <div className="lab-inline-actions">
-                          <button onClick={() => void addOrganizationMember()}>添加成员</button>
-                          <button onClick={() => void refreshOrganizationMembers()}>刷新成员</button>
-                        </div>
-                        <div className="capability-meta">
-                          {orgMembers.slice(0, 6).map(item => (
-                            <span key={item.id}>{item.email} · {item.role}</span>
-                          ))}
-                          {orgMembers.length === 0 ? <span>暂无成员</span> : null}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="channel-card">
-                  <h4>渠道作用域</h4>
-                  <div className="channel-list">
-                    <div className="capability-row">
-                      <div className="channel-row-controls">
-                        <select
-                          name="activeChannelScope"
-                          value={activeChannelScope}
-                          onChange={(event) => setActiveChannelScope(event.target.value as 'organization' | 'workspace')}
-                        >
-                          <option value="organization">组织级共享</option>
-                          <option value="workspace">工作区覆写</option>
-                        </select>
-                        <span className="channel-hint">
-                          当前工作区：{workspaceId || '未选择'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="channel-card">
-                  <h4>组织配额与审计</h4>
-                  <div className="channel-list">
-                    <div className="capability-row">
-                      <div className="channel-row-controls">
-                        <input
-                          name="quotaRequestLimit"
-                          value={quotaForm.requestLimit}
-                          onChange={(event) => setQuotaForm(prev => ({ ...prev, requestLimit: event.target.value }))}
-                          placeholder="请求配额（0 为不限制）"
-                        />
-                        <input
-                          name="quotaStorageLimitMb"
-                          value={quotaForm.storageLimitMb}
-                          onChange={(event) => setQuotaForm(prev => ({ ...prev, storageLimitMb: event.target.value }))}
-                          placeholder="存储配额 MB（0 为不限制）"
-                        />
-                        <input
-                          name="quotaConcurrencyLimit"
-                          value={quotaForm.concurrencyLimit}
-                          onChange={(event) => setQuotaForm(prev => ({ ...prev, concurrencyLimit: event.target.value }))}
-                          placeholder="并发配额（0 为不限制）"
-                        />
-                        <div className="lab-inline-actions">
-                          <button type="button" onClick={() => void saveOrganizationQuota()} data-testid="btn-save-org-quota">保存配额</button>
-                          <button type="button" onClick={() => void refreshOrganizationQuota()} data-testid="btn-refresh-org-quota">刷新配额</button>
-                        </div>
-                        <div className="lab-inline-actions">
-                          <button type="button" onClick={() => void exportOrganizationAudits('json')} data-testid="btn-export-org-audit-json">导出审计 JSON</button>
-                          <button type="button" onClick={() => void exportOrganizationAudits('csv')} data-testid="btn-export-org-audit-csv">导出审计 CSV</button>
-                        </div>
-                        <div className="capability-meta">
-                          <span>
-                            已用请求：{organizationUsage?.requestCount ?? 0}
-                            {organizationQuota?.requestLimit ? ` / ${organizationQuota.requestLimit}` : ' / 不限制'}
-                          </span>
-                          <span>
-                            已用存储：{Math.round((organizationUsage?.storageBytes || 0) / (1024 * 1024))} MB
-                            {organizationQuota?.storageLimitBytes
-                              ? ` / ${Math.round(organizationQuota.storageLimitBytes / (1024 * 1024))} MB`
-                              : ' / 不限制'}
-                          </span>
-                          <span>
-                            当前并发：{organizationUsage?.activeRequests ?? 0}
-                            {organizationQuota?.concurrencyLimit ? ` / ${organizationQuota.concurrencyLimit}` : ' / 不限制'}
-                          </span>
-                          <span>上次请求：{organizationUsage?.lastRequestAt ? new Date(organizationUsage.lastRequestAt).toLocaleString() : '-'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              </div>
-            )}
-
-            {authProfile ? (
-              <div className="channel-grid">
-                <section className="channel-card">
-                  <h4>视频模型渠道</h4>
-                  <div className="channel-list">
-                    {renderChannelRows(MODEL_CAPABILITY_ROWS, capabilities?.models)}
-                  </div>
-                </section>
-
-                <section className="channel-card">
-                  <h4>媒体服务渠道</h4>
-                  <div className="channel-list">
-                    {renderChannelRows(SERVICE_CAPABILITY_ROWS, capabilities?.services)}
-                  </div>
-                </section>
-              </div>
-            ) : null}
-          </section>
-        </div>
+      {labMode === 'compare' ? (
+        <CompareModePanel
+          availableModels={availableModels}
+          assets={assets}
+          leftModel={leftModel}
+          rightModel={rightModel}
+          leftAssetId={leftAssetId}
+          rightAssetId={rightAssetId}
+          leftAsset={leftAsset}
+          rightAsset={rightAsset}
+          leftVideoRef={leftVideoRef}
+          rightVideoRef={rightVideoRef}
+          onLeftModelChange={setLeftModel}
+          onRightModelChange={setRightModel}
+          onLeftAssetChange={setLeftAssetId}
+          onRightAssetChange={setRightAssetId}
+          onRequestRecommendation={requestRecommendation}
+          onOpenAssets={onOpenAssets}
+        />
       ) : null}
+
+      {labMode === 'marketplace' ? (
+        <MarketplaceModePanel
+          selectedPolicyId={selectedPolicyId}
+          policies={policies}
+          selectedPolicy={selectedPolicy}
+          availableModels={availableModels}
+          marketplace={marketplace}
+          policyCreateName={policyCreateName}
+          policyCreatePriority={policyCreatePriority}
+          policyCreateBudget={policyCreateBudget}
+          policyAllowedModels={policyAllowedModels}
+          policyWeights={policyWeights}
+          policyPrompt={policyPrompt}
+          policyBudget={policyBudget}
+          policyPriority={policyPriority}
+          policyDecision={policyDecision}
+          policyExecutions={policyExecutions}
+          policyExecHasMore={policyExecHasMore}
+          isPolicyLoading={isPolicyLoading}
+          isPolicySimulating={isPolicySimulating}
+          policyExecLoading={policyExecLoading}
+          onSelectedPolicyChange={setSelectedPolicyId}
+          onPolicyCreateNameChange={setPolicyCreateName}
+          onPolicyCreatePriorityChange={setPolicyCreatePriority}
+          onPolicyCreateBudgetChange={setPolicyCreateBudget}
+          onPolicyWeightChange={(key, value) => setPolicyWeights(prev => ({ ...prev, [key]: value }))}
+          onToggleAllowedModel={toggleAllowedModel}
+          onCreatePolicy={() => void createPolicy()}
+          onLoadPolicies={(notify) => void loadPolicies(notify)}
+          onUpdateSelectedPolicy={() => void updateSelectedPolicy()}
+          onPolicyPromptChange={setPolicyPrompt}
+          onPolicyBudgetChange={setPolicyBudget}
+          onPolicyPriorityChange={setPolicyPriority}
+          onSimulatePolicy={() => void simulatePolicy()}
+          onLoadPolicyExecutions={(reset) => void loadPolicyExecutions(reset)}
+        />
+      ) : null}
+
+      {labMode === 'creative' ? (
+        <CreativeModePanel
+          creativeScript={creativeScript}
+          creativeStyle={creativeStyle}
+          commitScore={commitScore}
+          isCreativeBusy={isCreativeBusy}
+          creativeRun={creativeRun}
+          creativeRunFeedback={creativeRunFeedback}
+          sceneFeedbackMap={sceneFeedbackMap}
+          creativeVersions={creativeVersions}
+          onCreativeScriptChange={setCreativeScript}
+          onCreativeStyleChange={setCreativeStyle}
+          onCommitScoreChange={setCommitScore}
+          onCreateCreativeRun={() => void createCreativeRun()}
+          onApplyCreativeFeedback={() => void applyCreativeFeedback()}
+          onCommitCreativeRun={() => void commitCreativeRun()}
+          onRefreshCreativeVersions={() => void refreshCreativeVersions()}
+          onCreativeRunFeedbackChange={setCreativeRunFeedback}
+          onSceneFeedbackChange={(sceneId, value) => setSceneFeedbackMap(prev => ({ ...prev, [sceneId]: value }))}
+          onSwitchCreativeRunVersion={setCreativeRun}
+        />
+      ) : null}
+
+      {labMode === 'collab' ? (
+        <CollabModePanel
+          workspaceName={workspaceName}
+          workspaceOwner={workspaceOwner}
+          workspaceId={workspaceId}
+          projectId={projectId}
+          inviteRole={inviteRole}
+          memberName={memberName}
+          collabRole={collabRole}
+          inviteCode={inviteCode}
+          invites={invites}
+          isWsConnected={isWsConnected}
+          presence={presence}
+          collabEvents={collabEvents}
+          snapshots={snapshots}
+          uploadFileName={uploadFileName}
+          uploadToken={uploadToken}
+          onWorkspaceNameChange={setWorkspaceName}
+          onWorkspaceOwnerChange={setWorkspaceOwner}
+          onCreateWorkspace={() => void createWorkspace()}
+          onRefreshWorkspaceState={() => void refreshWorkspaceState()}
+          onInviteRoleChange={setInviteRole}
+          onMemberNameChange={setMemberName}
+          onCollabRoleChange={setCollabRole}
+          onInviteCodeChange={setInviteCode}
+          onCreateInvite={() => void createInvite()}
+          onAcceptInvite={() => void acceptInvite()}
+          onConnectWs={connectWs}
+          onDisconnectWs={disconnectWs}
+          onSendCollabEvent={sendCollabEvent}
+          onCreateSnapshot={() => void createSnapshot()}
+          onUploadFileNameChange={setUploadFileName}
+          onRequestUploadToken={() => void requestUploadToken()}
+        />
+      ) : null}
+
+      <ChannelAccessPanel
+        show={showChannelPanel}
+        isCapabilitiesLoading={isCapabilitiesLoading}
+        effectiveOrganizationId={effectiveOrganizationId}
+        authProfile={authProfile}
+        organizations={organizations}
+        orgMembers={orgMembers}
+        selectedOrganizationId={effectiveOrganizationId}
+        activeChannelScope={activeChannelScope}
+        workspaceId={workspaceId}
+        loginEmail={loginEmail}
+        loginPassword={loginPassword}
+        registerMode={registerMode}
+        registerOrgName={registerOrgName}
+        isAuthBusy={isAuthBusy}
+        newOrgName={newOrgName}
+        inviteMemberEmail={inviteMemberEmail}
+        inviteOrgRole={inviteOrgRole}
+        organizationQuota={organizationQuota}
+        organizationUsage={organizationUsage}
+        quotaForm={quotaForm}
+        channelConfigs={channelConfigs}
+        channelForms={channelForms}
+        capabilities={capabilities}
+        onClose={() => setShowChannelPanel(false)}
+        onLoadCapabilities={() => void loadCapabilities()}
+        onRefreshChannelConfigs={() => void refreshChannelConfigs()}
+        onSubmitAuth={() => void submitAuth()}
+        onToggleRegisterMode={() => setRegisterMode(prev => !prev)}
+        onLoginEmailChange={setLoginEmail}
+        onLoginPasswordChange={setLoginPassword}
+        onRegisterOrgNameChange={setRegisterOrgName}
+        onSelectedOrganizationChange={(value) => {
+          setSelectedOrganizationId(value)
+          setOrganizationId(value)
+        }}
+        onNewOrgNameChange={setNewOrgName}
+        onCreateOrganization={() => void createOrganization()}
+        onLogoutAuth={() => void logoutAuth()}
+        onInviteMemberEmailChange={setInviteMemberEmail}
+        onInviteOrgRoleChange={setInviteOrgRole}
+        onAddOrganizationMember={() => void addOrganizationMember()}
+        onRefreshOrganizationMembers={() => void refreshOrganizationMembers()}
+        onActiveChannelScopeChange={setActiveChannelScope}
+        onQuotaFormChange={(next) => setQuotaForm(prev => ({ ...prev, ...next }))}
+        onSaveOrganizationQuota={() => void saveOrganizationQuota()}
+        onRefreshOrganizationQuota={() => void refreshOrganizationQuota()}
+        onExportOrganizationAudits={(format) => void exportOrganizationAudits(format)}
+        onUpdateChannelForm={updateChannelForm}
+        onSaveChannelConfig={(providerId) => void saveChannelConfig(providerId)}
+        onTestChannelConfig={(providerId) => void testChannelConfig(providerId)}
+      />
     </div>
   )
 }
