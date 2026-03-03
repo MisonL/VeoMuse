@@ -60,13 +60,19 @@ const PROVIDERS: ChannelProvider[] = [
   { id: 'styleTransfer', label: '风格迁移', category: 'service' }
 ]
 
-const MODEL_PROVIDER_IDS = new Set(PROVIDERS.filter(item => item.category === 'model').map(item => item.id))
-const SERVICE_PROVIDER_IDS = new Set(PROVIDERS.filter(item => item.category === 'service').map(item => item.id))
+const MODEL_PROVIDER_IDS = new Set(
+  PROVIDERS.filter((item) => item.category === 'model').map((item) => item.id)
+)
+const SERVICE_PROVIDER_IDS = new Set(
+  PROVIDERS.filter((item) => item.category === 'service').map((item) => item.id)
+)
 
 const getKey = () => {
   const raw = process.env.SECRET_ENCRYPTION_KEY?.trim()
   if (raw) {
-    const decoded = /^[a-f0-9]{64}$/i.test(raw) ? Buffer.from(raw, 'hex') : Buffer.from(raw, 'base64')
+    const decoded = /^[a-f0-9]{64}$/i.test(raw)
+      ? Buffer.from(raw, 'hex')
+      : Buffer.from(raw, 'base64')
     if (decoded.length === 32) return decoded
   }
   const fallback = process.env.JWT_SECRET?.trim() || 'veomuse-dev-encryption-secret-change-me'
@@ -138,7 +144,7 @@ export class ChannelConfigService {
   }
 
   static assertProvider(providerId: string) {
-    if (!PROVIDERS.some(item => item.id === providerId)) {
+    if (!PROVIDERS.some((item) => item.id === providerId)) {
       throw new Error('不支持的渠道 provider')
     }
   }
@@ -148,9 +154,7 @@ export class ChannelConfigService {
     extra?: Record<string, unknown>,
     options?: { requireModel?: boolean }
   ) {
-    const normalized = extra && typeof extra === 'object'
-      ? { ...extra }
-      : {}
+    const normalized = extra && typeof extra === 'object' ? { ...extra } : {}
     if (providerId !== 'openai-compatible') return normalized
 
     const requireModel = options?.requireModel !== false
@@ -183,7 +187,11 @@ export class ChannelConfigService {
     else delete next.model
 
     const temperatureRaw = normalized.temperature
-    if (temperatureRaw !== undefined && temperatureRaw !== null && String(temperatureRaw).trim() !== '') {
+    if (
+      temperatureRaw !== undefined &&
+      temperatureRaw !== null &&
+      String(temperatureRaw).trim() !== ''
+    ) {
       const temperature = Number(temperatureRaw)
       if (!Number.isFinite(temperature) || temperature < 0 || temperature > 2) {
         throw new Error('OpenAI 兼容渠道 temperature 需在 0-2 之间')
@@ -199,16 +207,24 @@ export class ChannelConfigService {
   static listConfigs(organizationId: string, workspaceId?: string) {
     const db = getLocalDb()
     const rows = workspaceId
-      ? db.prepare(`
+      ? db
+          .prepare(
+            `
         SELECT * FROM ai_channel_configs
         WHERE organization_id = ? AND (workspace_id IS NULL OR workspace_id = ?)
         ORDER BY provider_id ASC, workspace_id DESC
-      `).all(organizationId, workspaceId)
-      : db.prepare(`
+      `
+          )
+          .all(organizationId, workspaceId)
+      : db
+          .prepare(
+            `
         SELECT * FROM ai_channel_configs
         WHERE organization_id = ? AND workspace_id IS NULL
         ORDER BY provider_id ASC
-      `).all(organizationId)
+      `
+          )
+          .all(organizationId)
 
     const map = new Map<string, ChannelConfigRow>()
     for (const row of rows) {
@@ -240,16 +256,19 @@ export class ChannelConfigService {
     const db = getLocalDb()
     const scopeWorkspaceId = input.workspaceId?.trim() || null
     const nowTs = now()
-    const existing = db.prepare(`
+    const existing = db
+      .prepare(
+        `
       SELECT * FROM ai_channel_configs
       WHERE organization_id = ? AND provider_id = ? AND ((workspace_id IS NULL AND ? IS NULL) OR workspace_id = ?)
       LIMIT 1
-    `).get(input.organizationId, input.providerId, scopeWorkspaceId, scopeWorkspaceId) as any
+    `
+      )
+      .get(input.organizationId, input.providerId, scopeWorkspaceId, scopeWorkspaceId) as any
 
     const existingBaseUrl = String(existing?.base_url || '').trim()
-    const nextBaseUrl = input.baseUrl === undefined
-      ? existingBaseUrl
-      : String(input.baseUrl || '').trim()
+    const nextBaseUrl =
+      input.baseUrl === undefined ? existingBaseUrl : String(input.baseUrl || '').trim()
     const existingExtra = (() => {
       try {
         return JSON.parse(String(existing?.extra_json || '{}')) as Record<string, unknown>
@@ -257,9 +276,8 @@ export class ChannelConfigService {
         return {}
       }
     })()
-    const nextEnabled = input.enabled === undefined
-      ? Number(existing?.enabled || 0) === 1
-      : Boolean(input.enabled)
+    const nextEnabled =
+      input.enabled === undefined ? Number(existing?.enabled || 0) === 1 : Boolean(input.enabled)
     const nextExtraObject = this.normalizeExtra(
       input.providerId,
       input.extra === undefined ? existingExtra : input.extra,
@@ -273,11 +291,13 @@ export class ChannelConfigService {
       : keepEncrypted
 
     if (existing) {
-      db.prepare(`
+      db.prepare(
+        `
         UPDATE ai_channel_configs
         SET base_url = ?, secret_encrypted = ?, extra_json = ?, enabled = ?, updated_by = ?, updated_at = ?
         WHERE id = ?
-      `).run(
+      `
+      ).run(
         nextBaseUrl,
         nextSecretEncrypted,
         nextExtra,
@@ -286,23 +306,32 @@ export class ChannelConfigService {
         nowTs,
         existing.id
       )
-      this.writeAudit(input.organizationId, scopeWorkspaceId, input.actorUserId, 'channel.updated', input.providerId, {
-        workspaceId: scopeWorkspaceId,
-        enabled: Boolean(nextEnabledFlag),
-        hasSecret: Boolean(nextSecretEncrypted),
-        hasBaseUrl: Boolean(nextBaseUrl)
-      })
+      this.writeAudit(
+        input.organizationId,
+        scopeWorkspaceId,
+        input.actorUserId,
+        'channel.updated',
+        input.providerId,
+        {
+          workspaceId: scopeWorkspaceId,
+          enabled: Boolean(nextEnabledFlag),
+          hasSecret: Boolean(nextSecretEncrypted),
+          hasBaseUrl: Boolean(nextBaseUrl)
+        }
+      )
       const row = db.prepare(`SELECT * FROM ai_channel_configs WHERE id = ?`).get(existing.id)
       return normalizeConfigRow(row)
     }
 
     const id = `chn_${crypto.randomUUID()}`
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO ai_channel_configs (
         id, organization_id, workspace_id, provider_id, base_url, secret_encrypted, extra_json, enabled,
         created_by, updated_by, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `
+    ).run(
       id,
       input.organizationId,
       scopeWorkspaceId,
@@ -316,12 +345,19 @@ export class ChannelConfigService {
       nowTs,
       nowTs
     )
-    this.writeAudit(input.organizationId, scopeWorkspaceId, input.actorUserId, 'channel.created', input.providerId, {
-      workspaceId: scopeWorkspaceId,
-      enabled: Boolean(nextEnabledFlag),
-      hasSecret: Boolean(nextSecretEncrypted),
-      hasBaseUrl: Boolean(nextBaseUrl)
-    })
+    this.writeAudit(
+      input.organizationId,
+      scopeWorkspaceId,
+      input.actorUserId,
+      'channel.created',
+      input.providerId,
+      {
+        workspaceId: scopeWorkspaceId,
+        enabled: Boolean(nextEnabledFlag),
+        hasSecret: Boolean(nextSecretEncrypted),
+        hasBaseUrl: Boolean(nextBaseUrl)
+      }
+    )
     const row = db.prepare(`SELECT * FROM ai_channel_configs WHERE id = ?`).get(id)
     return normalizeConfigRow(row)
   }
@@ -331,17 +367,25 @@ export class ChannelConfigService {
     const db = getLocalDb()
     const workspaceId = context.workspaceId?.trim() || null
     const row = workspaceId
-      ? db.prepare(`
+      ? db
+          .prepare(
+            `
         SELECT * FROM ai_channel_configs
         WHERE organization_id = ? AND provider_id = ? AND (workspace_id = ? OR workspace_id IS NULL)
         ORDER BY workspace_id DESC, updated_at DESC
         LIMIT 1
-      `).get(context.organizationId, providerId, workspaceId)
-      : db.prepare(`
+      `
+          )
+          .get(context.organizationId, providerId, workspaceId)
+      : db
+          .prepare(
+            `
         SELECT * FROM ai_channel_configs
         WHERE organization_id = ? AND provider_id = ? AND workspace_id IS NULL
         LIMIT 1
-      `).get(context.organizationId, providerId)
+      `
+          )
+          .get(context.organizationId, providerId)
 
     if (!row) return null
     const secret = decryptSecret(String((row as any).secret_encrypted || ''))
@@ -409,9 +453,9 @@ export class ChannelConfigService {
     const workspaceId = String(input.workspaceId || '').trim()
     const resolved = organizationId
       ? this.resolve(input.providerId, {
-        organizationId,
-        workspaceId: workspaceId || undefined
-      })
+          organizationId,
+          workspaceId: workspaceId || undefined
+        })
       : null
     const apiKey = String(input.apiKey || '').trim() || String(resolved?.apiKey || '').trim()
     const baseUrl = String(input.baseUrl || '').trim() || String(resolved?.baseUrl || '').trim()
@@ -454,19 +498,23 @@ export class ChannelConfigService {
     providerId: string,
     detail: Record<string, unknown>
   ) {
-    getLocalDb().prepare(`
+    getLocalDb()
+      .prepare(
+        `
       INSERT INTO ai_channel_audits (
         id, organization_id, workspace_id, actor_user_id, action, provider_id, detail_json, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      `chna_${crypto.randomUUID()}`,
-      organizationId,
-      workspaceId,
-      actorUserId,
-      action,
-      providerId,
-      JSON.stringify(detail || {}),
-      now()
-    )
+    `
+      )
+      .run(
+        `chna_${crypto.randomUUID()}`,
+        organizationId,
+        workspaceId,
+        actorUserId,
+        action,
+        providerId,
+        JSON.stringify(detail || {}),
+        now()
+      )
   }
 }

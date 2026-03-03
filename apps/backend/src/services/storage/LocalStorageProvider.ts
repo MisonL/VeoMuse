@@ -11,7 +11,10 @@ export class LocalStorageProvider implements StorageProvider {
   private readonly rootDir: string
 
   constructor(rootDir?: string) {
-    this.rootDir = rootDir || process.env.LOCAL_STORAGE_ROOT?.trim() || path.resolve(process.cwd(), '../../uploads/workspace')
+    this.rootDir =
+      rootDir ||
+      process.env.LOCAL_STORAGE_ROOT?.trim() ||
+      path.resolve(process.cwd(), '../../uploads/workspace')
     if (!fs.existsSync(this.rootDir)) {
       fs.mkdirSync(this.rootDir, { recursive: true })
     }
@@ -45,11 +48,14 @@ export class LocalStorageProvider implements StorageProvider {
     if (!normalizedKey) {
       throw new Error('objectKey is required')
     }
-    const segments = normalizedKey.split('/').map(item => item.trim()).filter(Boolean)
+    const segments = normalizedKey
+      .split('/')
+      .map((item) => item.trim())
+      .filter(Boolean)
     if (!segments.length) {
       throw new Error('objectKey is invalid')
     }
-    if (!segments.every(segment => LOCAL_KEY_SEGMENT.test(segment))) {
+    if (!segments.every((segment) => LOCAL_KEY_SEGMENT.test(segment))) {
       throw new Error('objectKey contains invalid path segment')
     }
     const safeObjectKey = segments.join('/')
@@ -69,11 +75,12 @@ export class LocalStorageProvider implements StorageProvider {
     const fsDir = path.dirname(fsPath)
     if (!fs.existsSync(fsDir)) fs.mkdirSync(fsDir, { recursive: true })
 
-    const buffer = typeof bytes === 'string'
-      ? Buffer.from(bytes)
-      : bytes instanceof Uint8Array
+    const buffer =
+      typeof bytes === 'string'
         ? Buffer.from(bytes)
-        : Buffer.from(bytes)
+        : bytes instanceof Uint8Array
+          ? Buffer.from(bytes)
+          : Buffer.from(bytes)
 
     fs.writeFileSync(fsPath, buffer)
     return {

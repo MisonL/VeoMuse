@@ -1,20 +1,28 @@
 // apps/backend/src/services/drivers/RunwayDriver.ts
-import type { VideoModelDriver, GenerateParams, GenerateResult, GenerateRuntimeContext } from '../ModelDriver';
-import { ChannelConfigService } from '../ChannelConfigService';
+import type {
+  VideoModelDriver,
+  GenerateParams,
+  GenerateResult,
+  GenerateRuntimeContext
+} from '../ModelDriver'
+import { ChannelConfigService } from '../ChannelConfigService'
 
 export class RunwayDriver implements VideoModelDriver {
-  id = 'runway-gen3';
-  name = 'Runway Gen-3 Alpha';
+  id = 'runway-gen3'
+  name = 'Runway Gen-3 Alpha'
 
-  async generate(params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult> {
+  async generate(
+    params: GenerateParams,
+    context?: GenerateRuntimeContext
+  ): Promise<GenerateResult> {
     const channel = context?.organizationId
       ? ChannelConfigService.resolve(this.id, {
-        organizationId: context.organizationId,
-        workspaceId: context.workspaceId
-      })
+          organizationId: context.organizationId,
+          workspaceId: context.workspaceId
+        })
       : null
-    const apiUrl = channel?.baseUrl || process.env.RUNWAY_API_URL;
-    const apiKey = channel?.apiKey || process.env.RUNWAY_API_KEY;
+    const apiUrl = channel?.baseUrl || process.env.RUNWAY_API_URL
+    const apiKey = channel?.apiKey || process.env.RUNWAY_API_KEY
 
     if (!apiUrl || !apiKey) {
       return {
@@ -23,7 +31,7 @@ export class RunwayDriver implements VideoModelDriver {
         operationName: '',
         message: 'Runway provider 未配置 (RUNWAY_API_URL / RUNWAY_API_KEY)',
         provider: this.id
-      };
+      }
     }
 
     try {
@@ -38,10 +46,10 @@ export class RunwayDriver implements VideoModelDriver {
           negative_prompt: params.negativePrompt,
           options: params.options || {}
         })
-      });
+      })
 
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = await response.text()
         return {
           success: false,
           status: 'error',
@@ -49,17 +57,17 @@ export class RunwayDriver implements VideoModelDriver {
           message: 'Runway 生成失败',
           provider: this.id,
           error: `HTTP ${response.status}: ${errorText}`
-        };
+        }
       }
 
-      const data = await response.json() as any;
+      const data = (await response.json()) as any
       return {
         success: true,
         status: 'ok',
         operationName: data.operationName || data.id || `runway_${Date.now()}`,
         message: data.message || 'Runway 生成任务已在云端排队',
         provider: this.id
-      };
+      }
     } catch (error: any) {
       return {
         success: false,
@@ -68,7 +76,7 @@ export class RunwayDriver implements VideoModelDriver {
         message: 'Runway 网络请求失败',
         provider: this.id,
         error: error.message
-      };
+      }
     }
   }
 }

@@ -1,25 +1,31 @@
 // apps/backend/src/services/VfxService.ts
-import { BaseAiService } from './BaseAiService';
-import type { ChannelRuntimeContext } from './ChannelConfigService';
-import { ChannelConfigService } from './ChannelConfigService';
+import { BaseAiService } from './BaseAiService'
+import type { ChannelRuntimeContext } from './ChannelConfigService'
+import { ChannelConfigService } from './ChannelConfigService'
 
 export interface VfxParams {
-  clipId: string;
-  vfxType: string;
-  intensity?: number;
+  clipId: string
+  vfxType: string
+  intensity?: number
 }
 
 export class VfxService extends BaseAiService {
-  protected serviceName = 'AI-Neural-VFX';
-  private static instance = new VfxService();
+  protected serviceName = 'AI-Neural-VFX'
+  private static instance = new VfxService()
 
   static async applyVfx(
     params: VfxParams,
     context?: ChannelRuntimeContext
-  ): Promise<{ success: boolean; status: 'ok' | 'not_implemented' | 'error'; operationId: string; message?: string; error?: string }> {
+  ): Promise<{
+    success: boolean
+    status: 'ok' | 'not_implemented' | 'error'
+    operationId: string
+    message?: string
+    error?: string
+  }> {
     const channel = context?.organizationId ? ChannelConfigService.resolve('vfx', context) : null
-    const apiUrl = channel?.baseUrl || process.env.VFX_API_URL;
-    const apiKey = channel?.apiKey || process.env.VFX_API_KEY;
+    const apiUrl = channel?.baseUrl || process.env.VFX_API_URL
+    const apiKey = channel?.apiKey || process.env.VFX_API_KEY
 
     if (!apiUrl || !apiKey) {
       return {
@@ -27,7 +33,7 @@ export class VfxService extends BaseAiService {
         status: 'not_implemented',
         operationId: '',
         message: 'VFX provider 未配置 (VFX_API_URL / VFX_API_KEY)'
-      };
+      }
     }
 
     try {
@@ -38,13 +44,13 @@ export class VfxService extends BaseAiService {
           Authorization: `Bearer ${apiKey}`
         },
         body: JSON.stringify(params)
-      });
+      })
 
       return {
         success: true,
         status: 'ok',
         operationId: data.operationId || `vfx_${params.vfxType}_${Date.now()}`
-      };
+      }
     } catch (error: any) {
       return {
         success: false,
@@ -52,7 +58,7 @@ export class VfxService extends BaseAiService {
         operationId: '',
         message: 'VFX 应用失败',
         error: error.message
-      };
+      }
     }
   }
 }

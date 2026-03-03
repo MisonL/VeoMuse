@@ -30,11 +30,8 @@ const nowIso = () => new Date().toISOString()
 const toUnix = (date: Date) => Math.floor(date.getTime() / 1000)
 const runtimeFallbackJwtSecret = randomBytes(48).toString('hex')
 
-const base64UrlEncode = (value: Buffer | string) => Buffer.from(value)
-  .toString('base64')
-  .replace(/\+/g, '-')
-  .replace(/\//g, '_')
-  .replace(/=+$/g, '')
+const base64UrlEncode = (value: Buffer | string) =>
+  Buffer.from(value).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
 
 const base64UrlDecode = (value: string) => {
   const padded = value.replace(/-/g, '+').replace(/_/g, '/')
@@ -73,7 +70,9 @@ const verifyJwt = (token: string): AccessTokenPayload | null => {
   if (base64UrlEncode(expected) !== encodedSignature) return null
 
   try {
-    const payload = JSON.parse(base64UrlDecode(encodedPayload).toString('utf8')) as AccessTokenPayload
+    const payload = JSON.parse(
+      base64UrlDecode(encodedPayload).toString('utf8')
+    ) as AccessTokenPayload
     if (!payload?.sub || !payload?.email || !payload?.exp) return null
     if (payload.exp <= toUnix(new Date())) return null
     return payload
@@ -116,10 +115,12 @@ export class AuthService {
     const now = nowIso()
     const userId = `usr_${crypto.randomUUID()}`
     const passwordHash = await Bun.password.hash(normalizedPassword)
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO users (id, email, password_hash, status, created_at, updated_at)
       VALUES (?, ?, ?, 'active', ?, ?)
-    `).run(userId, normalizedEmail, passwordHash, now, now)
+    `
+    ).run(userId, normalizedEmail, passwordHash, now, now)
 
     const row = db.prepare(`SELECT * FROM users WHERE id = ?`).get(userId)
     return normalizeUser(row)
@@ -128,7 +129,9 @@ export class AuthService {
   static async login(email: string, password: string): Promise<AuthUser> {
     const normalizedEmail = this.normalizeEmail(email)
     const db = getLocalDb()
-    const row = db.prepare(`SELECT * FROM users WHERE email = ? LIMIT 1`).get(normalizedEmail) as any
+    const row = db
+      .prepare(`SELECT * FROM users WHERE email = ? LIMIT 1`)
+      .get(normalizedEmail) as any
     if (!row) throw new Error('账号或密码错误')
     if (row.status !== 'active') throw new Error('账号已停用')
     const ok = await Bun.password.verify(password, row.password_hash)
@@ -150,10 +153,18 @@ export class AuthService {
     const refreshToken = base64UrlEncode(randomBytes(36))
     const refreshTokenHash = hashRefreshToken(refreshToken)
     const db = getLocalDb()
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO auth_refresh_tokens (id, user_id, token_hash, expires_at, revoked_at, created_at)
       VALUES (?, ?, ?, ?, NULL, ?)
-    `).run(`rt_${crypto.randomUUID()}`, user.id, refreshTokenHash, refreshExp.toISOString(), now.toISOString())
+    `
+    ).run(
+      `rt_${crypto.randomUUID()}`,
+      user.id,
+      refreshTokenHash,
+      refreshExp.toISOString(),
+      now.toISOString()
+    )
     return {
       accessToken,
       refreshToken,
@@ -165,7 +176,9 @@ export class AuthService {
   static verifyAccessToken(token: string): AuthUser | null {
     const payload = verifyJwt((token || '').trim())
     if (!payload) return null
-    const row = getLocalDb().prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`).get(payload.sub) as any
+    const row = getLocalDb()
+      .prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`)
+      .get(payload.sub) as any
     if (!row || row.status !== 'active') return null
     return normalizeUser(row)
   }
@@ -175,11 +188,15 @@ export class AuthService {
     const now = nowIso()
     const db = getLocalDb()
     const tx = db.transaction(() => {
-      const row = db.prepare(`
+      const row = db
+        .prepare(
+          `
         SELECT * FROM auth_refresh_tokens
         WHERE token_hash = ? AND revoked_at IS NULL
         LIMIT 1
-      `).get(tokenHash) as any
+      `
+        )
+        .get(tokenHash) as any
       if (!row) throw new Error('刷新令牌无效')
       if (new Date(row.expires_at).getTime() <= Date.now()) {
         db.prepare(`UPDATE auth_refresh_tokens SET revoked_at = ? WHERE id = ?`).run(now, row.id)
@@ -190,11 +207,15 @@ export class AuthService {
         db.prepare(`UPDATE auth_refresh_tokens SET revoked_at = ? WHERE id = ?`).run(now, row.id)
         throw new Error('用户不可用')
       }
-      const revoked = db.prepare(`
+      const revoked = db
+        .prepare(
+          `
         UPDATE auth_refresh_tokens
         SET revoked_at = ?
         WHERE id = ? AND revoked_at IS NULL
-      `).run(now, row.id)
+      `
+        )
+        .run(now, row.id)
       if ((revoked.changes || 0) !== 1) {
         throw new Error('刷新令牌已失效')
       }
@@ -206,10 +227,14 @@ export class AuthService {
 
   static revokeRefreshToken(refreshToken: string) {
     const tokenHash = hashRefreshToken((refreshToken || '').trim())
-    getLocalDb().prepare(`
+    getLocalDb()
+      .prepare(
+        `
       UPDATE auth_refresh_tokens
       SET revoked_at = COALESCE(revoked_at, ?)
       WHERE token_hash = ?
-    `).run(nowIso(), tokenHash)
+    `
+      )
+      .run(nowIso(), tokenHash)
   }
 }

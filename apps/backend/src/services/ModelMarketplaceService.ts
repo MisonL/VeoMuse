@@ -57,6 +57,38 @@ interface EvaluatePolicyResult {
   budgetUsd: number
 }
 
+interface PolicyAlertConfig {
+  policyId: string
+  organizationId: string
+  enabled: boolean
+  channels: string[]
+  warningThresholdRatio: number
+  criticalThresholdRatio: number
+  createdAt: string
+  updatedAt: string
+}
+
+interface PolicyAlertConfigPatch {
+  enabled?: boolean
+  channels?: string[]
+  warningThresholdRatio?: number
+  criticalThresholdRatio?: number
+}
+
+interface PolicyAlertEvent {
+  id: string
+  policyId: string
+  organizationId: string
+  status: 'warning' | 'critical' | 'degraded'
+  message: string
+  prompt: string
+  recommendedModelId: string
+  estimatedCostUsd: number
+  budgetUsd: number
+  meta: Record<string, unknown>
+  createdAt: string
+}
+
 const nowIso = () => new Date().toISOString()
 
 const DEFAULT_WEIGHTS: Record<ModelRoutingPriority, RoutingWeightConfig> = {
@@ -184,13 +216,16 @@ const metricsFromRow = (row: any, modelId: string): ModelRuntimeMetrics => ({
   updatedAt: row?.updated_at ?? nowIso()
 })
 
-const normalizeWeights = (priority: ModelRoutingPriority, raw?: Partial<RoutingWeightConfig> | null): RoutingWeightConfig => {
+const normalizeWeights = (
+  priority: ModelRoutingPriority,
+  raw?: Partial<RoutingWeightConfig> | null
+): RoutingWeightConfig => {
   const merged: RoutingWeightConfig = {
     ...DEFAULT_WEIGHTS[priority],
     ...(raw || {})
   }
   const values = [merged.quality, merged.speed, merged.cost, merged.reliability]
-  const valid = values.every(v => Number.isFinite(v) && v >= 0)
+  const valid = values.every((v) => Number.isFinite(v) && v >= 0)
   if (!valid) return { ...DEFAULT_WEIGHTS[priority] }
   const total = values.reduce((acc, value) => acc + value, 0)
   if (total <= 0) return { ...DEFAULT_WEIGHTS[priority] }
@@ -203,7 +238,8 @@ const normalizeWeights = (priority: ModelRoutingPriority, raw?: Partial<RoutingW
 }
 
 const policyFromRow = (row: any): RoutingPolicy => {
-  const priority: ModelRoutingPriority = row.priority === 'speed' || row.priority === 'cost' ? row.priority : 'quality'
+  const priority: ModelRoutingPriority =
+    row.priority === 'speed' || row.priority === 'cost' ? row.priority : 'quality'
   const rawWeights = (() => {
     try {
       return JSON.parse(row.weights_json || '{}')
@@ -282,25 +318,110 @@ const estimateDurationFromPrompt = (prompt: string) => {
 
 const calcQualityScore = (profile: ModelProfile) => {
   const tags = profile.capabilities
-  const score = (
+  const score =
     (profile.supports4k ? 0.25 : 0) +
     (profile.supportsAudio ? 0.12 : 0) +
     (tags.includes('cinematic') ? 0.2 : 0) +
     (tags.includes('realistic') ? 0.18 : 0) +
     (tags.includes('effects') ? 0.08 : 0) +
     (tags.includes('world-consistency') ? 0.1 : 0)
-  )
   return Number(Math.min(1, Math.max(0, score)).toFixed(4))
 }
 
 const calcSpeedScore = (latencyMs: number) => Number(Math.max(0, 1 - latencyMs / 4000).toFixed(4))
 
-const calcCostScore = (estimatedCostUsd: number) => Number(Math.max(0, 1 - estimatedCostUsd / 2).toFixed(4))
+const calcCostScore = (estimatedCostUsd: number) =>
+  Number(Math.max(0, 1 - estimatedCostUsd / 2).toFixed(4))
 
 const resolveBudgetAlertRatio = () => {
   const value = Number.parseFloat(String(process.env.MODEL_POLICY_BUDGET_ALERT_RATIO || ''))
   if (!Number.isFinite(value)) return 0.8
   return Math.min(0.99, Math.max(0.5, value))
+}
+
+const DEFAULT_POLICY_ALERT_CHANNELS = ['dashboard']
+const DEFAULT_WARNING_THRESHOLD_RATIO = 0.8
+const DEFAULT_CRITICAL_THRESHOLD_RATIO = 1
+
+const normalizeAlertRatio = (value: unknown, fallback: number) => {
+  const ratio = Number(value)
+  if (!Number.isFinite(ratio)) return fallback
+  return Number(Math.min(1, Math.max(0, ratio)).toFixed(4))
+}
+
+const normalizeAlertThresholds = (warningInput: unknown, criticalInput: unknown) => {
+  const warning = normalizeAlertRatio(warningInput, DEFAULT_WARNING_THRESHOLD_RATIO)
+  const criticalRaw = normalizeAlertRatio(criticalInput, DEFAULT_CRITICAL_THRESHOLD_RATIO)
+  const critical = Number(Math.max(warning, criticalRaw).toFixed(4))
+  return { warning, critical }
+}
+
+const normalizeAlertChannels = (channels: unknown) => {
+  if (!Array.isArray(channels)) return [...DEFAULT_POLICY_ALERT_CHANNELS]
+  const normalized = channels.map((item) => String(item || '').trim()).filter(Boolean)
+  if (!normalized.length) return [...DEFAULT_POLICY_ALERT_CHANNELS]
+  return Array.from(new Set(normalized))
+}
+
+const alertConfigFromRow = (
+  row: any,
+  organizationId: string,
+  policyId: string
+): PolicyAlertConfig => {
+  const channels = (() => {
+    try {
+      const parsed = JSON.parse(row?.channels_json || '[]')
+      return normalizeAlertChannels(parsed)
+    } catch {
+      return [...DEFAULT_POLICY_ALERT_CHANNELS]
+    }
+  })()
+
+  const { warning, critical } = normalizeAlertThresholds(
+    row?.warning_threshold_ratio,
+    row?.critical_threshold_ratio
+  )
+
+  const createdAt = row?.created_at ? String(row.created_at) : nowIso()
+  const updatedAt = row?.updated_at ? String(row.updated_at) : createdAt
+
+  return {
+    policyId,
+    organizationId,
+    enabled: Boolean(row?.enabled ?? 1),
+    channels,
+    warningThresholdRatio: warning,
+    criticalThresholdRatio: critical,
+    createdAt,
+    updatedAt
+  }
+}
+
+const alertEventFromRow = (row: any): PolicyAlertEvent => {
+  const status = row?.status === 'critical' || row?.status === 'degraded' ? row.status : 'warning'
+  return {
+    id: row.id,
+    policyId: row.policy_id,
+    organizationId: row.organization_id || 'org_default',
+    status,
+    message: row.message,
+    prompt: row.prompt,
+    recommendedModelId: row.recommended_model_id,
+    estimatedCostUsd: Number(row.estimated_cost_usd || 0),
+    budgetUsd: Number(row.budget_usd || 0),
+    meta: (() => {
+      try {
+        const parsed = JSON.parse(row.meta_json || '{}')
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return parsed as Record<string, unknown>
+        }
+      } catch {
+        // ignore invalid meta payload
+      }
+      return {}
+    })(),
+    createdAt: row.created_at
+  }
 }
 
 export class ModelMarketplaceService {
@@ -339,12 +460,14 @@ export class ModelMarketplaceService {
         throw new Error('fallbackPolicyId chain is too deep')
       }
       const row = getLocalDb()
-        .prepare(`
+        .prepare(
+          `
           SELECT fallback_policy_id
           FROM routing_policies
           WHERE id = ? AND organization_id = ?
           LIMIT 1
-        `)
+        `
+        )
         .get(cursor, organizationId) as { fallback_policy_id?: string | null } | null
       cursor = row?.fallback_policy_id ? String(row.fallback_policy_id) : null
     }
@@ -390,7 +513,8 @@ export class ModelMarketplaceService {
       )
     })
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO routing_policies (
         id, organization_id, name, description, priority, max_budget_usd, enabled, allowed_models_json, weights_json, fallback_policy_id, created_at, updated_at
       )
@@ -406,7 +530,8 @@ export class ModelMarketplaceService {
         weights_json = excluded.weights_json,
         fallback_policy_id = excluded.fallback_policy_id,
         updated_at = excluded.updated_at
-    `).run(
+    `
+    ).run(
       'default-auto',
       'org_default',
       '默认智能路由',
@@ -447,12 +572,13 @@ export class ModelMarketplaceService {
 
     profiles.forEach((profile) => {
       const modelMetrics = telemetry.filter(
-        metric => metric.service === `MODEL-${profile.id}` && new Date(metric.timestamp).getTime() >= fromTs
+        (metric) =>
+          metric.service === `MODEL-${profile.id}` && new Date(metric.timestamp).getTime() >= fromTs
       )
       const totalRequests = modelMetrics.length
-      const successCount = modelMetrics.filter(metric => metric.success).length
+      const successCount = modelMetrics.filter((metric) => metric.success).length
       const successRate = totalRequests ? Number((successCount / totalRequests).toFixed(4)) : 1
-      const p95LatencyMs = calcP95(modelMetrics.map(metric => metric.durationMs))
+      const p95LatencyMs = calcP95(modelMetrics.map((metric) => metric.durationMs))
       const avgCostUsd = totalRequests ? Number((profile.costPerSecond * 8).toFixed(4)) : 0
 
       upsertMetric.run(
@@ -492,11 +618,13 @@ export class ModelMarketplaceService {
   static listPolicies(organizationId: string = 'org_default'): RoutingPolicy[] {
     this.ensureInitialized()
     const rows = getLocalDb()
-      .prepare(`
+      .prepare(
+        `
         SELECT * FROM routing_policies
         WHERE organization_id = ?
         ORDER BY updated_at DESC, created_at DESC
-      `)
+      `
+      )
       .all(organizationId)
     return rows.map(policyFromRow)
   }
@@ -516,9 +644,7 @@ export class ModelMarketplaceService {
     const priority = payload.priority || 'quality'
     const fallbackPolicyId = this.normalizeFallbackPolicyId(payload.fallbackPolicyId) ?? null
     this.assertFallbackPolicyValid(organizationId, id, fallbackPolicyId)
-    const maxBudget = payload.maxBudgetUsd === undefined
-      ? 0
-      : Number(payload.maxBudgetUsd)
+    const maxBudget = payload.maxBudgetUsd === undefined ? 0 : Number(payload.maxBudgetUsd)
     if (!Number.isFinite(maxBudget)) {
       throw new Error('maxBudgetUsd must be a finite number')
     }
@@ -536,24 +662,28 @@ export class ModelMarketplaceService {
       updatedAt: now
     }
 
-    getLocalDb().prepare(`
+    getLocalDb()
+      .prepare(
+        `
       INSERT INTO routing_policies (
         id, organization_id, name, description, priority, max_budget_usd, enabled, allowed_models_json, weights_json, fallback_policy_id, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      policy.id,
-      organizationId,
-      policy.name,
-      policy.description,
-      policy.priority,
-      policy.maxBudgetUsd,
-      policy.enabled ? 1 : 0,
-      JSON.stringify(policy.allowedModels),
-      JSON.stringify(policy.weights),
-      policy.fallbackPolicyId,
-      policy.createdAt,
-      policy.updatedAt
-    )
+    `
+      )
+      .run(
+        policy.id,
+        organizationId,
+        policy.name,
+        policy.description,
+        policy.priority,
+        policy.maxBudgetUsd,
+        policy.enabled ? 1 : 0,
+        JSON.stringify(policy.allowedModels),
+        JSON.stringify(policy.weights),
+        policy.fallbackPolicyId,
+        policy.createdAt,
+        policy.updatedAt
+      )
 
     return policy
   }
@@ -562,9 +692,10 @@ export class ModelMarketplaceService {
     const current = this.getPolicy(policyId, organizationId)
     if (!current) return null
     const priority = patch.priority || current.priority
-    const fallbackPolicyId = patch.fallbackPolicyId === undefined
-      ? current.fallbackPolicyId
-      : this.normalizeFallbackPolicyId(patch.fallbackPolicyId) ?? null
+    const fallbackPolicyId =
+      patch.fallbackPolicyId === undefined
+        ? current.fallbackPolicyId
+        : (this.normalizeFallbackPolicyId(patch.fallbackPolicyId) ?? null)
     this.assertFallbackPolicyValid(organizationId, policyId, fallbackPolicyId)
     if (patch.maxBudgetUsd !== undefined && !Number.isFinite(Number(patch.maxBudgetUsd))) {
       throw new Error('maxBudgetUsd must be a finite number')
@@ -574,31 +705,43 @@ export class ModelMarketplaceService {
       name: patch.name?.trim() || current.name,
       description: patch.description?.trim() || current.description,
       priority,
-      maxBudgetUsd: patch.maxBudgetUsd === undefined ? current.maxBudgetUsd : Math.max(0, Number(patch.maxBudgetUsd)),
+      maxBudgetUsd:
+        patch.maxBudgetUsd === undefined
+          ? current.maxBudgetUsd
+          : Math.max(0, Number(patch.maxBudgetUsd)),
       enabled: patch.enabled === undefined ? current.enabled : Boolean(patch.enabled),
-      allowedModels: Array.isArray(patch.allowedModels) ? patch.allowedModels.map(String) : current.allowedModels,
-      weights: normalizeWeights(priority, patch.weights ? { ...current.weights, ...patch.weights } : current.weights),
+      allowedModels: Array.isArray(patch.allowedModels)
+        ? patch.allowedModels.map(String)
+        : current.allowedModels,
+      weights: normalizeWeights(
+        priority,
+        patch.weights ? { ...current.weights, ...patch.weights } : current.weights
+      ),
       fallbackPolicyId,
       updatedAt: nowIso()
     }
 
-    getLocalDb().prepare(`
+    getLocalDb()
+      .prepare(
+        `
       UPDATE routing_policies
       SET name = ?, description = ?, priority = ?, max_budget_usd = ?, enabled = ?, allowed_models_json = ?, weights_json = ?, fallback_policy_id = ?, updated_at = ?
       WHERE id = ? AND organization_id = ?
-    `).run(
-      next.name,
-      next.description,
-      next.priority,
-      next.maxBudgetUsd,
-      next.enabled ? 1 : 0,
-      JSON.stringify(next.allowedModels),
-      JSON.stringify(next.weights),
-      next.fallbackPolicyId,
-      next.updatedAt,
-      next.id,
-      organizationId
-    )
+    `
+      )
+      .run(
+        next.name,
+        next.description,
+        next.priority,
+        next.maxBudgetUsd,
+        next.enabled ? 1 : 0,
+        JSON.stringify(next.allowedModels),
+        JSON.stringify(next.weights),
+        next.fallbackPolicyId,
+        next.updatedAt,
+        next.id,
+        organizationId
+      )
 
     return next
   }
@@ -609,30 +752,36 @@ export class ModelMarketplaceService {
     query: PolicyExecutionQuery = {}
   ) {
     this.ensureInitialized()
-    const safeLimit = Number.isFinite(query.limit) && (query.limit || 0) > 0
-      ? Math.min(100, Math.floor(query.limit as number))
-      : 20
-    const safeOffset = Number.isFinite(query.offset) && (query.offset || 0) > 0
-      ? Math.max(0, Math.floor(query.offset as number))
-      : 0
+    const safeLimit =
+      Number.isFinite(query.limit) && (query.limit || 0) > 0
+        ? Math.min(100, Math.floor(query.limit as number))
+        : 20
+    const safeOffset =
+      Number.isFinite(query.offset) && (query.offset || 0) > 0
+        ? Math.max(0, Math.floor(query.offset as number))
+        : 0
 
     const totalRow = getLocalDb()
-      .prepare(`
+      .prepare(
+        `
         SELECT COUNT(1) AS total
         FROM routing_executions
         WHERE policy_id = ? AND organization_id = ?
-      `)
+      `
+      )
       .get(policyId, organizationId) as { total?: number } | null
     const total = Number(totalRow?.total || 0)
 
     const rows = getLocalDb()
-      .prepare(`
+      .prepare(
+        `
         SELECT * FROM routing_executions
         WHERE policy_id = ? AND organization_id = ?
         ORDER BY created_at DESC
         LIMIT ${safeLimit}
         OFFSET ${safeOffset}
-      `)
+      `
+      )
       .all(policyId, organizationId)
 
     return {
@@ -646,6 +795,177 @@ export class ModelMarketplaceService {
     }
   }
 
+  private static buildDefaultPolicyAlertConfig(
+    organizationId: string,
+    policyId: string
+  ): PolicyAlertConfig {
+    const now = nowIso()
+    const { warning, critical } = normalizeAlertThresholds(
+      DEFAULT_WARNING_THRESHOLD_RATIO,
+      DEFAULT_CRITICAL_THRESHOLD_RATIO
+    )
+    return {
+      policyId,
+      organizationId,
+      enabled: true,
+      channels: [...DEFAULT_POLICY_ALERT_CHANNELS],
+      warningThresholdRatio: warning,
+      criticalThresholdRatio: critical,
+      createdAt: now,
+      updatedAt: now
+    }
+  }
+
+  static getPolicyAlertConfig(organizationId: string, policyId: string) {
+    this.ensureInitialized()
+    const row = getLocalDb()
+      .prepare(
+        `
+        SELECT *
+        FROM policy_alert_configs
+        WHERE policy_id = ? AND organization_id = ?
+        LIMIT 1
+      `
+      )
+      .get(policyId, organizationId)
+    if (!row) return this.buildDefaultPolicyAlertConfig(organizationId, policyId)
+    return alertConfigFromRow(row, organizationId, policyId)
+  }
+
+  static updatePolicyAlertConfig(
+    organizationId: string,
+    policyId: string,
+    patch: PolicyAlertConfigPatch
+  ) {
+    this.ensureInitialized()
+    const policy = this.getPolicy(policyId, organizationId)
+    if (!policy) return null
+
+    const current = this.getPolicyAlertConfig(organizationId, policyId)
+    const channels =
+      patch.channels === undefined ? current.channels : normalizeAlertChannels(patch.channels)
+    const { warning, critical } = normalizeAlertThresholds(
+      patch.warningThresholdRatio === undefined
+        ? current.warningThresholdRatio
+        : patch.warningThresholdRatio,
+      patch.criticalThresholdRatio === undefined
+        ? current.criticalThresholdRatio
+        : patch.criticalThresholdRatio
+    )
+    const now = nowIso()
+    const next: PolicyAlertConfig = {
+      policyId,
+      organizationId,
+      enabled: patch.enabled === undefined ? current.enabled : Boolean(patch.enabled),
+      channels,
+      warningThresholdRatio: warning,
+      criticalThresholdRatio: critical,
+      createdAt: current.createdAt || now,
+      updatedAt: now
+    }
+
+    getLocalDb()
+      .prepare(
+        `
+      INSERT INTO policy_alert_configs (
+        policy_id, organization_id, enabled, channels_json, warning_threshold_ratio, critical_threshold_ratio, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(policy_id) DO UPDATE SET
+        organization_id = excluded.organization_id,
+        enabled = excluded.enabled,
+        channels_json = excluded.channels_json,
+        warning_threshold_ratio = excluded.warning_threshold_ratio,
+        critical_threshold_ratio = excluded.critical_threshold_ratio,
+        updated_at = excluded.updated_at
+    `
+      )
+      .run(
+        policyId,
+        organizationId,
+        next.enabled ? 1 : 0,
+        JSON.stringify(next.channels),
+        next.warningThresholdRatio,
+        next.criticalThresholdRatio,
+        next.createdAt,
+        next.updatedAt
+      )
+
+    return next
+  }
+
+  static listPolicyAlerts(organizationId: string, policyId: string, limit?: number) {
+    this.ensureInitialized()
+    const safeLimit =
+      Number.isFinite(limit) && (limit || 0) > 0 ? Math.min(200, Math.floor(limit as number)) : 20
+    const rows = getLocalDb()
+      .prepare(
+        `
+        SELECT *
+        FROM policy_alert_events
+        WHERE policy_id = ? AND organization_id = ?
+        ORDER BY created_at DESC
+        LIMIT ${safeLimit}
+      `
+      )
+      .all(policyId, organizationId)
+    return rows.map(alertEventFromRow)
+  }
+
+  static simulateDecisionBatch(
+    organizationId: string,
+    policyId: string,
+    scenarios: Array<{
+      prompt: string
+      budgetUsd?: number
+      priority?: 'quality' | 'speed' | 'cost'
+    }>
+  ) {
+    this.ensureInitialized()
+    const policy = this.getPolicy(policyId, organizationId)
+    if (!policy) {
+      throw new Error('Routing policy not found')
+    }
+
+    const normalizedScenarios = Array.isArray(scenarios)
+      ? scenarios.map((item) => ({
+          prompt: String(item?.prompt || ''),
+          budgetUsd: Number.isFinite(item?.budgetUsd) ? Number(item?.budgetUsd) : undefined,
+          priority: item?.priority
+        }))
+      : []
+
+    const summary = {
+      ok: 0,
+      warning: 0,
+      critical: 0,
+      degraded: 0
+    }
+
+    const results = normalizedScenarios.map((scenario) => {
+      const decision = this.simulateDecision(scenario, policyId, organizationId)
+      const status = decision.budgetGuard?.status || 'ok'
+      if (
+        status === 'warning' ||
+        status === 'critical' ||
+        status === 'degraded' ||
+        status === 'ok'
+      ) {
+        summary[status] += 1
+      }
+      return {
+        scenario,
+        decision
+      }
+    })
+
+    return {
+      policyId,
+      total: results.length,
+      results,
+      summary
+    }
+  }
+
   private static evaluateWithPolicy(
     payload: SimulatePayload,
     policy: RoutingPolicy
@@ -653,28 +973,35 @@ export class ModelMarketplaceService {
     const prompt = payload.prompt || ''
     const priority = payload.priority || policy.priority
     const durationSec = estimateDurationFromPrompt(prompt)
-    const budgetUsd = typeof payload.budgetUsd === 'number'
-      ? Math.max(0, payload.budgetUsd)
-      : Math.max(0, policy.maxBudgetUsd)
+    const budgetUsd =
+      typeof payload.budgetUsd === 'number'
+        ? Math.max(0, payload.budgetUsd)
+        : Math.max(0, policy.maxBudgetUsd)
     const weights = normalizeWeights(priority, policy.weights)
-    const marketplace = this
-      .listMarketplace()
-      .filter(item => item.profile.enabled)
-      .filter(item => policy.allowedModels.length === 0 || policy.allowedModels.includes(item.profile.id))
+    const marketplace = this.listMarketplace()
+      .filter((item) => item.profile.enabled)
+      .filter(
+        (item) =>
+          policy.allowedModels.length === 0 || policy.allowedModels.includes(item.profile.id)
+      )
 
     const scoreBreakdown = marketplace.map((item) => {
-      const estimatedCostUsd = Number((item.profile.costPerSecond * Math.min(durationSec, item.profile.maxDurationSec)).toFixed(4))
+      const estimatedCostUsd = Number(
+        (item.profile.costPerSecond * Math.min(durationSec, item.profile.maxDurationSec)).toFixed(4)
+      )
       const estimatedLatencyMs = item.metrics.p95LatencyMs || 1200
       const quality = calcQualityScore(item.profile)
       const speed = calcSpeedScore(estimatedLatencyMs)
       const cost = calcCostScore(estimatedCostUsd)
       const reliability = Number((item.metrics.successRate ?? 0.9).toFixed(4))
-      const finalScore = Number((
-        quality * weights.quality +
-        speed * weights.speed +
-        cost * weights.cost +
-        reliability * weights.reliability
-      ).toFixed(4))
+      const finalScore = Number(
+        (
+          quality * weights.quality +
+          speed * weights.speed +
+          cost * weights.cost +
+          reliability * weights.reliability
+        ).toFixed(4)
+      )
 
       return {
         modelId: item.profile.id,
@@ -689,7 +1016,7 @@ export class ModelMarketplaceService {
     })
 
     const scoredCandidates: ScoredCandidate[] = scoreBreakdown
-      .map(item => ({
+      .map((item) => ({
         modelId: item.modelId,
         score: item.finalScore,
         estimatedCostUsd: item.estimatedCostUsd,
@@ -697,9 +1024,10 @@ export class ModelMarketplaceService {
       }))
       .sort((a, b) => b.score - a.score)
 
-    const underBudget = budgetUsd > 0
-      ? scoredCandidates.filter(item => item.estimatedCostUsd <= budgetUsd)
-      : scoredCandidates
+    const underBudget =
+      budgetUsd > 0
+        ? scoredCandidates.filter((item) => item.estimatedCostUsd <= budgetUsd)
+        : scoredCandidates
 
     const selectedPool = underBudget.length ? underBudget : scoredCandidates
     const top = selectedPool[0]
@@ -729,7 +1057,7 @@ export class ModelMarketplaceService {
       ? `命中策略 ${policy.name}，按${priority}权重评分最优`
       : `策略 ${policy.name} 下预算不足，退化为全候选评分`
 
-    const normalizedScoreBreakdown: ScoreBreakdownRow[] = scoreBreakdown.map(item => ({
+    const normalizedScoreBreakdown: ScoreBreakdownRow[] = scoreBreakdown.map((item) => ({
       modelId: item.modelId,
       quality: item.quality,
       speed: item.speed,
@@ -753,7 +1081,9 @@ export class ModelMarketplaceService {
       },
       scoreBreakdown: normalizedScoreBreakdown,
       scoredCandidates,
-      hasBudgetMiss: Boolean(budgetUsd > 0 && underBudget.length === 0 && scoredCandidates.length > 0),
+      hasBudgetMiss: Boolean(
+        budgetUsd > 0 && underBudget.length === 0 && scoredCandidates.length > 0
+      ),
       budgetUsd
     }
   }
@@ -816,27 +1146,80 @@ export class ModelMarketplaceService {
     prompt: string,
     decision: RoutingDecision
   ) {
-    getLocalDb().prepare(`
+    getLocalDb()
+      .prepare(
+        `
       INSERT INTO routing_executions (
         id, organization_id, policy_id, prompt, priority, recommended_model_id, estimated_cost_usd, estimated_latency_ms,
         confidence, reason, candidates_json, score_breakdown_json, fallback_used, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      `exec_${crypto.randomUUID()}`,
-      organizationId,
-      policyId,
-      prompt,
-      decision.priority,
-      decision.recommendedModelId,
-      decision.estimatedCostUsd,
-      decision.estimatedLatencyMs,
-      decision.confidence,
-      decision.reason,
-      JSON.stringify(decision.candidates || []),
-      JSON.stringify(decision.scoreBreakdown || []),
-      decision.fallbackUsed ? 1 : 0,
-      nowIso()
-    )
+    `
+      )
+      .run(
+        `exec_${crypto.randomUUID()}`,
+        organizationId,
+        policyId,
+        prompt,
+        decision.priority,
+        decision.recommendedModelId,
+        decision.estimatedCostUsd,
+        decision.estimatedLatencyMs,
+        decision.confidence,
+        decision.reason,
+        JSON.stringify(decision.candidates || []),
+        JSON.stringify(decision.scoreBreakdown || []),
+        decision.fallbackUsed ? 1 : 0,
+        nowIso()
+      )
+  }
+
+  private static recordPolicyAlertEvent(
+    organizationId: string,
+    policyId: string,
+    prompt: string,
+    decision: RoutingDecision
+  ) {
+    const budgetGuard = decision.budgetGuard
+    if (!budgetGuard || budgetGuard.status === 'ok') return
+
+    const alertConfig = this.getPolicyAlertConfig(organizationId, policyId)
+    if (!alertConfig.enabled) return
+
+    const usageRatio =
+      budgetGuard.budgetUsd > 0
+        ? Number((decision.estimatedCostUsd / budgetGuard.budgetUsd).toFixed(4))
+        : 0
+
+    getLocalDb()
+      .prepare(
+        `
+      INSERT INTO policy_alert_events (
+        id, organization_id, policy_id, status, message, prompt, recommended_model_id,
+        estimated_cost_usd, budget_usd, meta_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `
+      )
+      .run(
+        `pae_${crypto.randomUUID()}`,
+        organizationId,
+        policyId,
+        budgetGuard.status,
+        budgetGuard.message || decision.reason,
+        prompt,
+        decision.recommendedModelId,
+        decision.estimatedCostUsd,
+        budgetGuard.budgetUsd,
+        JSON.stringify({
+          channels: alertConfig.channels,
+          warningThresholdRatio: alertConfig.warningThresholdRatio,
+          criticalThresholdRatio: alertConfig.criticalThresholdRatio,
+          alertThresholdRatio: budgetGuard.alertThresholdRatio,
+          usageRatio,
+          autoDegraded: Boolean(budgetGuard.autoDegraded),
+          fallbackUsed: Boolean(decision.fallbackUsed)
+        }),
+        nowIso()
+      )
   }
 
   static simulateDecision(
@@ -847,7 +1230,7 @@ export class ModelMarketplaceService {
     this.ensureInitialized()
     const policy = specificPolicyId
       ? this.getPolicy(specificPolicyId, organizationId)
-      : this.listPolicies(organizationId).find(item => item.enabled) || null
+      : this.listPolicies(organizationId).find((item) => item.enabled) || null
 
     const effectivePolicy = policy || {
       id: 'default-auto',
@@ -868,9 +1251,9 @@ export class ModelMarketplaceService {
     let fallbackUsed = false
 
     const shouldTryFallback =
-      evaluated.hasBudgetMiss
-      || this.isOverBudget(evaluated.decision, evaluated.budgetUsd)
-      || evaluated.decision.candidates.length === 0
+      evaluated.hasBudgetMiss ||
+      this.isOverBudget(evaluated.decision, evaluated.budgetUsd) ||
+      evaluated.decision.candidates.length === 0
 
     if (
       shouldTryFallback &&
@@ -880,10 +1263,15 @@ export class ModelMarketplaceService {
       const fallbackPolicy = this.getPolicy(effectivePolicy.fallbackPolicyId, organizationId)
       if (fallbackPolicy && fallbackPolicy.enabled) {
         const fallbackResult = this.evaluateWithPolicy(payload, fallbackPolicy)
-        const fallbackBetterCost = fallbackResult.decision.estimatedCostUsd <= decision.estimatedCostUsd
-        const fallbackBackInBudget = evaluated.budgetUsd > 0 && fallbackResult.decision.estimatedCostUsd <= evaluated.budgetUsd
+        const fallbackBetterCost =
+          fallbackResult.decision.estimatedCostUsd <= decision.estimatedCostUsd
+        const fallbackBackInBudget =
+          evaluated.budgetUsd > 0 && fallbackResult.decision.estimatedCostUsd <= evaluated.budgetUsd
         const fallbackHasCandidate = fallbackResult.decision.candidates.length > 0
-        if (fallbackHasCandidate && (fallbackBetterCost || fallbackBackInBudget || decision.candidates.length === 0)) {
+        if (
+          fallbackHasCandidate &&
+          (fallbackBetterCost || fallbackBackInBudget || decision.candidates.length === 0)
+        ) {
           evaluated = fallbackResult
           decision = {
             ...fallbackResult.decision,
@@ -898,8 +1286,9 @@ export class ModelMarketplaceService {
 
     let autoDegraded = false
     if (this.isOverBudget(decision, evaluated.budgetUsd) && evaluated.scoredCandidates.length > 0) {
-      const cheapest = [...evaluated.scoredCandidates]
-        .sort((a, b) => (a.estimatedCostUsd - b.estimatedCostUsd) || (b.score - a.score))[0]
+      const cheapest = [...evaluated.scoredCandidates].sort(
+        (a, b) => a.estimatedCostUsd - b.estimatedCostUsd || b.score - a.score
+      )[0]
       if (cheapest && cheapest.modelId !== decision.recommendedModelId) {
         decision = {
           ...decision,
@@ -922,11 +1311,18 @@ export class ModelMarketplaceService {
       budgetGuard
     }
 
-    if (budgetGuard && budgetGuard.status !== 'ok' && !finalDecision.reason.includes(budgetGuard.message)) {
+    if (
+      budgetGuard &&
+      budgetGuard.status !== 'ok' &&
+      !finalDecision.reason.includes(budgetGuard.message)
+    ) {
       finalDecision.reason = `${finalDecision.reason}；${budgetGuard.message}`
     }
 
-    this.recordExecution(organizationId, finalDecision.policyId || effectivePolicy.id, payload.prompt || '', finalDecision)
+    const finalPolicyId = finalDecision.policyId || effectivePolicy.id
+    const prompt = payload.prompt || ''
+    this.recordExecution(organizationId, finalPolicyId, prompt, finalDecision)
+    this.recordPolicyAlertEvent(organizationId, finalPolicyId, prompt, finalDecision)
     return finalDecision
   }
 

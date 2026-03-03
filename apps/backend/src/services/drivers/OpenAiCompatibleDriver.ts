@@ -1,4 +1,9 @@
-import type { GenerateParams, GenerateResult, GenerateRuntimeContext, VideoModelDriver } from '../ModelDriver'
+import type {
+  GenerateParams,
+  GenerateResult,
+  GenerateRuntimeContext,
+  VideoModelDriver
+} from '../ModelDriver'
 import { ChannelConfigService } from '../ChannelConfigService'
 
 const toNumber = (value: unknown) => {
@@ -18,41 +23,38 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
     return new URL(`${baseUrl.replace(/\/+$/, '')}${safePath}`).toString()
   }
 
-  async generate(params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult> {
+  async generate(
+    params: GenerateParams,
+    context?: GenerateRuntimeContext
+  ): Promise<GenerateResult> {
     const channel = context?.organizationId
       ? ChannelConfigService.resolve(this.id, {
-        organizationId: context.organizationId,
-        workspaceId: context.workspaceId
-      })
+          organizationId: context.organizationId,
+          workspaceId: context.workspaceId
+        })
       : null
 
     const baseUrl = String(
-      channel?.baseUrl
-      || process.env.OPENAI_COMPATIBLE_BASE_URL
-      || process.env.OPENAI_BASE_URL
-      || ''
+      channel?.baseUrl ||
+        process.env.OPENAI_COMPATIBLE_BASE_URL ||
+        process.env.OPENAI_BASE_URL ||
+        ''
     ).trim()
     const apiKey = String(
-      channel?.apiKey
-      || process.env.OPENAI_COMPATIBLE_API_KEY
-      || process.env.OPENAI_API_KEY
-      || ''
+      channel?.apiKey || process.env.OPENAI_COMPATIBLE_API_KEY || process.env.OPENAI_API_KEY || ''
     ).trim()
     const model = String(
-      channel?.extra?.model
-      || process.env.OPENAI_COMPATIBLE_MODEL
-      || process.env.OPENAI_MODEL
-      || ''
+      channel?.extra?.model || process.env.OPENAI_COMPATIBLE_MODEL || process.env.OPENAI_MODEL || ''
     ).trim()
-    const path = String(
-      channel?.extra?.path
-      || process.env.OPENAI_COMPATIBLE_PATH
-      || this.DEFAULT_PATH
-    ).trim() || this.DEFAULT_PATH
+    const path =
+      String(
+        channel?.extra?.path || process.env.OPENAI_COMPATIBLE_PATH || this.DEFAULT_PATH
+      ).trim() || this.DEFAULT_PATH
 
-    const temperature = channel?.extra?.temperature !== undefined
-      ? toNumber(channel.extra.temperature)
-      : toNumber(process.env.OPENAI_COMPATIBLE_TEMPERATURE)
+    const temperature =
+      channel?.extra?.temperature !== undefined
+        ? toNumber(channel.extra.temperature)
+        : toNumber(process.env.OPENAI_COMPATIBLE_TEMPERATURE)
 
     if (!baseUrl || !apiKey || !model) {
       return {
@@ -111,11 +113,12 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
         }
       }
 
-      const data = await response.json() as any
+      const data = (await response.json()) as any
       const content = data?.choices?.[0]?.message?.content
-      const message = typeof content === 'string' && content.trim()
-        ? `OpenAI 兼容响应：${content.trim().slice(0, 72)}`
-        : `OpenAI 兼容模型(${model})调用成功`
+      const message =
+        typeof content === 'string' && content.trim()
+          ? `OpenAI 兼容响应：${content.trim().slice(0, 72)}`
+          : `OpenAI 兼容模型(${model})调用成功`
 
       return {
         success: true,

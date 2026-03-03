@@ -1,20 +1,28 @@
 // apps/backend/src/services/drivers/LumaDriver.ts
-import type { VideoModelDriver, GenerateParams, GenerateResult, GenerateRuntimeContext } from '../ModelDriver';
-import { ChannelConfigService } from '../ChannelConfigService';
+import type {
+  VideoModelDriver,
+  GenerateParams,
+  GenerateResult,
+  GenerateRuntimeContext
+} from '../ModelDriver'
+import { ChannelConfigService } from '../ChannelConfigService'
 
 export class LumaDriver implements VideoModelDriver {
-  id = 'luma-dream';
-  name = 'Luma Dream Machine';
+  id = 'luma-dream'
+  name = 'Luma Dream Machine'
 
-  async generate(params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult> {
+  async generate(
+    params: GenerateParams,
+    context?: GenerateRuntimeContext
+  ): Promise<GenerateResult> {
     const channel = context?.organizationId
       ? ChannelConfigService.resolve(this.id, {
-        organizationId: context.organizationId,
-        workspaceId: context.workspaceId
-      })
+          organizationId: context.organizationId,
+          workspaceId: context.workspaceId
+        })
       : null
-    const apiUrl = channel?.baseUrl || process.env.LUMA_API_URL;
-    const apiKey = channel?.apiKey || process.env.LUMA_API_KEY;
+    const apiUrl = channel?.baseUrl || process.env.LUMA_API_URL
+    const apiKey = channel?.apiKey || process.env.LUMA_API_KEY
 
     if (!apiUrl || !apiKey) {
       return {
@@ -23,7 +31,7 @@ export class LumaDriver implements VideoModelDriver {
         operationName: '',
         message: 'Luma provider 未配置 (LUMA_API_URL / LUMA_API_KEY)',
         provider: this.id
-      };
+      }
     }
 
     try {
@@ -38,10 +46,10 @@ export class LumaDriver implements VideoModelDriver {
           negative_prompt: params.negativePrompt,
           options: params.options || {}
         })
-      });
+      })
 
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = await response.text()
         return {
           success: false,
           status: 'error',
@@ -49,17 +57,17 @@ export class LumaDriver implements VideoModelDriver {
           message: 'Luma 生成失败',
           provider: this.id,
           error: `HTTP ${response.status}: ${errorText}`
-        };
+        }
       }
 
-      const data = await response.json() as any;
+      const data = (await response.json()) as any
       return {
         success: true,
         status: 'ok',
         operationName: data.operationName || data.id || `luma_${Date.now()}`,
         message: data.message || 'Luma 任务已提交至集群',
         provider: this.id
-      };
+      }
     } catch (error: any) {
       return {
         success: false,
@@ -68,7 +76,7 @@ export class LumaDriver implements VideoModelDriver {
         message: 'Luma 网络请求失败',
         provider: this.id,
         error: error.message
-      };
+      }
     }
   }
 }

@@ -15,7 +15,12 @@ interface JoinPayload {
 }
 
 interface IncomingCollabMessage {
-  type: 'presence.heartbeat' | 'presence.leave' | 'timeline.patch' | 'project.patch' | 'cursor.update'
+  type:
+    | 'presence.heartbeat'
+    | 'presence.leave'
+    | 'timeline.patch'
+    | 'project.patch'
+    | 'cursor.update'
   projectId?: string
   payload?: Record<string, unknown>
 }
@@ -53,13 +58,16 @@ const safeSend = (ws: WsLike, payload: Record<string, unknown>) => {
 
 export class CollaborationService {
   private static sessions = new Map<string, Map<string, WsLike>>()
-  private static sessionMeta = new WeakMap<WsLike, {
-    workspaceId: string
-    sessionId: string
-    memberName: string
-    userId: string | null
-    role: WorkspaceRole
-  }>()
+  private static sessionMeta = new WeakMap<
+    WsLike,
+    {
+      workspaceId: string
+      sessionId: string
+      memberName: string
+      userId: string | null
+      role: WorkspaceRole
+    }
+  >()
 
   private static workspaceMap(workspaceId: string) {
     let map = this.sessions.get(workspaceId)
@@ -76,11 +84,15 @@ export class CollaborationService {
     const query = (data.query || {}) as Record<string, any>
     const params = (data.params || {}) as Record<string, any>
     const roleFromQuery = query.role === 'owner' || query.role === 'editor' ? query.role : 'viewer'
-    const roleFromData = data.role === 'owner' || data.role === 'editor' || data.role === 'viewer' ? data.role : undefined
+    const roleFromData =
+      data.role === 'owner' || data.role === 'editor' || data.role === 'viewer'
+        ? data.role
+        : undefined
     const userId = meta?.userId || data.userId || query.userId || null
 
     return {
-      workspaceId: meta?.workspaceId || data.workspaceId || params.workspaceId || query.workspaceId || null,
+      workspaceId:
+        meta?.workspaceId || data.workspaceId || params.workspaceId || query.workspaceId || null,
       sessionId: meta?.sessionId || data.sessionId || query.sessionId || null,
       memberName: meta?.memberName || data.memberName || query.memberName || 'Guest',
       userId: userId ? String(userId) : null,
@@ -228,7 +240,9 @@ export class CollaborationService {
     let role: WorkspaceRole = session.role
 
     if (!meta && data.__collabJoined !== true) {
-      const fallbackWorkspaceId = String(workspaceId || data.workspaceId || params.workspaceId || query.workspaceId || '').trim()
+      const fallbackWorkspaceId = String(
+        workspaceId || data.workspaceId || params.workspaceId || query.workspaceId || ''
+      ).trim()
       const fallbackSessionId = String(sessionId || data.sessionId || query.sessionId || '').trim()
       if (!fallbackWorkspaceId || !fallbackSessionId) {
         safeSend(ws, { type: 'error', error: 'Session not initialized' })
@@ -303,7 +317,10 @@ export class CollaborationService {
       return
     }
 
-    if (message.projectId && !WorkspaceService.projectBelongsToWorkspace(workspaceId, message.projectId)) {
+    if (
+      message.projectId &&
+      !WorkspaceService.projectBelongsToWorkspace(workspaceId, message.projectId)
+    ) {
       safeSend(ws, { type: 'error', error: 'Project does not belong to workspace' })
       return
     }
@@ -343,7 +360,11 @@ export class CollaborationService {
     })
   }
 
-  private static broadcast(workspaceId: string, payload: Record<string, unknown>, excludeSessionId?: string) {
+  private static broadcast(
+    workspaceId: string,
+    payload: Record<string, unknown>,
+    excludeSessionId?: string
+  ) {
     const map = this.sessions.get(workspaceId)
     if (!map) return
     map.forEach((client, sid) => {

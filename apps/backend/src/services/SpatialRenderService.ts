@@ -1,26 +1,32 @@
 // apps/backend/src/services/SpatialRenderService.ts
-import { BaseAiService } from './BaseAiService';
-import type { ChannelRuntimeContext } from './ChannelConfigService';
-import { ChannelConfigService } from './ChannelConfigService';
+import { BaseAiService } from './BaseAiService'
+import type { ChannelRuntimeContext } from './ChannelConfigService'
+import { ChannelConfigService } from './ChannelConfigService'
 
 export interface SpatialResult {
-  success: boolean;
-  status?: 'ok' | 'not_implemented' | 'error';
-  message?: string;
-  nerfDataUrl: string;
-  meshUrl: string;
-  totalVoxels: number;
-  error?: string;
+  success: boolean
+  status?: 'ok' | 'not_implemented' | 'error'
+  message?: string
+  nerfDataUrl: string
+  meshUrl: string
+  totalVoxels: number
+  error?: string
 }
 
 export class SpatialRenderService extends BaseAiService {
-  protected serviceName = 'AI-Spatial-Renderer';
-  private static instance = new SpatialRenderService();
+  protected serviceName = 'AI-Spatial-Renderer'
+  private static instance = new SpatialRenderService()
 
-  static async reconstruct(clipId: string, quality: string = 'ultra', context?: ChannelRuntimeContext): Promise<SpatialResult> {
-    const channel = context?.organizationId ? ChannelConfigService.resolve('spatialRender', context) : null
-    const apiUrl = channel?.baseUrl || process.env.SPATIAL_API_URL;
-    const apiKey = channel?.apiKey || process.env.SPATIAL_API_KEY;
+  static async reconstruct(
+    clipId: string,
+    quality: string = 'ultra',
+    context?: ChannelRuntimeContext
+  ): Promise<SpatialResult> {
+    const channel = context?.organizationId
+      ? ChannelConfigService.resolve('spatialRender', context)
+      : null
+    const apiUrl = channel?.baseUrl || process.env.SPATIAL_API_URL
+    const apiKey = channel?.apiKey || process.env.SPATIAL_API_KEY
 
     if (!apiUrl || !apiKey) {
       return {
@@ -30,18 +36,21 @@ export class SpatialRenderService extends BaseAiService {
         nerfDataUrl: '',
         meshUrl: '',
         totalVoxels: 0
-      };
+      }
     }
 
     try {
-      const { data } = await this.instance.request<any>(`${apiUrl.replace(/\/$/, '')}/reconstruct`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({ clipId, quality })
-      });
+      const { data } = await this.instance.request<any>(
+        `${apiUrl.replace(/\/$/, '')}/reconstruct`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({ clipId, quality })
+        }
+      )
 
       return {
         success: true,
@@ -49,7 +58,7 @@ export class SpatialRenderService extends BaseAiService {
         nerfDataUrl: data.nerfDataUrl,
         meshUrl: data.meshUrl,
         totalVoxels: data.totalVoxels || 0
-      } as SpatialResult;
+      } as SpatialResult
     } catch (error: any) {
       return {
         success: false,
@@ -59,7 +68,7 @@ export class SpatialRenderService extends BaseAiService {
         meshUrl: '',
         totalVoxels: 0,
         error: error.message
-      };
+      }
     }
   }
 }

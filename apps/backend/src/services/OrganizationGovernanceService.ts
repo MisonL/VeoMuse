@@ -111,11 +111,15 @@ const csvEscape = (value: unknown) => {
 
 export class OrganizationGovernanceService {
   static getQuota(organizationId: string): OrganizationQuota {
-    const row = getLocalDb().prepare(`
+    const row = getLocalDb()
+      .prepare(
+        `
       SELECT * FROM organization_quotas
       WHERE organization_id = ?
       LIMIT 1
-    `).get(organizationId)
+    `
+      )
+      .get(organizationId)
     return toQuota(organizationId, row)
   }
 
@@ -129,14 +133,23 @@ export class OrganizationGovernanceService {
     const current = this.getQuota(input.organizationId)
     const next: OrganizationQuota = {
       organizationId: input.organizationId,
-      requestLimit: input.requestLimit === undefined ? current.requestLimit : clampInt(input.requestLimit, 0),
-      storageLimitBytes: input.storageLimitBytes === undefined ? current.storageLimitBytes : clampInt(input.storageLimitBytes, 0),
-      concurrencyLimit: input.concurrencyLimit === undefined ? current.concurrencyLimit : clampInt(input.concurrencyLimit, 0),
+      requestLimit:
+        input.requestLimit === undefined ? current.requestLimit : clampInt(input.requestLimit, 0),
+      storageLimitBytes:
+        input.storageLimitBytes === undefined
+          ? current.storageLimitBytes
+          : clampInt(input.storageLimitBytes, 0),
+      concurrencyLimit:
+        input.concurrencyLimit === undefined
+          ? current.concurrencyLimit
+          : clampInt(input.concurrencyLimit, 0),
       updatedBy: input.updatedBy || current.updatedBy || 'system',
       updatedAt: nowIso()
     }
 
-    getLocalDb().prepare(`
+    getLocalDb()
+      .prepare(
+        `
       INSERT INTO organization_quotas (
         organization_id, request_limit, storage_limit_bytes, concurrency_limit, updated_by, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?)
@@ -146,24 +159,30 @@ export class OrganizationGovernanceService {
         concurrency_limit = excluded.concurrency_limit,
         updated_by = excluded.updated_by,
         updated_at = excluded.updated_at
-    `).run(
-      next.organizationId,
-      next.requestLimit,
-      next.storageLimitBytes,
-      next.concurrencyLimit,
-      next.updatedBy,
-      next.updatedAt
-    )
+    `
+      )
+      .run(
+        next.organizationId,
+        next.requestLimit,
+        next.storageLimitBytes,
+        next.concurrencyLimit,
+        next.updatedBy,
+        next.updatedAt
+      )
 
     return this.getQuota(input.organizationId)
   }
 
   static getUsage(organizationId: string): OrganizationUsage {
-    const row = getLocalDb().prepare(`
+    const row = getLocalDb()
+      .prepare(
+        `
       SELECT * FROM organization_usage_counters
       WHERE organization_id = ?
       LIMIT 1
-    `).get(organizationId)
+    `
+      )
+      .get(organizationId)
     return toUsage(organizationId, row)
   }
 
@@ -172,7 +191,9 @@ export class OrganizationGovernanceService {
     if (!safeDelta) return this.getUsage(organizationId)
     const nowTs = nowIso()
 
-    getLocalDb().prepare(`
+    getLocalDb()
+      .prepare(
+        `
       INSERT INTO organization_usage_counters (
         organization_id, request_count, storage_bytes, last_request_at, updated_at
       ) VALUES (?, ?, 0, ?, ?)
@@ -180,7 +201,9 @@ export class OrganizationGovernanceService {
         request_count = organization_usage_counters.request_count + excluded.request_count,
         last_request_at = excluded.last_request_at,
         updated_at = excluded.updated_at
-    `).run(organizationId, safeDelta, nowTs, nowTs)
+    `
+      )
+      .run(organizationId, safeDelta, nowTs, nowTs)
 
     return this.getUsage(organizationId)
   }
@@ -190,7 +213,9 @@ export class OrganizationGovernanceService {
     if (!Number.isFinite(safeDelta) || safeDelta === 0) return this.getUsage(organizationId)
 
     const nowTs = nowIso()
-    getLocalDb().prepare(`
+    getLocalDb()
+      .prepare(
+        `
       INSERT INTO organization_usage_counters (
         organization_id, request_count, storage_bytes, last_request_at, updated_at
       ) VALUES (?, 0, ?, NULL, ?)
@@ -200,12 +225,17 @@ export class OrganizationGovernanceService {
           ELSE organization_usage_counters.storage_bytes + excluded.storage_bytes
         END,
         updated_at = excluded.updated_at
-    `).run(organizationId, safeDelta, nowTs)
+    `
+      )
+      .run(organizationId, safeDelta, nowTs)
 
     return this.getUsage(organizationId)
   }
 
-  static checkRequestAllowed(organizationId: string, upcoming: number = 1): OrganizationQuotaCheckResult {
+  static checkRequestAllowed(
+    organizationId: string,
+    upcoming: number = 1
+  ): OrganizationQuotaCheckResult {
     const quota = this.getQuota(organizationId)
     const usage = this.getUsage(organizationId)
     const upcomingSafe = Math.max(0, Math.floor(upcoming || 0))
@@ -238,7 +268,10 @@ export class OrganizationGovernanceService {
     }
   }
 
-  static consumeRequestQuota(organizationId: string, delta: number = 1): OrganizationQuotaCheckResult {
+  static consumeRequestQuota(
+    organizationId: string,
+    delta: number = 1
+  ): OrganizationQuotaCheckResult {
     const check = this.checkRequestAllowed(organizationId, delta)
     if (!check.allowed) return check
     const usage = this.incrementRequest(organizationId, delta)
@@ -246,11 +279,15 @@ export class OrganizationGovernanceService {
       ...check,
       usage,
       current: usage.requestCount,
-      remaining: check.limit <= 0 ? Number.POSITIVE_INFINITY : Math.max(0, check.limit - usage.requestCount)
+      remaining:
+        check.limit <= 0 ? Number.POSITIVE_INFINITY : Math.max(0, check.limit - usage.requestCount)
     }
   }
 
-  static checkStorageAllowed(organizationId: string, upcomingBytes: number = 0): OrganizationQuotaCheckResult {
+  static checkStorageAllowed(
+    organizationId: string,
+    upcomingBytes: number = 0
+  ): OrganizationQuotaCheckResult {
     const quota = this.getQuota(organizationId)
     const usage = this.getUsage(organizationId)
     const upcomingSafe = Math.max(0, Math.floor(upcomingBytes || 0))
@@ -332,8 +369,12 @@ export class OrganizationGovernanceService {
     }
   }
 
-  static exportAudits(organizationId: string, options: OrganizationAuditExportOptions = {}): OrganizationAuditExportResult {
-    const scope = options.scope === 'channel' || options.scope === 'workspace' ? options.scope : 'all'
+  static exportAudits(
+    organizationId: string,
+    options: OrganizationAuditExportOptions = {}
+  ): OrganizationAuditExportResult {
+    const scope =
+      options.scope === 'channel' || options.scope === 'workspace' ? options.scope : 'all'
     const format = options.format === 'csv' ? 'csv' : 'json'
     const limit = Math.max(1, Math.min(5000, clampInt(options.limit, 1000)))
     const from = options.from?.trim() || undefined
@@ -353,7 +394,9 @@ export class OrganizationGovernanceService {
         params.push(to)
       }
 
-      const rows = getLocalDb().prepare(`
+      const rows = getLocalDb()
+        .prepare(
+          `
         SELECT
           id,
           organization_id,
@@ -368,7 +411,9 @@ export class OrganizationGovernanceService {
         WHERE ${clauses.join(' AND ')}
         ORDER BY created_at DESC
         LIMIT ${limit}
-      `).all(...params) as any[]
+      `
+        )
+        .all(...params) as any[]
 
       for (const row of rows) {
         records.push({
@@ -398,7 +443,9 @@ export class OrganizationGovernanceService {
         params.push(to)
       }
 
-      const rows = getLocalDb().prepare(`
+      const rows = getLocalDb()
+        .prepare(
+          `
         SELECT
           id,
           organization_id,
@@ -413,7 +460,9 @@ export class OrganizationGovernanceService {
         WHERE ${clauses.join(' AND ')}
         ORDER BY created_at DESC
         LIMIT ${limit}
-      `).all(...params) as any[]
+      `
+        )
+        .all(...params) as any[]
 
       for (const row of rows) {
         records.push({
@@ -431,9 +480,7 @@ export class OrganizationGovernanceService {
       }
     }
 
-    const sorted = records
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .slice(0, limit)
+    const sorted = records.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit)
 
     const output: OrganizationAuditExportResult = {
       organizationId,
@@ -460,18 +507,22 @@ export class OrganizationGovernanceService {
         'createdAt',
         'detailJson'
       ]
-      const rows = sorted.map(item => [
-        item.id,
-        item.source,
-        item.organizationId,
-        item.workspaceId || '',
-        item.actor,
-        item.action,
-        item.providerId || '',
-        item.traceId || '',
-        item.createdAt,
-        JSON.stringify(item.detail || {})
-      ].map(csvEscape).join(','))
+      const rows = sorted.map((item) =>
+        [
+          item.id,
+          item.source,
+          item.organizationId,
+          item.workspaceId || '',
+          item.actor,
+          item.action,
+          item.providerId || '',
+          item.traceId || '',
+          item.createdAt,
+          JSON.stringify(item.detail || {})
+        ]
+          .map(csvEscape)
+          .join(',')
+      )
       output.csv = [header.join(','), ...rows].join('\n')
     }
 

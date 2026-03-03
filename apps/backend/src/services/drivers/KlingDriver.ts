@@ -1,20 +1,28 @@
 // apps/backend/src/services/drivers/KlingDriver.ts
-import type { VideoModelDriver, GenerateParams, GenerateResult, GenerateRuntimeContext } from '../ModelDriver';
-import { ChannelConfigService } from '../ChannelConfigService';
+import type {
+  VideoModelDriver,
+  GenerateParams,
+  GenerateResult,
+  GenerateRuntimeContext
+} from '../ModelDriver'
+import { ChannelConfigService } from '../ChannelConfigService'
 
 export class KlingDriver implements VideoModelDriver {
-  id = 'kling-v1';
-  name = '快手可灵 Kling V1';
+  id = 'kling-v1'
+  name = '快手可灵 Kling V1'
 
-  async generate(params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult> {
+  async generate(
+    params: GenerateParams,
+    context?: GenerateRuntimeContext
+  ): Promise<GenerateResult> {
     const channel = context?.organizationId
       ? ChannelConfigService.resolve(this.id, {
-        organizationId: context.organizationId,
-        workspaceId: context.workspaceId
-      })
+          organizationId: context.organizationId,
+          workspaceId: context.workspaceId
+        })
       : null
-    const apiUrl = channel?.baseUrl || process.env.KLING_API_URL;
-    const apiKey = channel?.apiKey || process.env.KLING_API_KEY;
+    const apiUrl = channel?.baseUrl || process.env.KLING_API_URL
+    const apiKey = channel?.apiKey || process.env.KLING_API_KEY
 
     if (!apiUrl || !apiKey) {
       return {
@@ -23,7 +31,7 @@ export class KlingDriver implements VideoModelDriver {
         operationName: '',
         message: 'Kling provider 未配置 (KLING_API_URL / KLING_API_KEY)',
         provider: this.id
-      };
+      }
     }
 
     try {
@@ -38,10 +46,10 @@ export class KlingDriver implements VideoModelDriver {
           negative_prompt: params.negativePrompt,
           options: params.options || {}
         })
-      });
+      })
 
       if (!response.ok) {
-        const errorText = await response.text();
+        const errorText = await response.text()
         return {
           success: false,
           status: 'error',
@@ -49,17 +57,17 @@ export class KlingDriver implements VideoModelDriver {
           message: 'Kling 生成失败',
           provider: this.id,
           error: `HTTP ${response.status}: ${errorText}`
-        };
+        }
       }
 
-      const data = await response.json() as any;
+      const data = (await response.json()) as any
       return {
         success: true,
         status: 'ok',
         operationName: data.operationName || data.id || `kling_${Date.now()}`,
         message: data.message || 'Kling 视频生成已提交',
         provider: this.id
-      };
+      }
     } catch (error: any) {
       return {
         success: false,
@@ -68,7 +76,7 @@ export class KlingDriver implements VideoModelDriver {
         message: 'Kling 网络请求失败',
         provider: this.id,
         error: error.message
-      };
+      }
     }
   }
 }

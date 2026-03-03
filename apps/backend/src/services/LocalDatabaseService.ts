@@ -92,16 +92,33 @@ const RECOVERY_TABLES = [
   'request_metrics',
   'routing_policies',
   'routing_executions',
+  'policy_alert_configs',
+  'policy_alert_events',
   'creative_runs',
   'creative_feedback_events',
   'storyboard_scenes',
   'workspaces',
   'workspace_members',
   'workspace_invites',
+  'workspace_action_idempotency',
   'workspace_presence',
   'projects',
+  'project_comments',
+  'comment_replies',
+  'project_reviews',
+  'project_templates',
   'project_snapshots',
   'collab_events',
+  'workspace_role_permissions',
+  'timeline_merge_records',
+  'reliability_policies',
+  'rollback_drills',
+  'reliability_alerts',
+  'prompt_workflows',
+  'prompt_workflow_runs',
+  'batch_jobs',
+  'batch_job_items',
+  'asset_reuse_records',
   'journey_runs',
   'audit_logs'
 ] as const
@@ -120,23 +137,24 @@ const ensureDbDirectory = (dbPath: string) => {
 
 const isCorruptionMessage = (text: string) => {
   const value = text.toLowerCase()
-  return CORRUPTION_KEYWORDS.some(keyword => value.includes(keyword))
+  return CORRUPTION_KEYWORDS.some((keyword) => value.includes(keyword))
 }
 
-const escapeLikePattern = (value: string) => value
-  .replace(/\\/g, '\\\\')
-  .replace(/%/g, '\\%')
-  .replace(/_/g, '\\_')
+const escapeLikePattern = (value: string) =>
+  value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
 
 const readIntegrityRows = (db: Database, mode: DbIntegrityMode) => {
   const pragma = mode === 'full' ? 'integrity_check' : 'quick_check'
   const rows = db.query(`PRAGMA ${pragma};`).all() as Array<Record<string, unknown>>
-  return rows
-    .map((row) => String(Object.values(row)[0] ?? '').trim())
-    .filter(Boolean)
+  return rows.map((row) => String(Object.values(row)[0] ?? '').trim()).filter(Boolean)
 }
 
-const buildIntegrityReport = (dbPath: string, mode: DbIntegrityMode, status: DbIntegrityReport['status'], messages: string[]): DbIntegrityReport => ({
+const buildIntegrityReport = (
+  dbPath: string,
+  mode: DbIntegrityMode,
+  status: DbIntegrityReport['status'],
+  messages: string[]
+): DbIntegrityReport => ({
   dbPath,
   mode,
   status,
@@ -144,10 +162,8 @@ const buildIntegrityReport = (dbPath: string, mode: DbIntegrityMode, status: DbI
   checkedAt: nowIso()
 })
 
-const shouldAutoRepairFromReport = (report: Pick<DbIntegrityReport, 'status' | 'messages'>) => (
-  report.status === 'corrupted' ||
-  report.messages.some(isCorruptionMessage)
-)
+const shouldAutoRepairFromReport = (report: Pick<DbIntegrityReport, 'status' | 'messages'>) =>
+  report.status === 'corrupted' || report.messages.some(isCorruptionMessage)
 
 const emptySalvage = (): DbRepairReport['salvage'] => ({
   attempted: false,
@@ -163,43 +179,50 @@ const normalizeIntegrityReport = (
 ): DbIntegrityReport => ({
   dbPath: String(raw?.dbPath || fallbackDbPath),
   mode: raw?.mode === 'full' ? 'full' : 'quick',
-  status: raw?.status === 'corrupted' ? 'corrupted' : raw?.status === 'error' ? 'error' : defaultStatus,
+  status:
+    raw?.status === 'corrupted' ? 'corrupted' : raw?.status === 'error' ? 'error' : defaultStatus,
   messages: Array.isArray(raw?.messages) ? raw.messages.map(String) : [],
   checkedAt: String(raw?.checkedAt || fallbackTimestamp)
 })
 
 const normalizeRepairReport = (raw: any): DbRepairReport => {
-  const salvage = raw?.salvage && typeof raw.salvage === 'object'
-    ? {
-      attempted: Boolean(raw.salvage.attempted),
-      copiedRows: Number(raw.salvage.copiedRows || 0),
-      tableDetails: Array.isArray(raw.salvage.tableDetails)
-        ? raw.salvage.tableDetails.map((item: any) => ({
-          table: String(item?.table || 'unknown'),
-          copiedRows: Number(item?.copiedRows || 0),
-          status: item?.status === 'failed' ? 'failed' : item?.status === 'skipped' ? 'skipped' : 'copied',
-          reason: item?.reason ? String(item.reason) : undefined
-        }))
-        : []
-    }
-    : emptySalvage()
+  const salvage =
+    raw?.salvage && typeof raw.salvage === 'object'
+      ? {
+          attempted: Boolean(raw.salvage.attempted),
+          copiedRows: Number(raw.salvage.copiedRows || 0),
+          tableDetails: Array.isArray(raw.salvage.tableDetails)
+            ? raw.salvage.tableDetails.map((item: any) => ({
+                table: String(item?.table || 'unknown'),
+                copiedRows: Number(item?.copiedRows || 0),
+                status:
+                  item?.status === 'failed'
+                    ? 'failed'
+                    : item?.status === 'skipped'
+                      ? 'skipped'
+                      : 'copied',
+                reason: item?.reason ? String(item.reason) : undefined
+              }))
+            : []
+        }
+      : emptySalvage()
 
   const fallbackDbPath = String(raw?.dbPath || '')
   const fallbackTimestamp = String(raw?.timestamp || nowIso())
   const before = raw?.before
     ? normalizeIntegrityReport(raw.before, fallbackDbPath, fallbackTimestamp, 'ok')
     : normalizeIntegrityReport(
-      {
-        dbPath: fallbackDbPath,
-        mode: 'quick',
-        status: 'error',
-        messages: ['missing-before-report'],
-        checkedAt: fallbackTimestamp
-      },
-      fallbackDbPath,
-      fallbackTimestamp,
-      'error'
-    )
+        {
+          dbPath: fallbackDbPath,
+          mode: 'quick',
+          status: 'error',
+          messages: ['missing-before-report'],
+          checkedAt: fallbackTimestamp
+        },
+        fallbackDbPath,
+        fallbackTimestamp,
+        'error'
+      )
 
   const after = raw?.after
     ? normalizeIntegrityReport(raw.after, fallbackDbPath, fallbackTimestamp, 'ok')
@@ -223,11 +246,20 @@ const normalizeRepairReport = (raw: any): DbRepairReport => {
   }
 }
 
-const checkIntegrityOnDb = (db: Database, dbPath: string, mode: DbIntegrityMode): DbIntegrityReport => {
+const checkIntegrityOnDb = (
+  db: Database,
+  dbPath: string,
+  mode: DbIntegrityMode
+): DbIntegrityReport => {
   try {
     const messages = readIntegrityRows(db, mode)
     const ok = messages.length === 1 && messages[0]?.toLowerCase() === 'ok'
-    return buildIntegrityReport(dbPath, mode, ok ? 'ok' : 'corrupted', messages.length ? messages : ['No integrity output'])
+    return buildIntegrityReport(
+      dbPath,
+      mode,
+      ok ? 'ok' : 'corrupted',
+      messages.length ? messages : ['No integrity output']
+    )
   } catch (error: any) {
     return buildIntegrityReport(dbPath, mode, 'error', [error?.message || 'Integrity check failed'])
   }
@@ -243,7 +275,7 @@ const createDbConnection = (dbPath: string) => {
 
 const hasColumn = (db: Database, table: string, column: string) => {
   const rows = db.prepare(`PRAGMA table_info(${table});`).all() as Array<{ name: string }>
-  return rows.some(row => row.name === column)
+  return rows.some((row) => row.name === column)
 }
 
 const ensureColumn = (db: Database, table: string, column: string, ddl: string) => {
@@ -439,6 +471,39 @@ const migrate = (db: Database) => {
   ensureColumn(db, 'routing_executions', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS policy_alert_configs (
+      policy_id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      enabled INTEGER NOT NULL DEFAULT 1,
+      channels_json TEXT NOT NULL DEFAULT '["dashboard"]',
+      warning_threshold_ratio REAL NOT NULL DEFAULT 0.8,
+      critical_threshold_ratio REAL NOT NULL DEFAULT 1.0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(policy_id) REFERENCES routing_policies(id) ON DELETE CASCADE
+    );
+  `)
+  ensureColumn(db, 'policy_alert_configs', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS policy_alert_events (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      policy_id TEXT NOT NULL,
+      status TEXT NOT NULL,
+      message TEXT NOT NULL,
+      prompt TEXT NOT NULL DEFAULT '',
+      recommended_model_id TEXT NOT NULL DEFAULT '',
+      estimated_cost_usd REAL NOT NULL DEFAULT 0,
+      budget_usd REAL NOT NULL DEFAULT 0,
+      meta_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(policy_id) REFERENCES routing_policies(id) ON DELETE CASCADE
+    );
+  `)
+  ensureColumn(db, 'policy_alert_events', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS creative_runs (
       id TEXT PRIMARY KEY,
       organization_id TEXT NOT NULL DEFAULT 'org_default',
@@ -497,7 +562,12 @@ const migrate = (db: Database) => {
       FOREIGN KEY(run_id) REFERENCES creative_runs(id) ON DELETE CASCADE
     );
   `)
-  ensureColumn(db, 'creative_feedback_events', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+  ensureColumn(
+    db,
+    'creative_feedback_events',
+    'organization_id',
+    `TEXT NOT NULL DEFAULT 'org_default'`
+  )
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS workspaces (
@@ -572,6 +642,26 @@ const migrate = (db: Database) => {
   ensureColumn(db, 'workspace_invites', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS workspace_action_idempotency (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      workspace_id TEXT,
+      user_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      idempotency_key TEXT NOT NULL,
+      response_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE SET NULL
+    );
+  `)
+  ensureColumn(
+    db,
+    'workspace_action_idempotency',
+    'organization_id',
+    `TEXT NOT NULL DEFAULT 'org_default'`
+  )
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS workspace_presence (
       id TEXT PRIMARY KEY,
       organization_id TEXT NOT NULL DEFAULT 'org_default',
@@ -601,6 +691,56 @@ const migrate = (db: Database) => {
   ensureColumn(db, 'project_snapshots', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS project_comments (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      project_id TEXT NOT NULL,
+      actor_name TEXT NOT NULL,
+      anchor TEXT,
+      content TEXT NOT NULL,
+      mentions_json TEXT NOT NULL DEFAULT '[]',
+      status TEXT NOT NULL DEFAULT 'open',
+      resolved_by TEXT,
+      resolved_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+  `)
+  ensureColumn(db, 'project_comments', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS project_reviews (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      project_id TEXT NOT NULL,
+      actor_name TEXT NOT NULL,
+      decision TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      score REAL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+  `)
+  ensureColumn(db, 'project_reviews', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS project_templates (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      project_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      template_json TEXT NOT NULL DEFAULT '{}',
+      created_by TEXT NOT NULL DEFAULT 'system',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+  `)
+  ensureColumn(db, 'project_templates', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS collab_events (
       id TEXT PRIMARY KEY,
       organization_id TEXT NOT NULL DEFAULT 'org_default',
@@ -617,6 +757,202 @@ const migrate = (db: Database) => {
   ensureColumn(db, 'collab_events', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS comment_replies (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      project_id TEXT NOT NULL,
+      thread_id TEXT NOT NULL,
+      actor_name TEXT NOT NULL,
+      content TEXT NOT NULL,
+      mentions_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      FOREIGN KEY(thread_id) REFERENCES project_comments(id) ON DELETE CASCADE
+    );
+  `)
+  ensureColumn(db, 'comment_replies', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS workspace_role_permissions (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      workspace_id TEXT NOT NULL,
+      role TEXT NOT NULL,
+      permission_key TEXT NOT NULL,
+      allowed INTEGER NOT NULL DEFAULT 1,
+      updated_by TEXT NOT NULL DEFAULT 'system',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+    );
+  `)
+  ensureColumn(
+    db,
+    'workspace_role_permissions',
+    'organization_id',
+    `TEXT NOT NULL DEFAULT 'org_default'`
+  )
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS timeline_merge_records (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      workspace_id TEXT,
+      project_id TEXT NOT NULL,
+      actor_name TEXT NOT NULL,
+      source_revision TEXT NOT NULL DEFAULT '',
+      target_revision TEXT NOT NULL DEFAULT '',
+      conflict_json TEXT NOT NULL DEFAULT '[]',
+      result_json TEXT NOT NULL DEFAULT '{}',
+      status TEXT NOT NULL DEFAULT 'merged',
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+  `)
+  ensureColumn(
+    db,
+    'timeline_merge_records',
+    'organization_id',
+    `TEXT NOT NULL DEFAULT 'org_default'`
+  )
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS reliability_policies (
+      id TEXT PRIMARY KEY,
+      scope TEXT NOT NULL DEFAULT 'global',
+      target_slo REAL NOT NULL DEFAULT 0.99,
+      window_days INTEGER NOT NULL DEFAULT 30,
+      warning_threshold_ratio REAL NOT NULL DEFAULT 0.7,
+      alert_threshold_ratio REAL NOT NULL DEFAULT 0.9,
+      freeze_deploy_on_breach INTEGER NOT NULL DEFAULT 0,
+      updated_by TEXT NOT NULL DEFAULT 'system',
+      meta_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS rollback_drills (
+      id TEXT PRIMARY KEY,
+      policy_id TEXT,
+      environment TEXT NOT NULL DEFAULT 'production',
+      status TEXT NOT NULL DEFAULT 'scheduled',
+      trigger_type TEXT NOT NULL DEFAULT 'manual',
+      initiated_by TEXT NOT NULL,
+      summary TEXT NOT NULL DEFAULT '',
+      plan_json TEXT NOT NULL DEFAULT '{}',
+      result_json TEXT NOT NULL DEFAULT '{}',
+      started_at TEXT,
+      completed_at TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(policy_id) REFERENCES reliability_policies(id) ON DELETE SET NULL
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS reliability_alerts (
+      id TEXT PRIMARY KEY,
+      policy_id TEXT,
+      level TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'error_budget',
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'open',
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      triggered_at TEXT NOT NULL,
+      acknowledged_at TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(policy_id) REFERENCES reliability_policies(id) ON DELETE SET NULL
+    );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS prompt_workflows (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      definition_json TEXT NOT NULL DEFAULT '{}',
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `)
+  ensureColumn(db, 'prompt_workflows', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS prompt_workflow_runs (
+      id TEXT PRIMARY KEY,
+      workflow_id TEXT NOT NULL,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      trigger_type TEXT NOT NULL DEFAULT 'manual',
+      status TEXT NOT NULL DEFAULT 'queued',
+      input_json TEXT NOT NULL DEFAULT '{}',
+      output_json TEXT NOT NULL DEFAULT '{}',
+      error_message TEXT,
+      started_at TEXT NOT NULL,
+      completed_at TEXT,
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY(workflow_id) REFERENCES prompt_workflows(id) ON DELETE CASCADE
+    );
+  `)
+  ensureColumn(db, 'prompt_workflow_runs', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS batch_jobs (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      workflow_run_id TEXT,
+      job_type TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'queued',
+      total_items INTEGER NOT NULL DEFAULT 0,
+      completed_items INTEGER NOT NULL DEFAULT 0,
+      failed_items INTEGER NOT NULL DEFAULT 0,
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(workflow_run_id) REFERENCES prompt_workflow_runs(id) ON DELETE SET NULL
+    );
+  `)
+  ensureColumn(db, 'batch_jobs', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS batch_job_items (
+      id TEXT PRIMARY KEY,
+      job_id TEXT NOT NULL,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      item_key TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'queued',
+      input_json TEXT NOT NULL DEFAULT '{}',
+      output_json TEXT NOT NULL DEFAULT '{}',
+      error_message TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(job_id) REFERENCES batch_jobs(id) ON DELETE CASCADE
+    );
+  `)
+  ensureColumn(db, 'batch_job_items', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS asset_reuse_records (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      asset_id TEXT NOT NULL,
+      source_project_id TEXT,
+      target_project_id TEXT,
+      reused_by TEXT NOT NULL,
+      context_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL
+    );
+  `)
+  ensureColumn(db, 'asset_reuse_records', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS journey_runs (
       id TEXT PRIMARY KEY,
       flow_type TEXT NOT NULL,
@@ -625,6 +961,7 @@ const migrate = (db: Database) => {
       organization_id TEXT,
       workspace_id TEXT,
       session_id TEXT,
+      idempotency_key TEXT,
       step_count INTEGER NOT NULL DEFAULT 0,
       success INTEGER NOT NULL DEFAULT 0,
       duration_ms REAL NOT NULL DEFAULT 0,
@@ -632,6 +969,7 @@ const migrate = (db: Database) => {
       created_at TEXT NOT NULL
     );
   `)
+  ensureColumn(db, 'journey_runs', 'idempotency_key', 'TEXT')
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS db_repair_logs (
@@ -693,8 +1031,42 @@ const migrate = (db: Database) => {
   `)
 
   db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_journey_runs_flow_success_created
+    ON journey_runs(flow_type, success, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_journey_runs_idempotency_lookup
+    ON journey_runs(organization_id, flow_type, session_id, idempotency_key, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_journey_runs_org_flow_session_idempotency
+    ON journey_runs(organization_id, flow_type, session_id, idempotency_key)
+    WHERE idempotency_key IS NOT NULL
+      AND idempotency_key != ''
+      AND session_id IS NOT NULL
+      AND session_id != '';
+  `)
+
+  db.exec(`
     CREATE INDEX IF NOT EXISTS idx_routing_executions_policy_created
     ON routing_executions(policy_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_policy_alert_configs_org_updated
+    ON policy_alert_configs(organization_id, updated_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_policy_alert_events_policy_created
+    ON policy_alert_events(policy_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_policy_alert_events_status_created
+    ON policy_alert_events(status, created_at DESC);
   `)
 
   db.exec(`
@@ -753,6 +1125,16 @@ const migrate = (db: Database) => {
   `)
 
   db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_action_idempotency_unique
+    ON workspace_action_idempotency(user_id, action, idempotency_key);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_workspace_action_idempotency_created
+    ON workspace_action_idempotency(created_at DESC);
+  `)
+
+  db.exec(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_presence_unique_session
     ON workspace_presence(workspace_id, session_id);
   `)
@@ -778,8 +1160,123 @@ const migrate = (db: Database) => {
   `)
 
   db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_project_comments_project_created
+    ON project_comments(project_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_project_comments_project_status_created
+    ON project_comments(project_id, status, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_project_reviews_project_created
+    ON project_reviews(project_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_project_templates_project_updated
+    ON project_templates(project_id, updated_at DESC);
+  `)
+
+  db.exec(`
     CREATE INDEX IF NOT EXISTS idx_collab_events_workspace_created
     ON collab_events(workspace_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_comment_replies_thread_created
+    ON comment_replies(thread_id, created_at ASC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_comment_replies_project_created
+    ON comment_replies(project_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_role_permissions_unique
+    ON workspace_role_permissions(workspace_id, role, permission_key);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_workspace_role_permissions_workspace_role
+    ON workspace_role_permissions(workspace_id, role, updated_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_timeline_merge_records_project_created
+    ON timeline_merge_records(project_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_reliability_policies_updated
+    ON reliability_policies(updated_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_rollback_drills_created
+    ON rollback_drills(created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_rollback_drills_status_created
+    ON rollback_drills(status, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_reliability_alerts_status_triggered
+    ON reliability_alerts(status, triggered_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_reliability_alerts_policy_triggered
+    ON reliability_alerts(policy_id, triggered_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_prompt_workflows_org_updated
+    ON prompt_workflows(organization_id, updated_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_prompt_workflow_runs_workflow_created
+    ON prompt_workflow_runs(workflow_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_prompt_workflow_runs_org_created
+    ON prompt_workflow_runs(organization_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_batch_jobs_org_created
+    ON batch_jobs(organization_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_batch_jobs_status_updated
+    ON batch_jobs(status, updated_at DESC);
+  `)
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_batch_job_items_unique_key
+    ON batch_job_items(job_id, item_key);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_batch_job_items_job_status
+    ON batch_job_items(job_id, status, updated_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_asset_reuse_records_asset_created
+    ON asset_reuse_records(asset_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_asset_reuse_records_org_created
+    ON asset_reuse_records(organization_id, created_at DESC);
   `)
 
   db.exec(`
@@ -849,7 +1346,7 @@ const salvageFromBackup = (db: Database, backupPath: string | undefined) => {
     const sourceTableRows = db
       .prepare(`SELECT name FROM recover_source.sqlite_master WHERE type = 'table'`)
       .all() as Array<{ name: string }>
-    const sourceTables = new Set(sourceTableRows.map(row => row.name))
+    const sourceTables = new Set(sourceTableRows.map((row) => row.name))
 
     for (const table of RECOVERY_TABLES) {
       if (!sourceTables.has(table)) {
@@ -914,11 +1411,12 @@ const repairDatabaseFile = (
   ensureDbDirectory(dbPath)
 
   const forced = Boolean(options?.force)
-  const checkMode: DbRepairCheckMode = options?.checkMode === 'quick' || options?.checkMode === 'full'
-    ? options.checkMode
-    : forced
-      ? 'full'
-      : 'quick'
+  const checkMode: DbRepairCheckMode =
+    options?.checkMode === 'quick' || options?.checkMode === 'full'
+      ? options.checkMode
+      : forced
+        ? 'full'
+        : 'quick'
   const reason = options?.reason || 'manual'
   const actions: string[] = [`integrity-check-mode:${checkMode}`]
 
@@ -929,12 +1427,15 @@ const repairDatabaseFile = (
     probeDb = createDbConnection(dbPath)
     before = checkIntegrityOnDb(probeDb, dbPath, checkMode)
   } catch (error: any) {
-    before = buildIntegrityReport(dbPath, checkMode, 'error', [error?.message || 'Failed to open database'])
+    before = buildIntegrityReport(dbPath, checkMode, 'error', [
+      error?.message || 'Failed to open database'
+    ])
   } finally {
     closeQuietly(probeDb)
   }
 
-  const corruptionLikely = before.status === 'corrupted' || before.messages.some(isCorruptionMessage)
+  const corruptionLikely =
+    before.status === 'corrupted' || before.messages.some(isCorruptionMessage)
 
   if (before.status === 'ok' && !forced) {
     return {
@@ -1069,9 +1570,14 @@ export class LocalDatabaseService {
           throw new Error(`SQLite integrity check failed: ${health.messages.join('; ')}`)
         }
         if (!shouldAutoRepairFromReport(health)) {
-          throw new Error(`SQLite check failed but not corruption-like: ${health.messages.join('; ')}`)
+          throw new Error(
+            `SQLite check failed but not corruption-like: ${health.messages.join('; ')}`
+          )
         }
-        this.lastRepairReport = repairDatabaseFile(this.dbPath, { force: true, reason: 'startup-auto' })
+        this.lastRepairReport = repairDatabaseFile(this.dbPath, {
+          force: true,
+          reason: 'startup-auto'
+        })
         startupReports.push(this.lastRepairReport)
         if (this.lastRepairReport.status === 'failed') {
           throw new Error(this.lastRepairReport.error || 'Auto repair failed')
@@ -1083,7 +1589,10 @@ export class LocalDatabaseService {
     } catch (error: any) {
       closeQuietly(startupDb)
       if (autoRepairEnabled && isCorruptionMessage(error?.message || '')) {
-        this.lastRepairReport = repairDatabaseFile(this.dbPath, { force: true, reason: 'startup-corruption' })
+        this.lastRepairReport = repairDatabaseFile(this.dbPath, {
+          force: true,
+          reason: 'startup-corruption'
+        })
         startupReports.push(this.lastRepairReport)
         if (this.lastRepairReport.status === 'failed') {
           throw error
@@ -1154,7 +1663,10 @@ export class LocalDatabaseService {
     return report
   }
 
-  static repairDatabaseFile(dbPath: string, options?: { force?: boolean; reason?: string; checkMode?: DbRepairCheckMode }) {
+  static repairDatabaseFile(
+    dbPath: string,
+    options?: { force?: boolean; reason?: string; checkMode?: DbRepairCheckMode }
+  ) {
     return repairDatabaseFile(dbPath, options)
   }
 
@@ -1168,12 +1680,14 @@ export class LocalDatabaseService {
   }
 
   private queryRepairHistory(query: DbRepairHistoryQuery): DbRepairHistoryResult {
-    const safeLimit = Number.isFinite(query.limit) && (query.limit || 0) > 0
-      ? Math.min(100, Math.floor(query.limit as number))
-      : 20
-    const safeOffset = Number.isFinite(query.offset) && (query.offset || 0) > 0
-      ? Math.max(0, Math.floor(query.offset as number))
-      : 0
+    const safeLimit =
+      Number.isFinite(query.limit) && (query.limit || 0) > 0
+        ? Math.min(100, Math.floor(query.limit as number))
+        : 20
+    const safeOffset =
+      Number.isFinite(query.offset) && (query.offset || 0) > 0
+        ? Math.max(0, Math.floor(query.offset as number))
+        : 0
     const whereParts: string[] = []
     const params: string[] = []
 
@@ -1246,21 +1760,25 @@ export class LocalDatabaseService {
 
   private persistRepairToStorage(report: DbRepairReport) {
     try {
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO db_repair_logs (
           id, status, reason, forced, repaired, db_path, copied_rows, created_at, report_json
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        `dbr_${crypto.randomUUID()}`,
-        report.status,
-        report.reason,
-        report.forced ? 1 : 0,
-        report.repaired ? 1 : 0,
-        report.dbPath,
-        report.salvage.copiedRows,
-        report.timestamp,
-        JSON.stringify(report)
-      )
+      `
+        )
+        .run(
+          `dbr_${crypto.randomUUID()}`,
+          report.status,
+          report.reason,
+          report.forced ? 1 : 0,
+          report.repaired ? 1 : 0,
+          report.dbPath,
+          report.salvage.copiedRows,
+          report.timestamp,
+          JSON.stringify(report)
+        )
     } catch {
       // noop
     }

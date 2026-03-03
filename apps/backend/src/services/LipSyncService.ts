@@ -1,23 +1,30 @@
 // apps/backend/src/services/LipSyncService.ts
-import { BaseAiService } from './BaseAiService';
-import type { ChannelRuntimeContext } from './ChannelConfigService';
-import { ChannelConfigService } from './ChannelConfigService';
+import { BaseAiService } from './BaseAiService'
+import type { ChannelRuntimeContext } from './ChannelConfigService'
+import { ChannelConfigService } from './ChannelConfigService'
 
 export class LipSyncService extends BaseAiService {
-  protected serviceName = 'AI-Lip-Sync';
-  private static instance = new LipSyncService();
+  protected serviceName = 'AI-Lip-Sync'
+  private static instance = new LipSyncService()
 
-  static async sync(videoUrl: string, audioUrl: string, precision: string = 'high', context?: ChannelRuntimeContext): Promise<any> {
-    const channel = context?.organizationId ? ChannelConfigService.resolve('lipSync', context) : null
-    const apiUrl = channel?.baseUrl || process.env.LIP_SYNC_API_URL;
-    const apiKey = channel?.apiKey || process.env.LIP_SYNC_API_KEY;
+  static async sync(
+    videoUrl: string,
+    audioUrl: string,
+    precision: string = 'high',
+    context?: ChannelRuntimeContext
+  ): Promise<any> {
+    const channel = context?.organizationId
+      ? ChannelConfigService.resolve('lipSync', context)
+      : null
+    const apiUrl = channel?.baseUrl || process.env.LIP_SYNC_API_URL
+    const apiKey = channel?.apiKey || process.env.LIP_SYNC_API_KEY
 
     if (!apiUrl || !apiKey) {
       return {
         success: false,
         status: 'not_implemented',
         message: 'Lip Sync provider 未配置 (LIP_SYNC_API_URL / LIP_SYNC_API_KEY)'
-      };
+      }
     }
 
     try {
@@ -28,21 +35,21 @@ export class LipSyncService extends BaseAiService {
           Authorization: `Bearer ${apiKey}`
         },
         body: JSON.stringify({ videoUrl, audioUrl, precision })
-      });
+      })
 
       return {
         success: true,
         status: 'ok',
         syncedVideoUrl: data.syncedVideoUrl,
         operationId: data.operationId || `lip_${Date.now()}`
-      };
+      }
     } catch (error: any) {
       return {
         success: false,
         status: 'error',
         message: 'Lip Sync 失败',
         error: error.message
-      };
+      }
     }
   }
 }
