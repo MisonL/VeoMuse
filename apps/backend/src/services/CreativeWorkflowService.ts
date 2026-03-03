@@ -194,6 +194,20 @@ export interface BatchJobCreateInput {
   createdBy: string
 }
 
+export interface BatchJobListQuery {
+  organizationId: string
+  workflowRunId?: string
+  jobType?: string
+  status?: BatchJob['status']
+  limit?: number
+  cursor?: string
+}
+
+export interface BatchJobPageResult {
+  jobs: BatchJob[]
+  page: CursorPageMeta
+}
+
 export interface AssetReuseCreateInput {
   organizationId: string
   assetId: string
@@ -523,6 +537,89 @@ export class CreativeWorkflowService {
       throw new Error('批处理任务创建失败')
     }
     return job
+  }
+
+  static listBatchJobs(input: BatchJobListQuery): BatchJobPageResult {
+    const organizationId = input.organizationId.trim() || 'org_default'
+    const safeLimit =
+      Number.isFinite(input.limit) && (input.limit || 0) > 0
+        ? Math.min(100, Math.floor(input.limit as number))
+        : 20
+    const decodedCursor = decodeStableCursor(input.cursor)
+    const queryLimit = safeLimit + 1
+
+    const whereParts: string[] = ['organization_id = ?']
+    const params: string[] = [organizationId]
+
+    const workflowRunId = String(input.workflowRunId || '').trim()
+    if (workflowRunId) {
+      whereParts.push('workflow_run_id = ?')
+      params.push(workflowRunId)
+    }
+
+    const jobType = String(input.jobType || '').trim()
+    if (jobType) {
+      whereParts.push('job_type = ?')
+      params.push(jobType)
+    }
+
+    const status = String(input.status || '').trim()
+    if (status === 'queued' || status === 'completed' || status === 'failed') {
+      whereParts.push('status = ?')
+      params.push(status)
+    }
+
+    if (decodedCursor && decodedCursor.id !== null) {
+      whereParts.push('(created_at < ? OR (created_at = ? AND id < ?))')
+      params.push(decodedCursor.createdAt, decodedCursor.createdAt, decodedCursor.id)
+    } else if (decodedCursor) {
+      whereParts.push('created_at < ?')
+      params.push(decodedCursor.createdAt)
+    }
+
+    const rows = getLocalDb()
+      .prepare(
+        `
+      SELECT * FROM batch_jobs
+      WHERE ${whereParts.join(' AND ')}
+      ORDER BY created_at DESC, id DESC
+      LIMIT ${queryLimit}
+    `
+      )
+      .all(...params) as any[]
+
+    const hasMore = rows.length > safeLimit
+    const pageRows = hasMore ? rows.slice(0, safeLimit) : rows
+
+    const jobs = pageRows.map((row) => {
+      const items = getLocalDb()
+        .prepare(
+          `
+        SELECT * FROM batch_job_items
+        WHERE job_id = ?
+        ORDER BY created_at ASC
+      `
+        )
+        .all(String(row.id))
+        .map(toBatchJobItem)
+      return toBatchJob(row, items)
+    })
+
+    const nextCursor = hasMore
+      ? encodeStableCursor(
+          pageRows[pageRows.length - 1]?.created_at,
+          pageRows[pageRows.length - 1]?.id
+        )
+      : null
+
+    return {
+      jobs,
+      page: {
+        limit: safeLimit,
+        hasMore,
+        nextCursor: nextCursor || null
+      }
+    }
   }
 
   static getBatchJob(jobId: string): BatchJob | null {

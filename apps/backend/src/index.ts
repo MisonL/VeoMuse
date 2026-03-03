@@ -2762,6 +2762,42 @@ export const createApp = () => {
       }
     )
     .get(
+      '/api/v4/creative/batch-jobs',
+      ({ query, request, set }) => {
+        const organizationContext = resolveOrganizationContext(request, set, 'member')
+        if (!organizationContext) return { success: false, status: 'error', error: 'Forbidden' }
+        try {
+          const pageResult = CreativeWorkflowService.listBatchJobs({
+            organizationId: organizationContext.organizationId,
+            workflowRunId: query.workflowRunId,
+            jobType: query.jobType,
+            status: query.status as 'queued' | 'completed' | 'failed' | undefined,
+            limit: Number.parseInt(query.limit || '20', 10),
+            cursor: query.cursor
+          })
+          return {
+            success: true,
+            jobs: pageResult.jobs,
+            page: pageResult.page
+          }
+        } catch (error: any) {
+          set.status = 400
+          return { success: false, status: 'error', error: error?.message || '批处理任务查询失败' }
+        }
+      },
+      {
+        query: t.Object({
+          workflowRunId: t.Optional(t.String()),
+          jobType: t.Optional(t.String()),
+          status: t.Optional(
+            t.Union([t.Literal('queued'), t.Literal('completed'), t.Literal('failed')])
+          ),
+          limit: t.Optional(t.String()),
+          cursor: t.Optional(t.String())
+        })
+      }
+    )
+    .get(
       '/api/v4/creative/batch-jobs/:jobId',
       ({ params, request, set }) => {
         const organizationContext = resolveOrganizationContext(request, set, 'member')

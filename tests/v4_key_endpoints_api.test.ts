@@ -769,6 +769,75 @@ describe('V4 关键端点 API 回归（Stream D）', () => {
       expect(getBatchData.job?.id).toBe(jobId)
       expect(getBatchData.job?.totalItems).toBe(2)
       expect(Array.isArray(getBatchData.job?.items)).toBe(true)
+
+      const secondBatchResp = await app.handle(
+        new Request('http://localhost/api/v4/creative/batch-jobs', {
+          method: 'POST',
+          headers: createAuthHeaders(session.accessToken, {
+            organizationId: session.organizationId,
+            contentTypeJson: true
+          }),
+          body: JSON.stringify({
+            workflowRunId,
+            jobType: 'creative.render',
+            payload: { priority: 'high' },
+            items: [{ itemKey: 'shot-3', input: { durationSec: 4 } }]
+          })
+        })
+      )
+      const secondBatchData = (await secondBatchResp.json()) as any
+      expect(secondBatchResp.status).toBe(200)
+      expect(secondBatchData.success).toBe(true)
+      const secondJobId = String(secondBatchData.job?.id || '')
+      expect(secondJobId.startsWith('batch_')).toBe(true)
+
+      const forcedBatchTimestamp = new Date().toISOString()
+      getLocalDb()
+        .prepare(`UPDATE batch_jobs SET created_at = ? WHERE id IN (?, ?)`)
+        .run(forcedBatchTimestamp, jobId, secondJobId)
+
+      const listBatchFirstResp = await app.handle(
+        new Request('http://localhost/api/v4/creative/batch-jobs?limit=1', {
+          headers: createAuthHeaders(session.accessToken, {
+            organizationId: session.organizationId
+          })
+        })
+      )
+      const listBatchFirstData = (await listBatchFirstResp.json()) as any
+      expect(listBatchFirstResp.status).toBe(200)
+      expect(listBatchFirstData.success).toBe(true)
+      expect(Array.isArray(listBatchFirstData.jobs)).toBe(true)
+      expect(listBatchFirstData.jobs.length).toBe(1)
+      expect(listBatchFirstData.page?.hasMore).toBe(true)
+      expect(typeof listBatchFirstData.page?.nextCursor).toBe('string')
+
+      const batchCursor = String(listBatchFirstData.page?.nextCursor || '')
+      expect(batchCursor.includes('|')).toBe(true)
+
+      const listBatchSecondResp = await app.handle(
+        new Request(
+          `http://localhost/api/v4/creative/batch-jobs?limit=1&cursor=${encodeURIComponent(batchCursor)}`,
+          {
+            headers: createAuthHeaders(session.accessToken, {
+              organizationId: session.organizationId
+            })
+          }
+        )
+      )
+      const listBatchSecondData = (await listBatchSecondResp.json()) as any
+      expect(listBatchSecondResp.status).toBe(200)
+      expect(listBatchSecondData.success).toBe(true)
+      expect(Array.isArray(listBatchSecondData.jobs)).toBe(true)
+      expect(listBatchSecondData.jobs.length).toBe(1)
+
+      const batchIds = new Set(
+        [listBatchFirstData.jobs[0]?.id, listBatchSecondData.jobs[0]?.id]
+          .map((item: any) => String(item || ''))
+          .filter(Boolean)
+      )
+      expect(batchIds.size).toBe(2)
+      expect(batchIds.has(jobId)).toBe(true)
+      expect(batchIds.has(secondJobId)).toBe(true)
     },
     V4_API_TEST_TIMEOUT_MS
   )

@@ -759,6 +759,7 @@ curl -s http://127.0.0.1:18081/api/v4/projects/${PROJECT_ID}/timeline/merge \
 - `POST /api/v4/creative/prompt-workflows`
 - `GET /api/v4/creative/prompt-workflows/:workflowId/runs`
 - `POST /api/v4/creative/prompt-workflows/:workflowId/run`
+- `GET /api/v4/creative/batch-jobs`
 - `POST /api/v4/creative/batch-jobs`
 - `GET /api/v4/creative/batch-jobs/:jobId`
 - 鉴权：组织 `member+`，建议始终携带 `x-organization-id`
@@ -767,6 +768,7 @@ curl -s http://127.0.0.1:18081/api/v4/projects/${PROJECT_ID}/timeline/merge \
 - `GET /prompt-workflows/:workflowId/runs` Query：`limit`(optional, max `100`), `cursor`(optional)。返回 `{ success, runs, page }`，其中 `page = { limit, hasMore, nextCursor }`，游标语义为稳定复合游标（`created_at|id`），排序为 `created_at DESC, id DESC`。
 - 兼容性：仍接受旧版时间戳游标（仅 `created_at`），但推荐直接使用服务端返回的 `nextCursor`。
 - `POST /:workflowId/run` Body：`triggerType`(optional), `input`(optional), `createdBy`(optional)
+- `GET /batch-jobs` Query：`limit`(optional, max `100`), `cursor`(optional), `workflowRunId`(optional), `jobType`(optional), `status`(optional: `queued|completed|failed`)。返回 `{ success, jobs, page }`，其中 `page = { limit, hasMore, nextCursor }`，游标语义为稳定复合游标（`created_at|id`），排序为 `created_at DESC, id DESC`。
 - `POST /batch-jobs` Body：`workflowRunId`(optional), `jobType`(required), `payload`(optional), `items`(optional), `createdBy`(optional)
 
 请求示例：
@@ -802,6 +804,12 @@ curl -s http://127.0.0.1:18081/api/v4/creative/batch-jobs \
   -H "x-organization-id: ${ORG_ID}" \
   -H "Content-Type: application/json" \
   -d '{"workflowRunId":"pwfr_xxx","jobType":"creative.render","items":[{"itemKey":"shot-1","input":{"durationSec":8}}]}'
+```
+
+```bash
+curl -s "http://127.0.0.1:18081/api/v4/creative/batch-jobs?limit=20" \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  -H "x-organization-id: ${ORG_ID}"
 ```
 
 ### 10.6 Asset Reuse History
