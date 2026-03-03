@@ -8,6 +8,7 @@ const noop = () => {}
 
 const createProps = (overrides: Record<string, unknown> = {}) =>
   ({
+    isAuthenticated: true,
     workspaceName: 'VeoMuse 协作空间',
     workspaceOwner: 'Owner',
     workspaceId: '',
@@ -171,6 +172,7 @@ describe('CollabModePanel DOM 组件回归', () => {
     expect(view.getByText('邀请与加入')).toBeInTheDocument()
     expect(view.getByText('多人协同通道')).toBeInTheDocument()
     expect(view.getByText('v4 评论线程')).toBeInTheDocument()
+    fireEvent.click(view.getByTestId('btn-toggle-advanced-sections'))
     expect(view.getByText('项目治理闭环')).toBeInTheDocument()
     expect(view.getByText('运维工具')).toBeInTheDocument()
     expect(view.getAllByText('暂无邀请记录').length).toBe(1)
@@ -190,6 +192,7 @@ describe('CollabModePanel DOM 组件回归', () => {
     const view = render(
       <CollabModePanel
         {...createProps({
+          isAuthenticated: true,
           workspaceId: 'ws_1',
           projectId: 'project_1',
           collabRole: 'owner',
@@ -333,6 +336,7 @@ describe('CollabModePanel DOM 组件回归', () => {
               acknowledgedAt: null
             }
           ],
+          adminToken: 'admin-token-demo',
           rollbackDrillResult: {
             id: 'drill_1',
             policyId: 'policy_1',
@@ -357,6 +361,8 @@ describe('CollabModePanel DOM 组件回归', () => {
       />
     )
 
+    fireEvent.click(view.getByTestId('btn-toggle-advanced-sections'))
+
     expect(view.getByText('INVITE-1')).toBeInTheDocument()
     expect(view.getAllByText('Alice').length).toBeGreaterThan(0)
     expect(view.getByText('请优化节奏')).toBeInTheDocument()
@@ -379,5 +385,19 @@ describe('CollabModePanel DOM 组件回归', () => {
     expect(onAcknowledgeReliabilityAlert).toHaveBeenCalledWith('rel_alert_1')
     expect(onUpdatePermission).toHaveBeenCalledTimes(1)
     expect(onBatchUpdateProjectClips).toHaveBeenCalledTimes(1)
+  })
+
+  it('未登录态应禁用创建工作区按钮并展示提示', () => {
+    const view = render(
+      <CollabModePanel
+        {...createProps({
+          isAuthenticated: false
+        })}
+      />
+    )
+
+    const createWorkspaceBtn = view.getByTestId('btn-create-workspace')
+    expect(createWorkspaceBtn).toBeDisabled()
+    expect(createWorkspaceBtn).toHaveAttribute('title', '请先登录后再创建工作区')
   })
 })

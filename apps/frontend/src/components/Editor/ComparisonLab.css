@@ -816,6 +816,17 @@
   grid-column: 1 / -1;
 }
 
+.collab-sub-toggle {
+  border: 1px solid color-mix(in srgb, var(--ap-accent) 30%, var(--ap-border));
+  background: color-mix(in srgb, var(--ap-accent-soft) 70%, #ffffff 30%);
+  color: var(--ap-accent);
+}
+
+.collab-sub-toggle:hover {
+  border-color: color-mix(in srgb, var(--ap-accent) 45%, var(--ap-border));
+  background: color-mix(in srgb, var(--ap-accent-soft) 78%, #ffffff 22%);
+}
+
 .collab-card h5 {
   margin: 0;
   font-size: 11px;
