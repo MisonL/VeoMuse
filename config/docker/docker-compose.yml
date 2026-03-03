@@ -10,6 +10,12 @@ services:
       sh -c 'if [ -z "$${REDIS_PASSWORD}" ]; then echo "REDIS_PASSWORD is required"; exit 1; fi; redis-server --port 46379 --save 60 1 --loglevel warning --protected-mode yes --requirepass "$${REDIS_PASSWORD}"'
     expose:
       - '46379'
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -p 46379 -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   veomuse-backend:
     build:
@@ -27,13 +33,20 @@ services:
       - DB_AUTO_REPAIR=true
       - DB_HEALTHCHECK_INTERVAL_MS=0
     depends_on:
-      - veomuse-redis
+      veomuse-redis:
+        condition: service_healthy
     restart: always
     volumes:
       - veomuse-uploads:/app/uploads
       - veomuse-data:/app/data
     expose:
       - '33117'
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:33117/api/health').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
 
   veomuse-frontend:
     build:
@@ -42,8 +55,15 @@ services:
     ports:
       - '18081:18081'
     depends_on:
-      - veomuse-backend
+      veomuse-backend:
+        condition: service_healthy
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:18081/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
 
 networks:
   default:

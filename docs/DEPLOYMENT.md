@@ -26,6 +26,19 @@ scripts\\one-click-deploy.cmd
 - 自动启动 Docker Compose 集群（默认带 `--build`）。
 - 自动等待 `http://127.0.0.1:18081/api/health` 健康检查通过。
 
+### Compose 健康检查与启动顺序
+
+- `docker-compose.yml` 已为 `redis/backend/frontend` 配置 `healthcheck`。
+- 服务依赖链采用 `depends_on.condition: service_healthy`：
+  - `backend` 等待 `redis` 健康后启动。
+  - `frontend` 等待 `backend` 健康后启动。
+- 建议在手动部署时使用 `--wait`，确保服务健康后再进入验收。
+
+```bash
+docker compose -f config/docker/docker-compose.yml up -d --build --wait --wait-timeout 180
+docker compose -f config/docker/docker-compose.yml ps
+```
+
 ### 一键脚本参数
 
 - `--force-env` / `-ForceEnv`：强制重建关键安全变量（会备份旧 `.env`）。
