@@ -36,6 +36,7 @@ import type {
 } from '../types'
 
 interface CollabModePanelProps {
+  isAuthenticated: boolean
   workspaceName: string
   workspaceOwner: string
   workspaceId: string
@@ -187,6 +188,7 @@ interface CollabModePanelProps {
 }
 
 const CollabModePanel: React.FC<CollabModePanelProps> = ({
+  isAuthenticated,
   workspaceName,
   workspaceOwner,
   workspaceId,
@@ -336,6 +338,9 @@ const CollabModePanel: React.FC<CollabModePanelProps> = ({
   onRollbackDrillIdChange,
   onQueryRollbackDrill
 }) => {
+  const [showAdvancedSections, setShowAdvancedSections] = React.useState(false)
+  const hasAdminToken = adminToken.trim().length > 0
+
   return (
     <div className="collab-shell" data-testid="area-collab-shell">
       <section className="collab-card" data-testid="area-collab-workspace-card">
@@ -361,7 +366,12 @@ const CollabModePanel: React.FC<CollabModePanelProps> = ({
           </label>
         </div>
         <div className="lab-inline-actions">
-          <button onClick={onCreateWorkspace} data-testid="btn-create-workspace">
+          <button
+            onClick={onCreateWorkspace}
+            data-testid="btn-create-workspace"
+            disabled={!isAuthenticated}
+            title={!isAuthenticated ? '请先登录后再创建工作区' : ''}
+          >
             创建工作区
           </button>
           <button
@@ -630,623 +640,658 @@ const CollabModePanel: React.FC<CollabModePanelProps> = ({
         </div>
       </section>
 
-      <section className="collab-card" data-testid="area-project-governance-card">
-        <h4>项目治理闭环</h4>
+      <section className="collab-card collab-card--compact">
+        <h4>高级功能</h4>
         <div className="collab-meta">
-          <span>项目 ID：{projectId || '-'}</span>
-          <span>状态：{getBusyStatusText(isProjectGovernanceBusy)}</span>
+          <span>项目治理 / 权限 / 运维 / 快照已收纳为高级区，按需展开。</span>
         </div>
-
         <div className="lab-inline-actions">
-          <button
-            disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
-            onClick={onRefreshProjectComments}
-          >
-            刷新评论
+          <button onClick={() => setShowAdvancedSections((prev) => !prev)}>
+            {showAdvancedSections ? '收起高级功能' : '展开高级功能'}
           </button>
-          <label className="lab-field">
-            <span>评论 limit</span>
-            <input
-              type="number"
-              min={1}
-              name="projectCommentLimit"
-              value={projectCommentLimit}
-              onChange={(event) => onProjectCommentLimitChange(event.target.value)}
-              placeholder="20"
-            />
-          </label>
-          <button
-            disabled={isLoadMoreDisabled(projectId, projectCommentHasMore, isProjectGovernanceBusy)}
-            onClick={onLoadMoreProjectComments}
-          >
-            加载更多评论
-          </button>
-        </div>
-        <div className="collab-meta">
-          <span>评论下一页游标：{formatCursor(projectCommentCursor)}</span>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>评论锚点</span>
-            <input
-              name="projectCommentAnchor"
-              value={projectCommentAnchor}
-              onChange={(event) => onProjectCommentAnchorChange(event.target.value)}
-              placeholder="timeline:track-v1:clip-1"
-            />
-          </label>
-          <label className="lab-field">
-            <span>评论内容</span>
-            <input
-              name="projectCommentContent"
-              value={projectCommentContent}
-              onChange={(event) => onProjectCommentContentChange(event.target.value)}
-              placeholder="输入项目评论内容"
-            />
-          </label>
-          <label className="lab-field">
-            <span>评论 mentions</span>
-            <input
-              name="projectCommentMentions"
-              value={projectCommentMentions}
-              onChange={(event) => onProjectCommentMentionsChange(event.target.value)}
-              placeholder="owner,editor"
-            />
-          </label>
-          <button
-            className="inline-fill-btn"
-            disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
-            onClick={onCreateProjectComment}
-          >
-            新建评论
-          </button>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>待 Resolve 评论</span>
-            <select
-              name="projectSelectedCommentId"
-              value={projectSelectedCommentId}
-              onChange={(event) => onProjectSelectedCommentIdChange(event.target.value)}
-            >
-              <option value="">选择评论</option>
-              {projectComments.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {formatShortId(item.id, 8)} · {item.status}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            disabled={!projectSelectedCommentId || isProjectGovernanceBusy}
-            onClick={onResolveProjectComment}
-          >
-            标记评论已解决
-          </button>
-        </div>
-        <div className="collab-list">
-          {takePreviewItems(projectComments, 12).map((item) => (
-            <div key={item.id} className="collab-list-item">
-              <span>{item.content}</span>
-              <span>{item.status}</span>
-              <span>{formatMentions(item.mentions)}</span>
-              <span>{formatLocalTime(item.updatedAt)}</span>
-            </div>
-          ))}
-          {projectComments.length === 0 ? <div className="api-empty">暂无项目评论</div> : null}
-        </div>
-
-        <div className="lab-inline-actions">
-          <button
-            disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
-            onClick={onRefreshProjectReviews}
-          >
-            刷新评审
-          </button>
-          <label className="lab-field">
-            <span>评审 limit</span>
-            <input
-              type="number"
-              min={1}
-              name="projectReviewLimit"
-              value={projectReviewLimit}
-              onChange={(event) => onProjectReviewLimitChange(event.target.value)}
-              placeholder="20"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>评审决策</span>
-            <select
-              name="projectReviewDecision"
-              value={projectReviewDecision}
-              onChange={(event) =>
-                onProjectReviewDecisionChange(
-                  event.target.value as ProjectGovernanceReview['decision']
-                )
-              }
-            >
-              <option value="approved">approved</option>
-              <option value="changes_requested">changes_requested</option>
-            </select>
-          </label>
-          <label className="lab-field">
-            <span>评审摘要</span>
-            <input
-              name="projectReviewSummary"
-              value={projectReviewSummary}
-              onChange={(event) => onProjectReviewSummaryChange(event.target.value)}
-              placeholder="输入评审结论"
-            />
-          </label>
-          <label className="lab-field">
-            <span>评分（可选）</span>
-            <input
-              name="projectReviewScore"
-              value={projectReviewScore}
-              onChange={(event) => onProjectReviewScoreChange(event.target.value)}
-              placeholder="8.5"
-            />
-          </label>
-          <button
-            className="inline-fill-btn"
-            disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
-            onClick={onCreateProjectReview}
-          >
-            新建评审
-          </button>
-        </div>
-        <div className="collab-list">
-          {takePreviewItems(projectReviews, 12).map((item) => (
-            <div key={item.id} className="collab-list-item">
-              <span>{item.decision}</span>
-              <span>{item.summary}</span>
-              <span>{item.score ?? '-'}</span>
-              <span>{formatLocalTime(item.createdAt)}</span>
-            </div>
-          ))}
-          {projectReviews.length === 0 ? <div className="api-empty">暂无项目评审</div> : null}
-        </div>
-
-        <div className="lab-inline-actions">
-          <button
-            disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
-            onClick={onRefreshProjectTemplates}
-          >
-            刷新模板
-          </button>
-          <label className="lab-field">
-            <span>模板</span>
-            <select
-              name="projectSelectedTemplateId"
-              value={projectSelectedTemplateId}
-              onChange={(event) => onProjectSelectedTemplateIdChange(event.target.value)}
-            >
-              <option value="">选择模板</option>
-              {projectTemplates.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            disabled={!projectSelectedTemplateId || isProjectGovernanceBusy}
-            onClick={onApplyProjectTemplate}
-          >
-            应用模板
-          </button>
-        </div>
-        <label className="lab-field">
-          <span>模板应用参数（JSON）</span>
-          <textarea
-            name="projectTemplateApplyOptions"
-            value={projectTemplateApplyOptions}
-            onChange={(event) => onProjectTemplateApplyOptionsChange(event.target.value)}
-            placeholder='{"targetTrack":"track-v1","blendMode":"replace"}'
-          />
-        </label>
-        <div className="collab-meta">
-          <span>模板回执 Trace：{projectTemplateApplyResult?.traceId || '-'}</span>
-          <span>模板名称：{projectTemplateApplyResult?.templateName || '-'}</span>
-        </div>
-        <div className="collab-list">
-          {takePreviewItems(projectTemplates, 10).map((item) => (
-            <div key={item.id} className="collab-list-item">
-              <span>{item.name}</span>
-              <span>{item.description}</span>
-              <span>{item.createdBy}</span>
-              <span>{formatLocalTime(item.updatedAt)}</span>
-            </div>
-          ))}
-          {projectTemplates.length === 0 ? <div className="api-empty">暂无项目模板</div> : null}
-        </div>
-
-        <label className="lab-field">
-          <span>片段批量更新 operations（JSON 数组）</span>
-          <textarea
-            name="projectClipBatchOperations"
-            value={projectClipBatchOperations}
-            onChange={(event) => onProjectClipBatchOperationsChange(event.target.value)}
-            placeholder='[{"clipId":"clip-a","patch":{"start":0,"end":3}}]'
-          />
-        </label>
-        <div className="lab-inline-actions">
-          <button
-            disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
-            onClick={onBatchUpdateProjectClips}
-          >
-            提交片段批量更新
-          </button>
-        </div>
-        <div className="collab-meta">
-          <span>requested：{projectClipBatchResult?.requested ?? '-'}</span>
-          <span>accepted：{projectClipBatchResult?.accepted ?? '-'}</span>
-          <span>skipped：{projectClipBatchResult?.skipped ?? '-'}</span>
-          <span>rejected：{projectClipBatchResult?.rejected ?? '-'}</span>
-          <span>updated：{projectClipBatchResult?.updated ?? '-'}</span>
         </div>
       </section>
 
-      <section className="collab-card">
-        <h4>v4 权限与 Timeline Merge</h4>
-        <div className="lab-inline-actions">
-          <button disabled={!workspaceId || isV4Busy} onClick={onRefreshPermissions}>
-            刷新权限
-          </button>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>权限键</span>
-            <input
-              name="v4PermissionSubjectId"
-              value={permissionSubjectId}
-              onChange={(event) => onPermissionSubjectIdChange(event.target.value)}
-              placeholder="timeline.merge=true"
-            />
-          </label>
-          <label className="lab-field">
-            <span>角色</span>
-            <select
-              name="v4PermissionRole"
-              value={permissionRole}
-              onChange={(event) => onPermissionRoleChange(event.target.value as WorkspaceRole)}
-            >
-              <option value="viewer">viewer</option>
-              <option value="editor">editor</option>
-              <option value="owner">owner</option>
-            </select>
-          </label>
-        </div>
-        <div className="lab-inline-actions">
-          <button
-            disabled={isPermissionUpdateDisabled(workspaceId, permissionSubjectId, isV4Busy)}
-            onClick={onUpdatePermission}
-          >
-            更新权限
-          </button>
-          <button disabled={!projectId || isV4Busy} onClick={onMergeTimeline}>
-            调用 Timeline Merge
-          </button>
-        </div>
-        <div className="collab-meta">
-          <span>Merge 结果：{timelineMergeResult?.status || '-'}</span>
-          <span>Merge ID：{timelineMergeResult?.id || '-'}</span>
-          <span>冲突数：{timelineMergeResult ? timelineMergeResult.conflicts.length : '-'}</span>
-        </div>
-        <div className="collab-list">
-          {takePreviewItems(permissions, 12).map((item) => (
-            <div key={`${item.workspaceId}-${item.role}`} className="collab-list-item">
-              <span>{item.role}</span>
-              <span>{Object.keys(item.permissions || {}).length} 项权限</span>
-              <span>{item.updatedBy}</span>
+      {showAdvancedSections ? (
+        <>
+          <section className="collab-card" data-testid="area-project-governance-card">
+            <h4>项目治理闭环</h4>
+            <div className="collab-meta">
+              <span>项目 ID：{projectId || '-'}</span>
+              <span>状态：{getBusyStatusText(isProjectGovernanceBusy)}</span>
             </div>
-          ))}
-          {permissions.length === 0 ? <div className="api-empty">暂无权限记录</div> : null}
-        </div>
-      </section>
 
-      <section className="collab-card">
-        <h4>运维工具</h4>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>管理员令牌</span>
-            <input
-              name="v4AdminToken"
-              value={adminToken}
-              onChange={(event) => onAdminTokenChange(event.target.value)}
-              placeholder="用于 x-admin-token 请求头，可持久化"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>告警级别</span>
-            <select
-              name="v4AlertLevel"
-              value={reliabilityAlertLevel}
-              onChange={(event) =>
-                onReliabilityAlertLevelChange(event.target.value as 'all' | V4ReliabilityAlertLevel)
-              }
-            >
-              <option value="all">全部</option>
-              <option value="info">info</option>
-              <option value="warning">warning</option>
-              <option value="critical">critical</option>
-            </select>
-          </label>
-          <label className="lab-field">
-            <span>告警状态</span>
-            <select
-              name="v4AlertStatus"
-              value={reliabilityAlertStatus}
-              onChange={(event) =>
-                onReliabilityAlertStatusChange(
-                  event.target.value as 'all' | V4ReliabilityAlert['status']
-                )
-              }
-            >
-              <option value="all">全部</option>
-              <option value="open">open</option>
-              <option value="acknowledged">acknowledged</option>
-            </select>
-          </label>
-          <label className="lab-field">
-            <span>查询数量</span>
-            <input
-              type="number"
-              min={1}
-              name="v4AlertLimit"
-              value={reliabilityAlertLimit}
-              onChange={(event) => onReliabilityAlertLimitChange(event.target.value)}
-              placeholder="20"
-            />
-          </label>
-          <button
-            className="inline-fill-btn"
-            disabled={isOpsBusy}
-            onClick={onLoadReliabilityAlerts}
-          >
-            查询告警
-          </button>
-        </div>
-        <div className="collab-meta">
-          <span>告警列表</span>
-        </div>
-        <div className="collab-list">
-          {reliabilityAlerts.map((item) => (
-            <div key={item.id} className="collab-list-item">
-              <span>{item.level}</span>
-              <span>{item.status}</span>
-              <span>{item.title}</span>
-              <span>{formatLocalDateTime(item.triggeredAt)}</span>
-              <span>{formatLocalDateTime(item.acknowledgedAt)}</span>
+            <div className="lab-inline-actions">
               <button
-                disabled={isAlertAckDisabled(isOpsBusy, item.status)}
-                onClick={() => onAcknowledgeReliabilityAlert(item.id)}
+                disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
+                onClick={onRefreshProjectComments}
               >
-                {getAckLabel(item.status)}
+                刷新评论
+              </button>
+              <label className="lab-field">
+                <span>评论 limit</span>
+                <input
+                  type="number"
+                  min={1}
+                  name="projectCommentLimit"
+                  value={projectCommentLimit}
+                  onChange={(event) => onProjectCommentLimitChange(event.target.value)}
+                  placeholder="20"
+                />
+              </label>
+              <button
+                disabled={isLoadMoreDisabled(
+                  projectId,
+                  projectCommentHasMore,
+                  isProjectGovernanceBusy
+                )}
+                onClick={onLoadMoreProjectComments}
+              >
+                加载更多评论
               </button>
             </div>
-          ))}
-          {reliabilityAlerts.length === 0 ? <div className="api-empty">暂无可靠性告警</div> : null}
-        </div>
-        <div className="lab-inline-actions">
-          <button disabled={isOpsBusy} onClick={onLoadErrorBudget}>
-            读取错误预算
-          </button>
-          <button disabled={isOpsBusy} onClick={onUpdateErrorBudget}>
-            更新错误预算策略
-          </button>
-          <button disabled={isOpsBusy} onClick={onTriggerRollbackDrill}>
-            触发回滚演练
-          </button>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>作用域</span>
-            <input
-              name="v4ErrorBudgetScope"
-              value={errorBudgetScope}
-              onChange={(event) => onErrorBudgetScopeChange(event.target.value)}
-              placeholder="global"
-            />
-          </label>
-          <label className="lab-field">
-            <span>targetSlo</span>
-            <input
-              type="number"
-              min={0.5}
-              max={0.99999}
-              step={0.00001}
-              name="v4ErrorBudgetTargetSlo"
-              value={errorBudgetTargetSlo}
-              onChange={(event) => onErrorBudgetTargetSloChange(event.target.value)}
-              placeholder="0.99"
-            />
-          </label>
-          <label className="lab-field">
-            <span>windowDays</span>
-            <input
-              type="number"
-              min={1}
-              name="v4ErrorBudgetWindowDays"
-              value={errorBudgetWindowDays}
-              onChange={(event) => onErrorBudgetWindowDaysChange(event.target.value)}
-              placeholder="30"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>warningRatio</span>
-            <input
-              type="number"
-              min={0}
-              max={1}
-              step={0.01}
-              name="v4ErrorBudgetWarningThresholdRatio"
-              value={errorBudgetWarningThresholdRatio}
-              onChange={(event) => onErrorBudgetWarningThresholdRatioChange(event.target.value)}
-              placeholder="0.7"
-            />
-          </label>
-          <label className="lab-field">
-            <span>alertRatio</span>
-            <input
-              type="number"
-              min={0}
-              max={1}
-              step={0.01}
-              name="v4ErrorBudgetAlertThresholdRatio"
-              value={errorBudgetAlertThresholdRatio}
-              onChange={(event) => onErrorBudgetAlertThresholdRatioChange(event.target.value)}
-              placeholder="0.9"
-            />
-          </label>
-          <label className="lab-field">
-            <span>超限冻结发布</span>
-            <input
-              type="checkbox"
-              name="v4ErrorBudgetFreezeDeployOnBreach"
-              checked={errorBudgetFreezeDeployOnBreach}
-              onChange={(event) => onErrorBudgetFreezeDeployOnBreachChange(event.target.checked)}
-            />
-          </label>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>policyId</span>
-            <input
-              name="v4RollbackPolicyId"
-              value={rollbackPolicyId}
-              onChange={(event) => onRollbackPolicyIdChange(event.target.value)}
-              placeholder="可选"
-            />
-          </label>
-          <label className="lab-field">
-            <span>environment</span>
-            <input
-              name="v4RollbackEnvironment"
-              value={rollbackEnvironment}
-              onChange={(event) => onRollbackEnvironmentChange(event.target.value)}
-              placeholder="staging"
-            />
-          </label>
-          <label className="lab-field">
-            <span>triggerType</span>
-            <input
-              name="v4RollbackTriggerType"
-              value={rollbackTriggerType}
-              onChange={(event) => onRollbackTriggerTypeChange(event.target.value)}
-              placeholder="manual"
-            />
-          </label>
-        </div>
-        <label className="lab-field">
-          <span>summary</span>
-          <input
-            name="v4RollbackSummary"
-            value={rollbackSummary}
-            onChange={(event) => onRollbackSummaryChange(event.target.value)}
-            placeholder="触发回滚演练说明"
-          />
-        </label>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>plan(JSON)</span>
-            <textarea
-              name="v4RollbackPlan"
-              value={rollbackPlan}
-              onChange={(event) => onRollbackPlanChange(event.target.value)}
-              placeholder='{"steps":[]}'
-            />
-          </label>
-          <label className="lab-field">
-            <span>result(JSON)</span>
-            <textarea
-              name="v4RollbackResult"
-              value={rollbackResult}
-              onChange={(event) => onRollbackResultChange(event.target.value)}
-              placeholder="{}"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>演练 ID</span>
-            <input
-              name="v4RollbackDrillId"
-              value={rollbackDrillId}
-              onChange={(event) => onRollbackDrillIdChange(event.target.value)}
-              placeholder="留空则使用最近一次记录"
-            />
-          </label>
-          <button className="inline-fill-btn" disabled={isOpsBusy} onClick={onQueryRollbackDrill}>
-            查询演练结果
-          </button>
-        </div>
-        <div className="collab-meta">
-          <span>预算余量：{errorBudget?.evaluation.budgetRemaining ?? '-'}</span>
-          <span>
-            预算比例：
-            {formatRatioPercent(errorBudget?.evaluation.budgetRemainingRatio)}
-          </span>
-          <span>BurnRate：{errorBudget?.evaluation.burnRate ?? '-'}</span>
-          <span>状态：{errorBudget?.evaluation.status ?? '-'}</span>
-          <span>演练：{rollbackDrillResult?.status || '-'}</span>
-        </div>
-        <div className="collab-list">
-          {rollbackDrillResult ? (
-            <div className="collab-list-item">
-              <span>{rollbackDrillResult.id}</span>
-              <span>{rollbackDrillResult.status}</span>
-              <span>{formatLocalTime(rollbackDrillResult.completedAt)}</span>
+            <div className="collab-meta">
+              <span>评论下一页游标：{formatCursor(projectCommentCursor)}</span>
             </div>
-          ) : (
-            <div className="api-empty">暂无回滚演练结果</div>
-          )}
-        </div>
-      </section>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>评论锚点</span>
+                <input
+                  name="projectCommentAnchor"
+                  value={projectCommentAnchor}
+                  onChange={(event) => onProjectCommentAnchorChange(event.target.value)}
+                  placeholder="timeline:track-v1:clip-1"
+                />
+              </label>
+              <label className="lab-field">
+                <span>评论内容</span>
+                <input
+                  name="projectCommentContent"
+                  value={projectCommentContent}
+                  onChange={(event) => onProjectCommentContentChange(event.target.value)}
+                  placeholder="输入项目评论内容"
+                />
+              </label>
+              <label className="lab-field">
+                <span>评论 mentions</span>
+                <input
+                  name="projectCommentMentions"
+                  value={projectCommentMentions}
+                  onChange={(event) => onProjectCommentMentionsChange(event.target.value)}
+                  placeholder="owner,editor"
+                />
+              </label>
+              <button
+                className="inline-fill-btn"
+                disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
+                onClick={onCreateProjectComment}
+              >
+                新建评论
+              </button>
+            </div>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>待 Resolve 评论</span>
+                <select
+                  name="projectSelectedCommentId"
+                  value={projectSelectedCommentId}
+                  onChange={(event) => onProjectSelectedCommentIdChange(event.target.value)}
+                >
+                  <option value="">选择评论</option>
+                  {projectComments.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {formatShortId(item.id, 8)} · {item.status}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                disabled={!projectSelectedCommentId || isProjectGovernanceBusy}
+                onClick={onResolveProjectComment}
+              >
+                标记评论已解决
+              </button>
+            </div>
+            <div className="collab-list">
+              {takePreviewItems(projectComments, 12).map((item) => (
+                <div key={item.id} className="collab-list-item">
+                  <span>{item.content}</span>
+                  <span>{item.status}</span>
+                  <span>{formatMentions(item.mentions)}</span>
+                  <span>{formatLocalTime(item.updatedAt)}</span>
+                </div>
+              ))}
+              {projectComments.length === 0 ? <div className="api-empty">暂无项目评论</div> : null}
+            </div>
 
-      <section className="collab-card">
-        <h4>云存储与快照</h4>
-        <div className="lab-inline-actions">
-          <button disabled={!projectId} onClick={onCreateSnapshot}>
-            创建快照
-          </button>
-          <button disabled={!workspaceId} onClick={onRefreshWorkspaceState}>
-            刷新列表
-          </button>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>文件名</span>
-            <input
-              name="uploadFileName"
-              value={uploadFileName}
-              onChange={(event) => onUploadFileNameChange(event.target.value)}
-            />
-          </label>
-          <button className="inline-fill-btn" onClick={onRequestUploadToken}>
-            生成上传令牌
-          </button>
-        </div>
-        <div className="collab-meta">
-          <span>令牌对象：{uploadToken || '-'}</span>
-        </div>
-        <div className="collab-list">
-          {snapshots.map((item) => (
-            <div key={item.id} className="collab-list-item">
-              <span>{formatShortId(item.id, 12)}</span>
-              <span>{item.actorName}</span>
-              <span>{formatLocalDateTime(item.createdAt)}</span>
+            <div className="lab-inline-actions">
+              <button
+                disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
+                onClick={onRefreshProjectReviews}
+              >
+                刷新评审
+              </button>
+              <label className="lab-field">
+                <span>评审 limit</span>
+                <input
+                  type="number"
+                  min={1}
+                  name="projectReviewLimit"
+                  value={projectReviewLimit}
+                  onChange={(event) => onProjectReviewLimitChange(event.target.value)}
+                  placeholder="20"
+                />
+              </label>
             </div>
-          ))}
-          {snapshots.length === 0 ? <div className="api-empty">暂无项目快照</div> : null}
-        </div>
-      </section>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>评审决策</span>
+                <select
+                  name="projectReviewDecision"
+                  value={projectReviewDecision}
+                  onChange={(event) =>
+                    onProjectReviewDecisionChange(
+                      event.target.value as ProjectGovernanceReview['decision']
+                    )
+                  }
+                >
+                  <option value="approved">approved</option>
+                  <option value="changes_requested">changes_requested</option>
+                </select>
+              </label>
+              <label className="lab-field">
+                <span>评审摘要</span>
+                <input
+                  name="projectReviewSummary"
+                  value={projectReviewSummary}
+                  onChange={(event) => onProjectReviewSummaryChange(event.target.value)}
+                  placeholder="输入评审结论"
+                />
+              </label>
+              <label className="lab-field">
+                <span>评分（可选）</span>
+                <input
+                  name="projectReviewScore"
+                  value={projectReviewScore}
+                  onChange={(event) => onProjectReviewScoreChange(event.target.value)}
+                  placeholder="8.5"
+                />
+              </label>
+              <button
+                className="inline-fill-btn"
+                disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
+                onClick={onCreateProjectReview}
+              >
+                新建评审
+              </button>
+            </div>
+            <div className="collab-list">
+              {takePreviewItems(projectReviews, 12).map((item) => (
+                <div key={item.id} className="collab-list-item">
+                  <span>{item.decision}</span>
+                  <span>{item.summary}</span>
+                  <span>{item.score ?? '-'}</span>
+                  <span>{formatLocalTime(item.createdAt)}</span>
+                </div>
+              ))}
+              {projectReviews.length === 0 ? <div className="api-empty">暂无项目评审</div> : null}
+            </div>
+
+            <div className="lab-inline-actions">
+              <button
+                disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
+                onClick={onRefreshProjectTemplates}
+              >
+                刷新模板
+              </button>
+              <label className="lab-field">
+                <span>模板</span>
+                <select
+                  name="projectSelectedTemplateId"
+                  value={projectSelectedTemplateId}
+                  onChange={(event) => onProjectSelectedTemplateIdChange(event.target.value)}
+                >
+                  <option value="">选择模板</option>
+                  {projectTemplates.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                disabled={!projectSelectedTemplateId || isProjectGovernanceBusy}
+                onClick={onApplyProjectTemplate}
+              >
+                应用模板
+              </button>
+            </div>
+            <label className="lab-field">
+              <span>模板应用参数（JSON）</span>
+              <textarea
+                name="projectTemplateApplyOptions"
+                value={projectTemplateApplyOptions}
+                onChange={(event) => onProjectTemplateApplyOptionsChange(event.target.value)}
+                placeholder='{"targetTrack":"track-v1","blendMode":"replace"}'
+              />
+            </label>
+            <div className="collab-meta">
+              <span>模板回执 Trace：{projectTemplateApplyResult?.traceId || '-'}</span>
+              <span>模板名称：{projectTemplateApplyResult?.templateName || '-'}</span>
+            </div>
+            <div className="collab-list">
+              {takePreviewItems(projectTemplates, 10).map((item) => (
+                <div key={item.id} className="collab-list-item">
+                  <span>{item.name}</span>
+                  <span>{item.description}</span>
+                  <span>{item.createdBy}</span>
+                  <span>{formatLocalTime(item.updatedAt)}</span>
+                </div>
+              ))}
+              {projectTemplates.length === 0 ? <div className="api-empty">暂无项目模板</div> : null}
+            </div>
+
+            <label className="lab-field">
+              <span>片段批量更新 operations（JSON 数组）</span>
+              <textarea
+                name="projectClipBatchOperations"
+                value={projectClipBatchOperations}
+                onChange={(event) => onProjectClipBatchOperationsChange(event.target.value)}
+                placeholder='[{"clipId":"clip-a","patch":{"start":0,"end":3}}]'
+              />
+            </label>
+            <div className="lab-inline-actions">
+              <button
+                disabled={isProjectActionDisabled(projectId, isProjectGovernanceBusy)}
+                onClick={onBatchUpdateProjectClips}
+              >
+                提交片段批量更新
+              </button>
+            </div>
+            <div className="collab-meta">
+              <span>requested：{projectClipBatchResult?.requested ?? '-'}</span>
+              <span>accepted：{projectClipBatchResult?.accepted ?? '-'}</span>
+              <span>skipped：{projectClipBatchResult?.skipped ?? '-'}</span>
+              <span>rejected：{projectClipBatchResult?.rejected ?? '-'}</span>
+              <span>updated：{projectClipBatchResult?.updated ?? '-'}</span>
+            </div>
+          </section>
+
+          <section className="collab-card">
+            <h4>v4 权限与 Timeline Merge</h4>
+            <div className="lab-inline-actions">
+              <button disabled={!workspaceId || isV4Busy} onClick={onRefreshPermissions}>
+                刷新权限
+              </button>
+            </div>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>权限键</span>
+                <input
+                  name="v4PermissionSubjectId"
+                  value={permissionSubjectId}
+                  onChange={(event) => onPermissionSubjectIdChange(event.target.value)}
+                  placeholder="timeline.merge=true"
+                />
+              </label>
+              <label className="lab-field">
+                <span>角色</span>
+                <select
+                  name="v4PermissionRole"
+                  value={permissionRole}
+                  onChange={(event) => onPermissionRoleChange(event.target.value as WorkspaceRole)}
+                >
+                  <option value="viewer">viewer</option>
+                  <option value="editor">editor</option>
+                  <option value="owner">owner</option>
+                </select>
+              </label>
+            </div>
+            <div className="lab-inline-actions">
+              <button
+                disabled={isPermissionUpdateDisabled(workspaceId, permissionSubjectId, isV4Busy)}
+                onClick={onUpdatePermission}
+              >
+                更新权限
+              </button>
+              <button disabled={!projectId || isV4Busy} onClick={onMergeTimeline}>
+                调用 Timeline Merge
+              </button>
+            </div>
+            <div className="collab-meta">
+              <span>Merge 结果：{timelineMergeResult?.status || '-'}</span>
+              <span>Merge ID：{timelineMergeResult?.id || '-'}</span>
+              <span>
+                冲突数：{timelineMergeResult ? timelineMergeResult.conflicts.length : '-'}
+              </span>
+            </div>
+            <div className="collab-list">
+              {takePreviewItems(permissions, 12).map((item) => (
+                <div key={`${item.workspaceId}-${item.role}`} className="collab-list-item">
+                  <span>{item.role}</span>
+                  <span>{Object.keys(item.permissions || {}).length} 项权限</span>
+                  <span>{item.updatedBy}</span>
+                </div>
+              ))}
+              {permissions.length === 0 ? <div className="api-empty">暂无权限记录</div> : null}
+            </div>
+          </section>
+
+          <section className="collab-card">
+            <h4>运维工具</h4>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>管理员令牌</span>
+                <input
+                  name="v4AdminToken"
+                  value={adminToken}
+                  onChange={(event) => onAdminTokenChange(event.target.value)}
+                  placeholder="用于 x-admin-token 请求头，可持久化"
+                />
+              </label>
+            </div>
+            {!hasAdminToken ? (
+              <div className="api-empty">未填写管理员令牌，运维动作按钮已禁用。</div>
+            ) : null}
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>告警级别</span>
+                <select
+                  name="v4AlertLevel"
+                  value={reliabilityAlertLevel}
+                  onChange={(event) =>
+                    onReliabilityAlertLevelChange(
+                      event.target.value as 'all' | V4ReliabilityAlertLevel
+                    )
+                  }
+                >
+                  <option value="all">全部</option>
+                  <option value="info">info</option>
+                  <option value="warning">warning</option>
+                  <option value="critical">critical</option>
+                </select>
+              </label>
+              <label className="lab-field">
+                <span>告警状态</span>
+                <select
+                  name="v4AlertStatus"
+                  value={reliabilityAlertStatus}
+                  onChange={(event) =>
+                    onReliabilityAlertStatusChange(
+                      event.target.value as 'all' | V4ReliabilityAlert['status']
+                    )
+                  }
+                >
+                  <option value="all">全部</option>
+                  <option value="open">open</option>
+                  <option value="acknowledged">acknowledged</option>
+                </select>
+              </label>
+              <label className="lab-field">
+                <span>查询数量</span>
+                <input
+                  type="number"
+                  min={1}
+                  name="v4AlertLimit"
+                  value={reliabilityAlertLimit}
+                  onChange={(event) => onReliabilityAlertLimitChange(event.target.value)}
+                  placeholder="20"
+                />
+              </label>
+              <button
+                className="inline-fill-btn"
+                disabled={!hasAdminToken || isOpsBusy}
+                onClick={onLoadReliabilityAlerts}
+              >
+                查询告警
+              </button>
+            </div>
+            <div className="collab-meta">
+              <span>告警列表</span>
+            </div>
+            <div className="collab-list">
+              {reliabilityAlerts.map((item) => (
+                <div key={item.id} className="collab-list-item">
+                  <span>{item.level}</span>
+                  <span>{item.status}</span>
+                  <span>{item.title}</span>
+                  <span>{formatLocalDateTime(item.triggeredAt)}</span>
+                  <span>{formatLocalDateTime(item.acknowledgedAt)}</span>
+                  <button
+                    disabled={!hasAdminToken || isAlertAckDisabled(isOpsBusy, item.status)}
+                    onClick={() => onAcknowledgeReliabilityAlert(item.id)}
+                  >
+                    {getAckLabel(item.status)}
+                  </button>
+                </div>
+              ))}
+              {reliabilityAlerts.length === 0 ? (
+                <div className="api-empty">暂无可靠性告警</div>
+              ) : null}
+            </div>
+            <div className="lab-inline-actions">
+              <button disabled={!hasAdminToken || isOpsBusy} onClick={onLoadErrorBudget}>
+                读取错误预算
+              </button>
+              <button disabled={!hasAdminToken || isOpsBusy} onClick={onUpdateErrorBudget}>
+                更新错误预算策略
+              </button>
+              <button disabled={!hasAdminToken || isOpsBusy} onClick={onTriggerRollbackDrill}>
+                触发回滚演练
+              </button>
+            </div>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>作用域</span>
+                <input
+                  name="v4ErrorBudgetScope"
+                  value={errorBudgetScope}
+                  onChange={(event) => onErrorBudgetScopeChange(event.target.value)}
+                  placeholder="global"
+                />
+              </label>
+              <label className="lab-field">
+                <span>targetSlo</span>
+                <input
+                  type="number"
+                  min={0.5}
+                  max={0.99999}
+                  step={0.00001}
+                  name="v4ErrorBudgetTargetSlo"
+                  value={errorBudgetTargetSlo}
+                  onChange={(event) => onErrorBudgetTargetSloChange(event.target.value)}
+                  placeholder="0.99"
+                />
+              </label>
+              <label className="lab-field">
+                <span>windowDays</span>
+                <input
+                  type="number"
+                  min={1}
+                  name="v4ErrorBudgetWindowDays"
+                  value={errorBudgetWindowDays}
+                  onChange={(event) => onErrorBudgetWindowDaysChange(event.target.value)}
+                  placeholder="30"
+                />
+              </label>
+            </div>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>warningRatio</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  name="v4ErrorBudgetWarningThresholdRatio"
+                  value={errorBudgetWarningThresholdRatio}
+                  onChange={(event) => onErrorBudgetWarningThresholdRatioChange(event.target.value)}
+                  placeholder="0.7"
+                />
+              </label>
+              <label className="lab-field">
+                <span>alertRatio</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  name="v4ErrorBudgetAlertThresholdRatio"
+                  value={errorBudgetAlertThresholdRatio}
+                  onChange={(event) => onErrorBudgetAlertThresholdRatioChange(event.target.value)}
+                  placeholder="0.9"
+                />
+              </label>
+              <label className="lab-field">
+                <span>超限冻结发布</span>
+                <input
+                  type="checkbox"
+                  name="v4ErrorBudgetFreezeDeployOnBreach"
+                  checked={errorBudgetFreezeDeployOnBreach}
+                  onChange={(event) =>
+                    onErrorBudgetFreezeDeployOnBreachChange(event.target.checked)
+                  }
+                />
+              </label>
+            </div>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>policyId</span>
+                <input
+                  name="v4RollbackPolicyId"
+                  value={rollbackPolicyId}
+                  onChange={(event) => onRollbackPolicyIdChange(event.target.value)}
+                  placeholder="可选"
+                />
+              </label>
+              <label className="lab-field">
+                <span>environment</span>
+                <input
+                  name="v4RollbackEnvironment"
+                  value={rollbackEnvironment}
+                  onChange={(event) => onRollbackEnvironmentChange(event.target.value)}
+                  placeholder="staging"
+                />
+              </label>
+              <label className="lab-field">
+                <span>triggerType</span>
+                <input
+                  name="v4RollbackTriggerType"
+                  value={rollbackTriggerType}
+                  onChange={(event) => onRollbackTriggerTypeChange(event.target.value)}
+                  placeholder="manual"
+                />
+              </label>
+            </div>
+            <label className="lab-field">
+              <span>summary</span>
+              <input
+                name="v4RollbackSummary"
+                value={rollbackSummary}
+                onChange={(event) => onRollbackSummaryChange(event.target.value)}
+                placeholder="触发回滚演练说明"
+              />
+            </label>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>plan(JSON)</span>
+                <textarea
+                  name="v4RollbackPlan"
+                  value={rollbackPlan}
+                  onChange={(event) => onRollbackPlanChange(event.target.value)}
+                  placeholder='{"steps":[]}'
+                />
+              </label>
+              <label className="lab-field">
+                <span>result(JSON)</span>
+                <textarea
+                  name="v4RollbackResult"
+                  value={rollbackResult}
+                  onChange={(event) => onRollbackResultChange(event.target.value)}
+                  placeholder="{}"
+                />
+              </label>
+            </div>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>演练 ID</span>
+                <input
+                  name="v4RollbackDrillId"
+                  value={rollbackDrillId}
+                  onChange={(event) => onRollbackDrillIdChange(event.target.value)}
+                  placeholder="留空则使用最近一次记录"
+                />
+              </label>
+              <button
+                className="inline-fill-btn"
+                disabled={!hasAdminToken || isOpsBusy}
+                onClick={onQueryRollbackDrill}
+              >
+                查询演练结果
+              </button>
+            </div>
+            <div className="collab-meta">
+              <span>预算余量：{errorBudget?.evaluation.budgetRemaining ?? '-'}</span>
+              <span>
+                预算比例：
+                {formatRatioPercent(errorBudget?.evaluation.budgetRemainingRatio)}
+              </span>
+              <span>BurnRate：{errorBudget?.evaluation.burnRate ?? '-'}</span>
+              <span>状态：{errorBudget?.evaluation.status ?? '-'}</span>
+              <span>演练：{rollbackDrillResult?.status || '-'}</span>
+            </div>
+            <div className="collab-list">
+              {rollbackDrillResult ? (
+                <div className="collab-list-item">
+                  <span>{rollbackDrillResult.id}</span>
+                  <span>{rollbackDrillResult.status}</span>
+                  <span>{formatLocalTime(rollbackDrillResult.completedAt)}</span>
+                </div>
+              ) : (
+                <div className="api-empty">暂无回滚演练结果</div>
+              )}
+            </div>
+          </section>
+
+          <section className="collab-card">
+            <h4>云存储与快照</h4>
+            <div className="lab-inline-actions">
+              <button disabled={!projectId} onClick={onCreateSnapshot}>
+                创建快照
+              </button>
+              <button disabled={!workspaceId} onClick={onRefreshWorkspaceState}>
+                刷新列表
+              </button>
+            </div>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>文件名</span>
+                <input
+                  name="uploadFileName"
+                  value={uploadFileName}
+                  onChange={(event) => onUploadFileNameChange(event.target.value)}
+                />
+              </label>
+              <button className="inline-fill-btn" onClick={onRequestUploadToken}>
+                生成上传令牌
+              </button>
+            </div>
+            <div className="collab-meta">
+              <span>令牌对象：{uploadToken || '-'}</span>
+            </div>
+            <div className="collab-list">
+              {snapshots.map((item) => (
+                <div key={item.id} className="collab-list-item">
+                  <span>{formatShortId(item.id, 12)}</span>
+                  <span>{item.actorName}</span>
+                  <span>{formatLocalDateTime(item.createdAt)}</span>
+                </div>
+              ))}
+              {snapshots.length === 0 ? <div className="api-empty">暂无项目快照</div> : null}
+            </div>
+          </section>
+        </>
+      ) : null}
     </div>
   )
 }

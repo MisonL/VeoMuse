@@ -811,6 +811,11 @@
   scrollbar-gutter: stable;
 }
 
+.collab-card--compact {
+  min-height: auto;
+  grid-column: 1 / -1;
+}
+
 .collab-card h5 {
   margin: 0;
   font-size: 11px;

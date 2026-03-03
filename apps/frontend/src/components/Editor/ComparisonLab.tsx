@@ -2577,6 +2577,11 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   }
 
   const createWorkspace = async () => {
+    if (!authProfile) {
+      showToast('请先登录后再创建工作区', 'info')
+      setShowChannelPanel(true)
+      return
+    }
     if (!workspaceName.trim()) {
       showToast('请输入工作区名称', 'info')
       return
@@ -3023,6 +3028,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
 
       {labMode === 'collab' ? (
         <CollabModePanel
+          isAuthenticated={Boolean(authProfile)}
           workspaceName={workspaceName}
           workspaceOwner={workspaceOwner}
           workspaceId={workspaceId}
