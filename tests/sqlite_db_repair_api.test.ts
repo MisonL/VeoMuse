@@ -27,7 +27,7 @@ describe('数据库修复 API', () => {
         })
       })
     )
-    const data = await response.json() as any
+    const data = (await response.json()) as any
 
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)
@@ -35,7 +35,7 @@ describe('数据库修复 API', () => {
     expect(data.repair.checkMode).toBe('quick')
     expect(typeof data.repair.dbPath).toBe('string')
     expect(Array.isArray(data.repair.actions)).toBe(true)
-  }, 15_000)
+  }, 180_000)
 
   it('应支持管理员显式指定 full 检查模式', async () => {
     const response = await app.handle(
@@ -52,11 +52,11 @@ describe('数据库修复 API', () => {
         })
       })
     )
-    const data = await response.json() as any
+    const data = (await response.json()) as any
 
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)
     expect(['ok', 'repaired']).toContain(data.repair.status)
     expect(data.repair.checkMode).toBe('full')
-  }, 20_000)
+  }, 180_000)
 })

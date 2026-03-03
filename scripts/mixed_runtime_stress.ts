@@ -36,40 +36,43 @@ const apiBase = (process.env.API_BASE_URL || 'http://127.0.0.1:18081').trim().re
 const mockBindHost = (process.env.MOCK_PROVIDER_BIND_HOST || '127.0.0.1').trim()
 const mockPort = parseIntSafe(process.env.MOCK_PROVIDER_PORT, 39092)
 const mockProviderBaseUrl = (
-  process.env.MOCK_PROVIDER_BASE_URL ||
-  `http://host.docker.internal:${mockPort}`
-).trim().replace(/\/+$/, '')
+  process.env.MOCK_PROVIDER_BASE_URL || `http://host.docker.internal:${mockPort}`
+)
+  .trim()
+  .replace(/\/+$/, '')
 const totalRequests = parseIntSafe(process.env.STRESS_TOTAL_REQUESTS, 480)
 const concurrency = parseIntSafe(process.env.STRESS_CONCURRENCY, 24)
 
-const jsonResponse = (payload: unknown, status = 200) => new Response(JSON.stringify(payload), {
-  status,
-  headers: { 'Content-Type': 'application/json' }
-})
+const jsonResponse = (payload: unknown, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { 'Content-Type': 'application/json' }
+  })
 
-const startMockProvider = () => Bun.serve({
-  hostname: mockBindHost,
-  port: mockPort,
-  reusePort: true,
-  fetch(req) {
-    const url = new URL(req.url)
-    const path = url.pathname
+const startMockProvider = () =>
+  Bun.serve({
+    hostname: mockBindHost,
+    port: mockPort,
+    reusePort: true,
+    fetch(req) {
+      const url = new URL(req.url)
+      const path = url.pathname
 
-    if (path.endsWith('/veo-3.1-generate-001:predictLongRunning')) {
-      return jsonResponse({ name: `veo-op-${Date.now()}` })
+      if (path.endsWith('/veo-3.1-generate-001:predictLongRunning')) {
+        return jsonResponse({ name: `veo-op-${Date.now()}` })
+      }
+      if (path.endsWith('/generate')) {
+        return jsonResponse({ operationName: `gen-op-${Date.now()}`, message: 'ok' })
+      }
+      if (path.endsWith('/synthesize')) {
+        return jsonResponse({ audioBase64: Buffer.from('stress-audio').toString('base64') })
+      }
+      if (path.endsWith('/apply')) {
+        return jsonResponse({ operationId: `apply-${Date.now()}` })
+      }
+      return jsonResponse({ error: `unknown path: ${path}` }, 404)
     }
-    if (path.endsWith('/generate')) {
-      return jsonResponse({ operationName: `gen-op-${Date.now()}`, message: 'ok' })
-    }
-    if (path.endsWith('/synthesize')) {
-      return jsonResponse({ audioBase64: Buffer.from('stress-audio').toString('base64') })
-    }
-    if (path.endsWith('/apply')) {
-      return jsonResponse({ operationId: `apply-${Date.now()}` })
-    }
-    return jsonResponse({ error: `unknown path: ${path}` }, 404)
-  }
-})
+  })
 
 const requestJson = async <T>(
   path: string,
@@ -118,14 +121,18 @@ const run = async () => {
       'Content-Type': 'application/json'
     }
 
-    const wsData = await requestJson<any>('/api/workspaces', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: `Stress-Workspace-${stamp}`,
-        ownerName: `StressOwner-${stamp}`,
-        organizationId: orgId
-      })
-    }, authHeaders)
+    const wsData = await requestJson<any>(
+      '/api/workspaces',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          name: `Stress-Workspace-${stamp}`,
+          ownerName: `StressOwner-${stamp}`,
+          organizationId: orgId
+        })
+      },
+      authHeaders
+    )
     const workspaceId = String(wsData?.workspace?.id || '')
     const projectId = String(wsData?.defaultProject?.id || '')
     if (!workspaceId || !projectId) {
@@ -134,14 +141,18 @@ const run = async () => {
 
     const providers = ['veo-3.1', 'tts', 'vfx']
     for (const providerId of providers) {
-      const saved = await requestJson<any>(`/api/organizations/${orgId}/channels/${providerId}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          baseUrl: mockProviderBaseUrl,
-          apiKey: 'stress-key',
-          enabled: true
-        })
-      }, authHeaders)
+      const saved = await requestJson<any>(
+        `/api/organizations/${orgId}/channels/${providerId}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            baseUrl: mockProviderBaseUrl,
+            apiKey: 'stress-key',
+            enabled: true
+          })
+        },
+        authHeaders
+      )
       if (!saved?.success) {
         throw new Error(`failed to save provider ${providerId}`)
       }
@@ -180,7 +191,10 @@ const run = async () => {
       }
     ]
 
-    const counters = new Map<string, { total: number; success: number; failed: number; latencies: number[]; sampleError?: string }>()
+    const counters = new Map<
+      string,
+      { total: number; success: number; failed: number; latencies: number[]; sampleError?: string }
+    >()
     for (const scenario of scenarios) {
       counters.set(scenario.name, {
         total: 0,
@@ -198,39 +212,45 @@ const run = async () => {
       return id
     }
 
-    const workers = Array.from({ length: concurrency }, (_, workerIndex) => (async () => {
-      while (true) {
-        const taskId = nextTask()
-        if (taskId === null) return
-        const scenario = scenarios[taskId % scenarios.length]
-        const metric = counters.get(scenario.name)!
-        metric.total += 1
-        const begin = performance.now()
-        try {
-          const data = await requestJson<any>(scenario.path, {
-            method: 'POST',
-            body: JSON.stringify(scenario.buildBody(taskId + workerIndex))
-          }, authHeaders)
-          const latency = Number((performance.now() - begin).toFixed(2))
-          metric.latencies.push(latency)
-          if (scenario.validate(data)) {
-            metric.success += 1
-          } else {
+    const workers = Array.from({ length: concurrency }, (_, workerIndex) =>
+      (async () => {
+        while (true) {
+          const taskId = nextTask()
+          if (taskId === null) return
+          const scenario = scenarios[taskId % scenarios.length]
+          const metric = counters.get(scenario.name)!
+          metric.total += 1
+          const begin = performance.now()
+          try {
+            const data = await requestJson<any>(
+              scenario.path,
+              {
+                method: 'POST',
+                body: JSON.stringify(scenario.buildBody(taskId + workerIndex))
+              },
+              authHeaders
+            )
+            const latency = Number((performance.now() - begin).toFixed(2))
+            metric.latencies.push(latency)
+            if (scenario.validate(data)) {
+              metric.success += 1
+            } else {
+              metric.failed += 1
+              if (!metric.sampleError) {
+                metric.sampleError = `unexpected payload: ${JSON.stringify(data).slice(0, 220)}`
+              }
+            }
+          } catch (error: any) {
+            const latency = Number((performance.now() - begin).toFixed(2))
+            metric.latencies.push(latency)
             metric.failed += 1
             if (!metric.sampleError) {
-              metric.sampleError = `unexpected payload: ${JSON.stringify(data).slice(0, 220)}`
+              metric.sampleError = error?.message || String(error)
             }
           }
-        } catch (error: any) {
-          const latency = Number((performance.now() - begin).toFixed(2))
-          metric.latencies.push(latency)
-          metric.failed += 1
-          if (!metric.sampleError) {
-            metric.sampleError = error?.message || String(error)
-          }
         }
-      }
-    })())
+      })()
+    )
 
     await Promise.all(workers)
 

@@ -1,0 +1,17 @@
+{
+  "includePrefixes": [
+    "/api/admin/providers/health",
+    "/api/projects/:id/comments",
+    "/api/projects/:id/reviews",
+    "/api/projects/:id/templates",
+    "/api/projects/:id/clips/batch-update",
+    "/api/v4/admin/reliability",
+    "/api/v4/projects/:projectId/comment-threads",
+    "/api/v4/workspaces/:workspaceId/permissions",
+    "/api/v4/projects/:projectId/timeline/merge",
+    "/api/v4/creative",
+    "/api/v4/assets"
+  ],
+  "excludePatterns": [],
+  "manualRequiredEndpoints": []
+}

@@ -27,7 +27,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const createData = await createResp.json() as any
+    const createData = (await createResp.json()) as any
     expect(createResp.status).toBe(200)
     expect(createData.success).toBe(true)
     expect(createData.policy?.id).toContain('policy_')
@@ -35,10 +35,12 @@ describe('模型策略治理 API', () => {
 
     const policyId = createData.policy.id as string
 
-    const listResp = await app.handle(new Request('http://localhost/api/models/policies', {
-      headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
-    }))
-    const listData = await listResp.json() as any
+    const listResp = await app.handle(
+      new Request('http://localhost/api/models/policies', {
+        headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
+      })
+    )
+    const listData = (await listResp.json()) as any
     expect(listResp.status).toBe(200)
     expect(listData.success).toBe(true)
     expect(listData.policies.some((item: any) => item.id === policyId)).toBe(true)
@@ -57,7 +59,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const patchData = await patchResp.json() as any
+    const patchData = (await patchResp.json()) as any
     expect(patchResp.status).toBe(200)
     expect(patchData.success).toBe(true)
     expect(patchData.policy.priority).toBe('cost')
@@ -76,7 +78,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const simulateData = await simulateResp.json() as any
+    const simulateData = (await simulateResp.json()) as any
     expect(simulateResp.status).toBe(200)
     expect(simulateData.success).toBe(true)
     expect(simulateData.decision.policyId).toBe(policyId)
@@ -88,7 +90,7 @@ describe('模型策略治理 API', () => {
         headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
       })
     )
-    const execData = await execResp.json() as any
+    const execData = (await execResp.json()) as any
     expect(execResp.status).toBe(200)
     expect(execData.success).toBe(true)
     expect(Array.isArray(execData.executions)).toBe(true)
@@ -111,7 +113,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const invalidFallbackData = await invalidFallbackResp.json() as any
+    const invalidFallbackData = (await invalidFallbackResp.json()) as any
     expect(invalidFallbackResp.status).toBe(400)
     expect(invalidFallbackData.success).toBe(false)
 
@@ -128,7 +130,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const cycleAData = await cycleAToBResp.json() as any
+    const cycleAData = (await cycleAToBResp.json()) as any
     const cycleBResp = await app.handle(
       new Request('http://localhost/api/models/policies', {
         method: 'POST',
@@ -143,7 +145,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const cycleBData = await cycleBResp.json() as any
+    const cycleBData = (await cycleBResp.json()) as any
     expect(cycleBResp.status).toBe(200)
 
     const cyclePatchResp = await app.handle(
@@ -158,7 +160,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const cyclePatchData = await cyclePatchResp.json() as any
+    const cyclePatchData = (await cyclePatchResp.json()) as any
     expect(cyclePatchResp.status).toBe(400)
     expect(cyclePatchData.success).toBe(false)
   })
@@ -186,7 +188,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const createData = await createResp.json() as any
+    const createData = (await createResp.json()) as any
     expect(createResp.status).toBe(200)
     const policyId = createData.policy.id as string
 
@@ -204,7 +206,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const simulateData = await simulateResp.json() as any
+    const simulateData = (await simulateResp.json()) as any
     expect(simulateResp.status).toBe(200)
     expect(simulateData.success).toBe(true)
     expect(simulateData.decision.recommendedModelId).toBe('luma-dream')
@@ -235,7 +237,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const createData = await createResp.json() as any
+    const createData = (await createResp.json()) as any
     expect(createResp.status).toBe(200)
     const policyId = createData.policy.id as string
 
@@ -253,7 +255,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const simulateData = await simulateResp.json() as any
+    const simulateData = (await simulateResp.json()) as any
     expect(simulateResp.status).toBe(200)
     expect(simulateData.success).toBe(true)
     expect(simulateData.decision.recommendedModelId).toBe('pika-1.5')
@@ -286,7 +288,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const fallbackData = await fallbackResp.json() as any
+    const fallbackData = (await fallbackResp.json()) as any
     expect(fallbackResp.status).toBe(200)
     const fallbackPolicyId = fallbackData.policy.id as string
 
@@ -312,7 +314,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const primaryData = await primaryResp.json() as any
+    const primaryData = (await primaryResp.json()) as any
     expect(primaryResp.status).toBe(200)
     const primaryPolicyId = primaryData.policy.id as string
 
@@ -330,7 +332,7 @@ describe('模型策略治理 API', () => {
         })
       })
     )
-    const simulateData = await simulateResp.json() as any
+    const simulateData = (await simulateResp.json()) as any
     expect(simulateResp.status).toBe(200)
     expect(simulateData.success).toBe(true)
     expect(simulateData.decision.fallbackUsed).toBe(true)

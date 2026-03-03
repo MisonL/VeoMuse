@@ -16,8 +16,14 @@ const rules: Array<{ id: string; pattern: RegExp }> = [
   { id: 'github-pat', pattern: /\bghp_[A-Za-z0-9]{36}\b/g },
   { id: 'slack-token', pattern: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g },
   { id: 'private-key', pattern: /-----BEGIN (RSA|EC|DSA|OPENSSH|PGP) PRIVATE KEY-----/g },
-  { id: 'weak-password-pattern', pattern: /\bpassw(?:0)rd(?:[!@#$%^&*0-9][A-Za-z0-9!@#$%^&*()_+\-=[\]{};:,.<>/?]{0,24})?\b/gi },
-  { id: 'suspicious-assignment', pattern: /\b(api[_-]?key|token|secret|password)\b\s*[:=]\s*['"][^'"\r\n]{10,}['"]/gi }
+  {
+    id: 'weak-password-pattern',
+    pattern: /\bpassw(?:0)rd(?:[!@#$%^&*0-9][A-Za-z0-9!@#$%^&*()_+\-=[\]{};:,.<>/?]{0,24})?\b/gi
+  },
+  {
+    id: 'suspicious-assignment',
+    pattern: /\b(api[_-]?key|token|secret|password)\b\s*[:=]\s*['"][^'"\r\n]{10,}['"]/gi
+  }
 ]
 
 const allowRegexes: RegExp[] = [
@@ -46,7 +52,8 @@ const runGit = (gitArgs: string[]) => {
     stderr: 'pipe'
   })
   if (proc.exitCode !== 0) {
-    const errorText = Buffer.from(proc.stderr).toString('utf8').trim() || `git ${gitArgs.join(' ')} failed`
+    const errorText =
+      Buffer.from(proc.stderr).toString('utf8').trim() || `git ${gitArgs.join(' ')} failed`
     throw new Error(errorText)
   }
   return Buffer.from(proc.stdout).toString('utf8')
@@ -58,7 +65,7 @@ const listTargetFiles = () => {
     : runGit(['ls-files'])
   return raw
     .split('\n')
-    .map(item => item.trim())
+    .map((item) => item.trim())
     .filter(Boolean)
 }
 
@@ -67,7 +74,7 @@ const isLikelyBinary = (content: string) => content.includes('\u0000')
 const shouldAllow = (matched: string, lineText: string, file: string) => {
   if (file.endsWith('.md')) return true
   if (lineText.includes('process.env.')) return true
-  return allowRegexes.some(regex => regex.test(matched) || regex.test(lineText))
+  return allowRegexes.some((regex) => regex.test(matched) || regex.test(lineText))
 }
 
 const scanFile = (filePath: string) => {

@@ -17,7 +17,7 @@ test('可通过实验室 UI 完成注册、登录、创建工作区', async ({ p
   await page.getByTestId('btn-open-channel-panel').click()
   await expect(page.getByTestId('area-channel-panel')).toBeVisible()
 
-  if (!await page.getByTestId('input-register-organization').isVisible()) {
+  if (!(await page.getByTestId('input-register-organization').isVisible())) {
     await page.getByTestId('btn-toggle-register-mode').click()
     await expect(page.getByTestId('input-register-organization')).toBeVisible()
   }
@@ -36,5 +36,7 @@ test('可通过实验室 UI 完成注册、登录、创建工作区', async ({ p
   await page.getByTestId('input-workspace-owner').fill('UI_OWNER')
   await page.getByTestId('btn-create-workspace').click()
 
-  await expect(page.getByTestId('text-workspace-id')).not.toContainText('workspace: -', { timeout: 15000 })
+  await expect(page.getByTestId('text-workspace-id')).not.toContainText('workspace: -', {
+    timeout: 15000
+  })
 })

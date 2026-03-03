@@ -18,7 +18,7 @@ describe('创意闭环 API 回归', () => {
         })
       })
     )
-    const createData = await createResp.json() as any
+    const createData = (await createResp.json()) as any
     expect(createResp.status).toBe(200)
     expect(createData.success).toBe(true)
     expect(createData.run?.id).toContain('run_')
@@ -28,10 +28,12 @@ describe('创意闭环 API 回归', () => {
     const runId = createData.run.id as string
     const firstSceneId = createData.run.scenes[0].id as string
 
-    const getResp = await app.handle(new Request(`http://localhost/api/ai/creative/run/${runId}`, {
-      headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
-    }))
-    const getData = await getResp.json() as any
+    const getResp = await app.handle(
+      new Request(`http://localhost/api/ai/creative/run/${runId}`, {
+        headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
+      })
+    )
+    const getData = (await getResp.json()) as any
     expect(getResp.status).toBe(200)
     expect(getData.success).toBe(true)
     expect(getData.run.id).toBe(runId)
@@ -49,7 +51,7 @@ describe('创意闭环 API 回归', () => {
         })
       })
     )
-    const regenData = await regenResp.json() as any
+    const regenData = (await regenResp.json()) as any
     expect(regenResp.status).toBe(200)
     expect(regenData.success).toBe(true)
     const regeneratedScene = regenData.run.scenes.find((scene: any) => scene.id === firstSceneId)
@@ -59,10 +61,12 @@ describe('创意闭环 API 回归', () => {
 
   it('查询不存在的 run 应返回 404', async () => {
     const session = await createTestSession('creative-notfound')
-    const response = await app.handle(new Request('http://localhost/api/ai/creative/run/run_not_found', {
-      headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
-    }))
-    const data = await response.json() as any
+    const response = await app.handle(
+      new Request('http://localhost/api/ai/creative/run/run_not_found', {
+        headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
+      })
+    )
+    const data = (await response.json()) as any
 
     expect(response.status).toBe(404)
     expect(data.success).toBe(false)
@@ -85,15 +89,19 @@ describe('创意闭环 API 回归', () => {
         })
       })
     )
-    const createData = await createResp.json() as any
+    const createData = (await createResp.json()) as any
     expect(createResp.status).toBe(200)
     const runId = String(createData.run?.id || '')
     expect(runId.startsWith('run_')).toBe(true)
 
-    const outsiderResp = await app.handle(new Request(`http://localhost/api/ai/creative/run/${runId}`, {
-      headers: createAuthHeaders(outsider.accessToken, { organizationId: outsider.organizationId })
-    }))
-    const outsiderData = await outsiderResp.json() as any
+    const outsiderResp = await app.handle(
+      new Request(`http://localhost/api/ai/creative/run/${runId}`, {
+        headers: createAuthHeaders(outsider.accessToken, {
+          organizationId: outsider.organizationId
+        })
+      })
+    )
+    const outsiderData = (await outsiderResp.json()) as any
     expect(outsiderResp.status).toBe(404)
     expect(outsiderData.success).toBe(false)
   })

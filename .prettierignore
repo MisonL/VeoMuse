@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+
+# Build and coverage artifacts
+dist
+build
+coverage
+artifacts
+playwright-report
+test-results
+
+# Runtime and generated data
+uploads
+data
+
+# Lock and generated files
+*.lockb
+*.tsbuildinfo
+apps/frontend/vite.config.d.ts
+
+# Binary assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.woff
+*.woff2

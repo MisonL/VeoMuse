@@ -6,6 +6,13 @@ type GateMode = 'soft' | 'hard'
 type SloCategory = 'ai' | 'non_ai' | 'system'
 type SloPassFlagKey = 'primaryFlowSuccessRate' | 'nonAiApiP95Ms' | 'firstSuccessAvgSteps'
 type SloCurrentKey = 'primaryFlowSuccessRate' | 'nonAiApiP95Ms' | 'firstSuccessAvgSteps'
+type GateErrorKind =
+  | 'none'
+  | 'unreachable'
+  | 'auth'
+  | 'http'
+  | 'sample_insufficient'
+  | 'objective_failed'
 
 interface SloSummaryPayload {
   targets: {
@@ -44,9 +51,32 @@ interface SloBreakdownItem {
   lastSeenAt: string
 }
 
+interface JourneyFailureItem {
+  failedStage: string
+  errorKind: string
+  httpStatus: number | null
+  count: number
+  share: number
+  latestAt: string
+}
+
+interface JourneyFailuresPayload {
+  window: {
+    minutes: number
+    from: string
+    to: string
+  }
+  counts: {
+    totalFailJourneys: number
+  }
+  items: JourneyFailureItem[]
+  updatedAt: string
+}
+
 interface SloGateReport {
   schemaVersion: string
   status: GateStatus
+  errorKind: GateErrorKind
   generatedAt: string
   mode: GateMode
   enforce: boolean
@@ -56,8 +86,16 @@ interface SloGateReport {
   limit: number
   minNonAiSamples: number
   minJourneySamples: number
+  minFrontendSourceRatio: number
+  frontendSourceKey: string
   outputPath: string
   errors: string[]
+  diagnostics: Array<{
+    level: 'error' | 'warn' | 'info'
+    kind: GateErrorKind
+    target: 'summary' | 'breakdown' | 'journey_failures' | 'gate'
+    message: string
+  }>
   failedRules: Array<{ key: string; message: string }>
   sampleChecks: {
     nonAiSamples: {
@@ -70,6 +108,14 @@ interface SloGateReport {
       minimum: number
       pass: boolean
     }
+    frontendSourceRatio: {
+      sourceKey: string
+      sourceTotal: number
+      totalJourneys: number
+      current: number
+      minimum: number
+      pass: boolean
+    }
   }
   recommendations: string[]
   summary: SloSummaryPayload | null
@@ -78,6 +124,7 @@ interface SloGateReport {
     totalRoutes: number
     items: SloBreakdownItem[]
   } | null
+  journeyFailures: JourneyFailuresPayload | null
 }
 
 const parsePositiveInt = (value: string | undefined, fallback: number) => {
@@ -87,6 +134,11 @@ const parsePositiveInt = (value: string | undefined, fallback: number) => {
 
 const parseNonNegativeInt = (value: string | undefined, fallback: number) => {
   const parsed = Number.parseInt(String(value || ''), 10)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
+}
+
+const parseNonNegativeNumber = (value: string | undefined, fallback: number) => {
+  const parsed = Number.parseFloat(String(value || ''))
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
 }
 
@@ -113,25 +165,40 @@ const parseArgValue = (flag: string) => {
 }
 
 const parseMode = (value: string | undefined): GateMode | null => {
-  const normalized = String(value || '').trim().toLowerCase()
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
   if (normalized === 'hard' || normalized === 'soft') return normalized
   return null
 }
 
 const resolveApiBase = () => {
-  const raw = parseArgValue('--api-base') || process.env.API_BASE_URL || 'http://127.0.0.1:18081'
+  const raw =
+    parseArgValue('--api-base') ||
+    process.env.SLO_GATE_API_BASE ||
+    process.env.API_BASE_URL ||
+    'http://127.0.0.1:33117'
   return raw.trim().replace(/\/+$/, '')
 }
 
 const resolveCategory = (): SloCategory => {
-  const raw = (parseArgValue('--category') || process.env.SLO_GATE_CATEGORY || 'non_ai').trim().toLowerCase()
+  const raw = (parseArgValue('--category') || process.env.SLO_GATE_CATEGORY || 'non_ai')
+    .trim()
+    .toLowerCase()
   if (raw === 'ai' || raw === 'system') return raw
   return 'non_ai'
 }
 
 const resolveOutputPath = () => {
-  const raw = parseArgValue('--output') || process.env.SLO_GATE_OUTPUT || 'artifacts/slo-report.json'
+  const raw =
+    parseArgValue('--output') || process.env.SLO_GATE_OUTPUT || 'artifacts/slo-report.json'
   return path.resolve(process.cwd(), raw)
+}
+
+const resolveFrontendSourceKey = () => {
+  const raw =
+    parseArgValue('--frontend-source-key') || process.env.SLO_GATE_FRONTEND_SOURCE_KEY || 'frontend'
+  return raw.trim() || 'frontend'
 }
 
 const resolveMode = (): GateMode => {
@@ -148,25 +215,58 @@ const resolveMode = (): GateMode => {
 const mode = resolveMode()
 const enforce = mode === 'hard'
 const apiBase = resolveApiBase()
-const windowMinutes = parsePositiveInt(parseArgValue('--window') || process.env.SLO_GATE_WINDOW_MINUTES, 1440)
+const windowMinutes = parsePositiveInt(
+  parseArgValue('--window') || process.env.SLO_GATE_WINDOW_MINUTES,
+  1440
+)
 const category = resolveCategory()
-const limit = Math.min(100, parsePositiveInt(parseArgValue('--limit') || process.env.SLO_GATE_LIMIT, 8))
+const limit = Math.min(
+  100,
+  parsePositiveInt(parseArgValue('--limit') || process.env.SLO_GATE_LIMIT, 8)
+)
 const minNonAiSamples = parseNonNegativeInt(
   parseArgValue('--min-non-ai-samples') || process.env.SLO_GATE_MIN_NON_AI_SAMPLES,
-  0
+  20
 )
 const minJourneySamples = parseNonNegativeInt(
   parseArgValue('--min-journey-samples') || process.env.SLO_GATE_MIN_JOURNEY_SAMPLES,
+  10
+)
+const minFrontendSourceRatio = parseNonNegativeNumber(
+  parseArgValue('--min-frontend-source-ratio') || process.env.SLO_GATE_MIN_FRONTEND_SOURCE_RATIO,
   0
 )
+const frontendSourceKey = resolveFrontendSourceKey()
 const timeoutMs = parsePositiveInt(process.env.SLO_GATE_TIMEOUT_MS, 10_000)
 const adminToken = (process.env.SLO_GATE_ADMIN_TOKEN || process.env.ADMIN_TOKEN || '').trim()
 const outputPath = resolveOutputPath()
-const schemaVersion = (
-  parseArgValue('--schema-version')
-  || process.env.SLO_GATE_REPORT_SCHEMA_VERSION
-  || '1.0'
-).trim() || '1.0'
+const schemaVersion =
+  (
+    parseArgValue('--schema-version') ||
+    process.env.SLO_GATE_REPORT_SCHEMA_VERSION ||
+    '1.0'
+  ).trim() || '1.0'
+
+const classifyRequestError = (
+  error: any
+): Extract<GateErrorKind, 'unreachable' | 'auth' | 'http'> => {
+  const status = Number(error?.httpStatus)
+  if (status === 401 || status === 403) return 'auth'
+
+  const message = String(error?.message || error || '').toLowerCase()
+  if (message.includes('unauthorized') || message.includes('forbidden')) return 'auth'
+  if (
+    message.includes('unable to connect') ||
+    message.includes('failed to fetch') ||
+    message.includes('econnrefused') ||
+    message.includes('timeout') ||
+    message.includes('timed out') ||
+    message.includes('network')
+  ) {
+    return 'unreachable'
+  }
+  return 'http'
+}
 
 const requestJson = async <T>(url: string): Promise<T> => {
   const response = await fetch(url, {
@@ -174,16 +274,24 @@ const requestJson = async <T>(url: string): Promise<T> => {
     headers: adminToken ? { 'x-admin-token': adminToken } : {},
     signal: AbortSignal.timeout(timeoutMs)
   })
-  const payload = await response.json().catch(() => null) as any
+  const payload = (await response.json().catch(() => null)) as any
   if (!response.ok) {
-    throw new Error(payload?.error || payload?.message || `HTTP ${response.status}`)
+    const message = payload?.error || payload?.message || `HTTP ${response.status}`
+    const failure = new Error(String(message))
+    ;(failure as any).httpStatus = response.status
+    throw failure
   }
   return payload as T
 }
 
+const formatRatio = (value: number) => `${(value * 100).toFixed(1)}%`
+
 const buildSampleChecks = (summary: SloSummaryPayload | null) => {
   const nonAiCurrent = Number(summary?.counts?.nonAiSamples || 0)
   const journeyCurrent = Number(summary?.counts?.totalJourneys || 0)
+  const sourceTotal = Number(summary?.sourceBreakdown?.[frontendSourceKey]?.total || 0)
+  const frontendRatio = journeyCurrent > 0 ? sourceTotal / journeyCurrent : 0
+  const frontendPass = minFrontendSourceRatio <= 0 || frontendRatio >= minFrontendSourceRatio
   return {
     nonAiSamples: {
       current: nonAiCurrent,
@@ -194,6 +302,14 @@ const buildSampleChecks = (summary: SloSummaryPayload | null) => {
       current: journeyCurrent,
       minimum: minJourneySamples,
       pass: journeyCurrent >= minJourneySamples
+    },
+    frontendSourceRatio: {
+      sourceKey: frontendSourceKey,
+      sourceTotal,
+      totalJourneys: journeyCurrent,
+      current: frontendRatio,
+      minimum: minFrontendSourceRatio,
+      pass: frontendPass
     }
   }
 }
@@ -258,19 +374,38 @@ const buildFailedRules = (
     })
   }
 
+  if (!sampleChecks.frontendSourceRatio.pass) {
+    failed.push({
+      key: 'samples.frontendSourceRatio',
+      message: `来源占比不足（${sampleChecks.frontendSourceRatio.sourceKey}=${formatRatio(sampleChecks.frontendSourceRatio.current)}，阈值>=${formatRatio(sampleChecks.frontendSourceRatio.minimum)}，样本=${sampleChecks.frontendSourceRatio.sourceTotal}/${sampleChecks.frontendSourceRatio.totalJourneys}）`
+    })
+  }
+
   return failed
 }
 
 const buildRecommendations = (params: {
   errors: string[]
+  fetchErrorKinds: Array<Extract<GateErrorKind, 'unreachable' | 'auth' | 'http'>>
   failedRules: Array<{ key: string; message: string }>
   sampleChecks: ReturnType<typeof buildSampleChecks>
   summary: SloSummaryPayload | null
+  journeyFailures: JourneyFailuresPayload | null
 }) => {
   const rec = new Set<string>()
 
   if (params.errors.length) {
-    rec.add('确认 SLO API 可访问，并检查 ADMIN_TOKEN/SLO_GATE_ADMIN_TOKEN 是否匹配。')
+    if (params.fetchErrorKinds.includes('auth')) {
+      rec.add('SLO 鉴权失败：检查 ADMIN_TOKEN 与 SLO_GATE_ADMIN_TOKEN 是否正确且与服务端一致。')
+    }
+    if (params.fetchErrorKinds.includes('unreachable')) {
+      rec.add('SLO API 不可达：确认后端已启动，并检查 SLO_GATE_API_BASE/API_BASE_URL 地址。')
+    }
+    if (params.fetchErrorKinds.includes('http')) {
+      rec.add(
+        'SLO API 返回异常状态：检查 /api/admin/slo/summary 与 /api/admin/slo/breakdown 响应。'
+      )
+    }
   }
 
   if (!params.sampleChecks.nonAiSamples.pass) {
@@ -281,12 +416,39 @@ const buildRecommendations = (params: {
     rec.add('补充 first_success_path 旅程上报，或下调 SLO_GATE_MIN_JOURNEY_SAMPLES 阈值。')
   }
 
-  if (params.summary?.current?.primaryFlowSuccessRate === null && params.sampleChecks.journeySamples.minimum === 0) {
+  if (!params.sampleChecks.frontendSourceRatio.pass) {
+    rec.add(
+      `提高来源 ${params.sampleChecks.frontendSourceRatio.sourceKey} 的样本占比，或下调 SLO_GATE_MIN_FRONTEND_SOURCE_RATIO 阈值。`
+    )
+    if (params.sampleChecks.frontendSourceRatio.sourceTotal === 0) {
+      rec.add(
+        `来源 ${params.sampleChecks.frontendSourceRatio.sourceKey} 当前无样本，请检查 summary.sourceBreakdown 是否包含该来源键。`
+      )
+    }
+  }
+
+  if (
+    params.summary?.current?.primaryFlowSuccessRate === null &&
+    params.sampleChecks.journeySamples.minimum === 0
+  ) {
     rec.add('当前无旅程样本，建议设置 SLO_GATE_MIN_JOURNEY_SAMPLES 并接入持续旅程埋点。')
   }
 
-  if (params.summary?.current?.nonAiApiP95Ms === null && params.sampleChecks.nonAiSamples.minimum === 0) {
+  if (
+    params.summary?.current?.nonAiApiP95Ms === null &&
+    params.sampleChecks.nonAiSamples.minimum === 0
+  ) {
     rec.add('当前无非 AI 请求样本，建议设置 SLO_GATE_MIN_NON_AI_SAMPLES 并补充稳定请求流量。')
+  }
+
+  if ((params.journeyFailures?.items || []).length > 0) {
+    const topFailures = params
+      .journeyFailures!.items.slice(0, 3)
+      .map(
+        (item) => `${item.failedStage}/${item.errorKind}/${item.httpStatus ?? 'null'}:${item.count}`
+      )
+      .join(' | ')
+    rec.add(`失败旅程 Top 模式：${topFailures}，建议优先修复首位失败模式。`)
   }
 
   if (!params.failedRules.length && !params.errors.length) {
@@ -296,10 +458,33 @@ const buildRecommendations = (params: {
   return Array.from(rec)
 }
 
+const resolveErrorKind = (params: {
+  fetchErrorKinds: Array<Extract<GateErrorKind, 'unreachable' | 'auth' | 'http'>>
+  failedRules: Array<{ key: string; message: string }>
+}) => {
+  if (params.fetchErrorKinds.includes('auth')) return 'auth' as const
+  if (params.fetchErrorKinds.includes('unreachable')) return 'unreachable' as const
+  if (params.fetchErrorKinds.includes('http')) return 'http' as const
+  if (params.failedRules.some((item) => item.key.startsWith('samples.')))
+    return 'sample_insufficient' as const
+  if (params.failedRules.length > 0) return 'objective_failed' as const
+  return 'none' as const
+}
+
+const resolveDecisionSourceLabel = (errorKind: GateErrorKind) => {
+  if (errorKind === 'sample_insufficient') return '样本不足'
+  if (errorKind === 'objective_failed') return '目标未达标'
+  if (errorKind === 'none') return '已达标'
+  return `接口异常(${errorKind})`
+}
+
 const run = async () => {
   const errors: string[] = []
+  const diagnostics: SloGateReport['diagnostics'] = []
+  const fetchErrorKinds: Array<Extract<GateErrorKind, 'unreachable' | 'auth' | 'http'>> = []
   let summary: SloSummaryPayload | null = null
   let breakdown: SloGateReport['breakdown'] = null
+  let journeyFailures: JourneyFailuresPayload | null = null
 
   try {
     const summaryPayload = await requestJson<{ success?: boolean; summary?: SloSummaryPayload }>(
@@ -307,14 +492,56 @@ const run = async () => {
     )
     summary = summaryPayload.summary || null
   } catch (error: any) {
-    errors.push(`summary: ${error?.message || String(error)}`)
+    const kind = classifyRequestError(error)
+    const message = error?.message || String(error)
+    fetchErrorKinds.push(kind)
+    errors.push(`summary: ${message}`)
+    diagnostics.push({
+      level: 'error',
+      kind,
+      target: 'summary',
+      message
+    })
+  }
+
+  try {
+    const journeyPayload = await requestJson<{
+      success?: boolean
+      window?: JourneyFailuresPayload['window']
+      counts?: JourneyFailuresPayload['counts']
+      items?: JourneyFailureItem[]
+      updatedAt?: string
+    }>(`${apiBase}/api/admin/slo/journey-failures?windowMinutes=${windowMinutes}&limit=${limit}`)
+    journeyFailures = {
+      window: journeyPayload.window || {
+        minutes: windowMinutes,
+        from: '',
+        to: ''
+      },
+      counts: {
+        totalFailJourneys: Number(journeyPayload.counts?.totalFailJourneys || 0)
+      },
+      items: Array.isArray(journeyPayload.items) ? journeyPayload.items : [],
+      updatedAt: String(journeyPayload.updatedAt || new Date().toISOString())
+    }
+  } catch (error: any) {
+    const kind = classifyRequestError(error)
+    const message = error?.message || String(error)
+    diagnostics.push({
+      level: 'warn',
+      kind,
+      target: 'journey_failures',
+      message
+    })
   }
 
   try {
     const breakdownPayload = await requestJson<{
       success?: boolean
       breakdown?: { totalRequests?: number; totalRoutes?: number; items?: SloBreakdownItem[] }
-    }>(`${apiBase}/api/admin/slo/breakdown?windowMinutes=${windowMinutes}&category=${category}&limit=${limit}`)
+    }>(
+      `${apiBase}/api/admin/slo/breakdown?windowMinutes=${windowMinutes}&category=${category}&limit=${limit}`
+    )
 
     const raw = breakdownPayload.breakdown
     if (raw) {
@@ -325,27 +552,61 @@ const run = async () => {
       }
     }
   } catch (error: any) {
-    errors.push(`breakdown: ${error?.message || String(error)}`)
+    const kind = classifyRequestError(error)
+    const message = error?.message || String(error)
+    fetchErrorKinds.push(kind)
+    errors.push(`breakdown: ${message}`)
+    diagnostics.push({
+      level: 'error',
+      kind,
+      target: 'breakdown',
+      message
+    })
   }
 
   const sampleChecks = buildSampleChecks(summary)
   const failedRules = buildFailedRules(summary, sampleChecks)
+  failedRules.forEach((item) => {
+    diagnostics.push({
+      level: 'warn',
+      kind: item.key.startsWith('samples.') ? 'sample_insufficient' : 'objective_failed',
+      target: 'gate',
+      message: `${item.key}: ${item.message}`
+    })
+  })
   const recommendations = buildRecommendations({
     errors,
+    fetchErrorKinds,
     failedRules,
     sampleChecks,
-    summary
+    summary,
+    journeyFailures
   })
-  const hasUnreachable = errors.length > 0 && !summary
-  const status: GateStatus = hasUnreachable
-    ? (mode === 'hard' ? 'fail' : 'unavailable')
+  const hasUnavailableSummary = errors.length > 0 && !summary
+  const status: GateStatus = hasUnavailableSummary
+    ? mode === 'hard'
+      ? 'fail'
+      : 'unavailable'
     : failedRules.length > 0
-      ? (mode === 'hard' ? 'fail' : 'warn')
+      ? mode === 'hard'
+        ? 'fail'
+        : 'warn'
       : 'pass'
+  const errorKind = resolveErrorKind({ fetchErrorKinds, failedRules })
+
+  if (!diagnostics.length) {
+    diagnostics.push({
+      level: 'info',
+      kind: 'none',
+      target: 'gate',
+      message: 'SLO 门禁通过'
+    })
+  }
 
   const report: SloGateReport = {
     schemaVersion,
     status,
+    errorKind,
     generatedAt: new Date().toISOString(),
     mode,
     enforce,
@@ -355,29 +616,37 @@ const run = async () => {
     limit,
     minNonAiSamples,
     minJourneySamples,
+    minFrontendSourceRatio,
+    frontendSourceKey,
     outputPath,
     errors,
+    diagnostics,
     failedRules,
     sampleChecks,
     recommendations,
     summary,
-    breakdown
+    breakdown,
+    journeyFailures
   }
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true })
   await fs.writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8')
 
   console.log(`[slo-gate] status=${report.status} mode=${mode}`)
+  console.log(
+    `[slo-gate] samples: journey=${sampleChecks.journeySamples.current}/${sampleChecks.journeySamples.minimum}, non_ai=${sampleChecks.nonAiSamples.current}/${sampleChecks.nonAiSamples.minimum}, source(${sampleChecks.frontendSourceRatio.sourceKey})=${sampleChecks.frontendSourceRatio.sourceTotal}/${sampleChecks.frontendSourceRatio.totalJourneys}(${formatRatio(sampleChecks.frontendSourceRatio.current)})>=${formatRatio(sampleChecks.frontendSourceRatio.minimum)}`
+  )
+  console.log(`[slo-gate] decision-source=${resolveDecisionSourceLabel(errorKind)}`)
   console.log(`[slo-gate] report=${outputPath}`)
   if (errors.length) {
-    errors.forEach(item => console.warn(`[slo-gate] warning: ${item}`))
+    errors.forEach((item) => console.warn(`[slo-gate] warning: ${item}`))
   }
   if (failedRules.length) {
-    failedRules.forEach(item => console.warn(`[slo-gate] unmet: ${item.key} -> ${item.message}`))
+    failedRules.forEach((item) => console.warn(`[slo-gate] unmet: ${item.key} -> ${item.message}`))
   }
 
   if (report.recommendations.length) {
-    report.recommendations.forEach(item => console.log(`[slo-gate] recommendation: ${item}`))
+    report.recommendations.forEach((item) => console.log(`[slo-gate] recommendation: ${item}`))
   }
 
   if (report.status === 'fail') {

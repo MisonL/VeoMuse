@@ -1,4 +1,4 @@
-# VeoMuse 旗舰版生产部署指南 (V3.1 Pro)
+# VeoMuse 旗舰版生产部署指南 (V3.1)
 
 ## 🚀 一键部署 (Recommended)
 
@@ -21,59 +21,66 @@ scripts\\one-click-deploy.cmd
 ```
 
 脚本会自动完成：
+
 - 创建或修复 `.env` 中生产必需安全变量（随机强密钥）。
 - 自动启动 Docker Compose 集群（默认带 `--build`）。
 - 自动等待 `http://127.0.0.1:18081/api/health` 健康检查通过。
 
 ### 一键脚本参数
+
 - `--force-env` / `-ForceEnv`：强制重建关键安全变量（会备份旧 `.env`）。
 - `--skip-build` / `-SkipBuild`：跳过镜像重建，直接 `up -d`。
 - `--api-port <port>` / `-ApiPort <port>`：自定义健康检查端口。
 
 ## 🏗️ 架构详情
+
 - **Nginx**: 入口网关，负责静态资源托管、`/api` 反代与 `/ws` WebSocket 转发。
 - **Bun Backend**: 模型调度、AI 服务编排、FFmpeg 合成。
 - **Redis**: 内网任务与状态缓存。
 
 ## 🔐 暴露策略
+
 - 仅前端网关暴露 `18081` 端口。
 - Backend/Redis 使用容器内网 `expose`，不直接对宿主机暴露。
 
 ## ⚙️ 关键环境变量
-| Key | Default | Note |
-|---|---|---|
-| `PORT` | 33117 | 后端端口 |
-| `REDIS_PASSWORD` | (required) | Redis `requirepass` 口令，生产环境必填且必须为强口令 |
-| `UPLOADS_PATH` | `/app/uploads` | 导出与上传统一根目录 |
-| `VEOMUSE_DB_PATH` | `/app/data/veomuse.sqlite` | 本地 SQLite 存储路径（模型超市、创意闭环、协作审计） |
-| `DB_AUTO_REPAIR` | `true` | 启动时发现 SQLite 损坏自动尝试修复（`false` 时关闭） |
-| `DB_HEALTHCHECK_INTERVAL_MS` | `0` | 运行时数据库健康巡检间隔（毫秒），`0` 表示关闭巡检 |
-| `JWT_SECRET` | (empty) | 生产环境必填，未配置将拒绝启动 |
-| `SECRET_ENCRYPTION_KEY` | (empty) | 生产环境必填，用于渠道密钥加密 |
-| `ADMIN_TOKEN` | (empty) | 建议必填，配置后 `/api/admin/metrics` 需 `x-admin-token` |
-| `ALCHEMY_API_URL` | (empty) | 风格迁移服务地址（启用 `/api/ai/alchemy/style-transfer`） |
-| `ALCHEMY_API_KEY` | (empty) | 风格迁移服务密钥 |
-| `CLEANUP_INTERVAL_MS` | `86400000` | 自动清理任务调度间隔（毫秒） |
-| `CLEANUP_RETENTION_MS` | `86400000` | 文件保留时长（毫秒），超时自动删除 |
-| `SLO_CLEANUP_INTERVAL_MS` | `86400000` | SLO 指标清理调度间隔（毫秒） |
-| `SLO_REQUEST_RETENTION_DAYS` | `14` | 请求级 SLO 指标保留天数 |
-| `SLO_JOURNEY_RETENTION_DAYS` | `30` | 旅程级 SLO 指标保留天数 |
-| `SLO_TARGET_PRIMARY_SUCCESS_RATE` | `0.995` | 主链路成功率目标 |
-| `SLO_TARGET_NON_AI_P95_MS` | `400` | 非 AI API P95 目标（毫秒） |
-| `SLO_TARGET_FIRST_SUCCESS_MAX_STEPS` | `8` | 首次成功平均步数目标上限 |
-| `MARKETPLACE_METRIC_INTERVAL_MS` | `300000` | 模型运行指标聚合入库间隔（毫秒） |
-| `STORAGE_PROVIDER` | `local` | 上传令牌 provider，当前推荐 `local`（已预留云兼容接口） |
-| `LOCAL_STORAGE_ROOT` | `/app/uploads/workspace` | 本地对象存储根目录 |
-| `FEATURE_MODEL_POLICY_V2` | `true` | 模型策略治理增强能力开关 |
-| `FEATURE_CREATIVE_LOOP_V2` | `true` | 创意闭环版本化能力开关 |
-| `FEATURE_COLLAB_WS` | `true` | 实时协同 WebSocket 开关 |
-| `NODE_ENV` | production | 生产模式 |
+
+| Key                                  | Default                    | Note                                                      |
+| ------------------------------------ | -------------------------- | --------------------------------------------------------- |
+| `PORT`                               | 33117                      | 后端端口                                                  |
+| `REDIS_PASSWORD`                     | (required)                 | Redis `requirepass` 口令，生产环境必填且必须为强口令      |
+| `UPLOADS_PATH`                       | `/app/uploads`             | 导出与上传统一根目录                                      |
+| `VEOMUSE_DB_PATH`                    | `/app/data/veomuse.sqlite` | 本地 SQLite 存储路径（模型超市、创意闭环、协作审计）      |
+| `DB_AUTO_REPAIR`                     | `true`                     | 启动时发现 SQLite 损坏自动尝试修复（`false` 时关闭）      |
+| `DB_HEALTHCHECK_INTERVAL_MS`         | `0`                        | 运行时数据库健康巡检间隔（毫秒），`0` 表示关闭巡检        |
+| `JWT_SECRET`                         | (empty)                    | 生产环境必填，未配置将拒绝启动                            |
+| `SECRET_ENCRYPTION_KEY`              | (empty)                    | 生产环境必填，用于渠道密钥加密                            |
+| `ADMIN_TOKEN`                        | (empty)                    | 建议必填，配置后 `/api/admin/metrics` 需 `x-admin-token`  |
+| `ALCHEMY_API_URL`                    | (empty)                    | 风格迁移服务地址（启用 `/api/ai/alchemy/style-transfer`） |
+| `ALCHEMY_API_KEY`                    | (empty)                    | 风格迁移服务密钥                                          |
+| `CLEANUP_INTERVAL_MS`                | `86400000`                 | 自动清理任务调度间隔（毫秒）                              |
+| `CLEANUP_RETENTION_MS`               | `86400000`                 | 文件保留时长（毫秒），超时自动删除                        |
+| `SLO_CLEANUP_INTERVAL_MS`            | `86400000`                 | SLO 指标清理调度间隔（毫秒）                              |
+| `SLO_REQUEST_RETENTION_DAYS`         | `14`                       | 请求级 SLO 指标保留天数                                   |
+| `SLO_JOURNEY_RETENTION_DAYS`         | `30`                       | 旅程级 SLO 指标保留天数                                   |
+| `SLO_TARGET_PRIMARY_SUCCESS_RATE`    | `0.995`                    | 主链路成功率目标                                          |
+| `SLO_TARGET_NON_AI_P95_MS`           | `400`                      | 非 AI API P95 目标（毫秒）                                |
+| `SLO_TARGET_FIRST_SUCCESS_MAX_STEPS` | `8`                        | 首次成功平均步数目标上限                                  |
+| `MARKETPLACE_METRIC_INTERVAL_MS`     | `300000`                   | 模型运行指标聚合入库间隔（毫秒）                          |
+| `STORAGE_PROVIDER`                   | `local`                    | 当前仅 `local` 生效，其他 provider 仍为预留扩展           |
+| `LOCAL_STORAGE_ROOT`                 | `/app/uploads/workspace`   | 本地对象存储根目录                                        |
+| `FEATURE_MODEL_POLICY_V2`            | `true`                     | 兼容性环境变量；当前实现默认开启，暂未作为运行时动态开关  |
+| `FEATURE_CREATIVE_LOOP_V2`           | `true`                     | 兼容性环境变量；当前实现默认开启，暂未作为运行时动态开关  |
+| `FEATURE_COLLAB_WS`                  | `true`                     | 兼容性环境变量；当前实现默认开启，暂未作为运行时动态开关  |
+| `NODE_ENV`                           | production                 | 生产模式                                                  |
 
 ## 🗄️ 数据持久化
-- `docker-compose.yml` 已将后端 SQLite 数据目录挂载为 `../../data:/app/data`。
-- 若需要自定义路径，请同时修改 `VEOMUSE_DB_PATH` 与 volume 挂载目标，保持路径一致。
+
+- `docker-compose.yml` 当前使用命名卷 `veomuse-data:/app/data` 持久化 SQLite 数据目录。
+- 若需改为宿主机 bind mount，可在 `docker-compose.yml` 将该卷改写为目录映射，并同步 `VEOMUSE_DB_PATH`。
 
 ## ✅ 验证命令
+
 ```bash
 curl -s http://127.0.0.1:18081/api/health
 curl -s http://127.0.0.1:18081/api/capabilities
@@ -118,6 +125,7 @@ curl -s "http://127.0.0.1:18081${UPLOAD_URL}" \
 
 curl -s http://127.0.0.1:18081/api/admin/db/health -H "x-admin-token: $ADMIN_TOKEN" | jq '.health.status'
 curl -s http://127.0.0.1:18081/api/admin/db/runtime -H "x-admin-token: $ADMIN_TOKEN" | jq '.runtime'
+curl -s http://127.0.0.1:18081/api/admin/providers/health -H "x-admin-token: $ADMIN_TOKEN" | jq '.summary'
 curl -s http://127.0.0.1:18081/api/admin/slo/summary -H "x-admin-token: $ADMIN_TOKEN" | jq '.summary.passFlags'
 curl -s "http://127.0.0.1:18081/api/admin/slo/breakdown?category=non_ai&limit=5" -H "x-admin-token: $ADMIN_TOKEN" | jq '.breakdown.items'
 curl -I http://127.0.0.1:18081 | grep -E "Content-Security-Policy|X-Frame-Options|Referrer-Policy|Permissions-Policy"
@@ -125,6 +133,7 @@ curl -s http://127.0.0.1:18081/api/admin/metrics -H "x-admin-token: $ADMIN_TOKEN
 ```
 
 ## 🚦 发布门禁
+
 ```bash
 # 标准发布门禁（默认包含稳定 Mock 回归）
 bun run release:gate
@@ -133,10 +142,50 @@ bun run release:gate
 bun run release:gate:real
 ```
 
+工程质量补充命令：
+
+```bash
+# 统一格式检查
+bun run format:check
+
+# 覆盖率门禁（产出 coverage/lcov.info 与 summary.json）
+bun run test:coverage
+
+# 全链路质量入口
+bun run quality:full
+```
+
+API 契约门禁（V4）：
+
+- 目标：保证路由实现、API 文档、`_api.test.ts` 测试三方一致。
+- 执行命令（本地/CI 都可）：
+
+```bash
+bun run scripts/api_contract_guard.ts
+```
+
+- 非 0 退出表示存在契约缺口，输出 JSON 中 `failures[]` 会标记缺失维度（`route` / `documentation` / `tests`）。
+- 可选参数：
+  - `--backend` 指定后端路由文件
+  - `--docs` 指定 API 文档
+  - `--tests-dir` 指定测试目录
+
+```bash
+bun run scripts/api_contract_guard.ts \
+  --backend apps/backend/src/index.ts \
+  --docs docs/API_DOCUMENTATION.md \
+  --tests-dir tests
+```
+
 SLO 门禁说明：
-- `release:gate` 会自动按分支选择模式：`main=hard`，其他分支=`soft`。
+
+- CI 主门禁统一由 `release:gate` 驱动，默认链路为 `security + build + unit + e2e smoke + e2e regression mock + SLO`。
+- `release:gate` 默认策略：本地执行默认 `soft`；CI 环境按分支选择 `main=hard`、其他分支=`soft`。
 - `soft`：仅告警，不阻断发布；`hard`：任何未达标将阻断发布。
 - 报告输出默认路径：`artifacts/slo-report.json`。
+- 质量汇总输出：`artifacts/quality-summary.json`，失败步骤新增 `steps[].failure.domain`（`security/build/test/e2e/slo/unknown`）。
+- 质量汇总新增 `recommendations` 字段：输出中文可执行修复动作，并按失败域自动去重。
+- 本地执行 `release:gate` 时会在 SLO 检查前自动探测 `/api/health`；若 SLO API 不可达且地址为本机（`127.0.0.1/localhost/0.0.0.0`），会自动拉起后端并在结束后回收。
 - 仍兼容历史开关 `SLO_GATE_ENFORCE=true`，等价于 `mode=hard`。
 - 若需手动覆盖模式，请在执行前设置：
 
@@ -145,31 +194,68 @@ RELEASE_SLO_MODE=soft bun run release:gate
 ```
 
 可选参数与环境变量：
-- `API_BASE_URL` / `--api-base`：SLO 拉取地址（默认 `http://127.0.0.1:18081`）
+
+- `SLO_GATE_API_BASE` / `API_BASE_URL` / `--api-base`：SLO 拉取地址（默认 `http://127.0.0.1:33117`）
 - `SLO_GATE_MODE` / `--mode`：门禁模式（`soft`/`hard`）
 - `SLO_GATE_WINDOW_MINUTES` / `--window`：统计窗口（默认 `1440`）
 - `SLO_GATE_CATEGORY` / `--category`：分解维度（默认 `non_ai`）
 - `SLO_GATE_LIMIT` / `--limit`：分解条数（默认 `8`）
-- `SLO_GATE_MIN_NON_AI_SAMPLES` / `--min-non-ai-samples`：非 AI 最小样本阈值（默认 `0`）
-- `SLO_GATE_MIN_JOURNEY_SAMPLES` / `--min-journey-samples`：旅程最小样本阈值（默认 `0`）
+- `SLO_GATE_MIN_NON_AI_SAMPLES` / `--min-non-ai-samples`：非 AI 最小样本阈值（默认 `20`）
+- `SLO_GATE_MIN_JOURNEY_SAMPLES` / `--min-journey-samples`：旅程最小样本阈值（默认 `10`）
+- `SLO_GATE_MIN_FRONTEND_SOURCE_RATIO` / `--min-frontend-source-ratio`：来源占比最小阈值（默认 `0`，表示关闭；建议取值 `0~1`）
+- `SLO_GATE_FRONTEND_SOURCE_KEY` / `--frontend-source-key`：来源占比统计键（默认 `frontend`，从 `summary.sourceBreakdown` 读取）
 - `SLO_GATE_REPORT_SCHEMA_VERSION` / `--schema-version`：报告 schema 版本号（默认 `1.0`）
 - `SLO_GATE_ADMIN_TOKEN`：可覆盖 `ADMIN_TOKEN` 用于脚本鉴权
+- `SLO_ADMIN_SEED_ENABLED`：是否启用 `/api/admin/slo/seed` 预热接口（默认 `false`，建议仅 CI 临时开启）
+- `RELEASE_GATE_SLO_BOOTSTRAP`：是否启用本地 SLO 自举（默认本地 `true`、CI `false`）
+- `RELEASE_GATE_SLO_BOOTSTRAP_TIMEOUT_MS`：本地自举超时（默认 `15000`）
+- `RELEASE_GATE_SLO_HEALTH_TIMEOUT_MS`：单次健康探测超时（默认 `1200`）
+- 地址优先级：`--api-base` > `SLO_GATE_API_BASE` > `API_BASE_URL` > 默认地址
 
 样本不足策略：
+
 - 当样本低于阈值时，报告会在 `sampleChecks` 与 `failedRules` 明确标记不足项。
 - `soft` 模式返回 `warn`；`hard` 模式返回 `fail` 并阻断流水线。
-- 当阈值设为 `0` 时，脚本会输出改进建议，但不会因“缺样本”直接失败。
+- 默认阈值为 `non_ai>=20`、`journey>=10`、`frontend_source_ratio=0(关闭)`；如需临时放宽，可显式设为 `0`。
+- `slo-report.json` 除 `summary/breakdown` 外，还会输出 `journeyFailures`（失败阶段+错误类型聚合）用于定位主链路失败模式。
 
 CI 质量门禁策略（`.github/workflows/ci-quality-gate.yml`）：
+
+- CI 主门禁检查集合与 `release:gate` 保持一致，差异仅在执行编排与 SLO 模式（PR=`soft`、`main`=`hard`）。
 - PR：`soft` 模式执行 SLO 门禁。
 - `main`：`hard` 模式执行 SLO 门禁。
-- 产物统一上传：`playwright-report/`、`test-results/playwright/`、`artifacts/slo-report.json`。
+- SLO 检查前会调用 `/api/admin/slo/seed` 预热 `20/10` 样本（仅 CI 开启 `SLO_ADMIN_SEED_ENABLED=true`）。
+- 产物统一上传：`playwright-report/`、`test-results/playwright/`、`artifacts/slo-report.json`、`artifacts/slo-seed.json`。
 
 真实渠道回归启用条件：
+
 - `E2E_REAL_CHANNELS=true`
 - `GEMINI_API_KEYS` 已配置（用于真实导演生成链路）
+- 真实渠道回归默认仍为手动执行（本地命令或手动 workflow），不纳入 PR/main 自动流水线。
+
+手动 workflow 入口（按需执行）：
+
+```bash
+# 真实渠道回归（手动）
+bun run e2e:regression:real
+# 或完整门禁 + 真实回归
+bun run release:gate:real
+
+# DB repair drill（手动）
+bun run drill:db-repair
+
+# 协作 WS stress（手动）
+bun run stress:collab-ws
+```
+
+触发条件与产物：
+
+- 真实回归：适用于真实渠道配置、供应商策略、凭据变更等高风险发布前复核；产物位于 `playwright-report/`、`test-results/playwright/`。
+- DB repair drill：适用于数据库修复逻辑调整、SQLite 升级、损坏告警演练；产物位于 `data/drills/`，核心报告为 `db-repair-drill-*.json`（含 `backupPath`、`quarantinePath`、`copiedRows`）。
+- stress：适用于协作协议/广播路径改动与容量基线复测；产物为脚本标准输出 JSON 摘要（`ackRate`、`avgAckMs`、`p95AckMs`、`errors`、`broadcasts`）。
 
 ## 🛡️ Secrets 防泄漏
+
 ```bash
 # 安装本地 pre-push 钩子（提交前自动扫描）
 bun run hooks:install
@@ -179,15 +265,18 @@ bun run security:scan
 ```
 
 CI 已内置双层扫描：
+
 - `Bun Secrets Guard`（轻量正则）
 - `Gitleaks Deep Scan`（历史级深度扫描 + SARIF）
 
 ## 🔒 协作鉴权要求
+
 - 所有工作区接口统一使用 `Authorization: Bearer <accessToken>`，并以真实工作区成员角色做鉴权（`viewer/editor/owner`）。
 - 邀请与成员管理接口要求 `owner` 角色；上传令牌与本地上传要求至少 `editor` 角色。
 - WebSocket 协作通道推荐携带 `veomuse-auth.<accessToken>` 子协议；服务端兼容 `Authorization: Bearer <accessToken>`。仅允许已加入工作区的成员连接，非成员会被立即断开。
 
 ## 🧪 协作 WS 压测脚本
+
 默认对运行中的后端执行协作通道压测（创建工作区 -> 多客户端并发连接 -> timeline/cursor/heartbeat ACK 统计）。
 
 ```bash
@@ -207,4 +296,5 @@ COLLAB_STRESS_CLIENTS=24 COLLAB_STRESS_ROUNDS=20 bun run stress:collab-ws
 说明：未显式配置 `API_BASE_URL` 时，脚本会自动优先探测 `http://127.0.0.1:18081`（Docker 网关）并回退到 `http://127.0.0.1:33117`（直连后端）。
 
 ---
+
 **VeoMuse - 工业级稳定性，旗舰级表现。**

@@ -23,7 +23,7 @@ describe('Admin 请求头优化', () => {
     expect(calls.length).toBe(1)
     const [, init] = calls[0]
     const headers = (init.headers || {}) as Record<string, string>
-    const hasContentType = Object.keys(headers).some(key => key.toLowerCase() === 'content-type')
+    const hasContentType = Object.keys(headers).some((key) => key.toLowerCase() === 'content-type')
     expect(init.method).toBe('GET')
     expect(hasContentType).toBe(false)
   })

@@ -40,7 +40,7 @@ test('@mock 可通过 UI 串通注册 -> 组织 -> 工作区 -> 生成 -> 导出
   await page.getByTestId('btn-open-channel-panel').click()
   await expect(page.getByTestId('area-channel-panel')).toBeVisible()
 
-  if (!await page.getByTestId('input-register-organization').isVisible()) {
+  if (!(await page.getByTestId('input-register-organization').isVisible())) {
     await page.getByTestId('btn-toggle-register-mode').click()
     await expect(page.getByTestId('input-register-organization')).toBeVisible()
   }
@@ -56,15 +56,23 @@ test('@mock 可通过 UI 串通注册 -> 组织 -> 工作区 -> 生成 -> 导出
   await page.getByTestId('input-workspace-name').fill(`UI工作区_${suffix}`)
   await page.getByTestId('input-workspace-owner').fill('UI_OWNER')
   await page.getByTestId('btn-create-workspace').click()
-  await expect(page.getByTestId('text-workspace-id')).not.toContainText('workspace: -', { timeout: 15000 })
+  await expect(page.getByTestId('text-workspace-id')).not.toContainText('workspace: -', {
+    timeout: 15000
+  })
 
   await page.getByTestId('btn-mode-edit').click()
-  await page.getByTestId('area-left-panel').getByRole('button', { name: 'AI 导演', exact: true }).click()
+  await page
+    .getByTestId('area-left-panel')
+    .getByRole('button', { name: 'AI 导演', exact: true })
+    .click()
   await page.getByTestId('input-director-prompt').fill('清晨街景，镜头推进')
   await page.getByTestId('btn-run-director').click()
   await expect(page.locator('.scene-title')).toContainText('链路镜头 1')
 
-  await page.getByTestId('area-left-panel').getByRole('button', { name: '媒体资源', exact: true }).click()
+  await page
+    .getByTestId('area-left-panel')
+    .getByRole('button', { name: '媒体资源', exact: true })
+    .click()
   await page.locator('input[name="assetUploadFiles"]').setInputFiles(fixtureFile)
   await expect(page.locator('.asset-tile').first()).toBeVisible({ timeout: 15000 })
   await page.locator('.asset-tile .tile-actions button').first().click()

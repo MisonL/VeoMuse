@@ -26,10 +26,14 @@ describe('SQLite 修复数据回收', () => {
     expect(initReport.status).toBe('repaired')
 
     const seedDb = new Database(dbPath)
-    seedDb.prepare(`
+    seedDb
+      .prepare(
+        `
       INSERT INTO workspaces (id, name, created_at, updated_at)
       VALUES (?, ?, ?, ?)
-    `).run('ws_salvage', '回收验证空间', new Date().toISOString(), new Date().toISOString())
+    `
+      )
+      .run('ws_salvage', '回收验证空间', new Date().toISOString(), new Date().toISOString())
     seedDb.close(false)
 
     const repairReport = LocalDatabaseService.repairDatabaseFile(dbPath, {
@@ -41,7 +45,9 @@ describe('SQLite 修复数据回收', () => {
     expect(repairReport.salvage.attempted).toBe(true)
     expect(repairReport.salvage.copiedRows).toBeGreaterThanOrEqual(1)
     expect(
-      repairReport.salvage.tableDetails.some((item) => item.table === 'workspaces' && item.status === 'copied')
+      repairReport.salvage.tableDetails.some(
+        (item) => item.table === 'workspaces' && item.status === 'copied'
+      )
     ).toBe(true)
 
     const verifyDb = new Database(dbPath, { readonly: true })

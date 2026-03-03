@@ -6,6 +6,7 @@
 ## [Unreleased]
 
 ### Added
+
 - 新增发布门禁脚本与命令：
   - `scripts/release_gate.ts`
   - `bun run release:gate`
@@ -22,6 +23,7 @@
   - 报告 schema 字段完整性
 
 ### Changed
+
 - 数据库修复 API 支持 `checkMode`（`quick`/`full`）并引入默认策略：
   - `force=false` 默认 `quick`，降低非强制巡检耗时
   - `force=true` 默认 `full`，提升强制修复前判断精度
@@ -37,11 +39,13 @@
 - `scripts/provider_chain_e2e.ts` 旅程埋点 meta 新增 `flowVersion`、`scenarioId`、`buildRef`
 
 ### Fixed
+
 - 修复 `tests/sqlite_db_repair_api.test.ts` 中“非强制修复检查”超时问题（原因为默认全量完整性检查耗时过高）。
 
 ## [3.1.0] - 2026-03-02
 
 ### Added
+
 - 三平台一键安装部署脚本：
   - `scripts/one-click-deploy.sh`（macOS/Linux）
   - `scripts/one-click-deploy.ps1`（Windows PowerShell）
@@ -54,23 +58,27 @@
   - `docs/requirements/CONDUCTOR_ASSET_CONVERSION_MAP.md`
 
 ### Changed
+
 - 发布文档与入口说明升级为“三平台一键部署”：
   - `README.md`
   - `docs/DEPLOYMENT.md`
 - 协作/工作区鉴权文档统一为 Bearer + 成员角色模型。
 
 ### Fixed
+
 - 协作 WebSocket 生命周期边界处理，减少无效会话导致的噪音与错误路径。
 - 协作压测脚本鉴权链路对齐现网（register/login + Bearer + organization + userId 成员绑定）。
 
 ## [3.0.0] - 2026-02-28
 
 ### Changed
+
 - 部署文档端口信息修正与重复内容清理，统一部署口径。
 
 ## [2.0.0] - 2025-11-19
 
 ### Changed
+
 - 项目版本升级至 `v2.0.0`。
 
 ---

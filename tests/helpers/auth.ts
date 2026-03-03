@@ -3,7 +3,7 @@ import { buildTestPassword } from './credentials'
 
 export const callApi = async (path: string, init?: RequestInit) => {
   const response = await app.handle(new Request(`http://localhost${path}`, init))
-  const data = await response.json().catch(() => null) as any
+  const data = (await response.json().catch(() => null)) as any
   return { response, data }
 }
 

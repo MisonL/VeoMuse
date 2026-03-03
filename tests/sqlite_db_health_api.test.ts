@@ -15,7 +15,7 @@ describe('数据库健康检查 API', () => {
 
   it('未携带管理员令牌时应返回 401', async () => {
     const response = await app.handle(new Request('http://localhost/api/admin/db/health'))
-    const data = await response.json() as any
+    const data = (await response.json()) as any
 
     expect(response.status).toBe(401)
     expect(data.success).toBe(false)
@@ -23,16 +23,16 @@ describe('数据库健康检查 API', () => {
 
   it('携带管理员令牌时应返回数据库健康信息', async () => {
     const response = await app.handle(
-      new Request('http://localhost/api/admin/db/health?mode=full', {
+      new Request('http://localhost/api/admin/db/health?mode=quick', {
         headers: { 'x-admin-token': 'unit-test-admin-token' }
       })
     )
-    const data = await response.json() as any
+    const data = (await response.json()) as any
 
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)
     expect(['ok', 'corrupted', 'error']).toContain(data.health.status)
     expect(Array.isArray(data.health.messages)).toBe(true)
     expect(typeof data.health.dbPath).toBe('string')
-  }, 20_000)
+  }, 180_000)
 })

@@ -3,10 +3,12 @@
 ## 1. 版本策略
 
 VeoMuse 使用 **Semantic Versioning 2.0.0**：
+
 - `MAJOR.MINOR.PATCH`
 - 示例：`3.1.0`
 
 规则：
+
 - `MAJOR`：存在不兼容变更（API/部署/数据结构破坏性变化）
 - `MINOR`：向后兼容的新功能（新增能力、增强链路）
 - `PATCH`：向后兼容的问题修复（Bug/Security/文档对齐）
@@ -54,7 +56,7 @@ VeoMuse 使用 **Semantic Versioning 2.0.0**：
   - `CHANGELOG.md`
   - GitHub Release
   - 升级说明文档
-  中同步声明。
+    中同步声明。
 
 ## 6. 责任边界
 

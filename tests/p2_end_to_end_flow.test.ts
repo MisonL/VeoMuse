@@ -22,7 +22,7 @@ describe('P2 端到端主路径回归', () => {
         })
       })
     )
-    const policyData = await policyResp.json() as any
+    const policyData = (await policyResp.json()) as any
     expect(policyResp.status).toBe(200)
     expect(policyData.success).toBe(true)
     const policyId = policyData.policy.id as string
@@ -40,7 +40,7 @@ describe('P2 端到端主路径回归', () => {
         })
       })
     )
-    const decisionData = await decisionResp.json() as any
+    const decisionData = (await decisionResp.json()) as any
     expect(decisionResp.status).toBe(200)
     expect(decisionData.success).toBe(true)
     expect(decisionData.decision.policyId).toBe(policyId)
@@ -62,7 +62,7 @@ describe('P2 端到端主路径回归', () => {
         })
       })
     )
-    const runData = await runResp.json() as any
+    const runData = (await runResp.json()) as any
     expect(runResp.status).toBe(200)
     expect(runData.success).toBe(true)
     expect(runData.run.notes?.context?.routingPolicyId).toBe(policyId)
@@ -81,7 +81,7 @@ describe('P2 端到端主路径回归', () => {
         })
       })
     )
-    const workspaceData = await workspaceResp.json() as any
+    const workspaceData = (await workspaceResp.json()) as any
     expect(workspaceResp.status).toBe(200)
     expect(workspaceData.success).toBe(true)
     const workspaceId = workspaceData.workspace.id as string
@@ -97,7 +97,7 @@ describe('P2 端到端主路径回归', () => {
         body: JSON.stringify({ role: 'editor' })
       })
     )
-    const inviteData = await inviteResp.json() as any
+    const inviteData = (await inviteResp.json()) as any
     expect(inviteResp.status).toBe(200)
     expect(inviteData.success).toBe(true)
 
@@ -111,7 +111,7 @@ describe('P2 端到端主路径回归', () => {
         body: JSON.stringify({ memberName: 'Editor P2' })
       })
     )
-    const acceptData = await acceptResp.json() as any
+    const acceptData = (await acceptResp.json()) as any
     expect(acceptResp.status).toBe(200)
     expect(acceptData.success).toBe(true)
     expect(acceptData.workspace.id).toBe(workspaceId)
@@ -132,7 +132,7 @@ describe('P2 端到端主路径回归', () => {
         })
       })
     )
-    const tokenData = await tokenResp.json() as any
+    const tokenData = (await tokenResp.json()) as any
     expect(tokenResp.status).toBe(200)
     expect(tokenData.success).toBe(true)
 
@@ -146,7 +146,7 @@ describe('P2 端到端主路径回归', () => {
         body: 'p2-e2e-binary'
       })
     )
-    const uploadData = await uploadResp.json() as any
+    const uploadData = (await uploadResp.json()) as any
     expect(uploadResp.status).toBe(201)
     expect(uploadData.success).toBe(true)
     expect(uploadData.uploaded.objectKey).toBe(tokenData.token.objectKey)

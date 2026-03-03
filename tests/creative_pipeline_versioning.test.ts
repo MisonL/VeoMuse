@@ -22,7 +22,7 @@ describe('创意闭环版本化 API', () => {
         })
       })
     )
-    const createData = await createResp.json() as any
+    const createData = (await createResp.json()) as any
     expect(createResp.status).toBe(200)
     expect(createData.success).toBe(true)
     expect(createData.run.version).toBe(1)
@@ -48,7 +48,7 @@ describe('创意闭环版本化 API', () => {
         })
       })
     )
-    const feedbackData = await feedbackResp.json() as any
+    const feedbackData = (await feedbackResp.json()) as any
     expect(feedbackResp.status).toBe(200)
     expect(feedbackData.success).toBe(true)
     expect(feedbackData.previousRunId).toBe(sourceRunId)
@@ -72,7 +72,7 @@ describe('创意闭环版本化 API', () => {
         })
       })
     )
-    const feedbackData2 = await feedbackResp2.json() as any
+    const feedbackData2 = (await feedbackResp2.json()) as any
     expect(feedbackResp2.status).toBe(200)
     expect(feedbackData2.success).toBe(true)
     expect(feedbackData2.run.parentRunId).toBe(latestRunId)
@@ -84,7 +84,7 @@ describe('创意闭环版本化 API', () => {
         headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
       })
     )
-    const versionsData = await versionsResp.json() as any
+    const versionsData = (await versionsResp.json()) as any
     expect(versionsResp.status).toBe(200)
     expect(versionsData.success).toBe(true)
     expect(Array.isArray(versionsData.versions)).toBe(true)
@@ -97,7 +97,7 @@ describe('创意闭环版本化 API', () => {
         headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
       })
     )
-    const versionsFromMiddleData = await versionsFromMiddleResp.json() as any
+    const versionsFromMiddleData = (await versionsFromMiddleResp.json()) as any
     expect(versionsFromMiddleResp.status).toBe(200)
     expect(versionsFromMiddleData.versions.length).toBe(versionsData.versions.length)
 
@@ -117,7 +117,7 @@ describe('创意闭环版本化 API', () => {
         })
       })
     )
-    const commitData = await commitResp.json() as any
+    const commitData = (await commitResp.json()) as any
     expect(commitResp.status).toBe(200)
     expect(commitData.success).toBe(true)
     expect(commitData.run.status).toBe('completed')

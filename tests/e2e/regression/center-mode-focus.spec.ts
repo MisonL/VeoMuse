@@ -13,7 +13,9 @@ test('布局模式切换到聚焦后中心区扩展', async ({ page }) => {
   await page.getByTestId('btn-center-mode-focus').click()
   await expect(shell).toHaveAttribute('data-layout-mode', 'focus')
 
-  await expect.poll(async () => (await center.boundingBox())?.width ?? 0).toBeGreaterThan(before + 8)
+  await expect
+    .poll(async () => (await center.boundingBox())?.width ?? 0)
+    .toBeGreaterThan(before + 8)
 
   await page.getByTestId('btn-center-mode-fit').click()
   await expect(shell).toHaveAttribute('data-layout-mode', 'fit')

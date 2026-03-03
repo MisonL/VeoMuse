@@ -20,7 +20,7 @@ describe('协作平台化 API', () => {
         })
       })
     )
-    const createData = await createResp.json() as any
+    const createData = (await createResp.json()) as any
     expect(createResp.status).toBe(200)
     expect(createData.success).toBe(true)
 
@@ -40,19 +40,20 @@ describe('协作平台化 API', () => {
         })
       })
     )
-    const inviteData = await inviteResp.json() as any
+    const inviteData = (await inviteResp.json()) as any
     expect(inviteResp.status).toBe(200)
     expect(inviteData.success).toBe(true)
     expect(inviteData.invite.role).toBe('editor')
 
     const code = inviteData.invite.code as string
+    const acceptIdempotencyKey = `workspace-accept-${Date.now()}`
 
     const listInviteResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/invites`, {
         headers: createAuthHeaders(owner.accessToken, { organizationId: owner.organizationId })
       })
     )
-    const listInviteData = await listInviteResp.json() as any
+    const listInviteData = (await listInviteResp.json()) as any
     expect(listInviteResp.status).toBe(200)
     expect(listInviteData.invites.some((item: any) => item.code === code)).toBe(true)
 
@@ -64,23 +65,44 @@ describe('协作平台化 API', () => {
           contentTypeJson: true
         }),
         body: JSON.stringify({
-          memberName: 'Editor B'
+          memberName: 'Editor B',
+          idempotencyKey: acceptIdempotencyKey
         })
       })
     )
-    const acceptData = await acceptResp.json() as any
+    const acceptData = (await acceptResp.json()) as any
     expect(acceptResp.status).toBe(200)
     expect(acceptData.success).toBe(true)
     expect(acceptData.member.name).toBe('Editor B')
     expect(acceptData.workspace.id).toBe(workspaceId)
     expect(acceptData.defaultProject.id).toBe(projectId)
 
+    const duplicateAcceptResp = await app.handle(
+      new Request(`http://localhost/api/workspaces/invites/${code}/accept`, {
+        method: 'POST',
+        headers: createAuthHeaders(editor.accessToken, {
+          organizationId: editor.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          memberName: 'Editor B',
+          idempotencyKey: acceptIdempotencyKey
+        })
+      })
+    )
+    const duplicateAcceptData = (await duplicateAcceptResp.json()) as any
+    expect(duplicateAcceptResp.status).toBe(200)
+    expect(duplicateAcceptData.success).toBe(true)
+    expect(duplicateAcceptData.workspace.id).toBe(acceptData.workspace.id)
+    expect(duplicateAcceptData.defaultProject.id).toBe(acceptData.defaultProject.id)
+    expect(duplicateAcceptData.member.id).toBe(acceptData.member.id)
+
     const membersResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/members`, {
         headers: createAuthHeaders(owner.accessToken, { organizationId: owner.organizationId })
       })
     )
-    const membersData = await membersResp.json() as any
+    const membersData = (await membersResp.json()) as any
     expect(membersResp.status).toBe(200)
     expect(membersData.members.some((item: any) => item.name === 'Editor B')).toBe(true)
 
@@ -95,7 +117,7 @@ describe('协作平台化 API', () => {
         headers: createAuthHeaders(editor.accessToken, { organizationId: editor.organizationId })
       })
     )
-    const presenceData = await presenceResp.json() as any
+    const presenceData = (await presenceResp.json()) as any
     expect(presenceResp.status).toBe(200)
     expect(presenceData.success).toBe(true)
     expect(presenceData.members.some((item: any) => item.memberName === 'Editor B')).toBe(true)
@@ -115,7 +137,7 @@ describe('协作平台化 API', () => {
         })
       })
     )
-    const snapshotData = await snapshotResp.json() as any
+    const snapshotData = (await snapshotResp.json()) as any
     expect(snapshotResp.status).toBe(200)
     expect(snapshotData.success).toBe(true)
     expect(snapshotData.snapshot.projectId).toBe(projectId)
@@ -125,7 +147,7 @@ describe('协作平台化 API', () => {
         headers: createAuthHeaders(editor.accessToken, { organizationId: editor.organizationId })
       })
     )
-    const listSnapshotData = await listSnapshotResp.json() as any
+    const listSnapshotData = (await listSnapshotResp.json()) as any
     expect(listSnapshotResp.status).toBe(200)
     expect(listSnapshotData.success).toBe(true)
     expect(listSnapshotData.snapshots.length).toBeGreaterThan(0)
@@ -159,7 +181,7 @@ describe('协作平台化 API', () => {
         })
       })
     )
-    const uploadTokenData = await uploadTokenResp.json() as any
+    const uploadTokenData = (await uploadTokenResp.json()) as any
     expect(uploadTokenResp.status).toBe(200)
     expect(uploadTokenData.success).toBe(true)
     expect(uploadTokenData.token.provider).toBe('local')
@@ -175,7 +197,7 @@ describe('协作平台化 API', () => {
         body: 'binary-content'
       })
     )
-    const uploadData = await uploadResp.json() as any
+    const uploadData = (await uploadResp.json()) as any
     expect(uploadResp.status).toBe(201)
     expect(uploadData.success).toBe(true)
     expect(uploadData.uploaded.objectKey).toBe(uploadTokenData.token.objectKey)

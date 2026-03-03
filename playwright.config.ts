@@ -54,7 +54,8 @@ export default defineConfig({
       stderr: 'pipe'
     },
     {
-      command: 'PLAYWRIGHT_TEST=true bun run --cwd apps/frontend dev --host 127.0.0.1 --port 42873',
+      command:
+        'env -u NO_COLOR PLAYWRIGHT_TEST=true bun run --cwd apps/frontend dev --host 127.0.0.1 --port 42873',
       url: FRONTEND_URL,
       name: 'frontend',
       reuseExistingServer: !process.env.CI,

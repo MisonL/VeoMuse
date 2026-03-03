@@ -1,0 +1,121 @@
+import fs from 'fs/promises'
+import path from 'path'
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import { runReleaseGate } from '../scripts/release_gate'
+
+const QUALITY_SUMMARY_PATH = path.resolve(process.cwd(), 'artifacts/quality-summary.json')
+const originalFetch = globalThis.fetch
+
+const createSubprocess = (exitCode: number) =>
+  ({
+    exited: Promise.resolve(exitCode),
+    kill: () => {}
+  }) as unknown as Bun.Subprocess
+
+const readSummary = async () => {
+  const raw = await fs.readFile(QUALITY_SUMMARY_PATH, 'utf8')
+  return JSON.parse(raw) as any
+}
+
+describe('发布门禁运行时路径（mock）', () => {
+  beforeEach(async () => {
+    await fs.rm(QUALITY_SUMMARY_PATH, { force: true }).catch(() => {})
+  })
+
+  afterEach(() => {
+    mock.restore()
+    globalThis.fetch = originalFetch
+  })
+
+  it('runReleaseGate 成功路径应写入 passed 汇总', async () => {
+    const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((_cmd: any) => createSubprocess(0))
+    globalThis.fetch = mock(
+      async () =>
+        new Response(JSON.stringify({ status: 'ok' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+    ) as any
+
+    await runReleaseGate([], { GITHUB_REF_NAME: 'main' } as NodeJS.ProcessEnv)
+
+    expect(spawnSpy).toHaveBeenCalled()
+    const summary = await readSummary()
+    expect(summary.status).toBe('passed')
+    expect(summary.branch).toBe('main')
+    expect(Array.isArray(summary.steps)).toBe(true)
+    expect(summary.steps.length).toBe(6)
+    expect(summary.sloBootstrap?.status).toBe('reused')
+  })
+
+  it('runReleaseGate 失败路径应写入 failed 汇总并抛错', async () => {
+    let callCount = 0
+    spyOn(Bun, 'spawn').mockImplementation((_cmd: any) => {
+      callCount += 1
+      return createSubprocess(callCount === 2 ? 1 : 0)
+    })
+
+    await expect(
+      runReleaseGate([], { GITHUB_REF_NAME: 'feature/release-gate-fail' } as NodeJS.ProcessEnv)
+    ).rejects.toThrow('Build failed with exit code 1')
+
+    const summary = await readSummary()
+    expect(summary.status).toBe('failed')
+    expect(summary.failure?.message).toContain('Build failed with exit code 1')
+    expect(Array.isArray(summary.steps)).toBe(true)
+    expect(
+      summary.steps.some((step: any) => step.name === 'Build' && step.status === 'failed')
+    ).toBe(true)
+    expect(Array.isArray(summary.recommendations)).toBe(true)
+    expect(summary.recommendations.length).toBeGreaterThan(0)
+  })
+
+  it('SLO 健康不可达且自举关闭时应标记 skipped 并继续执行', async () => {
+    const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((_cmd: any) => createSubprocess(0))
+    globalThis.fetch = mock(async () => {
+      throw new Error('failed to fetch')
+    }) as any
+
+    await runReleaseGate([], {
+      GITHUB_REF_NAME: 'feature/slo-skipped',
+      RELEASE_GATE_SLO_BOOTSTRAP: 'false'
+    } as NodeJS.ProcessEnv)
+
+    const summary = await readSummary()
+    expect(summary.status).toBe('passed')
+    expect(summary.sloBootstrap?.status).toBe('skipped')
+    expect(String(summary.sloBootstrap?.detail || '')).toContain('bootstrap-disabled')
+    expect(Array.isArray(summary.steps)).toBe(true)
+    expect(summary.steps.length).toBe(6)
+    expect(spawnSpy).toHaveBeenCalledTimes(6)
+  })
+
+  it('SLO 自举后端提前退出时应写入 failed 汇总', async () => {
+    const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
+      if (Array.isArray(cmd)) {
+        return createSubprocess(0)
+      }
+      return createSubprocess(1)
+    })
+    globalThis.fetch = mock(async () => {
+      throw new Error('failed to fetch')
+    }) as any
+
+    await expect(
+      runReleaseGate([], {
+        GITHUB_REF_NAME: 'feature/slo-bootstrap-fail'
+      } as NodeJS.ProcessEnv)
+    ).rejects.toThrow('SLO bootstrap backend exited early')
+
+    const summary = await readSummary()
+    expect(summary.status).toBe('failed')
+    expect(summary.sloBootstrap?.status).toBe('failed')
+    expect(String(summary.sloBootstrap?.detail || '')).toContain(
+      'SLO bootstrap backend exited early'
+    )
+    expect(
+      summary.steps.some((step: any) => step.name.includes('SLO Check') && step.status === 'failed')
+    ).toBe(true)
+    expect(spawnSpy).toHaveBeenCalled()
+  })
+})

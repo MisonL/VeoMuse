@@ -7,40 +7,46 @@ describe('旅程埋点 API', () => {
   const sessionPrefix = `test-journey-${Date.now()}`
 
   afterEach(() => {
-    getLocalDb().prepare(`DELETE FROM journey_runs WHERE session_id LIKE ?`).run(`${sessionPrefix}%`)
+    getLocalDb()
+      .prepare(`DELETE FROM journey_runs WHERE session_id LIKE ?`)
+      .run(`${sessionPrefix}%`)
   })
 
   it('未登录时上报旅程应返回 401', async () => {
-    const response = await app.handle(new Request('http://localhost/api/telemetry/journey', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        flowType: 'first_success_path',
-        source: 'frontend',
-        stepCount: 3,
-        success: true
+    const response = await app.handle(
+      new Request('http://localhost/api/telemetry/journey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flowType: 'first_success_path',
+          source: 'frontend',
+          stepCount: 3,
+          success: true
+        })
       })
-    }))
-    const payload = await response.json() as any
+    )
+    const payload = (await response.json()) as any
     expect(response.status).toBe(401)
     expect(payload.success).toBe(false)
   })
 
   it('stepCount 非法时应返回 400', async () => {
     const session = await createTestSession('journey-step-invalid')
-    const response = await app.handle(new Request('http://localhost/api/telemetry/journey', {
-      method: 'POST',
-      headers: createAuthHeaders(session.accessToken, {
-        organizationId: session.organizationId,
-        contentTypeJson: true
-      }),
-      body: JSON.stringify({
-        flowType: 'first_success_path',
-        source: 'frontend',
-        stepCount: 0,
-        success: true
+    const response = await app.handle(
+      new Request('http://localhost/api/telemetry/journey', {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          flowType: 'first_success_path',
+          source: 'frontend',
+          stepCount: 0,
+          success: true
+        })
       })
-    }))
+    )
     expect(response.status).toBe(400)
   })
 
@@ -48,22 +54,24 @@ describe('旅程埋点 API', () => {
     const session = await createTestSession('journey-success')
     const journeySessionId = `${sessionPrefix}-ok`
 
-    const response = await app.handle(new Request('http://localhost/api/telemetry/journey', {
-      method: 'POST',
-      headers: createAuthHeaders(session.accessToken, {
-        organizationId: session.organizationId,
-        contentTypeJson: true
-      }),
-      body: JSON.stringify({
-        flowType: 'first_success_path',
-        source: 'frontend',
-        stepCount: 4,
-        success: true,
-        durationMs: 2100,
-        sessionId: journeySessionId
+    const response = await app.handle(
+      new Request('http://localhost/api/telemetry/journey', {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          flowType: 'first_success_path',
+          source: 'frontend',
+          stepCount: 4,
+          success: true,
+          durationMs: 2100,
+          sessionId: journeySessionId
+        })
       })
-    }))
-    const payload = await response.json() as any
+    )
+    const payload = (await response.json()) as any
 
     expect(response.status).toBe(200)
     expect(payload.success).toBe(true)
@@ -73,8 +81,14 @@ describe('旅程埋点 API', () => {
     expect(payload.journey?.organizationId).toBe(session.organizationId)
 
     const row = getLocalDb()
-      .prepare(`SELECT organization_id, step_count, success FROM journey_runs WHERE session_id = ? ORDER BY created_at DESC LIMIT 1`)
-      .get(journeySessionId) as { organization_id: string; step_count: number; success: number } | null
+      .prepare(
+        `SELECT organization_id, step_count, success FROM journey_runs WHERE session_id = ? ORDER BY created_at DESC LIMIT 1`
+      )
+      .get(journeySessionId) as {
+      organization_id: string
+      step_count: number
+      success: number
+    } | null
 
     expect(row).toBeTruthy()
     expect(row?.organization_id).toBe(session.organizationId)
@@ -82,42 +96,148 @@ describe('旅程埋点 API', () => {
     expect(row?.success).toBe(1)
   })
 
+  it('应按 sessionId + idempotencyKey 去重旅程上报', async () => {
+    const session = await createTestSession('journey-idempotency')
+    const journeySessionId = `${sessionPrefix}-dedupe`
+    const idempotencyKey = `${journeySessionId}:success:4`
+
+    const requestBody = {
+      flowType: 'first_success_path',
+      source: 'frontend',
+      stepCount: 4,
+      success: true,
+      durationMs: 1000,
+      sessionId: journeySessionId,
+      idempotencyKey
+    }
+
+    const firstResp = await app.handle(
+      new Request('http://localhost/api/telemetry/journey', {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify(requestBody)
+      })
+    )
+    const firstPayload = (await firstResp.json()) as any
+
+    const secondResp = await app.handle(
+      new Request('http://localhost/api/telemetry/journey', {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify(requestBody)
+      })
+    )
+    const secondPayload = (await secondResp.json()) as any
+
+    expect(firstResp.status).toBe(200)
+    expect(firstPayload.success).toBe(true)
+    expect(firstPayload.deduplicated).toBe(false)
+
+    expect(secondResp.status).toBe(200)
+    expect(secondPayload.success).toBe(true)
+    expect(secondPayload.deduplicated).toBe(true)
+
+    const count = getLocalDb()
+      .prepare(
+        `SELECT COUNT(1) as count FROM journey_runs WHERE session_id = ? AND idempotency_key = ?`
+      )
+      .get(journeySessionId, idempotencyKey) as { count: number }
+    expect(count.count).toBe(1)
+  })
+
+  it('应持久化失败阶段与错误类型诊断字段', async () => {
+    const session = await createTestSession('journey-failure-meta')
+    const journeySessionId = `${sessionPrefix}-failure-meta`
+
+    const response = await app.handle(
+      new Request('http://localhost/api/telemetry/journey', {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          flowType: 'first_success_path',
+          source: 'frontend',
+          stepCount: 3,
+          success: false,
+          durationMs: 1500,
+          sessionId: journeySessionId,
+          meta: {
+            reason: 'quota-exceeded',
+            failedStage: 'workspace',
+            errorKind: 'quota',
+            httpStatus: 429
+          }
+        })
+      })
+    )
+    const payload = (await response.json()) as any
+
+    expect(response.status).toBe(200)
+    expect(payload.success).toBe(true)
+    expect(payload.journey?.meta?.failedStage).toBe('workspace')
+    expect(payload.journey?.meta?.errorKind).toBe('quota')
+    expect(payload.journey?.meta?.httpStatus).toBe(429)
+
+    const row = getLocalDb()
+      .prepare(
+        `SELECT meta_json FROM journey_runs WHERE session_id = ? ORDER BY created_at DESC LIMIT 1`
+      )
+      .get(journeySessionId) as { meta_json: string } | null
+    expect(row).toBeTruthy()
+    const meta = JSON.parse(row?.meta_json || '{}') as Record<string, unknown>
+    expect(meta.failedStage).toBe('workspace')
+    expect(meta.errorKind).toBe('quota')
+    expect(meta.httpStatus).toBe(429)
+  })
+
   it('非工作区成员上报携带 workspaceId 时应返回 403', async () => {
     const owner = await createTestSession('journey-owner')
     const outsider = await createTestSession('journey-outsider')
 
-    const createWorkspaceResp = await app.handle(new Request('http://localhost/api/workspaces', {
-      method: 'POST',
-      headers: createAuthHeaders(owner.accessToken, {
-        organizationId: owner.organizationId,
-        contentTypeJson: true
-      }),
-      body: JSON.stringify({
-        name: 'Journey Workspace',
-        ownerName: 'Owner'
+    const createWorkspaceResp = await app.handle(
+      new Request('http://localhost/api/workspaces', {
+        method: 'POST',
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          name: 'Journey Workspace',
+          ownerName: 'Owner'
+        })
       })
-    }))
-    const createWorkspaceData = await createWorkspaceResp.json() as any
+    )
+    const createWorkspaceData = (await createWorkspaceResp.json()) as any
     expect(createWorkspaceResp.status).toBe(200)
     const workspaceId = createWorkspaceData.workspace?.id as string
     expect(typeof workspaceId).toBe('string')
 
-    const response = await app.handle(new Request('http://localhost/api/telemetry/journey', {
-      method: 'POST',
-      headers: createAuthHeaders(outsider.accessToken, {
-        organizationId: outsider.organizationId,
-        contentTypeJson: true
-      }),
-      body: JSON.stringify({
-        flowType: 'first_success_path',
-        source: 'frontend',
-        stepCount: 3,
-        success: false,
-        workspaceId,
-        sessionId: `${sessionPrefix}-forbidden`
+    const response = await app.handle(
+      new Request('http://localhost/api/telemetry/journey', {
+        method: 'POST',
+        headers: createAuthHeaders(outsider.accessToken, {
+          organizationId: outsider.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          flowType: 'first_success_path',
+          source: 'frontend',
+          stepCount: 3,
+          success: false,
+          workspaceId,
+          sessionId: `${sessionPrefix}-forbidden`
+        })
       })
-    }))
-    const payload = await response.json() as any
+    )
+    const payload = (await response.json()) as any
 
     expect(response.status).toBe(403)
     expect(payload.success).toBe(false)

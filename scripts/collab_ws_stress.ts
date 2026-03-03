@@ -89,7 +89,9 @@ const parsePositiveInt = (value: string | undefined, fallback: number) => {
 const parseConfig = (): StressConfig => {
   const runTag = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
   const ownerName = process.env.COLLAB_STRESS_OWNER || 'StressOwner'
-  const apiBase = String(process.env.API_BASE_URL || '').trim().replace(/\/+$/, '')
+  const apiBase = String(process.env.API_BASE_URL || '')
+    .trim()
+    .replace(/\/+$/, '')
   return {
     selfHost: process.env.SELF_HOST === '1' || process.env.SELF_HOST === 'true',
     apiBase,
@@ -159,11 +161,14 @@ const extractAuthContext = (payload: AuthResponsePayload): AuthContext => {
   }
 }
 
-const ensureUserSession = async (apiBase: string, input: {
-  email: string
-  password: string
-  organizationName?: string
-}) => {
+const ensureUserSession = async (
+  apiBase: string,
+  input: {
+    email: string
+    password: string
+    organizationName?: string
+  }
+) => {
   try {
     const registered = await requestJson<AuthResponsePayload>(`${apiBase}/api/auth/register`, {
       method: 'POST',
@@ -191,26 +196,29 @@ const ensureUserSession = async (apiBase: string, input: {
   return extractAuthContext(loggedIn)
 }
 
-const waitOpen = (ws: WebSocket, timeoutMs: number) => new Promise<void>((resolve, reject) => {
-  const timer = setTimeout(() => {
-    reject(new Error('WebSocket open timeout'))
-  }, timeoutMs)
+const waitOpen = (ws: WebSocket, timeoutMs: number) =>
+  new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('WebSocket open timeout'))
+    }, timeoutMs)
 
-  ws.onopen = () => {
-    clearTimeout(timer)
-    resolve()
-  }
+    ws.onopen = () => {
+      clearTimeout(timer)
+      resolve()
+    }
 
-  ws.onclose = (event) => {
-    clearTimeout(timer)
-    reject(new Error(`WebSocket closed before open (${event.code}): ${event.reason || 'no reason'}`))
-  }
+    ws.onclose = (event) => {
+      clearTimeout(timer)
+      reject(
+        new Error(`WebSocket closed before open (${event.code}): ${event.reason || 'no reason'}`)
+      )
+    }
 
-  ws.onerror = () => {
-    clearTimeout(timer)
-    reject(new Error('WebSocket open failed'))
-  }
-})
+    ws.onerror = () => {
+      clearTimeout(timer)
+      reject(new Error('WebSocket open failed'))
+    }
+  })
 
 const attachClientHandlers = (client: StressClient) => {
   client.ws.onmessage = (event) => {
@@ -247,7 +255,11 @@ const attachClientHandlers = (client: StressClient) => {
       return
     }
 
-    if (payload.type === 'ack' && client.pendingAck && payload.ackType === client.pendingAck.ackType) {
+    if (
+      payload.type === 'ack' &&
+      client.pendingAck &&
+      payload.ackType === client.pendingAck.ackType
+    ) {
       const latency = performance.now() - client.pendingAck.sentAt
       clearTimeout(client.pendingAck.timer)
       client.ackCount += 1
@@ -268,7 +280,12 @@ const waitClientReady = (client: StressClient, timeoutMs: number) => {
   })
 }
 
-const sendAndWaitAck = (client: StressClient, ackType: string, payload: Record<string, unknown>, timeoutMs: number) => {
+const sendAndWaitAck = (
+  client: StressClient,
+  ackType: string,
+  payload: Record<string, unknown>,
+  timeoutMs: number
+) => {
   if (client.pendingAck) return Promise.reject(new Error('Pending ack exists'))
   return new Promise<number>((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -410,14 +427,11 @@ const run = async () => {
       const query = new URLSearchParams({
         sessionId
       })
-      const ws = new WebSocket(
-        `${wsBase}/ws/collab/${workspaceId}?${query.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
+      const ws = new WebSocket(`${wsBase}/ws/collab/${workspaceId}?${query.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
         }
-      )
+      })
       await waitOpen(ws, config.ackTimeoutMs)
       const client: StressClient = {
         ws,

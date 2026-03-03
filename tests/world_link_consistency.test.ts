@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
-import { app } from '../apps/backend/src/index';
-import { createAuthHeaders, createTestSession } from './helpers/auth';
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { app } from '../apps/backend/src/index'
+import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 describe('World-Link 一致性参数验证', () => {
   const envBackup: Record<string, string | undefined> = {}
@@ -54,7 +54,7 @@ describe('World-Link 一致性参数验证', () => {
           worldId
         })
       })
-    );
+    )
     const response2 = await app.handle(
       new Request('http://localhost/api/video/generate', {
         method: 'POST',
@@ -69,20 +69,20 @@ describe('World-Link 一致性参数验证', () => {
           worldId
         })
       })
-    );
+    )
 
-    const data = await response.json() as any;
-    const data2 = await response2.json() as any;
-    expect(response.status).toBe(200);
-    expect(response2.status).toBe(200);
-    expect(data.provider).toBe('luma-dream');
-    expect(data2.provider).toBe('luma-dream');
-    expect(data.status).toBe('ok');
-    expect(data2.status).toBe('ok');
-    expect(payloads.length).toBe(2);
-    expect(payloads[0].options?.worldLink).toBe(true);
-    expect(payloads[1].options?.worldLink).toBe(true);
-    expect(payloads[0].options?.worldId).toBe(worldId);
-    expect(payloads[1].options?.worldId).toBe(worldId);
-  });
-});
+    const data = (await response.json()) as any
+    const data2 = (await response2.json()) as any
+    expect(response.status).toBe(200)
+    expect(response2.status).toBe(200)
+    expect(data.provider).toBe('luma-dream')
+    expect(data2.provider).toBe('luma-dream')
+    expect(data.status).toBe('ok')
+    expect(data2.status).toBe('ok')
+    expect(payloads.length).toBe(2)
+    expect(payloads[0].options?.worldLink).toBe(true)
+    expect(payloads[1].options?.worldLink).toBe(true)
+    expect(payloads[0].options?.worldId).toBe(worldId)
+    expect(payloads[1].options?.worldId).toBe(worldId)
+  })
+})

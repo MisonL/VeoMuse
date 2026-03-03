@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'bun:test';
-import { app } from '../apps/backend/src/index';
-import { createAuthHeaders, createTestSession } from './helpers/auth';
+import { describe, expect, it } from 'bun:test'
+import { app } from '../apps/backend/src/index'
+import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 describe('动捕映射链路验证', () => {
   it('应将动捕数据同步到演员驱动并返回映射摘要', async () => {
@@ -24,13 +24,13 @@ describe('动捕映射链路验证', () => {
           }
         })
       })
-    );
+    )
 
-    const data = await response.json() as any;
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.actorId).toBe('hero-man');
-    expect(data.mappedJoints).toBe(2);
-    expect(data.expression).toBe('smile');
-  });
-});
+    const data = (await response.json()) as any
+    expect(response.status).toBe(200)
+    expect(data.success).toBe(true)
+    expect(data.actorId).toBe('hero-man')
+    expect(data.mappedJoints).toBe(2)
+    expect(data.expression).toBe('smile')
+  })
+})

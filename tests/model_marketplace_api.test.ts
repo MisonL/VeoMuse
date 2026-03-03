@@ -5,7 +5,7 @@ import { createAuthHeaders, createTestSession } from './helpers/auth'
 describe('模型超市 API 回归', () => {
   it('应返回模型超市列表与运行指标', async () => {
     const response = await app.handle(new Request('http://localhost/api/models/marketplace'))
-    const data = await response.json() as any
+    const data = (await response.json()) as any
 
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)
@@ -20,13 +20,15 @@ describe('模型超市 API 回归', () => {
 
   it('应支持获取模型画像并在不存在时返回 404', async () => {
     const profileResp = await app.handle(new Request('http://localhost/api/models/veo-3.1/profile'))
-    const profileData = await profileResp.json() as any
+    const profileData = (await profileResp.json()) as any
     expect(profileResp.status).toBe(200)
     expect(profileData.success).toBe(true)
     expect(profileData.profile.id).toBe('veo-3.1')
 
-    const missingResp = await app.handle(new Request('http://localhost/api/models/not-exist-model/profile'))
-    const missingData = await missingResp.json() as any
+    const missingResp = await app.handle(
+      new Request('http://localhost/api/models/not-exist-model/profile')
+    )
+    const missingData = (await missingResp.json()) as any
     expect(missingResp.status).toBe(404)
     expect(missingData.success).toBe(false)
   })
@@ -47,7 +49,7 @@ describe('模型超市 API 回归', () => {
         })
       })
     )
-    const data = await response.json() as any
+    const data = (await response.json()) as any
 
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)

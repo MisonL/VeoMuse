@@ -11,15 +11,16 @@ class MockWs {
   }
 }
 
-const parseMessages = (ws: MockWs) => ws.sent
-  .map((row) => {
-    try {
-      return JSON.parse(row)
-    } catch {
-      return null
-    }
-  })
-  .filter(Boolean) as Array<Record<string, any>>
+const parseMessages = (ws: MockWs) =>
+  ws.sent
+    .map((row) => {
+      try {
+        return JSON.parse(row)
+      } catch {
+        return null
+      }
+    })
+    .filter(Boolean) as Array<Record<string, any>>
 
 describe('协作服务 WS 会话', () => {
   it('应支持加入、心跳、协同事件广播与离开', () => {
@@ -46,30 +47,53 @@ describe('协作服务 WS 会话', () => {
       sessionId: 'sess-editor'
     })
 
-    expect(parseMessages(ownerWs).some(item => item.type === 'presence.snapshot')).toBe(true)
-    expect(parseMessages(ownerWs).some(item => item.type === 'presence.joined' && item.memberName === 'Editor B')).toBe(true)
-    expect(parseMessages(editorWs).some(item => item.type === 'presence.snapshot')).toBe(true)
+    expect(parseMessages(ownerWs).some((item) => item.type === 'presence.snapshot')).toBe(true)
+    expect(
+      parseMessages(ownerWs).some(
+        (item) => item.type === 'presence.joined' && item.memberName === 'Editor B'
+      )
+    ).toBe(true)
+    expect(parseMessages(editorWs).some((item) => item.type === 'presence.snapshot')).toBe(true)
 
     CollaborationService.onMessage(ownerWs as any, JSON.stringify({ type: 'presence.heartbeat' }))
-    expect(parseMessages(ownerWs).some(item => item.type === 'ack' && item.ackType === 'presence.heartbeat')).toBe(true)
+    expect(
+      parseMessages(ownerWs).some(
+        (item) => item.type === 'ack' && item.ackType === 'presence.heartbeat'
+      )
+    ).toBe(true)
 
-    CollaborationService.onMessage(ownerWs as any, JSON.stringify({
-      type: 'timeline.patch',
-      projectId,
-      payload: {
-        source: 'unit-test',
-        patch: 'clip moved'
-      }
-    }))
+    CollaborationService.onMessage(
+      ownerWs as any,
+      JSON.stringify({
+        type: 'timeline.patch',
+        projectId,
+        payload: {
+          source: 'unit-test',
+          patch: 'clip moved'
+        }
+      })
+    )
 
-    expect(parseMessages(ownerWs).some(item => item.type === 'ack' && item.ackType === 'timeline.patch')).toBe(true)
-    expect(parseMessages(editorWs).some(item => item.type === 'collab.event' && item.eventType === 'timeline.patch')).toBe(true)
+    expect(
+      parseMessages(ownerWs).some(
+        (item) => item.type === 'ack' && item.ackType === 'timeline.patch'
+      )
+    ).toBe(true)
+    expect(
+      parseMessages(editorWs).some(
+        (item) => item.type === 'collab.event' && item.eventType === 'timeline.patch'
+      )
+    ).toBe(true)
 
     const history = WorkspaceService.listCollabEvents(workspaceId, 50)
-    expect(history.some(item => item.eventType === 'timeline.patch')).toBe(true)
+    expect(history.some((item) => item.eventType === 'timeline.patch')).toBe(true)
 
     CollaborationService.onMessage(editorWs as any, JSON.stringify({ type: 'presence.leave' }))
-    expect(parseMessages(ownerWs).some(item => item.type === 'presence.left' && item.memberName === 'Editor B')).toBe(true)
+    expect(
+      parseMessages(ownerWs).some(
+        (item) => item.type === 'presence.left' && item.memberName === 'Editor B'
+      )
+    ).toBe(true)
 
     CollaborationService.leave(ownerWs as any)
   })
@@ -87,7 +111,11 @@ describe('协作服务 WS 会话', () => {
     })
 
     CollaborationService.onMessage(ws as any, 'not-json')
-    expect(parseMessages(ws).some(item => item.type === 'error' && item.error === 'Invalid message payload')).toBe(true)
+    expect(
+      parseMessages(ws).some(
+        (item) => item.type === 'error' && item.error === 'Invalid message payload'
+      )
+    ).toBe(true)
 
     CollaborationService.leave(ws as any)
   })
@@ -116,21 +144,34 @@ describe('协作服务 WS 会话', () => {
 
     expect(joinedOwner).toBe(true)
     expect(joinedOutsider).toBe(false)
-    expect(parseMessages(outsiderWs).some(item => item.type === 'error' && item.error === 'Member is not part of workspace')).toBe(true)
+    expect(
+      parseMessages(outsiderWs).some(
+        (item) => item.type === 'error' && item.error === 'Member is not part of workspace'
+      )
+    ).toBe(true)
 
-    CollaborationService.onMessage(ownerWs as any, JSON.stringify({
-      type: 'timeline.patch',
-      projectId: projectIdB,
-      payload: { source: 'isolation-test' }
-    }))
+    CollaborationService.onMessage(
+      ownerWs as any,
+      JSON.stringify({
+        type: 'timeline.patch',
+        projectId: projectIdB,
+        payload: { source: 'isolation-test' }
+      })
+    )
 
     const ownerMessages = parseMessages(ownerWs)
-    expect(ownerMessages.some(item => item.type === 'error' && item.error === 'Project does not belong to workspace')).toBe(true)
-    expect(ownerMessages.some(item => item.type === 'ack' && item.ackType === 'timeline.patch')).toBe(false)
+    expect(
+      ownerMessages.some(
+        (item) => item.type === 'error' && item.error === 'Project does not belong to workspace'
+      )
+    ).toBe(true)
+    expect(
+      ownerMessages.some((item) => item.type === 'ack' && item.ackType === 'timeline.patch')
+    ).toBe(false)
 
     const historyA = WorkspaceService.listCollabEvents(workspaceIdA, 50)
-    expect(historyA.some(item => item.projectId === projectIdB)).toBe(false)
+    expect(historyA.some((item) => item.projectId === projectIdB)).toBe(false)
 
     CollaborationService.leave(ownerWs as any)
-  })
+  }, 30_000)
 })

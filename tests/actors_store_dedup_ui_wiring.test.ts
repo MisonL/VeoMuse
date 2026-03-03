@@ -9,8 +9,8 @@ describe('演员数据共享缓存接线验证', () => {
     const assetPanel = read('apps/frontend/src/components/Editor/AssetPanel.tsx')
     const inspector = read('apps/frontend/src/components/Editor/PropertyInspector.tsx')
 
-    expect(assetPanel).toContain("useActorsStore")
-    expect(inspector).toContain("useActorsStore")
+    expect(assetPanel).toContain('useActorsStore')
+    expect(inspector).toContain('useActorsStore')
     expect(assetPanel.includes('api.api.ai.actors.get')).toBe(false)
     expect(inspector.includes('api.api.ai.actors.get')).toBe(false)
   })

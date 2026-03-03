@@ -33,10 +33,12 @@ describe('SQLite 损坏修复能力', () => {
 
     const db = new Database(dbPath, { readonly: true })
     const table = db
-      .prepare(`
+      .prepare(
+        `
         SELECT name FROM sqlite_master
         WHERE type = 'table' AND name = 'model_profiles'
-      `)
+      `
+      )
       .get() as { name: string } | undefined
     db.close(false)
 

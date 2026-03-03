@@ -9,7 +9,7 @@ services:
     command: >-
       sh -c 'if [ -z "$${REDIS_PASSWORD}" ]; then echo "REDIS_PASSWORD is required"; exit 1; fi; redis-server --port 46379 --save 60 1 --loglevel warning --protected-mode yes --requirepass "$${REDIS_PASSWORD}"'
     expose:
-      - "46379"
+      - '46379'
 
   veomuse-backend:
     build:
@@ -33,14 +33,14 @@ services:
       - veomuse-uploads:/app/uploads
       - veomuse-data:/app/data
     expose:
-      - "33117"
+      - '33117'
 
   veomuse-frontend:
     build:
       context: ../..
       dockerfile: config/docker/frontend.Dockerfile
     ports:
-      - "18081:18081"
+      - '18081:18081'
     depends_on:
       - veomuse-backend
     restart: always

@@ -26,11 +26,15 @@ const baseAudioClip: Clip = {
 
 describe('前端翻译克隆逻辑', () => {
   it('文本片段翻译后应克隆并写入 translated 内容与来源语言', () => {
-    const cloned = buildTranslatedClipClone(baseTextClip, {
-      translatedText: 'A girl walks out of the cafe at dawn.',
-      detectedLang: 'Chinese',
-      targetLang: 'English'
-    }, 123456)
+    const cloned = buildTranslatedClipClone(
+      baseTextClip,
+      {
+        translatedText: 'A girl walks out of the cafe at dawn.',
+        detectedLang: 'Chinese',
+        targetLang: 'English'
+      },
+      123456
+    )
 
     expect(cloned.id).toContain('translated-English-123456')
     expect(cloned.start).toBe(baseTextClip.end)
@@ -41,11 +45,15 @@ describe('前端翻译克隆逻辑', () => {
   })
 
   it('音频片段翻译后应克隆并将 name 改为翻译文本', () => {
-    const cloned = buildTranslatedClipClone(baseAudioClip, {
-      translatedText: 'A girl walks out of the cafe at dawn.',
-      detectedLang: 'Chinese',
-      targetLang: 'English'
-    }, 7890)
+    const cloned = buildTranslatedClipClone(
+      baseAudioClip,
+      {
+        translatedText: 'A girl walks out of the cafe at dawn.',
+        detectedLang: 'Chinese',
+        targetLang: 'English'
+      },
+      7890
+    )
 
     expect(cloned.name).toBe('A girl walks out of the cafe at dawn.')
     expect(cloned.start).toBe(baseAudioClip.end)

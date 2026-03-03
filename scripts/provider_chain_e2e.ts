@@ -41,113 +41,120 @@ const apiBase = (process.env.API_BASE_URL || 'http://127.0.0.1:18081').trim().re
 const mockBindHost = (process.env.MOCK_PROVIDER_BIND_HOST || '127.0.0.1').trim()
 const mockPort = parseIntSafe(process.env.MOCK_PROVIDER_PORT, 39091)
 const mockProviderBaseUrl = (
-  process.env.MOCK_PROVIDER_BASE_URL ||
-  `http://host.docker.internal:${mockPort}`
-).trim().replace(/\/+$/, '')
+  process.env.MOCK_PROVIDER_BASE_URL || `http://host.docker.internal:${mockPort}`
+)
+  .trim()
+  .replace(/\/+$/, '')
 const mockApiKey = 'mock-key'
 const flowVersion = (process.env.PROVIDER_CHAIN_FLOW_VERSION || 'v3.2.0').trim() || 'v3.2.0'
-const scenarioId = (process.env.E2E_SCENARIO_ID || 'provider-chain-mock').trim() || 'provider-chain-mock'
+const scenarioId =
+  (process.env.E2E_SCENARIO_ID || 'provider-chain-mock').trim() || 'provider-chain-mock'
 const buildRef = (
-  process.env.BUILD_REF
-  || process.env.GITHUB_SHA
-  || process.env.CI_COMMIT_SHA
-  || `local-${Date.now()}`
+  process.env.BUILD_REF ||
+  process.env.GITHUB_SHA ||
+  process.env.CI_COMMIT_SHA ||
+  `local-${Date.now()}`
 ).trim()
 
-const jsonResponse = (payload: unknown, status = 200) => new Response(JSON.stringify(payload), {
-  status,
-  headers: { 'Content-Type': 'application/json' }
-})
+const jsonResponse = (payload: unknown, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { 'Content-Type': 'application/json' }
+  })
 
-const startMockProvider = () => Bun.serve({
-  hostname: mockBindHost,
-  port: mockPort,
-  reusePort: true,
-  fetch(req) {
-    const url = new URL(req.url)
-    const path = url.pathname
+const startMockProvider = () =>
+  Bun.serve({
+    hostname: mockBindHost,
+    port: mockPort,
+    reusePort: true,
+    fetch(req) {
+      const url = new URL(req.url)
+      const path = url.pathname
 
-    if (path.endsWith('/veo-3.1-generate-001:predictLongRunning')) {
-      return jsonResponse({
-        name: `gemini-op-${Date.now()}`
-      })
-    }
+      if (path.endsWith('/veo-3.1-generate-001:predictLongRunning')) {
+        return jsonResponse({
+          name: `gemini-op-${Date.now()}`
+        })
+      }
 
-    if (path.endsWith('/generate')) {
-      return jsonResponse({
-        operationName: `gen-op-${Date.now()}`,
-        message: 'mock-generate-ok'
-      })
-    }
+      if (path.endsWith('/generate')) {
+        return jsonResponse({
+          operationName: `gen-op-${Date.now()}`,
+          message: 'mock-generate-ok'
+        })
+      }
 
-    if (path.endsWith('/v1/chat/completions')) {
-      return jsonResponse({
-        id: `openai-compatible-${Date.now()}`,
-        choices: [
-          {
-            index: 0,
-            message: {
-              role: 'assistant',
-              content: 'openai-compatible-mock-ok'
+      if (path.endsWith('/v1/chat/completions')) {
+        return jsonResponse({
+          id: `openai-compatible-${Date.now()}`,
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: 'assistant',
+                content: 'openai-compatible-mock-ok'
+              }
             }
-          }
-        ]
-      })
-    }
+          ]
+        })
+      }
 
-    if (path.endsWith('/synthesize')) {
-      return jsonResponse({
-        audioBase64: Buffer.from('mock-audio').toString('base64')
-      })
-    }
+      if (path.endsWith('/synthesize')) {
+        return jsonResponse({
+          audioBase64: Buffer.from('mock-audio').toString('base64')
+        })
+      }
 
-    if (path.endsWith('/morph')) {
-      return jsonResponse({
-        morphedAudioUrl: 'https://mock.local/audio/morphed.mp3'
-      })
-    }
+      if (path.endsWith('/morph')) {
+        return jsonResponse({
+          morphedAudioUrl: 'https://mock.local/audio/morphed.mp3'
+        })
+      }
 
-    if (path.endsWith('/reconstruct')) {
-      return jsonResponse({
-        nerfDataUrl: 'https://mock.local/nerf/data',
-        meshUrl: 'https://mock.local/mesh/output.glb',
-        totalVoxels: 2048
-      })
-    }
+      if (path.endsWith('/reconstruct')) {
+        return jsonResponse({
+          nerfDataUrl: 'https://mock.local/nerf/data',
+          meshUrl: 'https://mock.local/mesh/output.glb',
+          totalVoxels: 2048
+        })
+      }
 
-    if (path.endsWith('/analyze')) {
-      return jsonResponse({
-        bpm: 128,
-        beats: [0.12, 0.58, 1.04, 1.51]
-      })
-    }
+      if (path.endsWith('/analyze')) {
+        return jsonResponse({
+          bpm: 128,
+          beats: [0.12, 0.58, 1.04, 1.51]
+        })
+      }
 
-    if (path.endsWith('/sync')) {
-      return jsonResponse({
-        syncedVideoUrl: 'https://mock.local/video/synced.mp4',
-        operationId: `sync-${Date.now()}`
-      })
-    }
+      if (path.endsWith('/sync')) {
+        return jsonResponse({
+          syncedVideoUrl: 'https://mock.local/video/synced.mp4',
+          operationId: `sync-${Date.now()}`
+        })
+      }
 
-    if (path.endsWith('/style-transfer')) {
-      return jsonResponse({
-        operationId: `style-${Date.now()}`,
-        message: 'mock-style-ok'
-      })
-    }
+      if (path.endsWith('/style-transfer')) {
+        return jsonResponse({
+          operationId: `style-${Date.now()}`,
+          message: 'mock-style-ok'
+        })
+      }
 
-    if (path.endsWith('/apply')) {
-      return jsonResponse({
-        operationId: `apply-${Date.now()}`
-      })
-    }
+      if (path.endsWith('/apply')) {
+        return jsonResponse({
+          operationId: `apply-${Date.now()}`
+        })
+      }
 
-    return jsonResponse({
-      success: false,
-      error: `Unknown mock path: ${path}`
-    }, 404)
-  }
-})
+      return jsonResponse(
+        {
+          success: false,
+          error: `Unknown mock path: ${path}`
+        },
+        404
+      )
+    }
+  })
 
 const requestJson = async <T>(
   path: string,
@@ -203,31 +210,37 @@ const reportE2EJourney = async (params: {
   }
 
   const sessionId = `provider-chain-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-  const totalDurationMs = Number(params.steps.reduce((sum, item) => sum + Number(item.durationMs || 0), 0).toFixed(2))
-  const failedSteps = params.steps.filter(item => !item.ok).map(item => item.name)
+  const totalDurationMs = Number(
+    params.steps.reduce((sum, item) => sum + Number(item.durationMs || 0), 0).toFixed(2)
+  )
+  const failedSteps = params.steps.filter((item) => !item.ok).map((item) => item.name)
 
   try {
-    await requestJson('/api/telemetry/journey', {
-      method: 'POST',
-      body: JSON.stringify({
-        flowType: 'first_success_path',
-        source: 'e2e',
-        stepCount: Math.max(1, params.steps.length),
-        success: params.failedCount === 0,
-        durationMs: totalDurationMs,
-        organizationId: params.organizationId || undefined,
-        workspaceId: params.workspaceId || undefined,
-        sessionId,
-        meta: {
-          flow: 'provider_chain_e2e',
-          flowVersion,
-          scenarioId,
-          buildRef,
-          failedSteps,
-          failedCount: params.failedCount
-        }
-      })
-    }, params.authHeaders)
+    await requestJson(
+      '/api/telemetry/journey',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          flowType: 'first_success_path',
+          source: 'e2e',
+          stepCount: Math.max(1, params.steps.length),
+          success: params.failedCount === 0,
+          durationMs: totalDurationMs,
+          organizationId: params.organizationId || undefined,
+          workspaceId: params.workspaceId || undefined,
+          sessionId,
+          meta: {
+            flow: 'provider_chain_e2e',
+            flowVersion,
+            scenarioId,
+            buildRef,
+            failedSteps,
+            failedCount: params.failedCount
+          }
+        })
+      },
+      params.authHeaders
+    )
 
     return {
       reported: true,
@@ -254,42 +267,54 @@ const run = async () => {
   let authHeaders: Record<string, string> = {}
 
   try {
-    await timed('注册并创建组织', async () => {
-      const data = await requestJson<RegisterResponse>('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          organizationName: `E2E-Org-${stamp}`
+    await timed(
+      '注册并创建组织',
+      async () => {
+        const data = await requestJson<RegisterResponse>('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            organizationName: `E2E-Org-${stamp}`
+          })
         })
-      })
-      if (!data.success || !data.session?.accessToken || !data.organizations?.[0]?.id) {
-        throw new Error('register payload invalid')
-      }
-      orgId = data.organizations[0].id
-      authHeaders = {
-        Authorization: `Bearer ${data.session.accessToken}`,
-        'x-organization-id': orgId,
-        'Content-Type': 'application/json'
-      }
-    }, steps)
+        if (!data.success || !data.session?.accessToken || !data.organizations?.[0]?.id) {
+          throw new Error('register payload invalid')
+        }
+        orgId = data.organizations[0].id
+        authHeaders = {
+          Authorization: `Bearer ${data.session.accessToken}`,
+          'x-organization-id': orgId,
+          'Content-Type': 'application/json'
+        }
+      },
+      steps
+    )
 
-    await timed('创建工作区', async () => {
-      const data = await requestJson<WorkspaceResponse>('/api/workspaces', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: `E2E-Workspace-${stamp}`,
-          ownerName: `Owner-${stamp}`,
-          organizationId: orgId
-        })
-      }, authHeaders)
-      if (!data.success || !data.workspace?.id || !data.defaultProject?.id) {
-        throw new Error('workspace payload invalid')
-      }
-      workspaceId = data.workspace.id
-      projectId = data.defaultProject.id
-    }, steps)
+    await timed(
+      '创建工作区',
+      async () => {
+        const data = await requestJson<WorkspaceResponse>(
+          '/api/workspaces',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              name: `E2E-Workspace-${stamp}`,
+              ownerName: `Owner-${stamp}`,
+              organizationId: orgId
+            })
+          },
+          authHeaders
+        )
+        if (!data.success || !data.workspace?.id || !data.defaultProject?.id) {
+          throw new Error('workspace payload invalid')
+        }
+        workspaceId = data.workspace.id
+        projectId = data.defaultProject.id
+      },
+      steps
+    )
 
     const providers = [
       'veo-3.1',
@@ -310,46 +335,76 @@ const run = async () => {
     ]
 
     for (const providerId of providers) {
-      await timed(`配置渠道:${providerId}`, async () => {
-        const data = await requestJson<{ success: boolean }>(`/api/organizations/${orgId}/channels/${providerId}`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            baseUrl: mockProviderBaseUrl,
-            apiKey: mockApiKey,
-            enabled: true,
-            extra: providerId === 'openai-compatible'
-              ? {
-                model: 'mock-openai-compatible-model',
-                path: '/v1/chat/completions',
-                temperature: 0.6
-              }
-              : undefined
-          })
-        }, authHeaders)
-        if (!data.success) {
-          throw new Error(`upsert failed for ${providerId}`)
-        }
-      }, steps)
+      await timed(
+        `配置渠道:${providerId}`,
+        async () => {
+          const data = await requestJson<{ success: boolean }>(
+            `/api/organizations/${orgId}/channels/${providerId}`,
+            {
+              method: 'PUT',
+              body: JSON.stringify({
+                baseUrl: mockProviderBaseUrl,
+                apiKey: mockApiKey,
+                enabled: true,
+                extra:
+                  providerId === 'openai-compatible'
+                    ? {
+                        model: 'mock-openai-compatible-model',
+                        path: '/v1/chat/completions',
+                        temperature: 0.6
+                      }
+                    : undefined
+              })
+            },
+            authHeaders
+          )
+          if (!data.success) {
+            throw new Error(`upsert failed for ${providerId}`)
+          }
+        },
+        steps
+      )
     }
 
-    const modelCases = ['veo-3.1', 'kling-v1', 'sora-preview', 'luma-dream', 'runway-gen3', 'pika-1.5', 'openai-compatible']
+    const modelCases = [
+      'veo-3.1',
+      'kling-v1',
+      'sora-preview',
+      'luma-dream',
+      'runway-gen3',
+      'pika-1.5',
+      'openai-compatible'
+    ]
     for (const modelId of modelCases) {
-      await timed(`视频生成:${modelId}`, async () => {
-        const data = await requestJson<any>('/api/video/generate', {
-          method: 'POST',
-          body: JSON.stringify({
-            modelId,
-            text: `mock generate ${modelId}`,
-            workspaceId
-          })
-        }, authHeaders)
-        if (data.status !== 'ok' || !data.success) {
-          throw new Error(`unexpected generate status=${data.status}`)
-        }
-      }, steps)
+      await timed(
+        `视频生成:${modelId}`,
+        async () => {
+          const data = await requestJson<any>(
+            '/api/video/generate',
+            {
+              method: 'POST',
+              body: JSON.stringify({
+                modelId,
+                text: `mock generate ${modelId}`,
+                workspaceId
+              })
+            },
+            authHeaders
+          )
+          if (data.status !== 'ok' || !data.success) {
+            throw new Error(`unexpected generate status=${data.status}`)
+          }
+        },
+        steps
+      )
     }
 
-    const aiCases: Array<{ name: string; path: string; body: Record<string, unknown>; expected: (data: any) => boolean }> = [
+    const aiCases: Array<{
+      name: string
+      path: string
+      body: Record<string, unknown>
+      expected: (data: any) => boolean
+    }> = [
       {
         name: 'AI-TTS',
         path: '/api/ai/tts',
@@ -383,7 +438,11 @@ const run = async () => {
       {
         name: 'AI-LipSync',
         path: '/api/ai/sync-lip',
-        body: { videoUrl: 'https://mock.local/v.mp4', audioUrl: 'https://mock.local/a.mp3', workspaceId },
+        body: {
+          videoUrl: 'https://mock.local/v.mp4',
+          audioUrl: 'https://mock.local/a.mp3',
+          workspaceId
+        },
         expected: (data) => data.status === 'ok' && Boolean(data.syncedVideoUrl)
       },
       {
@@ -401,15 +460,23 @@ const run = async () => {
     ]
 
     for (const item of aiCases) {
-      await timed(item.name, async () => {
-        const data = await requestJson<any>(item.path, {
-          method: 'POST',
-          body: JSON.stringify(item.body)
-        }, authHeaders)
-        if (!item.expected(data)) {
-          throw new Error(`unexpected payload for ${item.name}`)
-        }
-      }, steps)
+      await timed(
+        item.name,
+        async () => {
+          const data = await requestJson<any>(
+            item.path,
+            {
+              method: 'POST',
+              body: JSON.stringify(item.body)
+            },
+            authHeaders
+          )
+          if (!item.expected(data)) {
+            throw new Error(`unexpected payload for ${item.name}`)
+          }
+        },
+        steps
+      )
     }
   } finally {
     server.stop(true)

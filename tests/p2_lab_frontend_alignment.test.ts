@@ -2,7 +2,10 @@ import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'fs'
 import path from 'path'
 
-const labCssPath = path.resolve(process.cwd(), 'apps/frontend/src/components/Editor/ComparisonLab.css')
+const labCssPath = path.resolve(
+  process.cwd(),
+  'apps/frontend/src/components/Editor/ComparisonLab.css'
+)
 const labSourceFiles = [
   'apps/frontend/src/components/Editor/ComparisonLab.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/types.ts',
@@ -15,9 +18,8 @@ const labSourceFiles = [
   'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
 ]
 
-const readLabSources = () => labSourceFiles
-  .map(file => readFileSync(path.resolve(process.cwd(), file), 'utf8'))
-  .join('\n')
+const readLabSources = () =>
+  labSourceFiles.map((file) => readFileSync(path.resolve(process.cwd(), file), 'utf8')).join('\n')
 
 describe('P2 实验室前端对齐验证', () => {
   it('应包含 P2 三大模式入口', () => {
@@ -54,7 +56,9 @@ describe('P2 实验室前端对齐验证', () => {
     expect(content).toContain('presence.heartbeat')
     expect(content).toContain('timeline.patch')
     expect(content).toContain('const optimisticEvent: CollabEvent')
-    expect(content).toContain('setCollabEvents(prev => [optimisticEvent, ...prev].slice(0, 100))')
+    expect(content).toMatch(
+      /setCollabEvents\(\s*\(?prev\)?\s*=>\s*\[optimisticEvent,\s*\.\.\.prev\]\.slice\(0,\s*100\)\s*\)/
+    )
     expect(content).toContain('setWorkspaceId(payload.workspace.id)')
     expect(content).toContain('setProjectId(payload.defaultProject.id)')
   })
@@ -64,7 +68,7 @@ describe('P2 实验室前端对齐验证', () => {
     expect(content).toContain('isPolicyLoading')
     expect(content).toContain('isPolicySimulating')
     expect(content).toContain('isCreativeBusy')
-    expect(content).toContain('collabRole !== \'owner\'')
+    expect(content).toContain("collabRole !== 'owner'")
   })
 
   it('样式层应具备创意与协作布局容器', () => {

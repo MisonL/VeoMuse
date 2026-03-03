@@ -33,9 +33,18 @@ const postJson = async <T>(
     }
   })
 
-  const data = await response.json().catch(() => ({})) as T & { success?: boolean; error?: string }
-  if (!response.ok || (typeof data === 'object' && data !== null && 'success' in data && data.success === false)) {
-    const err = (data && typeof data === 'object' && 'error' in data && data.error) ? String(data.error) : `HTTP ${response.status()}`
+  const data = (await response.json().catch(() => ({}))) as T & {
+    success?: boolean
+    error?: string
+  }
+  if (
+    !response.ok ||
+    (typeof data === 'object' && data !== null && 'success' in data && data.success === false)
+  ) {
+    const err =
+      data && typeof data === 'object' && 'error' in data && data.error
+        ? String(data.error)
+        : `HTTP ${response.status()}`
     throw new Error(`${path} 请求失败: ${err}`)
   }
   return data
@@ -77,14 +86,19 @@ export const seedAuthSession = async (
     const workspacePayload = await postJson<{
       success: boolean
       workspace: { id: string }
-    }>(request, '/api/workspaces', {
-      name: `E2E工作区_${suffix}`,
-      ownerName: 'E2E_OWNER',
-      organizationId
-    }, {
-      Authorization: `Bearer ${session.accessToken}`,
-      'x-organization-id': organizationId
-    })
+    }>(
+      request,
+      '/api/workspaces',
+      {
+        name: `E2E工作区_${suffix}`,
+        ownerName: 'E2E_OWNER',
+        organizationId
+      },
+      {
+        Authorization: `Bearer ${session.accessToken}`,
+        'x-organization-id': organizationId
+      }
+    )
     session.workspaceId = workspacePayload.workspace.id
   }
 
@@ -92,13 +106,16 @@ export const seedAuthSession = async (
 }
 
 export const injectAuthSession = async (page: Page, session: SeededSession) => {
-  await page.addInitScript((injected) => {
-    window.localStorage.setItem('veomuse-access-token', injected.accessToken)
-    window.localStorage.setItem('veomuse-refresh-token', injected.refreshToken)
-    window.localStorage.setItem('veomuse-organization-id', injected.organizationId)
-  }, {
-    accessToken: session.accessToken,
-    refreshToken: session.refreshToken,
-    organizationId: session.organizationId
-  })
+  await page.addInitScript(
+    (injected) => {
+      window.localStorage.setItem('veomuse-access-token', injected.accessToken)
+      window.localStorage.setItem('veomuse-refresh-token', injected.refreshToken)
+      window.localStorage.setItem('veomuse-organization-id', injected.organizationId)
+    },
+    {
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      organizationId: session.organizationId
+    }
+  )
 }

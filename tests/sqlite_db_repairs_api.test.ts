@@ -33,7 +33,7 @@ describe('数据库修复历史 API', () => {
         headers: { 'x-admin-token': 'unit-test-admin-token' }
       })
     )
-    const data = await response.json() as any
+    const data = (await response.json()) as any
 
     expect(response.status).toBe(200)
     expect(data.success).toBe(true)
@@ -64,11 +64,14 @@ describe('数据库修复历史 API', () => {
 
     const futureFrom = new Date(mark + 60_000).toISOString()
     const futureResponse = await app.handle(
-      new Request(`http://localhost/api/admin/db/repairs?limit=10&from=${encodeURIComponent(futureFrom)}`, {
-        headers: { 'x-admin-token': 'unit-test-admin-token' }
-      })
+      new Request(
+        `http://localhost/api/admin/db/repairs?limit=10&from=${encodeURIComponent(futureFrom)}`,
+        {
+          headers: { 'x-admin-token': 'unit-test-admin-token' }
+        }
+      )
     )
-    const futureData = await futureResponse.json() as any
+    const futureData = (await futureResponse.json()) as any
     expect(futureResponse.status).toBe(200)
     expect(futureData.success).toBe(true)
     expect(Array.isArray(futureData.repairs)).toBe(true)
@@ -83,7 +86,7 @@ describe('数据库修复历史 API', () => {
         { headers: { 'x-admin-token': 'unit-test-admin-token' } }
       )
     )
-    const rangeData = await rangeResponse.json() as any
+    const rangeData = (await rangeResponse.json()) as any
     expect(rangeResponse.status).toBe(200)
     expect(rangeData.success).toBe(true)
     expect(rangeData.repairs.some((item: any) => item.reason === 'history-range-test')).toBe(true)
@@ -115,7 +118,7 @@ describe('数据库修复历史 API', () => {
         { headers: { 'x-admin-token': 'unit-test-admin-token' } }
       )
     )
-    const firstPageData = await firstPageResponse.json() as any
+    const firstPageData = (await firstPageResponse.json()) as any
     expect(firstPageResponse.status).toBe(200)
     expect(firstPageData.success).toBe(true)
     expect(firstPageData.repairs.length).toBe(1)
@@ -131,7 +134,7 @@ describe('数据库修复历史 API', () => {
         { headers: { 'x-admin-token': 'unit-test-admin-token' } }
       )
     )
-    const secondPageData = await secondPageResponse.json() as any
+    const secondPageData = (await secondPageResponse.json()) as any
     expect(secondPageResponse.status).toBe(200)
     expect(secondPageData.success).toBe(true)
     expect(secondPageData.repairs.length).toBe(1)

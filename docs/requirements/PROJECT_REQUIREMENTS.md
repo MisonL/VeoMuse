@@ -11,6 +11,7 @@
 ## 2. 产品定义需求（PRD）
 
 ### 2.1 产品定位与目标用户
+
 - **内容创作者**：需要高质量、低成本视频素材的自媒体、UP 主及艺术家。
 - **技术爱好者**：追求最新 AI 技术落地体验、关注 Gemini 生态的极客。
 - **营销团队**：需要快速产出广告素材、进行批量视频生成的专业机构。
@@ -25,6 +26,7 @@
 - **AI 创意引擎**：深化 AI 在脚本生成、分镜设计、配乐推荐等环节的参与度。
 
 ### 2.2 体验与品牌要求
+
 - **定位**：充满活力的创意伙伴 (Enthusiastic & Creative Partner)。
 - **规范**：语气应富有感染力，不仅是执行命令，更要像是在与用户一起共创。
 - **核心风格**：玻璃拟态 (Glassmorphism)。
@@ -36,6 +38,7 @@
 ## 3. 架构与工程约束需求
 
 ### 3.1 技术栈基线
+
 - **运行时 (Runtime)**: **Bun** (极速 IO 与文件处理)
 - **后端框架 (Backend)**: **Elysia.js** (高性能，完美支持 Bun)
 - **类型同步 (Type Safety)**: **Eden Treaty** (实现前后端 100% 类型自动同步)
@@ -54,6 +57,7 @@
 - **视频处理**: **FFmpeg (fluent-ffmpeg)** + **Canvas API** (用于前端视频预览)
 
 ### 3.2 开发流程与质量门禁
+
 - Create a new test file for the feature or bug fix.
 - Write one or more unit tests that clearly define the expected behavior and acceptance criteria for the task.
 - **CRITICAL:** Run the tests and confirm that they fail as expected. This is the "Red" phase of TDD. Do not proceed until you have failing tests.
@@ -68,10 +72,11 @@
 - Stage all code changes related to the task.
 - Propose a clear, concise commit message e.g, \`feat(ui): Create basic HTML structure for calculator\`.
 - Perform the commit.
-- **Step 9.1: Get Commit Hash:** Obtain the hash of the *just-completed commit* (\`git log -1 --format="%H"\`).
+- **Step 9.1: Get Commit Hash:** Obtain the hash of the _just-completed commit_ (\`git log -1 --format="%H"\`).
 - **Step 9.2: Draft Note Content:** Create a detailed summary for the completed task. This should include the task name, a summary of changes, a list of all created/modified files, and the core "why" for the change.
 
 ### 3.3 代码规范要求
+
 - Code should be easy to read and understand by humans.
 - Avoid overly clever or obscure constructs.
 - Follow existing patterns in the codebase.
@@ -86,7 +91,7 @@
 - Mark properties never reassigned outside the constructor with \`readonly\`.
 - **Never use the \`public\` modifier** (it's the default). Restrict visibility with \`private\` or \`protected\` where possible.
 - **Functions:** Prefer function declarations for named functions. Use arrow functions for anonymous functions/callbacks.
-- **File Naming:** All lowercase, with underscores (\`_\`) or dashes (\`-\`). Extension must be \`.js\`.
+- **File Naming:** All lowercase, with underscores (\`\_\`) or dashes (\`-\`). Extension must be \`.js\`.
 - **File Encoding:** UTF-8.
 - **Whitespace:** Use only ASCII horizontal spaces (0x20). Tabs are forbidden for indentation.
 - New files should be ES modules (\`import\`/\`export\`).
@@ -100,6 +105,7 @@
 ## 4. 功能需求基线（V3.1）
 
 ### 4.1 冻结基线需求（BL）
+
 - [x] `BL-01` Bun Monorepo 前后端联调 + Eden Treaty 类型同步
 - [x] `BL-02` AI 提示词增强 + 视频生成 + WebSocket 实时进度
 - [x] `BL-03` 多轨时间轴拖拽/裁剪/同步预览
@@ -116,6 +122,7 @@
 - [x] `BL-14` 全量蓝图对齐标准
 
 ### 4.2 核心功能需求（P0）
+
 - [x] `P0-01` Luma/Runway/Pika 可用并可触发生成
 - [x] `P0-02` 新模型驱动标准化 + 智能路由推荐
 - [x] `P0-03` 翻译并克隆闭环
@@ -137,6 +144,7 @@
 - [x] `P0-19` Nginx CSP + 自动清理任务
 
 ### 4.3 审计可信度需求（P1）
+
 - [x] `P1-01` `tracks.md` 与 archive/plan 1:1 对齐
 - [x] `P1-02` `metadata.json` 状态与执行状态一致
 - [x] `P1-03` 清除验证状态自相矛盾条目
@@ -145,11 +153,13 @@
 - [x] `P1-06` full_blueprint_alignment 三项标准定量化（同上文档）
 
 ### 4.4 路线增强需求（P2）
+
 - [x] `P2-01` 模型超市治理策略（能力/成本/成功率/延迟画像）
 - [x] `P2-02` AI 创意引擎自动闭环深化
 - [x] `P2-03` 协作平台化（团队空间/云存储/多人协同）
 
 ### 4.5 P0 实施工作包状态
+
 - [x] `WP-A1` 模型通道闭环（已完成：推荐路由扩展 + 降级策略 + 测试）
 - [x] `WP-A2` 媒体炼金术闭环（已完成：style-transfer 真路由 + 翻译克隆 UI + 测试）
 - [x] `WP-A3` 数字演员系统闭环（已完成：演员库 API + UI 入口 + 4K HDR 导出预设 + 口型同步测试）
@@ -163,6 +173,7 @@
 ## 5. 下一阶段需求（V3.2）
 
 ### 5.1 北极星目标（NS）
+
 - 关键主链路（注册/组织/工作区/协作/导出）端到端成功率 >= 99.5%
 - 非 AI API（工作区、存储、策略）P95 响应时间 <= 400ms
 - 新用户首次完成“创建工作区 -> 生成 -> 导出”平均步骤 <= 8
@@ -170,6 +181,7 @@
 - 主分支安全门禁（secrets 扫描、鉴权回归、多租户越权回归）全绿
 
 ### 5.2 第一批 P0 任务
+
 - [x] 将 `ComparisonLab.tsx` 拆分为模式级容器 + 领域子组件（降低耦合）
 - [x] 建立“功能导览 / 新手引导”最小可用版本
 - [x] 增加浏览器级 E2E：注册 -> 组织 -> 工作区 -> 生成 -> 导出
@@ -187,34 +199,34 @@
 - 计划清单项总数（按 archive/plan 勾选行自动统计，含子任务）：`330`
 - 已完成清单项（同口径）：`330`
 
-| 序号 | Track ID | 类型 | 状态 | 计划完成 | 需求摘要 |
-| --- | --- | --- | --- | --- | --- |
-| 1 | ai_audio_revolution_20260225 | feature | completed | 6/6 | AI 音频革命：智能配音 (TTS) 与创意背景音乐合成 |
-| 2 | ai_channels_explosion_20260226 | feature | completed | 11/11 | AI 渠道大爆发：集成 Luma Dream Machine、Runway Gen-3 与 Pika 1.5 顶级模型集群 |
-| 3 | ai_dimension_breakthrough_20260225 | feature | completed | 12/12 | AI 维度突破：3D 空间感知预览、AI 变声克隆与智能节奏对齐引擎 |
-| 4 | ai_director_peak_20260225 | feature | completed | 12/12 | AI 创意巅峰：‘一键导演’自动化剪辑、语义级画面蒙版与智能叙事修复 |
-| 5 | ai_media_alchemy_20260226 | feature | completed | 13/13 | AI 媒体炼金术：多语种配音同步翻译、视频实时风格迁移与智能素材增强 |
-| 6 | ai_mixed_reality_20260226 | feature | completed | 11/11 | 虚实共生：AI 实时动作捕捉同步、4K 神经辐射场 (NeRF) 渲染与沉浸式 VR 空间导出 |
-| 7 | ai_studio_evolution_20260226 | feature | completed | 9/9 | AI 影棚级进化：智能重光照 (Relighting)、神经渲染特效与全场景一致性引擎 |
-| 8 | ai_virtual_actors_20260226 | feature | completed | 12/12 | 数字人永生：生成式虚拟演员、高精度对口型 (Lip-Sync) 与 4K HDR 极速渲染引擎 |
-| 9 | bug_bash_final_20260226 | bug | completed | 11/11 | 旗舰版全量 Bug 猎杀：前端渲染异常、状态同步边界与 API 健壮性深度加固 |
-| 10 | editor_excellence_plan_20260225 | feature | completed | 15/15 | 编辑器卓越计划：磁吸对齐、全能素材中心与撤销重做系统 |
-| 11 | editor_polish_and_composition_20260225 | feature | completed | 17/17 | 编辑器深度打磨：高级交互、多片段拖拽与后台合成引擎 |
-| 12 | editor_precision_20260225 | feature | completed | 11/11 | 工匠之手：属性面板、精细化时间轴控制与专业右键菜单 |
-| 13 | editor_visual_fx_20260225 | feature | completed | 6/6 | 视觉艺术进阶：片段转场特效、文字动态预设与全局滤镜引擎 |
-| 14 | final_polish_20260226 | feature | completed | 11/11 | 旗舰版全功能极致打磨与体验抛光：音量平衡、渲染动效与交互细节优化 |
-| 15 | full_blueprint_alignment_20260227 | feature | completed | 16/16 | 补全所有规划的功能与前端功能的偏差，100% 对齐历史蓝图 |
-| 16 | init_monorepo_20260225 | feature | completed | 17/17 | 构建 VeoMuse 旗舰版 Monorepo：初始化 Bun Workspaces 并搭建 Elysia 与 React 基础脚手架 |
-| 17 | launch_and_deployment_20260226 | feature | completed | 6/6 | 旗舰版商业化上线：Docker 容器化、Nginx 高性能部署与全平台发布指南 |
-| 18 | migrate_core_logic_20260225 | feature | completed | 17/17 | 核心业务迁移与 AI 创意引擎实现：重构 Video 逻辑并实现 AI 智能翻译层 |
-| 19 | multi_model_orchestrator_20260225 | feature | completed | 13/13 | 全球模型总线：多模型架构抽象、Sora/Kling 对接与智能对比实验室 |
-| 20 | pro_mastery_boost_20260226 | feature | completed | 8/8 | 专业级增强：全局快捷键、智能预加载与全链路遥测看板 |
-| 21 | theme_system_20260227 | feature | completed | 19/19 | 开发主题系统 |
-| 22 | ultimate_excellence_20260226 | feature | completed | 13/13 | 极致卓越：架构抽象化、全链路性能量化与高可用健壮性加固 |
-| 23 | ultimate_optimize_20260226 | feature | completed | 25/25 | 全部优化好！全方位对齐 2026 最佳实践 |
-| 24 | ultimate_polish_20260226 | feature | completed | 16/16 | 全部处理好！全方位性能量化、代码复用提升与 UX 深度打磨 |
-| 25 | video_editor_core_20260225 | feature | completed | 17/17 | 次世代多轨道视频编辑器：构建时间轴、预览引擎与 AI 自动剪辑基础 |
-| 26 | visual_storytelling_20260225 | feature | completed | 6/6 | 视听叙事大师：动态文字、多音轨母带处理与转场特效引擎 |
+| 序号 | Track ID                               | 类型    | 状态      | 计划完成 | 需求摘要                                                                              |
+| ---- | -------------------------------------- | ------- | --------- | -------- | ------------------------------------------------------------------------------------- |
+| 1    | ai_audio_revolution_20260225           | feature | completed | 6/6      | AI 音频革命：智能配音 (TTS) 与创意背景音乐合成                                        |
+| 2    | ai_channels_explosion_20260226         | feature | completed | 11/11    | AI 渠道大爆发：集成 Luma Dream Machine、Runway Gen-3 与 Pika 1.5 顶级模型集群         |
+| 3    | ai_dimension_breakthrough_20260225     | feature | completed | 12/12    | AI 维度突破：3D 空间感知预览、AI 变声克隆与智能节奏对齐引擎                           |
+| 4    | ai_director_peak_20260225              | feature | completed | 12/12    | AI 创意巅峰：‘一键导演’自动化剪辑、语义级画面蒙版与智能叙事修复                       |
+| 5    | ai_media_alchemy_20260226              | feature | completed | 13/13    | AI 媒体炼金术：多语种配音同步翻译、视频实时风格迁移与智能素材增强                     |
+| 6    | ai_mixed_reality_20260226              | feature | completed | 11/11    | 虚实共生：AI 实时动作捕捉同步、4K 神经辐射场 (NeRF) 渲染与沉浸式 VR 空间导出          |
+| 7    | ai_studio_evolution_20260226           | feature | completed | 9/9      | AI 影棚级进化：智能重光照 (Relighting)、神经渲染特效与全场景一致性引擎                |
+| 8    | ai_virtual_actors_20260226             | feature | completed | 12/12    | 数字人永生：生成式虚拟演员、高精度对口型 (Lip-Sync) 与 4K HDR 极速渲染引擎            |
+| 9    | bug_bash_final_20260226                | bug     | completed | 11/11    | 旗舰版全量 Bug 猎杀：前端渲染异常、状态同步边界与 API 健壮性深度加固                  |
+| 10   | editor_excellence_plan_20260225        | feature | completed | 15/15    | 编辑器卓越计划：磁吸对齐、全能素材中心与撤销重做系统                                  |
+| 11   | editor_polish_and_composition_20260225 | feature | completed | 17/17    | 编辑器深度打磨：高级交互、多片段拖拽与后台合成引擎                                    |
+| 12   | editor_precision_20260225              | feature | completed | 11/11    | 工匠之手：属性面板、精细化时间轴控制与专业右键菜单                                    |
+| 13   | editor_visual_fx_20260225              | feature | completed | 6/6      | 视觉艺术进阶：片段转场特效、文字动态预设与全局滤镜引擎                                |
+| 14   | final_polish_20260226                  | feature | completed | 11/11    | 旗舰版全功能极致打磨与体验抛光：音量平衡、渲染动效与交互细节优化                      |
+| 15   | full_blueprint_alignment_20260227      | feature | completed | 16/16    | 补全所有规划的功能与前端功能的偏差，100% 对齐历史蓝图                                 |
+| 16   | init_monorepo_20260225                 | feature | completed | 17/17    | 构建 VeoMuse 旗舰版 Monorepo：初始化 Bun Workspaces 并搭建 Elysia 与 React 基础脚手架 |
+| 17   | launch_and_deployment_20260226         | feature | completed | 6/6      | 旗舰版商业化上线：Docker 容器化、Nginx 高性能部署与全平台发布指南                     |
+| 18   | migrate_core_logic_20260225            | feature | completed | 17/17    | 核心业务迁移与 AI 创意引擎实现：重构 Video 逻辑并实现 AI 智能翻译层                   |
+| 19   | multi_model_orchestrator_20260225      | feature | completed | 13/13    | 全球模型总线：多模型架构抽象、Sora/Kling 对接与智能对比实验室                         |
+| 20   | pro_mastery_boost_20260226             | feature | completed | 8/8      | 专业级增强：全局快捷键、智能预加载与全链路遥测看板                                    |
+| 21   | theme_system_20260227                  | feature | completed | 19/19    | 开发主题系统                                                                          |
+| 22   | ultimate_excellence_20260226           | feature | completed | 13/13    | 极致卓越：架构抽象化、全链路性能量化与高可用健壮性加固                                |
+| 23   | ultimate_optimize_20260226             | feature | completed | 25/25    | 全部优化好！全方位对齐 2026 最佳实践                                                  |
+| 24   | ultimate_polish_20260226               | feature | completed | 16/16    | 全部处理好！全方位性能量化、代码复用提升与 UX 深度打磨                                |
+| 25   | video_editor_core_20260225             | feature | completed | 17/17    | 次世代多轨道视频编辑器：构建时间轴、预览引擎与 AI 自动剪辑基础                        |
+| 26   | visual_storytelling_20260225           | feature | completed | 6/6      | 视听叙事大师：动态文字、多音轨母带处理与转场特效引擎                                  |
 
 ## 7. 测试与验收要求
 
@@ -231,34 +243,34 @@
 
 ## P0 映射清单
 
-| 需求ID | 自动化测试 | 手工验收要点 |
-|---|---|---|
-| `P0-01` 模型选择器可用 Luma/Runway/Pika | `tests/model_channels.test.ts` | 模型实验室左右模型下拉均可选择 3 个新模型并提交生成 |
-| `P0-02` 新模型驱动与路由推荐 | `tests/model_router_recommendation.test.ts` | 输入不同提示词，推荐模型会自动回填 |
-| `P0-03` 翻译并克隆 | `tests/media_alchemy_translation.test.ts`, `tests/media_alchemy_translation_frontend_clone.test.ts` | 属性面板触发翻译后时间轴新增克隆片段，克隆片段 `start/end/content/translatedFrom` 正确 |
-| `P0-04` 风格预设实时预览 | `tests/media_alchemy_style_transfer.test.ts`, `tests/media_alchemy_style_vfx_preview_data.test.ts` | 选择风格预设后片段 `data` 写入 `stylePreset/styleModel/styleOperationId` 并可用于预览反馈 |
-| `P0-05` 演员库管理与一致性 | `tests/virtual_actors_api.test.ts` | 新增演员后可在属性面板绑定并用于生成 |
-| `P0-06` 口型同步 | `tests/lip_sync_flow.test.ts` | 打开口型同步并生成时后端兼容 `sync_lip` 并标准化透传 `syncLip: true` |
-| `P0-07` 4K HDR 导出 | `tests/composition_service.test.ts` | 导出菜单可选 4K HDR，输出命名含 HDR 标识 |
-| `P0-08` 动捕同步演员 | `tests/motion_capture_mapping.test.ts` | 启动动捕流并同步到演员，状态提示成功 |
-| `P0-09` 3D 自由视角 | `tests/spatial_preview_mode.test.ts` | 预览区切换 3D 后可拖拽改变视角 |
-| `P0-10` 空间视频导出 | `tests/composition_api.test.ts` | 导出选中空间视频后返回有效输出路径 |
-| `P0-11` VFX 粒子层应用预览 | `tests/vfx_apply_flow.test.ts`, `tests/media_alchemy_style_vfx_preview_data.test.ts` | 选择 VFX 类型和强度后片段 `data` 写入 `vfxType/vfxIntensity/vfxOperationId` 并驱动叠加效果 |
-| `P0-12` World-Link 一致性 | `tests/world_link_consistency.test.ts` | 连续请求开启 world-link 且复用同一 worldId 时，驱动 payload 保持一致透传 |
-| `P0-13` 全 AI 服务统一 BaseAiService | `tests/base_ai_inheritance_coverage.test.ts` | `/api/admin/metrics` 能看到各 AI 服务计量 |
-| `P0-14` API 故障可恢复降级 | `tests/degrade_recovery_ui.test.ts`, `tests/resilience_demo.test.ts` | 失败提示中可点击“重试/降级继续编辑”且不阻塞编辑 |
-| `P0-15` 长时间轴性能 | `tests/timeline_virtualization.test.ts` | 长时间轴虚拟化策略与窗口裁剪逻辑走真实实现（含边界裁剪） |
-| `P0-16` Action + Optimistic | `tests/action_optimistic_flow.test.ts` | 导出按钮文案由 pending 状态即时驱动，且 App 同时接入 `useActionState/useOptimistic` |
-| `P0-17` 亮色主题与动效统一 | `tests/light_mode_visual_tokens.test.ts`, `tests/theme_system.test.ts` | 亮色默认加载，亮暗切换无闪烁 |
-| `P0-18` SyncController Native 化 | `tests/player_sync.test.ts` | 多轨播放时按预算同步，播放不中断 |
-| `P0-19` CSP + 自动清理 | `tests/nginx_security_headers.test.ts`, `tests/cleanup_scheduler.test.ts`, `tests/sqlite_db_auto_repair_guard.test.ts`, `tests/db_repair_drill_script.test.ts` | `curl -I` 可见安全头，超期文件自动清理并有指标；DB 自动修复仅在损坏迹象明确时触发；可通过 `bun run drill:db-repair` 执行损坏注入与修复演练 |
+| 需求ID                                  | 自动化测试                                                                                                                                                     | 手工验收要点                                                                                                                               |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `P0-01` 模型选择器可用 Luma/Runway/Pika | `tests/model_channels.test.ts`                                                                                                                                 | 模型实验室左右模型下拉均可选择 3 个新模型并提交生成                                                                                        |
+| `P0-02` 新模型驱动与路由推荐            | `tests/model_router_recommendation.test.ts`                                                                                                                    | 输入不同提示词，推荐模型会自动回填                                                                                                         |
+| `P0-03` 翻译并克隆                      | `tests/media_alchemy_translation.test.ts`, `tests/media_alchemy_translation_frontend_clone.test.ts`                                                            | 属性面板触发翻译后时间轴新增克隆片段，克隆片段 `start/end/content/translatedFrom` 正确                                                     |
+| `P0-04` 风格预设实时预览                | `tests/media_alchemy_style_transfer.test.ts`, `tests/media_alchemy_style_vfx_preview_data.test.ts`                                                             | 选择风格预设后片段 `data` 写入 `stylePreset/styleModel/styleOperationId` 并可用于预览反馈                                                  |
+| `P0-05` 演员库管理与一致性              | `tests/virtual_actors_api.test.ts`                                                                                                                             | 新增演员后可在属性面板绑定并用于生成                                                                                                       |
+| `P0-06` 口型同步                        | `tests/lip_sync_flow.test.ts`                                                                                                                                  | 打开口型同步并生成时后端兼容 `sync_lip` 并标准化透传 `syncLip: true`                                                                       |
+| `P0-07` 4K HDR 导出                     | `tests/composition_service.test.ts`                                                                                                                            | 导出菜单可选 4K HDR，输出命名含 HDR 标识                                                                                                   |
+| `P0-08` 动捕同步演员                    | `tests/motion_capture_mapping.test.ts`                                                                                                                         | 启动动捕流并同步到演员，状态提示成功                                                                                                       |
+| `P0-09` 3D 自由视角                     | `tests/spatial_preview_mode.test.ts`                                                                                                                           | 预览区切换 3D 后可拖拽改变视角                                                                                                             |
+| `P0-10` 空间视频导出                    | `tests/composition_api.test.ts`                                                                                                                                | 导出选中空间视频后返回有效输出路径                                                                                                         |
+| `P0-11` VFX 粒子层应用预览              | `tests/vfx_apply_flow.test.ts`, `tests/media_alchemy_style_vfx_preview_data.test.ts`                                                                           | 选择 VFX 类型和强度后片段 `data` 写入 `vfxType/vfxIntensity/vfxOperationId` 并驱动叠加效果                                                 |
+| `P0-12` World-Link 一致性               | `tests/world_link_consistency.test.ts`                                                                                                                         | 连续请求开启 world-link 且复用同一 worldId 时，驱动 payload 保持一致透传                                                                   |
+| `P0-13` 全 AI 服务统一 BaseAiService    | `tests/base_ai_inheritance_coverage.test.ts`                                                                                                                   | `/api/admin/metrics` 能看到各 AI 服务计量                                                                                                  |
+| `P0-14` API 故障可恢复降级              | `tests/degrade_recovery_ui.test.ts`, `tests/resilience_demo.test.ts`                                                                                           | 失败提示中可点击“重试/降级继续编辑”且不阻塞编辑                                                                                            |
+| `P0-15` 长时间轴性能                    | `tests/timeline_virtualization.test.ts`                                                                                                                        | 长时间轴虚拟化策略与窗口裁剪逻辑走真实实现（含边界裁剪）                                                                                   |
+| `P0-16` Action + Optimistic             | `tests/action_optimistic_flow.test.ts`                                                                                                                         | 导出按钮文案由 pending 状态即时驱动，且 App 同时接入 `useActionState/useOptimistic`                                                        |
+| `P0-17` 亮色主题与动效统一              | `tests/light_mode_visual_tokens.test.ts`, `tests/theme_system.test.ts`                                                                                         | 亮色默认加载，亮暗切换无闪烁                                                                                                               |
+| `P0-18` SyncController Native 化        | `tests/player_sync.test.ts`                                                                                                                                    | 多轨播放时按预算同步，播放不中断                                                                                                           |
+| `P0-19` CSP + 自动清理                  | `tests/nginx_security_headers.test.ts`, `tests/cleanup_scheduler.test.ts`, `tests/sqlite_db_auto_repair_guard.test.ts`, `tests/db_repair_drill_script.test.ts` | `curl -I` 可见安全头，超期文件自动清理并有指标；DB 自动修复仅在损坏迹象明确时触发；可通过 `bun run drill:db-repair` 执行损坏注入与修复演练 |
 
 ## P2 映射清单
 
-| 需求ID | 自动化测试 | 手工验收要点 |
-|---|---|---|
-| `P2-01` 模型超市治理策略（画像 + 治理） | `tests/model_marketplace_policy_api.test.ts`, `tests/p2_lab_frontend_alignment.test.ts` | 实验室“策略治理”可创建策略、模拟路由、查看执行记录分页与评分拆解；非法 fallback/循环 fallback 会被拒绝 |
-| `P2-02` AI 创意闭环深化（版本链） | `tests/creative_pipeline_versioning.test.ts`, `tests/creative_pipeline_api.test.ts`, `tests/p2_lab_frontend_alignment.test.ts` | 实验室“创意闭环”可创建 run、提交 run/scene 反馈、刷新版本链并 commit；从中间版本查询也能拿到完整版本链 |
+| 需求ID                                         | 自动化测试                                                                                                                                                                                  | 手工验收要点                                                                                                                                     |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `P2-01` 模型超市治理策略（画像 + 治理）        | `tests/model_marketplace_policy_api.test.ts`, `tests/p2_lab_frontend_alignment.test.ts`                                                                                                     | 实验室“策略治理”可创建策略、模拟路由、查看执行记录分页与评分拆解；非法 fallback/循环 fallback 会被拒绝                                           |
+| `P2-02` AI 创意闭环深化（版本链）              | `tests/creative_pipeline_versioning.test.ts`, `tests/creative_pipeline_api.test.ts`, `tests/p2_lab_frontend_alignment.test.ts`                                                              | 实验室“创意闭环”可创建 run、提交 run/scene 反馈、刷新版本链并 commit；从中间版本查询也能拿到完整版本链                                           |
 | `P2-03` 协作平台化（团队空间/云存储/多人协同） | `tests/workspace_platform_api.test.ts`, `tests/workspace_api.test.ts`, `tests/collaboration_service.test.ts`, `tests/p2_lab_frontend_alignment.test.ts`, `tests/p2_end_to_end_flow.test.ts` | 实验室“协作平台”可创建空间、邀请/接受邀请、连接 WS 协同、创建快照并生成上传令牌；非成员 WS 与跨空间 projectId 会被拦截，且 P2 主路径端到端可串通 |
 
 ## full_blueprint_alignment 定量标准
@@ -266,7 +278,6 @@
 - 蓝图覆盖率：`174 / 174 = 100%`（按 `archive/*/plan.md` 勾选项统计）
 - 逻辑连通性：核心链路 `8/8` 全通过（模型生成、导演分析、媒体炼金、演员一致性、动捕同步、VFX、导出、监控）
 - 视觉一致性：主题变量统一到 `theme.css`，`App.tsx` 不再内联主题块，亮暗模式切换通过自动化校验
-
 ```
 
 ## 附录 A：26 条轨道需求摘录

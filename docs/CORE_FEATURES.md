@@ -1,0 +1,104 @@
+# VeoMuse 核心功能清单（V3.1）
+
+本文用于快速审阅当前项目“已完成并可用”的核心能力，按业务域归类。
+
+## 1. AI 创作引擎
+
+### 1.1 文本到视频与导演能力
+
+- 能力：导演分析、镜头建议、提示词增强、智能剪辑。
+- 关键入口：`/api/ai/director/analyze`、`/api/ai/suggest-cuts`、`/api/ai/enhance`。
+- 关键测试：`tests/ai_api.test.ts`、`tests/prompt_enhance.test.ts`、`tests/ai_clip.test.ts`。
+
+### 1.2 媒体炼金能力
+
+- 能力：翻译克隆、风格迁移、VFX、重光照、口型同步、音色迁移、空间重建。
+- 关键入口：
+  - `/api/ai/translate`
+  - `/api/ai/alchemy/style-transfer`
+  - `/api/ai/vfx/apply`
+  - `/api/ai/sync-lip`
+  - `/api/ai/voice-morph`
+  - `/api/ai/relighting/apply`
+  - `/api/ai/spatial/render`
+- 关键测试：
+  - `tests/media_alchemy_translation.test.ts`
+  - `tests/media_alchemy_style_transfer.test.ts`
+  - `tests/vfx_apply_flow.test.ts`
+  - `tests/lip_sync_flow.test.ts`
+
+## 2. 多模型总线与渠道治理
+
+### 2.1 模型编排
+
+- 默认模型：`veo-3.1`、`kling-v1`、`sora-preview`、`luma-dream`、`runway-gen3`、`pika-1.5`、`openai-compatible`。
+- 关键入口：`/api/models`、`/api/models/marketplace`、`/api/generate`。
+- 关键测试：`tests/model_channels.test.ts`、`tests/model_marketplace_api.test.ts`。
+
+### 2.2 策略治理
+
+- 能力：策略创建/更新、模拟、执行记录、预算告警与自动降级。
+- 关键入口：`/api/models/policies/**`、`/api/models/policy/simulate`。
+- 关键测试：`tests/model_marketplace_policy_api.test.ts`、`tests/model_policy_sandbox_alerts_api.test.ts`。
+
+## 3. 协作平台与治理
+
+### 3.1 组织与工作区
+
+- 能力：组织、工作区、成员权限、审计导出、配额控制。
+- 关键入口：`/api/organizations/**`、`/api/workspaces/**`。
+- 关键测试：`tests/organization_governance_api.test.ts`、`tests/workspace_api.test.ts`。
+
+### 3.2 协作评论与评审
+
+- 能力：评论、回复、resolve、review、模板应用、批量片段更新。
+- 关键入口：
+  - `/api/projects/:id/comments`
+  - `/api/projects/:id/reviews`
+  - `/api/projects/:id/templates`
+  - `/api/projects/:id/clips/batch-update`
+- 关键测试：`tests/project_comments_reviews_api.test.ts`、`tests/project_templates_batch_update_api.test.ts`。
+
+## 4. V4 实验室能力
+
+### 4.1 可靠性治理
+
+- 能力：error budget、rollback drill、alerts 与 ACK。
+- 关键入口：`/api/v4/admin/reliability/**`。
+- 关键测试：`tests/v4_key_endpoints_api.test.ts`。
+
+### 4.2 创意工作流
+
+- 能力：workflow 列表/创建/运行、runs 查询、batch jobs、asset reuse。
+- 关键入口：
+  - `/api/v4/creative/prompt-workflows/**`
+  - `/api/v4/creative/batch-jobs/**`
+  - `/api/v4/assets/**`
+- 关键测试：`tests/v4_key_endpoints_api.test.ts`、`tests/v4_lab_frontend_alignment.test.ts`。
+
+## 5. 编辑器核心体验
+
+- 多轨时间轴、播放器同步、布局自适应、导出编排。
+- 关键前端入口：`App.tsx`、`VideoEditor.tsx`、`ComparisonLab.tsx`、`TelemetryDashboard.tsx`。
+- 关键后端入口：`/api/video/compose`、`/api/storage/upload-token`。
+- 关键测试：
+  - `tests/editor_store.test.ts`
+  - `tests/player_sync.test.ts`
+  - `tests/composition_api.test.ts`
+  - `tests/layout_math.test.ts`
+
+## 6. 可观测性与门禁
+
+- 管理指标：`/api/admin/metrics`。
+- Provider 健康：`/api/admin/providers/health`、`/api/admin/providers/health/:providerId`。
+- SLO 摘要/分解/失败诊断：`/api/admin/slo/**`。
+- 数据库健康与修复：`/api/admin/db/**`。
+- 发布门禁脚本：`scripts/release_gate.ts`、`scripts/slo_gate.ts`、`scripts/api_contract_guard.ts`。
+
+## 7. 质量基线
+
+- 单测：`bun run test`
+- 覆盖率门禁：`bun run test:coverage`
+- API 契约：`bun run quality:api-contract`
+- E2E 冒烟：`bun run e2e:smoke`
+- 发布门禁：`bun run release:gate`

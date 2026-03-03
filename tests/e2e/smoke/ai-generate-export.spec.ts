@@ -16,9 +16,7 @@ test('可完成导演生成并导出（稳定桩）', async ({ page, request }) 
       contentType: 'application/json',
       body: JSON.stringify({
         success: true,
-        scenes: [
-          { title: '镜头 1', duration: 4, videoPrompt: 'city night' }
-        ],
+        scenes: [{ title: '镜头 1', duration: 4, videoPrompt: 'city night' }],
         worldId: 'world_e2e'
       })
     })

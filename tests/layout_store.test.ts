@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { LAYOUT_DEFAULTS, LAYOUT_LIMITS, useLayoutStore } from '../apps/frontend/src/store/layoutStore'
+import {
+  LAYOUT_DEFAULTS,
+  LAYOUT_LIMITS,
+  useLayoutStore
+} from '../apps/frontend/src/store/layoutStore'
 
 describe('布局存储状态验证', () => {
   beforeEach(() => {
