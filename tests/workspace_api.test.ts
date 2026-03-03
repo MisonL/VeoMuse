@@ -50,6 +50,28 @@ describe('工作区协作 API 回归', () => {
     const workspaceId = createData.workspace.id as string
     const projectId = createData.defaultProject.id as string
 
+    const createProjectResp = await app.handle(
+      new Request('http://localhost/api/projects', {
+        method: 'POST',
+        headers: createAuthHeaders(owner.accessToken, {
+          organizationId: owner.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          workspaceId,
+          name: 'VeoMuse 子项目 A'
+        })
+      })
+    )
+    const createProjectData = (await createProjectResp.json()) as any
+    expect(createProjectResp.status).toBe(200)
+    expect(createProjectData.success).toBe(true)
+    expect(createProjectData.project?.id).toContain('prj_')
+    expect(createProjectData.project?.workspaceId).toBe(workspaceId)
+    expect(createProjectData.project?.name).toBe('VeoMuse 子项目 A')
+
+    const createdProjectId = createProjectData.project.id as string
+
     const membersUnauthorizedResp = await app.handle(
       new Request(`http://localhost/api/workspaces/${workspaceId}/members`)
     )
@@ -106,6 +128,7 @@ describe('工作区协作 API 回归', () => {
     expect(projectsResp.status).toBe(200)
     expect(projectsData.success).toBe(true)
     expect(projectsData.projects.some((project: any) => project.id === projectId)).toBe(true)
+    expect(projectsData.projects.some((project: any) => project.id === createdProjectId)).toBe(true)
 
     const auditResp = await app.handle(
       new Request(`http://localhost/api/projects/${projectId}/audit`, {
@@ -116,5 +139,17 @@ describe('工作区协作 API 回归', () => {
     expect(auditResp.status).toBe(200)
     expect(auditData.success).toBe(true)
     expect(auditData.logs.some((log: any) => log.action === 'workspace.created')).toBe(true)
+
+    const createdProjectAuditResp = await app.handle(
+      new Request(`http://localhost/api/projects/${createdProjectId}/audit`, {
+        headers: createAuthHeaders(owner.accessToken, { organizationId: owner.organizationId })
+      })
+    )
+    const createdProjectAuditData = (await createdProjectAuditResp.json()) as any
+    expect(createdProjectAuditResp.status).toBe(200)
+    expect(createdProjectAuditData.success).toBe(true)
+    expect(createdProjectAuditData.logs.some((log: any) => log.action === 'project.created')).toBe(
+      true
+    )
   }, 30_000)
 })

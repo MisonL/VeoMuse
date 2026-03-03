@@ -46,7 +46,7 @@
 ### 3.1 组织与工作区
 
 - 能力：组织、工作区、成员权限、审计导出、配额控制。
-- 关键入口：`/api/organizations/**`、`/api/workspaces/**`。
+- 关键入口：`/api/organizations/**`、`/api/workspaces/**`、`/api/projects`（工作区内创建项目）。
 - 关键测试：`tests/organization_governance_api.test.ts`、`tests/workspace_api.test.ts`。
 
 ### 3.2 协作评论与评审

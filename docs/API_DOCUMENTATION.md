@@ -445,6 +445,14 @@ NeRF 空间重构。未配置 provider 时返回 `not_implemented`。
 
 获取工作区项目列表。
 
+### POST `/api/projects`
+
+在指定工作区下创建项目。
+
+- **Params**: `workspaceId`(required), `name`(required)
+- **权限**: Bearer 用户在目标工作区中角色需至少为 `editor`，否则 `403`。
+- 工作区不存在返回 `404`。
+
 ### GET `/api/workspaces/:id/presence`
 
 获取在线成员快照。

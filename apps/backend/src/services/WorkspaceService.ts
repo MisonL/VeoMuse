@@ -1309,6 +1309,54 @@ export class WorkspaceService {
       .map(toAudit)
   }
 
+  static createProject(workspaceId: string, name: string, actorName: string): Project | null {
+    const normalizedWorkspaceId = workspaceId.trim()
+    const normalizedName = name.trim()
+    if (!normalizedWorkspaceId) {
+      throw new Error('工作区 ID 不能为空')
+    }
+    if (!normalizedName) {
+      throw new Error('项目名称不能为空')
+    }
+
+    const workspace = this.getWorkspace(normalizedWorkspaceId)
+    if (!workspace) {
+      throw new Error('Workspace not found')
+    }
+
+    const projectId = `prj_${crypto.randomUUID()}`
+    const createdAt = now()
+    const traceId = `trace_${crypto.randomUUID()}`
+
+    getLocalDb()
+      .prepare(
+        `
+      INSERT INTO projects (id, organization_id, workspace_id, name, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `
+      )
+      .run(
+        projectId,
+        workspace.organizationId || resolveOrganizationIdByWorkspace(normalizedWorkspaceId),
+        normalizedWorkspaceId,
+        normalizedName,
+        createdAt,
+        createdAt
+      )
+
+    this.writeAudit(
+      'project.created',
+      actorName,
+      { workspaceId: normalizedWorkspaceId, projectId, name: normalizedName },
+      workspace.organizationId || resolveOrganizationIdByWorkspace(normalizedWorkspaceId),
+      normalizedWorkspaceId,
+      projectId,
+      traceId
+    )
+
+    return this.getProject(projectId)
+  }
+
   static listWorkspaceProjects(workspaceId: string): Project[] {
     return getLocalDb()
       .prepare(

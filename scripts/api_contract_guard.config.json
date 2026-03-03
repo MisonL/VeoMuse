@@ -13,5 +13,5 @@
     "/api/v4/assets"
   ],
   "excludePatterns": [],
-  "manualRequiredEndpoints": []
+  "manualRequiredEndpoints": ["/api/projects"]
 }

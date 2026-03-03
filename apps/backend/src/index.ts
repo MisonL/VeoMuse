@@ -3069,6 +3069,46 @@ export const createApp = () => {
       }
     )
     .post(
+      '/api/projects',
+      ({ body, request, set }) => {
+        const authorized = authorizeWorkspaceRole(body.workspaceId, request, set, 'editor')
+        if (!authorized) {
+          if (set.status === 401) {
+            return { success: false, status: 'error', error: 'Unauthorized' }
+          }
+          return { success: false, status: 'error', error: 'Forbidden: editor membership required' }
+        }
+        try {
+          const project = WorkspaceService.createProject(
+            body.workspaceId,
+            body.name,
+            authorized.actorName
+          )
+          return {
+            success: true,
+            project
+          }
+        } catch (error: any) {
+          if (error?.message === 'Workspace not found') {
+            set.status = 404
+            return { success: false, status: 'error', error: 'Workspace not found' }
+          }
+          set.status = 400
+          return {
+            success: false,
+            status: 'error',
+            error: error?.message || 'Create project failed'
+          }
+        }
+      },
+      {
+        body: t.Object({
+          workspaceId: t.String(),
+          name: t.String()
+        })
+      }
+    )
+    .post(
       '/api/workspaces/:id/members',
       ({ params, body, request, set }) => {
         const authorized = authorizeWorkspaceRole(params.id, request, set, 'owner')

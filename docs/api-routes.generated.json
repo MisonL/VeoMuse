@@ -61,6 +61,7 @@
   "/api/organizations/:id/channels/:providerId",
   "/api/organizations/:id/members",
   "/api/organizations/:id/quota",
+  "/api/projects",
   "/api/projects/:id/audit",
   "/api/projects/:id/clips/batch-update",
   "/api/projects/:id/comments",
