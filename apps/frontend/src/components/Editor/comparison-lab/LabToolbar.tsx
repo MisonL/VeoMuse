@@ -32,7 +32,7 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
               name="syncPlayback"
               type="checkbox"
               checked={syncPlayback}
-              onChange={e => onSyncPlaybackChange(e.target.checked)}
+              onChange={(e) => onSyncPlaybackChange(e.target.checked)}
             />
             <span>同步预览</span>
           </label>
@@ -68,11 +68,21 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
           </button>
         </div>
         {labMode === 'compare' ? (
-          <button id="btn-export-compare-report" className="lab-btn" onClick={onExportReport}>导出对比报告</button>
+          <button id="btn-export-compare-report" className="lab-btn" onClick={onExportReport}>
+            导出对比报告
+          </button>
         ) : (
-          <button className="lab-btn" onClick={onRefreshMarketplace}>刷新超市</button>
+          <button className="lab-btn" onClick={onRefreshMarketplace}>
+            刷新超市
+          </button>
         )}
-        <button className="lab-btn" onClick={onOpenChannelPanel} data-testid="btn-open-channel-panel">渠道接入</button>
+        <button
+          className="lab-btn"
+          onClick={onOpenChannelPanel}
+          data-testid="btn-open-channel-panel"
+        >
+          渠道接入
+        </button>
       </div>
     </div>
   )

@@ -3,17 +3,18 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import { clamp } from '../utils/layoutMath'
 import type { CenterPanelMode, PreviewAspect, TopBarDensity } from '../types/layout'
 
-const createSafeStorage = () => createJSONStorage(() => {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    return window.localStorage
-  }
+const createSafeStorage = () =>
+  createJSONStorage(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage
+    }
 
-  return {
-    getItem: () => null,
-    setItem: (_name, _value) => {},
-    removeItem: (_name) => {}
-  }
-})
+    return {
+      getItem: () => null,
+      setItem: (_name, _value) => {},
+      removeItem: (_name) => {}
+    }
+  })
 
 export const LAYOUT_DEFAULTS = {
   leftPanelPx: 400,
@@ -50,15 +51,18 @@ export const useLayoutStore = create<LayoutState>()(
   persist(
     (set) => ({
       ...LAYOUT_DEFAULTS,
-      setLeftPanelPx: (px) => set({
-        leftPanelPx: clamp(px, LAYOUT_LIMITS.leftPanelPx.min, LAYOUT_LIMITS.leftPanelPx.max)
-      }),
-      setRightPanelPx: (px) => set({
-        rightPanelPx: clamp(px, LAYOUT_LIMITS.rightPanelPx.min, LAYOUT_LIMITS.rightPanelPx.max)
-      }),
-      setTimelinePx: (px) => set({
-        timelinePx: clamp(px, LAYOUT_LIMITS.timelinePx.min, LAYOUT_LIMITS.timelinePx.max)
-      }),
+      setLeftPanelPx: (px) =>
+        set({
+          leftPanelPx: clamp(px, LAYOUT_LIMITS.leftPanelPx.min, LAYOUT_LIMITS.leftPanelPx.max)
+        }),
+      setRightPanelPx: (px) =>
+        set({
+          rightPanelPx: clamp(px, LAYOUT_LIMITS.rightPanelPx.min, LAYOUT_LIMITS.rightPanelPx.max)
+        }),
+      setTimelinePx: (px) =>
+        set({
+          timelinePx: clamp(px, LAYOUT_LIMITS.timelinePx.min, LAYOUT_LIMITS.timelinePx.max)
+        }),
       setCenterMode: (centerMode) => set({ centerMode }),
       setTopBarDensity: (topBarDensity) => set({ topBarDensity }),
       setPreviewAspect: (previewAspect) => set({ previewAspect }),

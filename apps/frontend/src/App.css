@@ -10,7 +10,8 @@
 }
 
 @keyframes halo-drift-a {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {
@@ -19,7 +20,8 @@
 }
 
 @keyframes halo-drift-b {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   50% {
@@ -44,7 +46,11 @@
   grid-template-rows: var(--header-h) minmax(0, 1fr) var(--split-handle-h) var(--timeline-h);
   gap: 8px;
   background:
-    radial-gradient(980px 340px at 18% -8%, color-mix(in srgb, var(--ap-accent) 10%, transparent), transparent 72%),
+    radial-gradient(
+      980px 340px at 18% -8%,
+      color-mix(in srgb, var(--ap-accent) 10%, transparent),
+      transparent 72%
+    ),
     radial-gradient(780px 260px at 85% 0%, rgba(16, 185, 129, 0.08), transparent 74%),
     linear-gradient(180deg, color-mix(in srgb, var(--ap-bg) 86%, #ffffff 14%), var(--ap-bg)),
     var(--ap-bg);
@@ -354,7 +360,11 @@
 }
 
 .export-btn {
-  background: linear-gradient(160deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 68%, #07339a));
+  background: linear-gradient(
+    160deg,
+    var(--ap-accent),
+    color-mix(in srgb, var(--ap-accent) 68%, #07339a)
+  );
   color: #fff;
   border: none;
   padding: 9px 18px;
@@ -378,7 +388,11 @@
 }
 
 .export-btn.is-pending {
-  background: linear-gradient(165deg, color-mix(in srgb, var(--ap-accent) 88%, #1d4ed8 12%), color-mix(in srgb, var(--ap-accent) 62%, #0f2f8a 38%));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 88%, #1d4ed8 12%),
+    color-mix(in srgb, var(--ap-accent) 62%, #0f2f8a 38%)
+  );
 }
 
 .export-btn.is-done {
@@ -460,7 +474,11 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 64%, #22c55e 36%));
+  background: linear-gradient(
+    90deg,
+    var(--ap-accent),
+    color-mix(in srgb, var(--ap-accent) 64%, #22c55e 36%)
+  );
   box-shadow: 0 0 8px color-mix(in srgb, var(--ap-accent) 35%, transparent);
   transition: width 220ms ease;
 }
@@ -519,17 +537,29 @@
 
 .panel-left {
   grid-column: 1;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 80%, #ffffff 20%), color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 80%, #ffffff 20%),
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%)
+  );
 }
 
 .panel-center {
   grid-column: 3;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 85%, #ffffff 15%), color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 85%, #ffffff 15%),
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%)
+  );
 }
 
 .panel-right {
   grid-column: 5;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 76%, #ffffff 24%), color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 76%, #ffffff 24%),
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%)
+  );
 }
 
 .resize-handle {
@@ -564,7 +594,9 @@
   white-space: nowrap;
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity 120ms ease, transform 120ms ease;
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
   z-index: 8;
 }
 
@@ -662,7 +694,11 @@ body.resizing-y {
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 72%, var(--ap-surface) 28%), color-mix(in srgb, var(--ap-surface) 88%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 72%, var(--ap-surface) 28%),
+    color-mix(in srgb, var(--ap-surface) 88%, transparent)
+  );
 }
 
 .sidebar-tabs {
@@ -702,7 +738,11 @@ body.resizing-y {
   flex: 1;
   padding: 12px;
   overflow: hidden;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%), color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%),
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%)
+  );
 }
 
 .monitor-core {
@@ -720,8 +760,11 @@ body.resizing-y {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 86%, var(--ap-panel) 14%), color-mix(in srgb, var(--ap-surface) 92%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 86%, var(--ap-panel) 14%),
+    color-mix(in srgb, var(--ap-surface) 92%, transparent)
+  );
 }
 
 .preview-host {
@@ -841,8 +884,16 @@ body.resizing-y {
   align-items: center;
   border-top: 1px solid var(--ap-border);
   background:
-    radial-gradient(480px 80px at 50% 0%, color-mix(in srgb, var(--ap-accent-soft) 26%, transparent), transparent 76%),
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 84%, var(--ap-panel) 16%), color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%));
+    radial-gradient(
+      480px 80px at 50% 0%,
+      color-mix(in srgb, var(--ap-accent-soft) 26%, transparent),
+      transparent 76%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 84%, var(--ap-panel) 16%),
+      color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%)
+    );
   flex-shrink: 0;
 }
 
@@ -860,7 +911,10 @@ body.resizing-y {
   height: 46px;
   border-radius: 999px;
   cursor: pointer;
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
   font-size: 18px;
   display: inline-flex;
   align-items: center;
@@ -972,7 +1026,11 @@ body.resizing-y {
 .audio-master-btn.primary {
   border-color: color-mix(in srgb, var(--ap-accent) 55%, #dbeafe 45%);
   color: #ffffff;
-  background: linear-gradient(165deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 72%, #09336d));
+  background: linear-gradient(
+    165deg,
+    var(--ap-accent),
+    color-mix(in srgb, var(--ap-accent) 72%, #09336d)
+  );
 }
 
 .timeline-container {
@@ -988,7 +1046,11 @@ body.resizing-y {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 70%, var(--ap-card) 30%), color-mix(in srgb, var(--ap-panel) 78%, #ffffff 22%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 70%, var(--ap-card) 30%),
+    color-mix(in srgb, var(--ap-panel) 78%, #ffffff 22%)
+  );
 }
 
 .timeline-tools {
@@ -1125,7 +1187,11 @@ body.resizing-y {
 }
 
 .pro-inspector-outer {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 76%, #ffffff 24%), color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 76%, #ffffff 24%),
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%)
+  );
 }
 
 .guide-overlay {
@@ -1217,7 +1283,11 @@ body.resizing-y {
 .guide-nav.primary {
   border-color: color-mix(in srgb, var(--ap-accent) 55%, #dbeafe 45%);
   color: #ffffff;
-  background: linear-gradient(165deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 72%, #09336d));
+  background: linear-gradient(
+    165deg,
+    var(--ap-accent),
+    color-mix(in srgb, var(--ap-accent) 72%, #09336d)
+  );
 }
 
 .guide-nav:disabled {

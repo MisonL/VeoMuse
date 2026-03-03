@@ -1,5 +1,12 @@
 import React from 'react'
-import type { CreativeRun } from '../types'
+import type {
+  V4AssetReuseRecord,
+  CreativeRun,
+  V4AssetReuseResult,
+  V4BatchJob,
+  V4Workflow,
+  V4WorkflowRun
+} from '../types'
 
 interface CreativeModePanelProps {
   creativeScript: string
@@ -10,6 +17,30 @@ interface CreativeModePanelProps {
   creativeRunFeedback: string
   sceneFeedbackMap: Record<string, string>
   creativeVersions: CreativeRun[]
+  workflows: V4Workflow[]
+  selectedWorkflowId: string
+  workflowName: string
+  workflowDescription: string
+  workflowRunPayload: string
+  workflowRunResult: V4WorkflowRun | null
+  workflowRuns: V4WorkflowRun[]
+  workflowRunsLimit: string
+  workflowRunsHasMore: boolean
+  batchJobType: string
+  batchJobPayload: string
+  batchJobId: string
+  batchJobStatus: V4BatchJob | null
+  assetReuseSourceId: string
+  assetReuseTargetId: string
+  assetReuseNote: string
+  assetReuseResult: V4AssetReuseResult | null
+  assetReuseHistoryAssetId: string
+  assetReuseHistorySourceProjectId: string
+  assetReuseHistoryTargetProjectId: string
+  assetReuseHistoryLimit: string
+  assetReuseHistoryOffset: string
+  assetReuseHistoryRecords: V4AssetReuseRecord[]
+  isV4Busy: boolean
   onCreativeScriptChange: (value: string) => void
   onCreativeStyleChange: (value: string) => void
   onCommitScoreChange: (value: number) => void
@@ -20,6 +51,31 @@ interface CreativeModePanelProps {
   onCreativeRunFeedbackChange: (value: string) => void
   onSceneFeedbackChange: (sceneId: string, value: string) => void
   onSwitchCreativeRunVersion: (run: CreativeRun) => void
+  onRefreshWorkflows: () => void
+  onSelectedWorkflowIdChange: (value: string) => void
+  onWorkflowNameChange: (value: string) => void
+  onWorkflowDescriptionChange: (value: string) => void
+  onWorkflowRunPayloadChange: (value: string) => void
+  onCreateWorkflow: () => void
+  onRunWorkflow: () => void
+  onWorkflowRunsLimitChange: (value: string) => void
+  onQueryWorkflowRuns: () => void
+  onLoadMoreWorkflowRuns: () => void
+  onBatchJobTypeChange: (value: string) => void
+  onBatchJobPayloadChange: (value: string) => void
+  onBatchJobIdChange: (value: string) => void
+  onCreateBatchJob: () => void
+  onQueryBatchJob: () => void
+  onAssetReuseSourceIdChange: (value: string) => void
+  onAssetReuseTargetIdChange: (value: string) => void
+  onAssetReuseNoteChange: (value: string) => void
+  onCallAssetReuse: () => void
+  onAssetReuseHistoryAssetIdChange: (value: string) => void
+  onAssetReuseHistorySourceProjectIdChange: (value: string) => void
+  onAssetReuseHistoryTargetProjectIdChange: (value: string) => void
+  onAssetReuseHistoryLimitChange: (value: string) => void
+  onAssetReuseHistoryOffsetChange: (value: string) => void
+  onQueryAssetReuseHistory: () => void
 }
 
 const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
@@ -31,6 +87,30 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
   creativeRunFeedback,
   sceneFeedbackMap,
   creativeVersions,
+  workflows,
+  selectedWorkflowId,
+  workflowName,
+  workflowDescription,
+  workflowRunPayload,
+  workflowRunResult,
+  workflowRuns,
+  workflowRunsLimit,
+  workflowRunsHasMore,
+  batchJobType,
+  batchJobPayload,
+  batchJobId,
+  batchJobStatus,
+  assetReuseSourceId,
+  assetReuseTargetId,
+  assetReuseNote,
+  assetReuseResult,
+  assetReuseHistoryAssetId,
+  assetReuseHistorySourceProjectId,
+  assetReuseHistoryTargetProjectId,
+  assetReuseHistoryLimit,
+  assetReuseHistoryOffset,
+  assetReuseHistoryRecords,
+  isV4Busy,
   onCreativeScriptChange,
   onCreativeStyleChange,
   onCommitScoreChange,
@@ -40,7 +120,32 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
   onRefreshCreativeVersions,
   onCreativeRunFeedbackChange,
   onSceneFeedbackChange,
-  onSwitchCreativeRunVersion
+  onSwitchCreativeRunVersion,
+  onRefreshWorkflows,
+  onSelectedWorkflowIdChange,
+  onWorkflowNameChange,
+  onWorkflowDescriptionChange,
+  onWorkflowRunPayloadChange,
+  onCreateWorkflow,
+  onRunWorkflow,
+  onWorkflowRunsLimitChange,
+  onQueryWorkflowRuns,
+  onLoadMoreWorkflowRuns,
+  onBatchJobTypeChange,
+  onBatchJobPayloadChange,
+  onBatchJobIdChange,
+  onCreateBatchJob,
+  onQueryBatchJob,
+  onAssetReuseSourceIdChange,
+  onAssetReuseTargetIdChange,
+  onAssetReuseNoteChange,
+  onCallAssetReuse,
+  onAssetReuseHistoryAssetIdChange,
+  onAssetReuseHistorySourceProjectIdChange,
+  onAssetReuseHistoryTargetProjectIdChange,
+  onAssetReuseHistoryLimitChange,
+  onAssetReuseHistoryOffsetChange,
+  onQueryAssetReuseHistory
 }) => {
   return (
     <div className="creative-shell">
@@ -58,7 +163,11 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
         <div className="lab-inline-fields">
           <label className="lab-field">
             <span>风格</span>
-            <select name="creativeStyle" value={creativeStyle} onChange={(event) => onCreativeStyleChange(event.target.value)}>
+            <select
+              name="creativeStyle"
+              value={creativeStyle}
+              onChange={(event) => onCreativeStyleChange(event.target.value)}
+            >
               <option value="cinematic">cinematic</option>
               <option value="realistic">realistic</option>
               <option value="anime">anime</option>
@@ -74,7 +183,9 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
               max={1}
               step={0.05}
               value={commitScore}
-              onChange={(event) => onCommitScoreChange(Math.max(0, Math.min(1, Number(event.target.value || 0))))}
+              onChange={(event) =>
+                onCommitScoreChange(Math.max(0, Math.min(1, Number(event.target.value || 0))))
+              }
             />
           </label>
         </div>
@@ -82,9 +193,15 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
           <button disabled={isCreativeBusy} onClick={onCreateCreativeRun}>
             {isCreativeBusy ? '处理中...' : '创建 Run'}
           </button>
-          <button disabled={!creativeRun?.id || isCreativeBusy} onClick={onApplyCreativeFeedback}>应用反馈</button>
-          <button disabled={!creativeRun?.id || isCreativeBusy} onClick={onCommitCreativeRun}>提交完成</button>
-          <button disabled={!creativeRun?.id || isCreativeBusy} onClick={onRefreshCreativeVersions}>刷新版本链</button>
+          <button disabled={!creativeRun?.id || isCreativeBusy} onClick={onApplyCreativeFeedback}>
+            应用反馈
+          </button>
+          <button disabled={!creativeRun?.id || isCreativeBusy} onClick={onCommitCreativeRun}>
+            提交完成
+          </button>
+          <button disabled={!creativeRun?.id || isCreativeBusy} onClick={onRefreshCreativeVersions}>
+            刷新版本链
+          </button>
         </div>
       </section>
 
@@ -108,11 +225,15 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
               />
             </label>
             <div className="creative-scene-list">
-              {creativeRun.scenes.map(scene => (
+              {creativeRun.scenes.map((scene) => (
                 <div key={scene.id} className="creative-scene-item">
                   <div className="scene-headline">
-                    <strong>{scene.order + 1}. {scene.title}</strong>
-                    <span>rev {scene.revision || 1} · {scene.status}</span>
+                    <strong>
+                      {scene.order + 1}. {scene.title}
+                    </strong>
+                    <span>
+                      rev {scene.revision || 1} · {scene.status}
+                    </span>
                   </div>
                   <div className="scene-meta-line">
                     <span>{scene.duration}s</span>
@@ -129,23 +250,326 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
               ))}
             </div>
           </>
-        ) : <div className="api-empty">尚未创建创意 run</div>}
+        ) : (
+          <div className="api-empty">尚未创建创意 run</div>
+        )}
       </section>
 
       <section className="creative-card">
         <h4>版本链</h4>
         <div className="creative-version-list">
-          {creativeVersions.map(version => (
+          {creativeVersions.map((version) => (
             <button
               key={version.id}
               className={`creative-version-item ${creativeRun?.id === version.id ? 'active' : ''}`}
               onClick={() => onSwitchCreativeRunVersion(version)}
             >
-              <span>v{version.version || 1} · {version.status}</span>
+              <span>
+                v{version.version || 1} · {version.status}
+              </span>
               <span>{new Date(version.updatedAt).toLocaleString()}</span>
             </button>
           ))}
           {creativeVersions.length === 0 ? <div className="api-empty">暂无版本链记录</div> : null}
+        </div>
+      </section>
+
+      <section className="creative-card">
+        <h4>v4 Workflow</h4>
+        <div className="lab-inline-actions">
+          <button disabled={isV4Busy} onClick={onRefreshWorkflows}>
+            刷新列表
+          </button>
+        </div>
+        <div className="lab-inline-fields">
+          <label className="lab-field">
+            <span>工作流名称</span>
+            <input
+              name="v4WorkflowName"
+              value={workflowName}
+              onChange={(event) => onWorkflowNameChange(event.target.value)}
+            />
+          </label>
+          <label className="lab-field">
+            <span>描述</span>
+            <input
+              name="v4WorkflowDescription"
+              value={workflowDescription}
+              onChange={(event) => onWorkflowDescriptionChange(event.target.value)}
+            />
+          </label>
+        </div>
+        <div className="lab-inline-actions">
+          <button disabled={isV4Busy} onClick={onCreateWorkflow}>
+            创建 Workflow
+          </button>
+        </div>
+        <label className="lab-field">
+          <span>选择 Workflow</span>
+          <select
+            name="v4SelectedWorkflowId"
+            value={selectedWorkflowId}
+            onChange={(event) => onSelectedWorkflowIdChange(event.target.value)}
+          >
+            <option value="">请选择</option>
+            {workflows.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name} · {new Date(item.updatedAt).toLocaleString()}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="lab-field">
+          <span>Run Payload(JSON)</span>
+          <textarea
+            name="v4WorkflowRunPayload"
+            value={workflowRunPayload}
+            onChange={(event) => onWorkflowRunPayloadChange(event.target.value)}
+            placeholder='{"prompt":"8s cinematic city chase"}'
+          />
+        </label>
+        <div className="lab-inline-actions">
+          <button disabled={!selectedWorkflowId || isV4Busy} onClick={onRunWorkflow}>
+            运行 Workflow
+          </button>
+        </div>
+        <div className="lab-inline-fields">
+          <label className="lab-field">
+            <span>Runs 查询数量</span>
+            <input
+              type="number"
+              min={1}
+              name="v4WorkflowRunsLimit"
+              value={workflowRunsLimit}
+              onChange={(event) => onWorkflowRunsLimitChange(event.target.value)}
+              placeholder="20"
+            />
+          </label>
+          <button disabled={!selectedWorkflowId || isV4Busy} onClick={onQueryWorkflowRuns}>
+            查询 Runs
+          </button>
+          <button
+            disabled={!selectedWorkflowId || !workflowRunsHasMore || isV4Busy}
+            onClick={onLoadMoreWorkflowRuns}
+          >
+            加载更多 Runs
+          </button>
+        </div>
+        <div className="creative-summary">
+          <div>Run ID: {workflowRunResult?.id || '-'}</div>
+          <div>状态: {workflowRunResult?.status || '-'}</div>
+          <div>触发: {workflowRunResult?.triggerType || '-'}</div>
+        </div>
+        <div className="creative-scene-list">
+          {workflowRuns.map((item) => (
+            <div key={item.id} className="creative-scene-item">
+              <div className="scene-headline">
+                <strong>{item.id}</strong>
+                <span>{item.status}</span>
+              </div>
+              <div className="scene-meta-line">
+                <span>触发方式：{item.triggerType || '-'}</span>
+                <span>{new Date(item.createdAt).toLocaleString()}</span>
+              </div>
+            </div>
+          ))}
+          {workflowRuns.length === 0 ? (
+            <div className="api-empty">暂无 Workflow Runs 记录</div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="creative-card">
+        <h4>v4 Batch Job</h4>
+        <div className="lab-inline-fields">
+          <label className="lab-field">
+            <span>Job 类型</span>
+            <input
+              name="v4BatchJobType"
+              value={batchJobType}
+              onChange={(event) => onBatchJobTypeChange(event.target.value)}
+              placeholder="render.batch"
+            />
+          </label>
+          <label className="lab-field">
+            <span>Job ID</span>
+            <input
+              name="v4BatchJobId"
+              value={batchJobId}
+              onChange={(event) => onBatchJobIdChange(event.target.value)}
+              placeholder="创建后自动回填"
+            />
+          </label>
+        </div>
+        <label className="lab-field">
+          <span>Job Payload(JSON)</span>
+          <textarea
+            name="v4BatchJobPayload"
+            value={batchJobPayload}
+            onChange={(event) => onBatchJobPayloadChange(event.target.value)}
+            placeholder='{"items":["clip-a","clip-b"]}'
+          />
+        </label>
+        <div className="lab-inline-actions">
+          <button disabled={isV4Busy} onClick={onCreateBatchJob}>
+            创建 Batch Job
+          </button>
+          <button disabled={!batchJobId.trim() || isV4Busy} onClick={onQueryBatchJob}>
+            查询状态
+          </button>
+        </div>
+        <div className="creative-summary">
+          <div>状态: {batchJobStatus?.status || '-'}</div>
+          <div>
+            项数:{' '}
+            {batchJobStatus ? `${batchJobStatus.completedItems}/${batchJobStatus.totalItems}` : '-'}
+          </div>
+          <div>失败: {batchJobStatus?.failedItems ?? '-'}</div>
+        </div>
+        <div className="creative-scene-list">
+          {(batchJobStatus?.items || []).map((item) => (
+            <div key={item.id} className="creative-scene-item">
+              <div className="scene-headline">
+                <strong>{item.itemKey}</strong>
+                <span>{item.status}</span>
+              </div>
+              <div className="scene-meta-line">
+                <span>错误：{item.errorMessage || '-'}</span>
+              </div>
+            </div>
+          ))}
+          {batchJobStatus && (batchJobStatus.items || []).length === 0 ? (
+            <div className="api-empty">暂无 Batch Job Items</div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="creative-card">
+        <h4>v4 Asset Reuse</h4>
+        <div className="lab-inline-fields">
+          <label className="lab-field">
+            <span>来源 Asset</span>
+            <input
+              name="v4AssetReuseSourceId"
+              value={assetReuseSourceId}
+              onChange={(event) => onAssetReuseSourceIdChange(event.target.value)}
+              placeholder="asset_xxx"
+            />
+          </label>
+          <label className="lab-field">
+            <span>目标项目 ID</span>
+            <input
+              name="v4AssetReuseTargetId"
+              value={assetReuseTargetId}
+              onChange={(event) => onAssetReuseTargetIdChange(event.target.value)}
+              placeholder="project_xxx"
+            />
+          </label>
+        </div>
+        <label className="lab-field">
+          <span>说明</span>
+          <input
+            name="v4AssetReuseNote"
+            value={assetReuseNote}
+            onChange={(event) => onAssetReuseNoteChange(event.target.value)}
+            placeholder="reuse for style consistency"
+          />
+        </label>
+        <div className="lab-inline-actions">
+          <button
+            disabled={!assetReuseSourceId.trim() || !assetReuseTargetId.trim() || isV4Busy}
+            onClick={onCallAssetReuse}
+          >
+            调用 Asset Reuse
+          </button>
+        </div>
+        <div className="creative-summary">
+          <div>记录: {assetReuseResult?.id || '-'}</div>
+          <div>Asset: {assetReuseResult?.assetId || '-'}</div>
+          <div>目标项目: {assetReuseResult?.targetProjectId || '-'}</div>
+        </div>
+      </section>
+
+      <section className="creative-card">
+        <h4>v4 资产复用历史</h4>
+        <div className="lab-inline-fields">
+          <label className="lab-field">
+            <span>资产 ID</span>
+            <input
+              name="v4AssetReuseHistoryAssetId"
+              value={assetReuseHistoryAssetId}
+              onChange={(event) => onAssetReuseHistoryAssetIdChange(event.target.value)}
+              placeholder="为空则查询全部"
+            />
+          </label>
+          <label className="lab-field">
+            <span>来源项目 ID</span>
+            <input
+              name="v4AssetReuseHistorySourceProjectId"
+              value={assetReuseHistorySourceProjectId}
+              onChange={(event) => onAssetReuseHistorySourceProjectIdChange(event.target.value)}
+              placeholder="可选"
+            />
+          </label>
+          <label className="lab-field">
+            <span>目标项目 ID</span>
+            <input
+              name="v4AssetReuseHistoryTargetProjectId"
+              value={assetReuseHistoryTargetProjectId}
+              onChange={(event) => onAssetReuseHistoryTargetProjectIdChange(event.target.value)}
+              placeholder="可选"
+            />
+          </label>
+        </div>
+        <div className="lab-inline-fields">
+          <label className="lab-field">
+            <span>查询数量</span>
+            <input
+              type="number"
+              min={1}
+              name="v4AssetReuseHistoryLimit"
+              value={assetReuseHistoryLimit}
+              onChange={(event) => onAssetReuseHistoryLimitChange(event.target.value)}
+              placeholder="20"
+            />
+          </label>
+          <label className="lab-field">
+            <span>偏移量</span>
+            <input
+              type="number"
+              min={0}
+              name="v4AssetReuseHistoryOffset"
+              value={assetReuseHistoryOffset}
+              onChange={(event) => onAssetReuseHistoryOffsetChange(event.target.value)}
+              placeholder="0"
+            />
+          </label>
+        </div>
+        <div className="lab-inline-actions">
+          <button disabled={isV4Busy} onClick={onQueryAssetReuseHistory}>
+            查询历史
+          </button>
+        </div>
+        <div className="creative-scene-list">
+          {assetReuseHistoryRecords.map((item) => (
+            <div key={item.id} className="creative-scene-item">
+              <div className="scene-headline">
+                <strong>{item.assetId}</strong>
+                <span>{new Date(item.createdAt).toLocaleString()}</span>
+              </div>
+              <div className="scene-meta-line">
+                <span>来源项目：{item.sourceProjectId || '-'}</span>
+                <span>目标项目：{item.targetProjectId || '-'}</span>
+              </div>
+              <div className="scene-meta-line">
+                <span>复用人：{item.reusedBy || '-'}</span>
+                <span>记录 ID：{item.id}</span>
+              </div>
+            </div>
+          ))}
+          {assetReuseHistoryRecords.length === 0 ? (
+            <div className="api-empty">暂无资产复用历史</div>
+          ) : null}
         </div>
       </section>
     </div>

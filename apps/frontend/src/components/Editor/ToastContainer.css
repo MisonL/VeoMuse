@@ -30,9 +30,15 @@
   flex: 1;
 }
 
-.toast-item.success { border-left: 3px solid #10b981 !important; }
-.toast-item.error { border-left: 3px solid #ef4444 !important; }
-.toast-item.warning { border-left: 3px solid #f59e0b !important; }
+.toast-item.success {
+  border-left: 3px solid #10b981 !important;
+}
+.toast-item.error {
+  border-left: 3px solid #ef4444 !important;
+}
+.toast-item.warning {
+  border-left: 3px solid #f59e0b !important;
+}
 
 .toast-actions {
   width: 100%;

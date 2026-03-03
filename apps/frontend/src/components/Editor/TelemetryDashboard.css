@@ -6,7 +6,12 @@
   font-size: 12px;
 }
 
-.metrics-section label, .api-metrics label, .slo-panel > label, .db-ops-panel > label {
+.metrics-section label,
+.api-metrics label,
+.slo-panel > label,
+.db-ops-panel > label,
+.project-governance-panel > label,
+.provider-health-panel > label {
   display: block;
   color: var(--text-sub);
   margin-bottom: 8px;
@@ -38,9 +43,19 @@
   gap: 4px;
 }
 
-.metric-card .label { color: var(--text-sub); font-size: 10px; }
-.metric-card .value { font-size: 18px; font-weight: 700; color: var(--accent-color); }
-.metric-card .value.value-error { color: var(--danger-color); font-size: 13px; }
+.metric-card .label {
+  color: var(--text-sub);
+  font-size: 10px;
+}
+.metric-card .value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-color);
+}
+.metric-card .value.value-error {
+  color: var(--danger-color);
+  font-size: 13px;
+}
 
 .api-stat-row {
   display: grid;
@@ -50,10 +65,22 @@
   border-bottom: 1px solid var(--ap-border);
 }
 
-.api-name { color: var(--text-main); }
-.api-success { color: var(--success-color); font-weight: 600; text-align: right; }
-.api-avg { color: var(--text-sub); text-align: right; }
-.api-empty { color: var(--text-sub); font-size: 11px; }
+.api-name {
+  color: var(--text-main);
+}
+.api-success {
+  color: var(--success-color);
+  font-weight: 600;
+  text-align: right;
+}
+.api-avg {
+  color: var(--text-sub);
+  text-align: right;
+}
+.api-empty {
+  color: var(--text-sub);
+  font-size: 11px;
+}
 
 .slo-panel {
   border: 1px solid var(--ap-border);
@@ -122,6 +149,36 @@
   font-size: 10px;
 }
 
+.slo-threshold-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ap-text-dim);
+  font-size: 10px;
+}
+
+.slo-decision-pill {
+  border: 1px solid var(--ap-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 700;
+}
+
+.slo-decision-pill.pass {
+  border-color: color-mix(in srgb, var(--success-color) 40%, var(--ap-border));
+  color: var(--success-color);
+}
+
+.slo-decision-pill.sample_insufficient {
+  border-color: color-mix(in srgb, #f59e0b 40%, var(--ap-border));
+  color: #b45309;
+}
+
+.slo-decision-pill.target_missed {
+  border-color: color-mix(in srgb, var(--danger-color) 40%, var(--ap-border));
+  color: var(--danger-color);
+}
+
 .slo-breakdown-list {
   display: flex;
   flex-direction: column;
@@ -142,6 +199,41 @@
 }
 
 .slo-breakdown-item .route {
+  color: var(--ap-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slo-failure-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ap-text-dim);
+  font-size: 10px;
+}
+
+.slo-failure-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slo-failure-item {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 64px 86px 132px;
+  gap: 8px;
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: color-mix(in srgb, var(--ap-panel) 92%, #ffffff 8%);
+  color: var(--ap-text-dim);
+  font-size: 10px;
+  align-items: center;
+}
+
+.slo-failure-item .failure-route {
   color: var(--ap-text);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   overflow: hidden;
@@ -291,9 +383,13 @@
   overflow-wrap: anywhere;
 }
 
-.db-health-card.ok b { color: var(--success-color); }
+.db-health-card.ok b {
+  color: var(--success-color);
+}
 .db-health-card.corrupted b,
-.db-health-card.error b { color: var(--danger-color); }
+.db-health-card.error b {
+  color: var(--danger-color);
+}
 
 .db-health-msg {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -345,8 +441,12 @@
 }
 
 .db-repair-head .status.repaired,
-.db-repair-head .status.ok { color: var(--success-color); }
-.db-repair-head .status.failed { color: var(--danger-color); }
+.db-repair-head .status.ok {
+  color: var(--success-color);
+}
+.db-repair-head .status.failed {
+  color: var(--danger-color);
+}
 
 .db-repair-meta {
   display: flex;
@@ -360,12 +460,120 @@
   width: 100%;
 }
 
+.project-governance-panel {
+  border: 1px solid var(--ap-border);
+  border-radius: 12px;
+  background: var(--ap-surface);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.provider-health-panel {
+  border: 1px solid var(--ap-border);
+  border-radius: 12px;
+  background: var(--ap-surface);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.governance-project-row,
+.governance-action-row,
+.governance-meta-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.governance-project-row input,
+.governance-action-row input,
+.governance-action-row select,
+.governance-input-grid input,
+.project-governance-panel textarea {
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--ap-panel);
+  color: var(--ap-text);
+  font-size: 11px;
+}
+
+.governance-project-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.governance-action-row {
+  flex-wrap: wrap;
+}
+
+.governance-action-row button {
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: var(--ap-panel);
+  color: var(--ap-text);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.governance-action-row button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.governance-input-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.project-governance-panel textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.governance-meta-row {
+  color: var(--ap-text-dim);
+  font-size: 10px;
+  flex-wrap: wrap;
+}
+
+.governance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.governance-item {
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%);
+  color: var(--ap-text-dim);
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 96px 1fr;
+  gap: 8px;
+  font-size: 10px;
+  align-items: center;
+}
+
 @media (max-width: 768px) {
   .slo-grid {
     grid-template-columns: 1fr;
   }
 
   .slo-summary-row {
+    flex-direction: column;
+  }
+
+  .slo-threshold-row {
     flex-direction: column;
   }
 
@@ -381,6 +589,21 @@
   .db-actions-row,
   .db-search-row {
     flex-direction: column;
+  }
+
+  .governance-project-row,
+  .governance-action-row,
+  .governance-meta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .governance-input-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .governance-item {
+    grid-template-columns: 1fr;
   }
 
   .db-filter-grid {

@@ -11,7 +11,16 @@ interface ResizeHandleProps {
   disabled?: boolean
 }
 
-const ResizeHandle: React.FC<ResizeHandleProps> = ({ axis, onDrag, ariaLabel, hint, guideKey, testId, className, disabled = false }) => {
+const ResizeHandle: React.FC<ResizeHandleProps> = ({
+  axis,
+  onDrag,
+  ariaLabel,
+  hint,
+  guideKey,
+  testId,
+  className,
+  disabled = false
+}) => {
   const pointerIdRef = useRef<number | null>(null)
   const lastOffsetRef = useRef(0)
 
@@ -26,9 +35,8 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({ axis, onDrag, ariaLabel, hi
     }
   }, [clearDraggingState])
 
-  const getOffset = (event: React.PointerEvent<HTMLDivElement>) => (
+  const getOffset = (event: React.PointerEvent<HTMLDivElement>) =>
     axis === 'x' ? event.clientX : event.clientY
-  )
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (disabled) return

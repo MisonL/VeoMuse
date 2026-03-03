@@ -24,7 +24,7 @@ let inFlightRefresh: Promise<boolean> | null = null
 
 export const computeMetricsPollDelay = (failureStreak: number) => {
   const safe = Math.max(0, failureStreak)
-  return Math.min(MAX_INTERVAL_MS, BASE_INTERVAL_MS * (2 ** safe))
+  return Math.min(MAX_INTERVAL_MS, BASE_INTERVAL_MS * 2 ** safe)
 }
 
 export const useAdminMetricsStore = create<AdminMetricsState>((set) => ({
@@ -40,7 +40,8 @@ export const useAdminMetricsStore = create<AdminMetricsState>((set) => ({
 const scheduleNextTick = () => {
   if (pollingSubscribers <= 0) return
   const { failureStreak } = useAdminMetricsStore.getState()
-  const hiddenFactor = typeof document !== 'undefined' && document.visibilityState === 'hidden' ? 4 : 1
+  const hiddenFactor =
+    typeof document !== 'undefined' && document.visibilityState === 'hidden' ? 4 : 1
   const delay = computeMetricsPollDelay(failureStreak) * hiddenFactor
   pollingTimer = setTimeout(() => {
     void refreshAdminMetricsNow(useAdminMetricsStore.setState)
@@ -59,7 +60,9 @@ const clearPollingTimer = () => {
 }
 
 const refreshAdminMetricsNow = async (
-  set: (partial: Partial<AdminMetricsState> | ((state: AdminMetricsState) => Partial<AdminMetricsState>)) => void
+  set: (
+    partial: Partial<AdminMetricsState> | ((state: AdminMetricsState) => Partial<AdminMetricsState>)
+  ) => void
 ) => {
   if (inFlightRefresh) return inFlightRefresh
 
@@ -73,7 +76,9 @@ const refreshAdminMetricsNow = async (
     }
     try {
       const data = await adminGetJson<AdminMetricsPayload>('/api/admin/metrics')
-      const renderLoad = Number.isFinite(data?.system?.renderLoad) ? Math.round(data.system.renderLoad) : 0
+      const renderLoad = Number.isFinite(data?.system?.renderLoad)
+        ? Math.round(data.system.renderLoad)
+        : 0
       set((state) => ({
         metrics: data,
         error: '',

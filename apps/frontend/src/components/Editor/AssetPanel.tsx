@@ -1,28 +1,40 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { useEditorStore } from '../../store/editorStore';
-import type { Asset } from '../../store/editorStore';
-import { useActorsStore } from '../../store/actorsStore';
-import type { ActorProfile } from '../../store/actorsStore';
-import { useToastStore } from '../../store/toastStore';
-import { buildAuthHeaders, getAccessToken, resolveApiBase } from '../../utils/eden';
-import { MotionSyncManager } from '../../utils/motionSync';
-import './AssetPanel.css';
+import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import { useEditorStore } from '../../store/editorStore'
+import type { Asset } from '../../store/editorStore'
+import { useActorsStore } from '../../store/actorsStore'
+import type { ActorProfile } from '../../store/actorsStore'
+import { useToastStore } from '../../store/toastStore'
+import { buildAuthHeaders, getAccessToken, resolveApiBase } from '../../utils/eden'
+import { MotionSyncManager } from '../../utils/motionSync'
+import {
+  appendAssetToTracks,
+  buildActorCreatePayload,
+  buildMotionSyncPatch,
+  createImportedAsset,
+  extractBase64Payload,
+  filterAssetsByQueryAndCategory,
+  findParentTrackByClipId,
+  validateActorCreateInput,
+  validateMotionSyncInput
+} from './assetPanel.logic'
+import './AssetPanel.css'
 
-const readFileAsDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onload = () => resolve(String(reader.result || ''));
-  reader.onerror = () => reject(new Error(`读取文件失败: ${file.name}`));
-  reader.readAsDataURL(file);
-});
+const readFileAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error(`读取文件失败: ${file.name}`))
+    reader.readAsDataURL(file)
+  })
 
 interface AssetPanelProps {
-  mode?: 'assets' | 'director' | 'actors' | 'motion';
-  directorPrompt?: string;
-  onDirectorPromptChange?: (value: string) => void;
-  onRunDirector?: () => Promise<void> | void;
-  directorScenes?: Array<{ title?: string; duration?: number; videoPrompt?: string }>;
-  isAiWorking?: boolean;
+  mode?: 'assets' | 'director' | 'actors' | 'motion'
+  directorPrompt?: string
+  onDirectorPromptChange?: (value: string) => void
+  onRunDirector?: () => Promise<void> | void
+  directorScenes?: Array<{ title?: string; duration?: number; videoPrompt?: string }>
+  isAiWorking?: boolean
 }
 
 const AssetPanel: React.FC<AssetPanelProps> = ({
@@ -33,8 +45,19 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
   directorScenes = [],
   isAiWorking = false
 }) => {
-  const { assets, addAsset, tracks, setTracks, selectedClipId, updateClip, isMotionCaptureActive, setMotionCaptureActive, latestMotionData, setLatestMotionData } = useEditorStore(
-    useShallow(state => ({
+  const {
+    assets,
+    addAsset,
+    tracks,
+    setTracks,
+    selectedClipId,
+    updateClip,
+    isMotionCaptureActive,
+    setMotionCaptureActive,
+    latestMotionData,
+    setLatestMotionData
+  } = useEditorStore(
+    useShallow((state) => ({
       assets: state.assets,
       addAsset: state.addAsset,
       tracks: state.tracks,
@@ -46,196 +69,174 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
       latestMotionData: state.latestMotionData,
       setLatestMotionData: state.setLatestMotionData
     }))
-  );
-  const { showToast } = useToastStore();
+  )
+  const { showToast } = useToastStore()
   const { actors, isActorLoading, fetchActors, prependActor } = useActorsStore(
-    useShallow(state => ({
+    useShallow((state) => ({
       actors: state.actors,
       isActorLoading: state.isLoading,
       fetchActors: state.fetchActors,
       prependActor: state.prependActor
     }))
-  );
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<'all' | 'video' | 'audio'>('all');
-  const [actorName, setActorName] = useState('');
-  const [actorRefImage, setActorRefImage] = useState('');
-  const [motionActorId, setMotionActorId] = useState('');
-  const [isActorCreating, setIsActorCreating] = useState(false);
-  const [isMotionSyncing, setIsMotionSyncing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const objectUrlsRef = useRef<Set<string>>(new Set());
+  )
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState<'all' | 'video' | 'audio'>('all')
+  const [actorName, setActorName] = useState('')
+  const [actorRefImage, setActorRefImage] = useState('')
+  const [motionActorId, setMotionActorId] = useState('')
+  const [isActorCreating, setIsActorCreating] = useState(false)
+  const [isMotionSyncing, setIsMotionSyncing] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const objectUrlsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     return () => {
-      objectUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
-      objectUrlsRef.current.clear();
-    };
-  }, []);
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
+      objectUrlsRef.current.clear()
+    }
+  }, [])
 
   const loadActors = useCallback(async () => {
     try {
-      await fetchActors();
+      await fetchActors()
     } catch (e: any) {
-      showToast(e.message || '加载演员库失败', 'error');
+      showToast(e.message || '加载演员库失败', 'error')
     }
-  }, [fetchActors, showToast]);
+  }, [fetchActors, showToast])
 
   useEffect(() => {
     if (mode === 'actors' || mode === 'motion') {
-      loadActors();
+      loadActors()
     }
-  }, [mode, loadActors]);
+  }, [mode, loadActors])
 
-  const importFiles = useCallback(async (files: FileList | File[]) => {
-    const list = Array.from(files);
-    if (!list.length) return;
+  const importFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const list = Array.from(files)
+      if (!list.length) return
 
-    for (const file of list) {
-      const url = URL.createObjectURL(file);
-      objectUrlsRef.current.add(url);
-      let exportSrc = '';
+      for (const file of list) {
+        const url = URL.createObjectURL(file)
+        objectUrlsRef.current.add(url)
+        let exportSrc = ''
 
-      try {
-        const dataUrl = await readFileAsDataUrl(file);
-        const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
-        const response = await fetch(`${resolveApiBase()}/api/storage/local-import`, {
-          method: 'POST',
-          headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
-          body: JSON.stringify({
-            fileName: file.name,
-            base64Data,
-            contentType: file.type || undefined
+        try {
+          const dataUrl = await readFileAsDataUrl(file)
+          const base64Data = extractBase64Payload(dataUrl)
+          const response = await fetch(`${resolveApiBase()}/api/storage/local-import`, {
+            method: 'POST',
+            headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({
+              fileName: file.name,
+              base64Data,
+              contentType: file.type || undefined
+            })
           })
-        });
-        const payload = await response.json().catch(() => null) as any
-        if (!response.ok) {
-          throw new Error(payload?.error || `HTTP ${response.status}`)
+          const payload = (await response.json().catch(() => null)) as any
+          if (!response.ok) {
+            throw new Error(payload?.error || `HTTP ${response.status}`)
+          }
+          if (payload?.success && payload.imported?.localPath) {
+            exportSrc = payload.imported.localPath
+          }
+        } catch (e: any) {
+          showToast(`${file.name} 未能完成后端导入，将仅用于本地预览`, 'warning')
         }
-        if (payload?.success && payload.imported?.localPath) {
-          exportSrc = payload.imported.localPath;
-        }
-      } catch (e: any) {
-        showToast(`${file.name} 未能完成后端导入，将仅用于本地预览`, 'warning');
+
+        const newAsset: Asset = createImportedAsset(file, url, exportSrc, () => {
+          return `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+        })
+        addAsset(newAsset)
       }
 
-      const newAsset: Asset = {
-        id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        name: file.name,
-        type: file.type.startsWith('video') ? 'video' : 'audio',
-        src: url,
-        exportSrc
-      };
-      addAsset(newAsset);
-    }
+      showToast(`成功导入 ${list.length} 个媒体资产`, 'success')
+    },
+    [addAsset, showToast]
+  )
 
-    showToast(`成功导入 ${list.length} 个媒体资产`, 'success');
-  }, [addAsset, showToast]);
-
-  const handleImportClick = () => { fileInputRef.current?.click(); };
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) void importFiles(e.target.files);
-    e.target.value = '';
-  };
+    if (e.target.files) void importFiles(e.target.files)
+    e.target.value = ''
+  }
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
+    e.preventDefault()
     if (e.dataTransfer.files?.length) {
-      void importFiles(e.dataTransfer.files);
+      void importFiles(e.dataTransfer.files)
     }
-  };
+  }
 
   const handleAddToTimeline = (asset: Asset) => {
-    const newTracks = JSON.parse(JSON.stringify(tracks));
-    const targetTrackId = asset.type === 'video' ? 'track-v1' : 'track-a1';
-    const track = newTracks.find((t: any) => t.id === targetTrackId);
-    if (track) {
-      const start = track.clips.length > 0 ? track.clips[track.clips.length - 1].end : 0;
-      track.clips.push({
-        id: `clip-${Date.now()}`,
-        start,
-        end: start + 5,
-        src: asset.src,
-        name: asset.name,
-        type: asset.type,
-        data: asset.exportSrc ? { exportSrc: asset.exportSrc } : undefined
-      });
-      setTracks(newTracks);
-      showToast(`已将 ${asset.name} 添加至时间轴`, 'success');
-    }
-  };
+    const nextTracks = appendAssetToTracks(tracks, asset, () => `clip-${Date.now()}`)
+    const changed = nextTracks !== tracks && nextTracks.some((track, i) => track !== tracks[i])
+    if (!changed) return
+    setTracks(nextTracks)
+    showToast(`已将 ${asset.name} 添加至时间轴`, 'success')
+  }
 
   const handleCreateActor = async () => {
-    if (!actorName.trim() || !actorRefImage.trim()) {
-      showToast('请填写演员名称和参考图 URL', 'info');
-      return;
-    }
-    const accessToken = getAccessToken().trim();
-    if (!accessToken) {
-      showToast('请先登录后再创建演员', 'info');
-      return;
+    const accessToken = getAccessToken().trim()
+    const actorValidation = validateActorCreateInput(actorName, actorRefImage, accessToken)
+    if (actorValidation) {
+      showToast(actorValidation, 'info')
+      return
     }
 
-    setIsActorCreating(true);
+    setIsActorCreating(true)
     try {
       const response = await fetch(`${resolveApiBase()}/api/ai/actors`, {
         method: 'POST',
         headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
-          name: actorName.trim(),
-          refImage: actorRefImage.trim()
+          ...buildActorCreatePayload(actorName, actorRefImage)
         })
-      });
-      const payload = await response.json().catch(() => null) as any
+      })
+      const payload = (await response.json().catch(() => null)) as any
       if (!response.ok || payload?.success === false) {
-        throw new Error(payload?.error || `HTTP ${response.status}`);
+        throw new Error(payload?.error || `HTTP ${response.status}`)
       }
       if (payload?.actor) {
-        const actor = payload.actor as ActorProfile;
-        prependActor(actor);
-        if (!motionActorId) setMotionActorId(actor.id);
-        setActorName('');
-        setActorRefImage('');
-        showToast('演员已加入演员库', 'success');
+        const actor = payload.actor as ActorProfile
+        prependActor(actor)
+        if (!motionActorId) setMotionActorId(actor.id)
+        setActorName('')
+        setActorRefImage('')
+        showToast('演员已加入演员库', 'success')
       }
     } catch (e: any) {
-      showToast(e.message || '创建演员失败', 'error');
+      showToast(e.message || '创建演员失败', 'error')
     } finally {
-      setIsActorCreating(false);
+      setIsActorCreating(false)
     }
-  };
+  }
 
   const startMotionCapture = async () => {
     await MotionSyncManager.startCapture((data) => {
-      setLatestMotionData(data);
-    });
-    setMotionCaptureActive(true);
-    showToast('动捕流已启动（60fps）', 'success');
-  };
+      setLatestMotionData(data)
+    })
+    setMotionCaptureActive(true)
+    showToast('动捕流已启动（60fps）', 'success')
+  }
 
   const stopMotionCapture = () => {
-    MotionSyncManager.stopCapture();
-    setMotionCaptureActive(false);
-    showToast('动捕流已停止', 'info');
-  };
+    MotionSyncManager.stopCapture()
+    setMotionCaptureActive(false)
+    showToast('动捕流已停止', 'info')
+  }
 
   const syncMotionToActor = async () => {
-    if (!motionActorId) {
-      showToast('请选择演员后再同步', 'info');
-      return;
-    }
-    if (!latestMotionData) {
-      showToast('暂无动捕数据', 'warning');
-      return;
-    }
-    const accessToken = getAccessToken().trim();
-    if (!accessToken) {
-      showToast('请先登录后再同步动捕', 'info');
-      return;
+    const accessToken = getAccessToken().trim()
+    const motionValidation = validateMotionSyncInput(motionActorId, latestMotionData, accessToken)
+    if (motionValidation) {
+      showToast(motionValidation, motionValidation.includes('暂无') ? 'warning' : 'info')
+      return
     }
 
-    setIsMotionSyncing(true);
+    setIsMotionSyncing(true)
     try {
       const response = await fetch(`${resolveApiBase()}/api/ai/actors/motion-sync`, {
         method: 'POST',
@@ -244,43 +245,44 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
           actorId: motionActorId,
           motionData: latestMotionData
         })
-      });
-      const payload = await response.json().catch(() => null) as any
+      })
+      const payload = (await response.json().catch(() => null)) as any
       if (!response.ok || payload?.success === false) {
-        throw new Error(payload?.error || `HTTP ${response.status}`);
+        throw new Error(payload?.error || `HTTP ${response.status}`)
       }
 
       if (selectedClipId) {
-        const parentTrack = tracks.find(track => track.clips.some(clip => clip.id === selectedClipId));
+        const parentTrack = findParentTrackByClipId(tracks, selectedClipId)
         if (parentTrack) {
+          const existingData = parentTrack.clips.find((clip) => clip.id === selectedClipId)
+            ?.data as Record<string, unknown> | undefined
           updateClip(parentTrack.id, selectedClipId, {
-            data: {
-              ...(parentTrack.clips.find(clip => clip.id === selectedClipId)?.data || {}),
-              actorId: motionActorId,
-              motionSyncedAt: Date.now(),
-              motionPoseCount: latestMotionData.pose?.length || 0
-            }
-          });
+            data: buildMotionSyncPatch(existingData, motionActorId, latestMotionData, Date.now())
+          })
         }
       }
 
-      showToast(`动捕已同步到演员：${payload?.actorName || motionActorId}`, 'success');
+      showToast(`动捕已同步到演员：${payload?.actorName || motionActorId}`, 'success')
     } catch (e: any) {
-      showToast(e.message || '动捕同步失败', 'error');
+      showToast(e.message || '动捕同步失败', 'error')
     } finally {
-      setIsMotionSyncing(false);
+      setIsMotionSyncing(false)
     }
-  };
+  }
 
-  const filteredAssets = assets.filter(a => {
-    const matchesSearch = a.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = activeCategory === 'all' || a.type === activeCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredAssets = filterAssetsByQueryAndCategory(assets, searchQuery, activeCategory)
 
   return (
     <div className="pro-asset-panel">
-      <input type="file" name="assetUploadFiles" ref={fileInputRef} onChange={handleFileChange} multiple accept="video/*,audio/*" style={{ display: 'none' }} />
+      <input
+        type="file"
+        name="assetUploadFiles"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        multiple
+        accept="video/*,audio/*"
+        style={{ display: 'none' }}
+      />
 
       {mode === 'assets' ? (
         <>
@@ -296,12 +298,23 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button id="btn-import" className="import-btn-pro" onClick={handleImportClick} data-testid="btn-import-assets"><span>➕</span> 导入</button>
+            <button
+              id="btn-import"
+              className="import-btn-pro"
+              onClick={handleImportClick}
+              data-testid="btn-import-assets"
+            >
+              <span>➕</span> 导入
+            </button>
           </div>
 
           <div className="asset-categories">
-            {['all', 'video', 'audio'].map(cat => (
-              <button key={cat} className={`cat-btn ${activeCategory === cat ? 'active' : ''}`} onClick={() => setActiveCategory(cat as any)}>
+            {['all', 'video', 'audio'].map((cat) => (
+              <button
+                key={cat}
+                className={`cat-btn ${activeCategory === cat ? 'active' : ''}`}
+                onClick={() => setActiveCategory(cat as any)}
+              >
                 {cat === 'all' ? '全部' : cat === 'video' ? '视频' : '音频'}
               </button>
             ))}
@@ -309,18 +322,30 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
 
           <div className="pro-asset-grid">
             {filteredAssets.length > 0 ? (
-              filteredAssets.map(asset => (
+              filteredAssets.map((asset) => (
                 <div key={asset.id} className={`asset-tile ${asset.type}`}>
                   <div className="tile-preview">
                     {asset.type === 'video' ? '🎬' : '🎵'}
-                    <div className="tile-actions"><button onClick={() => handleAddToTimeline(asset)}>➕</button></div>
+                    <div className="tile-actions">
+                      <button onClick={() => handleAddToTimeline(asset)}>➕</button>
+                    </div>
                   </div>
-                  <div className="tile-footer"><span className="tile-name">{asset.name}</span><span className="tile-duration">本地资产</span></div>
+                  <div className="tile-footer">
+                    <span className="tile-name">{asset.name}</span>
+                    <span className="tile-duration">本地资产</span>
+                  </div>
                 </div>
               ))
             ) : (
-              <div className="pro-empty-state-v2" onClick={handleImportClick} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
-                <div className="empty-icon">📁</div><p>暂无媒体素材</p><span>点击此处或拖拽文件进行导入</span>
+              <div
+                className="pro-empty-state-v2"
+                onClick={handleImportClick}
+                onDrop={handleDrop}
+                onDragOver={(e) => e.preventDefault()}
+              >
+                <div className="empty-icon">📁</div>
+                <p>暂无媒体素材</p>
+                <span>点击此处或拖拽文件进行导入</span>
               </div>
             )}
           </div>
@@ -331,7 +356,9 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             <h4 className="section-label">脚本分析反馈</h4>
             <div className="analysis-card">
               <span className="status-tag">实时在线</span>
-              <p className="analysis-text">输入完整脚本后点击“生成分镜”，系统会自动分析并编排到时间轴。</p>
+              <p className="analysis-text">
+                输入完整脚本后点击“生成分镜”，系统会自动分析并编排到时间轴。
+              </p>
             </div>
           </div>
 
@@ -344,7 +371,13 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               onChange={(e) => onDirectorPromptChange?.(e.target.value)}
               data-testid="input-director-prompt"
             />
-            <button id="btn-run-director" className="import-btn-pro hub-primary-btn" onClick={() => onRunDirector?.()} disabled={isAiWorking} data-testid="btn-run-director">
+            <button
+              id="btn-run-director"
+              className="import-btn-pro hub-primary-btn"
+              onClick={() => onRunDirector?.()}
+              disabled={isAiWorking}
+              data-testid="btn-run-director"
+            >
               {isAiWorking ? '分析中...' : '生成分镜并编排'}
             </button>
           </div>
@@ -352,16 +385,25 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
           <div className="hub-section hub-section-loose">
             <h4 className="section-label">分镜流</h4>
             <div className="scene-card-list">
-              {(directorScenes.length ? directorScenes : [{ title: '等待生成', duration: 0 }]).map((scene, idx) => (
-                <div className="scene-card" key={`${scene.title || 'scene'}-${idx}`}>
-                  <div className="scene-index">{idx + 1}</div>
-                  <div className="scene-info">
-                    <div className="scene-title">{scene.title || '未命名分镜'}</div>
-                    <div className="scene-meta">{scene.duration || 0}s</div>
+              {(directorScenes.length ? directorScenes : [{ title: '等待生成', duration: 0 }]).map(
+                (scene, idx) => (
+                  <div className="scene-card" key={`${scene.title || 'scene'}-${idx}`}>
+                    <div className="scene-index">{idx + 1}</div>
+                    <div className="scene-info">
+                      <div className="scene-title">{scene.title || '未命名分镜'}</div>
+                      <div className="scene-meta">{scene.duration || 0}s</div>
+                    </div>
+                    <button
+                      className="scene-add-btn"
+                      onClick={() =>
+                        scene.videoPrompt && onDirectorPromptChange?.(scene.videoPrompt)
+                      }
+                    >
+                      填入提示词
+                    </button>
                   </div>
-                  <button className="scene-add-btn" onClick={() => scene.videoPrompt && onDirectorPromptChange?.(scene.videoPrompt)}>填入提示词</button>
-                </div>
-              ))}
+                )
+              )}
             </div>
           </div>
         </div>
@@ -371,7 +413,9 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             <h4 className="section-label">演员库管理</h4>
             <div className="analysis-card">
               <span className="status-tag">一致性引擎</span>
-              <p className="analysis-text">新增角色后，可在属性面板锁定角色一致性并启用口型同步。</p>
+              <p className="analysis-text">
+                新增角色后，可在属性面板锁定角色一致性并启用口型同步。
+              </p>
             </div>
           </div>
 
@@ -402,7 +446,10 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
           <div className="hub-section hub-section-loose">
             <h4 className="section-label">演员列表</h4>
             <div className="scene-card-list">
-              {(actors.length ? actors : [{ id: 'empty', name: '暂无演员', refImage: '-', createdAt: '-' }]).map((actor, idx) => (
+              {(actors.length
+                ? actors
+                : [{ id: 'empty', name: '暂无演员', refImage: '-', createdAt: '-' }]
+              ).map((actor, idx) => (
                 <div className="scene-card" key={`${actor.id}-${idx}`}>
                   <div className="scene-index">{idx + 1}</div>
                   <div className="scene-info">
@@ -420,16 +467,25 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             <h4 className="section-label">动作捕捉实验室</h4>
             <div className="analysis-card">
               <span className="status-tag">{isMotionCaptureActive ? '采集中' : '待启动'}</span>
-              <p className="analysis-text">可将实时骨架数据同步至演员一致性驱动，并用于空间预览场景。</p>
+              <p className="analysis-text">
+                可将实时骨架数据同步至演员一致性驱动，并用于空间预览场景。
+              </p>
             </div>
           </div>
 
           <div className="hub-section hub-section-tight">
             <div className="motion-controls">
-              <button className="import-btn-pro motion-btn" onClick={isMotionCaptureActive ? stopMotionCapture : startMotionCapture}>
+              <button
+                className="import-btn-pro motion-btn"
+                onClick={isMotionCaptureActive ? stopMotionCapture : startMotionCapture}
+              >
                 {isMotionCaptureActive ? '停止动捕' : '启动动捕'}
               </button>
-              <button className="import-btn-pro motion-btn" disabled={isMotionSyncing} onClick={syncMotionToActor}>
+              <button
+                className="import-btn-pro motion-btn"
+                disabled={isMotionSyncing}
+                onClick={syncMotionToActor}
+              >
                 {isMotionSyncing ? '同步中...' : '同步至演员'}
               </button>
               <select
@@ -439,8 +495,10 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 onChange={(e) => setMotionActorId(e.target.value)}
               >
                 <option value="">选择演员</option>
-                {actors.map(actor => (
-                  <option key={actor.id} value={actor.id}>{actor.name}</option>
+                {actors.map((actor) => (
+                  <option key={actor.id} value={actor.id}>
+                    {actor.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -460,14 +518,21 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 <div className="scene-index">F</div>
                 <div className="scene-info">
                   <div className="scene-title">面部表情</div>
-                  <div className="scene-meta">{latestMotionData?.face?.expression || 'N/A'} / {latestMotionData?.face?.intensity ?? 0}</div>
+                  <div className="scene-meta">
+                    {latestMotionData?.face?.expression || 'N/A'} /{' '}
+                    {latestMotionData?.face?.intensity ?? 0}
+                  </div>
                 </div>
               </div>
               <div className="scene-card">
                 <div className="scene-index">T</div>
                 <div className="scene-info">
                   <div className="scene-title">采样时间</div>
-                  <div className="scene-meta">{latestMotionData?.timestamp ? new Date(latestMotionData.timestamp).toLocaleTimeString() : 'N/A'}</div>
+                  <div className="scene-meta">
+                    {latestMotionData?.timestamp
+                      ? new Date(latestMotionData.timestamp).toLocaleTimeString()
+                      : 'N/A'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -475,7 +540,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default AssetPanel;
+export default AssetPanel

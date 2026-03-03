@@ -37,7 +37,11 @@
 
 /* 专业级导入按钮 */
 .import-btn-pro {
-  background: linear-gradient(165deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 68%, #09336d));
+  background: linear-gradient(
+    165deg,
+    var(--ap-accent),
+    color-mix(in srgb, var(--ap-accent) 68%, #09336d)
+  );
   color: #fff;
   border: none;
   padding: 0 14px;
@@ -111,8 +115,11 @@
   justify-content: center;
   gap: 12px;
   cursor: pointer;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 82%, transparent), color-mix(in srgb, var(--ap-card) 72%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 82%, transparent),
+    color-mix(in srgb, var(--ap-card) 72%, transparent)
+  );
   transition: all 0.3s;
 }
 
@@ -121,9 +128,19 @@
   border-color: var(--ap-accent);
 }
 
-.empty-icon { font-size: 32px; opacity: 0.5; }
-.pro-empty-state-v2 p { font-size: 14px; font-weight: 700; color: var(--ap-text); }
-.pro-empty-state-v2 span { font-size: 11px; color: var(--ap-text-dim); }
+.empty-icon {
+  font-size: 32px;
+  opacity: 0.5;
+}
+.pro-empty-state-v2 p {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ap-text);
+}
+.pro-empty-state-v2 span {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+}
 
 .asset-tile {
   background: color-mix(in srgb, var(--ap-surface) 91%, var(--ap-card) 9%);
@@ -151,20 +168,49 @@
 }
 
 .tile-actions {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: 0.2s;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: 0.2s;
 }
 
-.asset-tile:hover .tile-actions { opacity: 1; }
+.asset-tile:hover .tile-actions {
+  opacity: 1;
+}
 
 .tile-actions button {
-  background: var(--ap-accent); color: #fff; border: none; padding: 6px; border-radius: 50%; cursor: pointer;
+  background: var(--ap-accent);
+  color: #fff;
+  border: none;
+  padding: 6px;
+  border-radius: 50%;
+  cursor: pointer;
 }
 
-.tile-footer { padding: 8px; display: flex; flex-direction: column; }
-.tile-name { font-size: 11px; font-weight: 600; color: var(--ap-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tile-duration { font-size: 9px; color: var(--ap-text-dim); }
+.tile-footer {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.tile-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ap-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tile-duration {
+  font-size: 9px;
+  color: var(--ap-text-dim);
+}
 
 .director-hub {
   display: flex;
@@ -219,7 +265,7 @@
 .status-tag {
   display: inline-block;
   font-size: 10px;
-  color: #34C759;
+  color: #34c759;
   font-weight: 700;
   margin-bottom: 8px;
 }

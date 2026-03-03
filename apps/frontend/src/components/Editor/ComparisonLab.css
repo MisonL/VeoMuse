@@ -2,7 +2,11 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%), color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%),
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%)
+  );
   border-radius: 12px;
   overflow: hidden;
   min-height: 0;
@@ -19,7 +23,11 @@
   flex-wrap: wrap;
   gap: 8px 10px;
   padding: 9px 12px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 72%, var(--ap-panel) 28%), color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 72%, var(--ap-panel) 28%),
+    color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%)
+  );
   z-index: 10;
 }
 
@@ -41,9 +49,15 @@
 }
 
 @keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .lab-actions {
@@ -72,7 +86,11 @@
 
 .lab-btn {
   border: 1px solid color-mix(in srgb, var(--ap-border) 54%, var(--ap-accent) 46%);
-  background: linear-gradient(165deg, color-mix(in srgb, var(--ap-accent-soft) 75%, #ffffff 25%), color-mix(in srgb, var(--ap-accent-soft) 48%, #ffffff 52%));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent-soft) 75%, #ffffff 25%),
+    color-mix(in srgb, var(--ap-accent-soft) 48%, #ffffff 52%)
+  );
   color: var(--ap-accent);
   padding: 6px 10px;
   border-radius: 9px;
@@ -218,7 +236,11 @@
   align-items: start;
   padding: 10px 10px 9px;
   border-bottom: 1px solid var(--ap-border);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 78%, var(--ap-panel) 22%), color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 78%, var(--ap-panel) 22%),
+    color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%)
+  );
 }
 
 .pane-overlay {
@@ -321,7 +343,10 @@
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 150ms ease, filter 150ms ease, border-color 150ms ease;
+  transition:
+    transform 150ms ease,
+    filter 150ms ease,
+    border-color 150ms ease;
 }
 
 .empty-pane-cta:hover {
@@ -340,7 +365,12 @@
   width: 2px;
   height: 100%;
   margin: 0 auto;
-  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--ap-accent) 65%, #9ec5ff 35%), transparent);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--ap-accent) 65%, #9ec5ff 35%),
+    transparent
+  );
 }
 
 .axis-handle {

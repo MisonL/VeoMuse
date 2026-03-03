@@ -8,7 +8,13 @@ interface WorkspaceShellProps {
   children: ReactNode
 }
 
-const WorkspaceShell = ({ style, shellRef, layoutMode, topBarDensity, children }: WorkspaceShellProps) => (
+const WorkspaceShell = ({
+  style,
+  shellRef,
+  layoutMode,
+  topBarDensity,
+  children
+}: WorkspaceShellProps) => (
   <div
     className="pro-master-shell"
     ref={shellRef}

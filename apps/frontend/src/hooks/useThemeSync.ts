@@ -7,7 +7,7 @@ export const useThemeSync = () => {
   useEffect(() => {
     const applyTheme = (resolvedMode: 'light' | 'dark') => {
       document.documentElement.setAttribute('data-theme', resolvedMode)
-      
+
       // 应用自定义色板 (如果有)
       Object.entries(customPalette).forEach(([key, value]) => {
         document.documentElement.style.setProperty(key, value)

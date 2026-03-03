@@ -43,16 +43,34 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
       <div className="model-pane">
         <div className="pane-head">
           <div className="pane-overlay">
-            <span className="model-name">{availableModels.find(m => m.id === leftModel)?.name || leftModel}</span>
+            <span className="model-name">
+              {availableModels.find((m) => m.id === leftModel)?.name || leftModel}
+            </span>
             <div className="metric-chip">A 通道</div>
           </div>
           <div className="pane-controls">
-            <select name="leftModel" value={leftModel} onChange={e => onLeftModelChange(e.target.value)}>
-              {availableModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            <select
+              name="leftModel"
+              value={leftModel}
+              onChange={(e) => onLeftModelChange(e.target.value)}
+            >
+              {availableModels.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
             </select>
-            <select name="leftAssetId" value={leftAssetId} onChange={e => onLeftAssetChange(e.target.value)}>
+            <select
+              name="leftAssetId"
+              value={leftAssetId}
+              onChange={(e) => onLeftAssetChange(e.target.value)}
+            >
               <option value="">选择素材</option>
-              {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              {assets.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
             </select>
             <button onClick={() => onRequestRecommendation('left')}>推荐</button>
           </div>
@@ -81,16 +99,34 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
       <div className="model-pane">
         <div className="pane-head">
           <div className="pane-overlay">
-            <span className="model-name">{availableModels.find(m => m.id === rightModel)?.name || rightModel}</span>
+            <span className="model-name">
+              {availableModels.find((m) => m.id === rightModel)?.name || rightModel}
+            </span>
             <div className="metric-chip secondary">B 通道</div>
           </div>
           <div className="pane-controls">
-            <select name="rightModel" value={rightModel} onChange={e => onRightModelChange(e.target.value)}>
-              {availableModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            <select
+              name="rightModel"
+              value={rightModel}
+              onChange={(e) => onRightModelChange(e.target.value)}
+            >
+              {availableModels.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
             </select>
-            <select name="rightAssetId" value={rightAssetId} onChange={e => onRightAssetChange(e.target.value)}>
+            <select
+              name="rightAssetId"
+              value={rightAssetId}
+              onChange={(e) => onRightAssetChange(e.target.value)}
+            >
               <option value="">选择素材</option>
-              {assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              {assets.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
             </select>
             <button onClick={() => onRequestRecommendation('right')}>推荐</button>
           </div>

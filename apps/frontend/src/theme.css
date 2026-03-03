@@ -1,8 +1,8 @@
 :root {
   color-scheme: light;
-  --ap-font-ui: "Noto Sans SC", "PingFang SC", "Segoe UI", sans-serif;
-  --ap-font-display: "Barlow Condensed", "Chakra Petch", "Noto Sans SC", sans-serif;
-  --ap-font-mono: "Chakra Petch", "SF Mono", "JetBrains Mono", "Fira Code", "Menlo", monospace;
+  --ap-font-ui: 'Noto Sans SC', 'PingFang SC', 'Segoe UI', sans-serif;
+  --ap-font-display: 'Barlow Condensed', 'Chakra Petch', 'Noto Sans SC', sans-serif;
+  --ap-font-mono: 'Chakra Petch', 'SF Mono', 'JetBrains Mono', 'Fira Code', 'Menlo', monospace;
 
   --ap-bg: #e8eff7;
   --ap-surface: #fdfefe;
@@ -79,8 +79,21 @@
   --success-color: #3ddb89;
 }
 
-body, div, aside, header, footer, section, nav, button, input, textarea {
-  transition: background-color 0.24s ease, color 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+body,
+div,
+aside,
+header,
+footer,
+section,
+nav,
+button,
+input,
+textarea {
+  transition:
+    background-color 0.24s ease,
+    color 0.24s ease,
+    border-color 0.24s ease,
+    box-shadow 0.24s ease;
 }
 
 button {

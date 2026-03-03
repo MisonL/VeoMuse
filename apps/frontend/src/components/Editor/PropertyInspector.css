@@ -12,14 +12,22 @@
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 74%, var(--ap-surface) 26%), color-mix(in srgb, var(--ap-surface) 90%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 74%, var(--ap-surface) 26%),
+    color-mix(in srgb, var(--ap-surface) 90%, transparent)
+  );
 }
 
 .inspector-body {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 86%, #ffffff 14%), color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 86%, #ffffff 14%),
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%)
+  );
 }
 
 .inspector-tabs {
@@ -89,7 +97,9 @@
   letter-spacing: 0.02em;
 }
 
-.pro-input-mini, .pro-textarea-mini, .pro-select-mini {
+.pro-input-mini,
+.pro-textarea-mini,
+.pro-select-mini {
   background: color-mix(in srgb, var(--ap-surface) 88%, var(--ap-card) 12%);
   border: 1px solid var(--ap-border);
   border-radius: 8px;
@@ -152,7 +162,8 @@
 
 .pro-control-row input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 12px; height: 12px;
+  width: 12px;
+  height: 12px;
   background: var(--ap-accent);
   border-radius: 50%;
   cursor: pointer;
@@ -160,7 +171,11 @@
 
 .pro-master-btn {
   margin-top: 8px;
-  background: linear-gradient(165deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 68%, #09336d));
+  background: linear-gradient(
+    165deg,
+    var(--ap-accent),
+    color-mix(in srgb, var(--ap-accent) 68%, #09336d)
+  );
   color: #fff;
   border: none;
   padding: 10px 12px;

@@ -5,8 +5,17 @@ export const clamp = (value: number, min: number, max: number) => {
   return Math.min(Math.max(value, min), max)
 }
 
-export const calcAspectFit = (containerWidth: number, containerHeight: number, ratio = ASPECT_RATIO_16_9) => {
-  if (!Number.isFinite(containerWidth) || !Number.isFinite(containerHeight) || containerWidth <= 0 || containerHeight <= 0) {
+export const calcAspectFit = (
+  containerWidth: number,
+  containerHeight: number,
+  ratio = ASPECT_RATIO_16_9
+) => {
+  if (
+    !Number.isFinite(containerWidth) ||
+    !Number.isFinite(containerHeight) ||
+    containerWidth <= 0 ||
+    containerHeight <= 0
+  ) {
     return { width: 0, height: 0 }
   }
 

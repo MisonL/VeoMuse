@@ -84,7 +84,10 @@
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 150ms ease, filter 150ms ease, border-color 150ms ease;
+  transition:
+    transform 150ms ease,
+    filter 150ms ease,
+    border-color 150ms ease;
 }
 
 .player-empty-btn.primary {
@@ -103,7 +106,8 @@
 
 /* 1. 魔法粒子 */
 .magic-particles {
-  filter: contrast(1.2) brightness(1.1) drop-shadow(0 0 calc(10px * var(--vfx-intensity, 0.8)) #a855f7) !important;
+  filter: contrast(1.2) brightness(1.1)
+    drop-shadow(0 0 calc(10px * var(--vfx-intensity, 0.8)) #a855f7) !important;
 }
 
 /* 2. 赛博故障 */
@@ -112,22 +116,40 @@
 }
 
 .neon-bloom {
-  filter: saturate(calc(1 + var(--vfx-intensity, 0.8))) brightness(1.08) drop-shadow(0 0 calc(18px * var(--vfx-intensity, 0.8)) #00e5ff) !important;
+  filter: saturate(calc(1 + var(--vfx-intensity, 0.8))) brightness(1.08)
+    drop-shadow(0 0 calc(18px * var(--vfx-intensity, 0.8)) #00e5ff) !important;
 }
 
 @keyframes glitch {
-  0% { transform: translate(0); }
-  20% { transform: translate(-2px, 2px); filter: hue-rotate(90deg); }
-  40% { transform: translate(2px, -2px); }
-  60% { transform: translate(-2px, -2px); filter: contrast(2); }
-  80% { transform: translate(2px, 2px); }
-  100% { transform: translate(0); }
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+    filter: hue-rotate(90deg);
+  }
+  40% {
+    transform: translate(2px, -2px);
+  }
+  60% {
+    transform: translate(-2px, -2px);
+    filter: contrast(2);
+  }
+  80% {
+    transform: translate(2px, 2px);
+  }
+  100% {
+    transform: translate(0);
+  }
 }
 
 .vfx-layer-overlay {
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-  background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+  background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
   z-index: 5;
 }

@@ -1,235 +1,202 @@
-import React, { useEffect, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { useActorsStore } from '../../store/actorsStore';
-import { buildAuthHeaders, getAccessToken, resolveApiBase } from '../../utils/eden';
-import { useEditorStore } from '../../store/editorStore';
-import type { Clip } from '../../store/editorStore';
-import { useToastStore } from '../../store/toastStore';
+import React, { useEffect, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import { useActorsStore } from '../../store/actorsStore'
+import { buildAuthHeaders, getAccessToken, resolveApiBase } from '../../utils/eden'
+import { useEditorStore } from '../../store/editorStore'
+import type { Clip } from '../../store/editorStore'
+import { useToastStore } from '../../store/toastStore'
+import { buildTranslatedClipClone } from '../../utils/clipOperations'
 import {
-  applyStyleDataUpdate,
-  applyVfxDataUpdate,
-  buildTranslatedClipClone
-} from '../../utils/clipOperations';
-import TelemetryDashboard from './TelemetryDashboard';
-import './PropertyInspector.css';
+  buildAlchemyRequest,
+  extractInspectorErrorMessage,
+  resolveAlchemyOutcome,
+  resolveSelectedClipContext,
+  resolveTranslationResult,
+  resolveTranslationSourceText,
+  type AlchemyActionType
+} from './propertyInspector.logic'
+import TelemetryDashboard from './TelemetryDashboard'
+import './PropertyInspector.css'
 
 const PropertyInspector: React.FC = () => {
   const { tracks, selectedClipId, updateClip, setTracks } = useEditorStore(
-    useShallow(state => ({
+    useShallow((state) => ({
       tracks: state.tracks,
       selectedClipId: state.selectedClipId,
       updateClip: state.updateClip,
       setTracks: state.setTracks
     }))
-  );
-  const { showToast } = useToastStore();
+  )
+  const { showToast } = useToastStore()
   const { actors, fetchActors } = useActorsStore(
-    useShallow(state => ({
+    useShallow((state) => ({
       actors: state.actors,
       fetchActors: state.fetchActors
     }))
-  );
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'properties' | 'lab'>('properties');
+  )
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [activeTab, setActiveTab] = useState<'properties' | 'lab'>('properties')
 
   // 模拟参数状态
-  const [spatialX, setSpatialX] = useState(0);
-  const [bgmVolume, setBgmVolume] = useState(80);
-  const [targetLang, setTargetLang] = useState<'English' | 'Japanese'>('English');
-  const [stylePreset, setStylePreset] = useState<'cinematic' | 'van_gogh' | 'cyberpunk'>('cinematic');
-  const [styleModel, setStyleModel] = useState<'luma-dream' | 'kling-v1' | 'veo-3.1'>('luma-dream');
-  const [vfxType, setVfxType] = useState<'magic-particles' | 'cyber-glitch' | 'neon-bloom'>('magic-particles');
-  const [vfxIntensity, setVfxIntensity] = useState(0.8);
+  const [spatialX, setSpatialX] = useState(0)
+  const [bgmVolume, setBgmVolume] = useState(80)
+  const [targetLang, setTargetLang] = useState<'English' | 'Japanese'>('English')
+  const [stylePreset, setStylePreset] = useState<'cinematic' | 'van_gogh' | 'cyberpunk'>(
+    'cinematic'
+  )
+  const [styleModel, setStyleModel] = useState<'luma-dream' | 'kling-v1' | 'veo-3.1'>('luma-dream')
+  const [vfxType, setVfxType] = useState<'magic-particles' | 'cyber-glitch' | 'neon-bloom'>(
+    'magic-particles'
+  )
+  const [vfxIntensity, setVfxIntensity] = useState(0.8)
 
-  let selectedClip: Clip | null = null;
-  let parentTrackId: string | null = null;
-
-  tracks.forEach(track => {
-    const clip = track.clips.find(c => c.id === selectedClipId);
-    if (clip) { 
-      selectedClip = clip; 
-      parentTrackId = track.id; 
-    }
-  });
+  const clipContext = resolveSelectedClipContext(tracks, selectedClipId)
+  const selectedClip = clipContext.selectedClip
+  const parentTrackId = clipContext.parentTrackId
 
   useEffect(() => {
-    if (!getAccessToken().trim()) return;
+    if (!getAccessToken().trim()) return
     void fetchActors().catch(() => {
       // ignore actor list errors in inspector
-    });
-  }, [fetchActors]);
+    })
+  }, [fetchActors])
 
-  const extractErrorMessage = (payload: any, fallback: string) => {
-    if (!payload || typeof payload !== 'object') return fallback;
-    if (typeof payload.error === 'string' && payload.error.trim()) return payload.error;
-    if (typeof payload.message === 'string' && payload.message.trim()) return payload.message;
-    if (typeof payload.reason === 'string' && payload.reason.trim()) return payload.reason;
-    if (typeof payload.repair?.error === 'string' && payload.repair.error.trim()) return payload.repair.error;
-    return fallback;
-  };
-
-  const callAuthJson = async <T = any>(path: string, body: Record<string, unknown>) => {
+  const callAuthJson = async <T = any,>(path: string, body: Record<string, unknown>) => {
     if (!getAccessToken().trim()) {
-      throw new Error('请先登录后再使用 AI 功能');
+      throw new Error('请先登录后再使用 AI 功能')
     }
 
     const response = await fetch(`${resolveApiBase()}${path}`, {
       method: 'POST',
       headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(body ?? {})
-    });
+    })
 
-    const payload = await response.json().catch(() => null) as any;
+    const payload = (await response.json().catch(() => null)) as any
     if (!response.ok) {
-      throw new Error(extractErrorMessage(payload, `请求失败 (${response.status})`));
+      throw new Error(extractInspectorErrorMessage(payload, `请求失败 (${response.status})`))
     }
-    if (payload && typeof payload === 'object' && (payload.success === false || payload.status === 'error')) {
-      throw new Error(extractErrorMessage(payload, '请求失败'));
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      (payload.success === false || payload.status === 'error')
+    ) {
+      throw new Error(extractInspectorErrorMessage(payload, '请求失败'))
     }
-    return payload as T;
-  };
+    return payload as T
+  }
 
   const handleUpdate = (updates: Partial<Clip>) => {
-    if (parentTrackId && selectedClipId) { 
-      updateClip(parentTrackId, selectedClipId, updates); 
+    if (parentTrackId && selectedClipId) {
+      updateClip(parentTrackId, selectedClipId, updates)
     }
-  };
+  }
 
   const handleDataUpdate = (dataUpdates: any) => {
     if (selectedClip) {
-      handleUpdate({ data: { ...((selectedClip as Clip).data || {}), ...dataUpdates } });
+      handleUpdate({ data: { ...((selectedClip as Clip).data || {}), ...dataUpdates } })
     }
-  };
+  }
 
   const cloneSelectedClip = (next: Clip) => {
-    if (!selectedClip || !parentTrackId) return;
+    if (!selectedClip || !parentTrackId) return
 
-    const nextTracks = tracks.map(track => {
-      if (track.id !== parentTrackId) return track;
-      return { ...track, clips: [...track.clips, next] };
-    });
+    const nextTracks = tracks.map((track) => {
+      if (track.id !== parentTrackId) return track
+      return { ...track, clips: [...track.clips, next] }
+    })
 
-    setTracks(nextTracks);
-  };
+    setTracks(nextTracks)
+  }
 
   const handleTranslateAndClone = async () => {
-    if (!selectedClip) return;
+    if (!selectedClip) return
     if ((selectedClip as Clip).type !== 'text' && (selectedClip as Clip).type !== 'audio') {
-      showToast('仅文字或音频片段支持翻译克隆', 'info');
-      return;
+      showToast('仅文字或音频片段支持翻译克隆', 'info')
+      return
     }
 
-    setIsProcessing(true);
+    setIsProcessing(true)
     try {
-      const sourceText = (selectedClip as Clip).type === 'text'
-        ? ((selectedClip as Clip).data?.content || (selectedClip as Clip).name)
-        : (selectedClip as Clip).name;
+      const sourceText = resolveTranslationSourceText(selectedClip as Clip)
 
       const data = await callAuthJson<{
-        translatedText?: string;
-        detectedLang?: string;
-        targetLang?: string;
+        translatedText?: string
+        detectedLang?: string
+        targetLang?: string
       }>('/api/ai/translate', {
         text: sourceText,
         targetLang
-      });
-      if (!data?.translatedText) throw new Error('翻译结果为空');
-      const resolvedDetectedLang = data.detectedLang || 'auto';
-      const resolvedTargetLang = data.targetLang || targetLang;
-      const cloned = buildTranslatedClipClone(selectedClip as Clip, {
-        translatedText: data.translatedText,
-        detectedLang: resolvedDetectedLang,
-        targetLang: resolvedTargetLang
-      }, Date.now());
-      cloneSelectedClip(cloned);
+      })
+      const translation = resolveTranslationResult(data, targetLang)
+      const cloned = buildTranslatedClipClone(
+        selectedClip as Clip,
+        {
+          translatedText: translation.translatedText,
+          detectedLang: translation.detectedLang,
+          targetLang: translation.targetLang
+        },
+        Date.now()
+      )
+      cloneSelectedClip(cloned)
 
-      showToast(`已翻译并克隆为 ${resolvedTargetLang}`, 'success');
+      showToast(`已翻译并克隆为 ${translation.targetLang}`, 'success')
     } catch (e: any) {
-      showToast(e.message || '翻译失败', 'error');
+      showToast(e.message || '翻译失败', 'error')
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   // 物理集成：全量炼金术调用
-  const handleAlchemy = async (type: 'repair' | 'style' | 'lip' | 'enhance' | 'audio' | 'tts' | 'vfx') => {
-    if (!selectedClip) return;
-    setIsProcessing(true);
-    showToast(`🧬 正在执行高级炼金: ${type}`, 'info');
-    
+  const handleAlchemy = async (type: AlchemyActionType) => {
+    if (!selectedClip) return
+    setIsProcessing(true)
+    showToast(`🧬 正在执行高级炼金: ${type}`, 'info')
+
     try {
-      let payload: any;
-      switch (type) {
-        case 'repair':
-          payload = await callAuthJson('/api/ai/repair', { description: (selectedClip as Clip).name });
-          break;
-        case 'style':
-          payload = await callAuthJson('/api/ai/alchemy/style-transfer', {
-            clipId: (selectedClip as Clip).id,
-            style: stylePreset,
-            referenceModel: styleModel
-          });
-          break;
-        case 'lip':
-          payload = await callAuthJson('/api/ai/sync-lip', {
-            videoUrl: (selectedClip as Clip).src,
-            audioUrl: (selectedClip as Clip).src
-          });
-          break;
-        case 'enhance':
-          payload = await callAuthJson('/api/ai/enhance', { prompt: (selectedClip as Clip).name });
-          break;
-        case 'audio':
-          payload = await callAuthJson('/api/ai/analyze-audio', { audioUrl: (selectedClip as Clip).src });
-          break;
-        case 'tts':
-          payload = await callAuthJson('/api/ai/tts', { text: (selectedClip as Clip).data?.content || '' });
-          break;
-        case 'vfx':
-          payload = await callAuthJson('/api/ai/vfx/apply', {
-            clipId: (selectedClip as Clip).id,
-            vfxType,
-            intensity: vfxIntensity
-          });
-          break;
+      const request = buildAlchemyRequest(type, selectedClip as Clip, {
+        stylePreset,
+        styleModel,
+        vfxType,
+        vfxIntensity
+      })
+      const payload = await callAuthJson(request.path, request.body)
+      const outcome = resolveAlchemyOutcome(type, payload, (selectedClip as Clip).data, {
+        stylePreset,
+        styleModel,
+        vfxType,
+        vfxIntensity
+      })
+      if (outcome.dataUpdate) {
+        handleDataUpdate(outcome.dataUpdate)
       }
-
-      if (payload?.status === 'not_implemented') {
-        showToast(payload.message || '该能力未配置 provider', 'warning');
-      } else if (payload?.success === false) {
-        showToast(payload.message || '该能力执行失败', 'error');
-      } else {
-        if (type === 'style') {
-          handleDataUpdate(applyStyleDataUpdate((selectedClip as Clip).data, {
-            stylePreset,
-            styleModel,
-            operationId: payload?.operationId || ''
-          }));
-        }
-        if (type === 'vfx') {
-          handleDataUpdate(applyVfxDataUpdate((selectedClip as Clip).data, {
-            vfxType,
-            vfxIntensity,
-            operationId: payload?.operationId || ''
-          }));
-        }
-        showToast(`✨ ${type} 炼金成功`, 'success');
-      }
+      showToast(outcome.toastMessage, outcome.toastLevel)
     } catch (e: any) {
-      showToast(e.message, 'error');
+      showToast(e.message, 'error')
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
-  const current = selectedClip as Clip | null;
+  const current = selectedClip as Clip | null
 
   return (
     <div className="pro-inspector-inner">
       <header className="inspector-header">
         <div className="inspector-tabs">
-          <button className={activeTab === 'properties' ? 'active' : ''} onClick={() => setActiveTab('properties')}>属性</button>
-          <button className={activeTab === 'lab' ? 'active' : ''} onClick={() => setActiveTab('lab')}>监控</button>
+          <button
+            className={activeTab === 'properties' ? 'active' : ''}
+            onClick={() => setActiveTab('properties')}
+          >
+            属性
+          </button>
+          <button
+            className={activeTab === 'lab' ? 'active' : ''}
+            onClick={() => setActiveTab('lab')}
+          >
+            监控
+          </button>
         </div>
         {current && <span className="clip-type-badge">{current.type}</span>}
       </header>
@@ -238,21 +205,38 @@ const PropertyInspector: React.FC = () => {
         {activeTab === 'lab' ? (
           <TelemetryDashboard />
         ) : !current ? (
-          <div className="inspector-empty"><p>未选中片段</p><small>点击时间轴片段开始炼金</small></div>
+          <div className="inspector-empty">
+            <p>未选中片段</p>
+            <small>点击时间轴片段开始炼金</small>
+          </div>
         ) : (
           <div className="pro-inspector-content">
             <section className="inspector-section">
               <label>片段名称</label>
-              <input name="clipName" type="text" value={current.name} onChange={(e) => handleUpdate({ name: e.target.value })} className="pro-input-mini" />
+              <input
+                name="clipName"
+                type="text"
+                value={current.name}
+                onChange={(e) => handleUpdate({ name: e.target.value })}
+                className="pro-input-mini"
+              />
             </section>
 
             <section className="inspector-section">
               <label>媒体炼金术 (Alchemy)</label>
               <div className="alchemy-grid">
-                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('repair')}>画面修复</button>
-                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('style')}>风格迁移</button>
-                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('lip')}>口型同步</button>
-                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('enhance')}>画质增强</button>
+                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('repair')}>
+                  画面修复
+                </button>
+                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('style')}>
+                  风格迁移
+                </button>
+                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('lip')}>
+                  口型同步
+                </button>
+                <button className="alchemy-mini-btn" onClick={() => handleAlchemy('enhance')}>
+                  画质增强
+                </button>
               </div>
             </section>
 
@@ -264,7 +248,9 @@ const PropertyInspector: React.FC = () => {
                     name="stylePreset"
                     className="pro-select-mini"
                     value={stylePreset}
-                    onChange={(e) => setStylePreset(e.target.value as 'cinematic' | 'van_gogh' | 'cyberpunk')}
+                    onChange={(e) =>
+                      setStylePreset(e.target.value as 'cinematic' | 'van_gogh' | 'cyberpunk')
+                    }
                   >
                     <option value="cinematic">Cinematic</option>
                     <option value="van_gogh">Van Gogh</option>
@@ -274,7 +260,9 @@ const PropertyInspector: React.FC = () => {
                     name="styleModel"
                     className="pro-select-mini"
                     value={styleModel}
-                    onChange={(e) => setStyleModel(e.target.value as 'luma-dream' | 'kling-v1' | 'veo-3.1')}
+                    onChange={(e) =>
+                      setStyleModel(e.target.value as 'luma-dream' | 'kling-v1' | 'veo-3.1')
+                    }
                   >
                     <option value="luma-dream">Luma</option>
                     <option value="kling-v1">Kling</option>
@@ -292,7 +280,11 @@ const PropertyInspector: React.FC = () => {
                     name="vfxType"
                     className="pro-select-mini"
                     value={vfxType}
-                    onChange={(e) => setVfxType(e.target.value as 'magic-particles' | 'cyber-glitch' | 'neon-bloom')}
+                    onChange={(e) =>
+                      setVfxType(
+                        e.target.value as 'magic-particles' | 'cyber-glitch' | 'neon-bloom'
+                      )
+                    }
                   >
                     <option value="magic-particles">Magic Particles</option>
                     <option value="cyber-glitch">Cyber Glitch</option>
@@ -308,7 +300,11 @@ const PropertyInspector: React.FC = () => {
                     onChange={(e) => setVfxIntensity(Number(e.target.value))}
                   />
                 </div>
-                <button className="alchemy-mini-btn w-full" onClick={() => handleAlchemy('vfx')} disabled={isProcessing}>
+                <button
+                  className="alchemy-mini-btn w-full"
+                  onClick={() => handleAlchemy('vfx')}
+                  disabled={isProcessing}
+                >
                   {isProcessing ? '特效处理中...' : '应用特效层'}
                 </button>
               </section>
@@ -350,15 +346,19 @@ const PropertyInspector: React.FC = () => {
                     onChange={(e) => handleDataUpdate({ actorId: e.target.value })}
                   >
                     <option value="">不绑定演员</option>
-                    {actors.map(actor => (
-                      <option key={actor.id} value={actor.id}>{actor.name}</option>
+                    {actors.map((actor) => (
+                      <option key={actor.id} value={actor.id}>
+                        {actor.name}
+                      </option>
                     ))}
                   </select>
                   <select
                     name="consistencyStrength"
                     className="pro-select-mini"
                     value={String(current.data?.consistencyStrength ?? 1)}
-                    onChange={(e) => handleDataUpdate({ consistencyStrength: Number(e.target.value) })}
+                    onChange={(e) =>
+                      handleDataUpdate({ consistencyStrength: Number(e.target.value) })
+                    }
                   >
                     <option value="0.6">一致性 0.6</option>
                     <option value="0.8">一致性 0.8</option>
@@ -384,21 +384,33 @@ const PropertyInspector: React.FC = () => {
                 <label>空间 3D 控制 (NeRF)</label>
                 <div className="pro-control-row">
                   <span>水平轴</span>
-                  <input name="spatialX" type="range" value={spatialX} onChange={e => setSpatialX(parseInt(e.target.value))} />
+                  <input
+                    name="spatialX"
+                    type="range"
+                    value={spatialX}
+                    onChange={(e) => setSpatialX(parseInt(e.target.value))}
+                  />
                 </div>
-                <button className="pro-master-btn" onClick={async () => {
-                  setIsProcessing(true);
-                  try {
-                    const data = await callAuthJson('/api/ai/spatial/render', { clipId: current.id });
-                    if (data?.status === 'not_implemented') showToast(data.message || '3D 重构服务未配置', 'warning');
-                    else if (data?.success) showToast('✨ 3D 重构完成', 'success');
-                    else showToast('3D 重构执行失败', 'error');
-                  } catch (e: any) {
-                    showToast(e.message || '3D 重构失败', 'error');
-                  } finally {
-                    setIsProcessing(false);
-                  }
-                }} disabled={isProcessing}>
+                <button
+                  className="pro-master-btn"
+                  onClick={async () => {
+                    setIsProcessing(true)
+                    try {
+                      const data = await callAuthJson('/api/ai/spatial/render', {
+                        clipId: current.id
+                      })
+                      if (data?.status === 'not_implemented')
+                        showToast(data.message || '3D 重构服务未配置', 'warning')
+                      else if (data?.success) showToast('✨ 3D 重构完成', 'success')
+                      else showToast('3D 重构执行失败', 'error')
+                    } catch (e: any) {
+                      showToast(e.message || '3D 重构失败', 'error')
+                    } finally {
+                      setIsProcessing(false)
+                    }
+                  }}
+                  disabled={isProcessing}
+                >
                   {isProcessing ? '正在重构...' : '🧊 执行 NeRF 3D 渲染'}
                 </button>
               </section>
@@ -407,13 +419,20 @@ const PropertyInspector: React.FC = () => {
             {current.type === 'text' && (
               <section className="inspector-section">
                 <label>TTS 配音控制器</label>
-                <textarea name="ttsContent" value={current.data?.content || ''} onChange={(e) => handleDataUpdate({ content: e.target.value })} className="pro-textarea-mini" />
+                <textarea
+                  name="ttsContent"
+                  value={current.data?.content || ''}
+                  onChange={(e) => handleDataUpdate({ content: e.target.value })}
+                  className="pro-textarea-mini"
+                />
                 <div className="pro-control-row mt-4">
                   <select name="ttsVoice" className="pro-select-mini">
                     <option>自然男声 (中文)</option>
                     <option>甜美女声 (中文)</option>
                   </select>
-                  <button className="alchemy-mini-btn" onClick={() => handleAlchemy('tts')}>生成</button>
+                  <button className="alchemy-mini-btn" onClick={() => handleAlchemy('tts')}>
+                    生成
+                  </button>
                 </div>
                 <div className="pro-control-row mt-4">
                   <select
@@ -425,7 +444,11 @@ const PropertyInspector: React.FC = () => {
                     <option value="English">翻译为英文</option>
                     <option value="Japanese">翻译为日文</option>
                   </select>
-                  <button className="alchemy-mini-btn" onClick={handleTranslateAndClone} disabled={isProcessing}>
+                  <button
+                    className="alchemy-mini-btn"
+                    onClick={handleTranslateAndClone}
+                    disabled={isProcessing}
+                  >
                     {isProcessing ? '翻译中...' : '翻译并克隆'}
                   </button>
                 </div>
@@ -445,7 +468,11 @@ const PropertyInspector: React.FC = () => {
                     <option value="English">翻译为英文</option>
                     <option value="Japanese">翻译为日文</option>
                   </select>
-                  <button className="alchemy-mini-btn" onClick={handleTranslateAndClone} disabled={isProcessing}>
+                  <button
+                    className="alchemy-mini-btn"
+                    onClick={handleTranslateAndClone}
+                    disabled={isProcessing}
+                  >
                     {isProcessing ? '翻译中...' : '翻译并克隆'}
                   </button>
                 </div>
@@ -456,15 +483,22 @@ const PropertyInspector: React.FC = () => {
               <label>智能音频辅助</label>
               <div className="pro-control-row">
                 <span>BGM 匹配</span>
-                <input name="bgmVolume" type="range" value={bgmVolume} onChange={e => setBgmVolume(parseInt(e.target.value))} />
+                <input
+                  name="bgmVolume"
+                  type="range"
+                  value={bgmVolume}
+                  onChange={(e) => setBgmVolume(parseInt(e.target.value))}
+                />
               </div>
-              <button className="alchemy-mini-btn w-full" onClick={() => handleAlchemy('audio')}>🥁 节奏感应分析</button>
+              <button className="alchemy-mini-btn w-full" onClick={() => handleAlchemy('audio')}>
+                🥁 节奏感应分析
+              </button>
             </section>
           </div>
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default PropertyInspector;
+export default PropertyInspector

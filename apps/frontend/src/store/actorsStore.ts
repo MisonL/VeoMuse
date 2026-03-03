@@ -29,7 +29,7 @@ export const useActorsStore = create<ActorsState>((set, get) => ({
   fetchActors: async (options) => {
     const force = options?.force === true
     const { actors, lastLoadedAt } = get()
-    const isFresh = lastLoadedAt !== null && (Date.now() - lastLoadedAt) < ACTOR_CACHE_TTL_MS
+    const isFresh = lastLoadedAt !== null && Date.now() - lastLoadedAt < ACTOR_CACHE_TTL_MS
     if (!force && actors.length > 0 && isFresh) return actors
     if (inFlightFetch) return inFlightFetch
     if (!getAccessToken().trim()) {
@@ -44,7 +44,7 @@ export const useActorsStore = create<ActorsState>((set, get) => ({
           method: 'GET',
           headers: buildAuthHeaders()
         })
-        const payload = await response.json().catch(() => null) as any
+        const payload = (await response.json().catch(() => null)) as any
         if (!response.ok || payload?.success === false) {
           throw new Error(payload?.error || `HTTP ${response.status}`)
         }
@@ -69,10 +69,10 @@ export const useActorsStore = create<ActorsState>((set, get) => ({
   },
   prependActor: (actor) => {
     set((state) => {
-      const exists = state.actors.some(item => item.id === actor.id)
+      const exists = state.actors.some((item) => item.id === actor.id)
       if (exists) {
         return {
-          actors: state.actors.map(item => item.id === actor.id ? actor : item),
+          actors: state.actors.map((item) => (item.id === actor.id ? actor : item)),
           lastLoadedAt: Date.now()
         }
       }

@@ -30,7 +30,11 @@
 }
 
 .theme-btn.active {
-  background: linear-gradient(160deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent) 70%, #09336d));
+  background: linear-gradient(
+    160deg,
+    var(--ap-accent),
+    color-mix(in srgb, var(--ap-accent) 70%, #09336d)
+  );
   color: #fff;
   box-shadow: 0 4px 10px var(--ap-accent-glow);
 }

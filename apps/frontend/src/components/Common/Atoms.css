@@ -1,13 +1,13 @@
 /* Pro 级视觉补强 */
 
 :root {
-  --pro-bg: #0A0A0A;
+  --pro-bg: #0a0a0a;
   --pro-panel: #121212;
-  --pro-header: #1A1A1B;
-  --pro-accent: #007AFF;
-  --pro-text: #E5E5E5;
-  --pro-text-secondary: #A0A0A0; /* 提升对比度 */
-  --pro-border: #2C2C2E;
+  --pro-header: #1a1a1b;
+  --pro-accent: #007aff;
+  --pro-text: #e5e5e5;
+  --pro-text-secondary: #a0a0a0; /* 提升对比度 */
+  --pro-border: #2c2c2e;
 }
 
 /* 专业级电平表 (模拟) */
@@ -22,7 +22,8 @@
 
 .meter-fill {
   position: absolute;
-  bottom: 0; width: 100%;
+  bottom: 0;
+  width: 100%;
   background: linear-gradient(to top, #34c759, #ffcc00, #ff3b30);
   height: 60%; /* 动态控制 */
   box-shadow: 0 0 8px rgba(52, 199, 89, 0.4);
@@ -32,7 +33,7 @@
 .timeline-clip-pro {
   border-radius: 4px !important;
   background: var(--pro-accent) !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -40,12 +41,12 @@
 
 .clip-thumb-preview {
   flex: 1;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .clip-label-pro {
@@ -53,7 +54,7 @@
   padding: 0 4px;
   font-size: 9px;
   font-weight: 700;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;

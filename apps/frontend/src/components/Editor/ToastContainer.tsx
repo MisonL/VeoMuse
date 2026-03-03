@@ -1,19 +1,23 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useToastStore } from '../../store/toastStore';
-import './ToastContainer.css';
+import React from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useToastStore } from '../../store/toastStore'
+import './ToastContainer.css'
 
 const ToastContainer: React.FC = () => {
-  const { toasts, removeToast } = useToastStore();
+  const { toasts, removeToast } = useToastStore()
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'success': return '✅';
-      case 'error': return '❌';
-      case 'warning': return '⚠️';
-      default: return 'ℹ️';
+      case 'success':
+        return '✅'
+      case 'error':
+        return '❌'
+      case 'warning':
+        return '⚠️'
+      default:
+        return 'ℹ️'
     }
-  };
+  }
 
   return (
     <div className="toast-container">
@@ -36,8 +40,8 @@ const ToastContainer: React.FC = () => {
                     key={`${toast.id}-${index}`}
                     className={`toast-action-btn ${action.variant || 'secondary'}`}
                     onClick={() => {
-                      action.onClick?.();
-                      removeToast(toast.id);
+                      action.onClick?.()
+                      removeToast(toast.id)
                     }}
                   >
                     {action.label}
@@ -49,7 +53,7 @@ const ToastContainer: React.FC = () => {
         ))}
       </AnimatePresence>
     </div>
-  );
-};
+  )
+}
 
-export default ToastContainer;
+export default ToastContainer

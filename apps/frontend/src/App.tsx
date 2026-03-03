@@ -1,14 +1,32 @@
-import { useState, memo, useEffect, useActionState, useOptimistic, lazy, Suspense, useMemo, useRef, useCallback, startTransition } from 'react'
+import {
+  useState,
+  memo,
+  useEffect,
+  useActionState,
+  useOptimistic,
+  lazy,
+  Suspense,
+  useMemo,
+  useRef,
+  useCallback,
+  startTransition
+} from 'react'
 import type { CSSProperties } from 'react'
+import type { StoreApi } from 'zustand'
+import { useStore } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
+import type { TemporalState } from 'zundo'
 import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import { useAdminMetricsPolling, useAdminMetricsStore } from './store/adminMetricsStore'
 import { useJourneyTelemetryStore } from './store/journeyTelemetryStore'
+import type { JourneyErrorKind } from './store/journeyTelemetryStore'
 import { LAYOUT_LIMITS, useLayoutStore } from './store/layoutStore'
 import { useThemeSync } from './hooks/useThemeSync'
 import { buildAuthHeaders, resolveApiBase } from './utils/eden'
+import { classifyRequestError } from './utils/requestError'
 import { calcAspectFit, clamp } from './utils/layoutMath'
+import { requestJsonWithRetry } from './components/Editor/comparison-lab/api'
 import ResizeHandle from './components/Common/ResizeHandle'
 import ThemeSwitcher from './components/Common/ThemeSwitcher'
 import WorkspaceShell from './components/Layout/WorkspaceShell'
@@ -47,6 +65,26 @@ const VERTICAL_HANDLE_SIZE = 8
 const SHELL_VERTICAL_PADDING = 20
 const SHELL_VERTICAL_GAP = 30
 const GUIDE_STORAGE_KEY = 'veomuse-onboarding-v1'
+const getRuntimeEnv = (): Record<string, string | undefined> => {
+  const processEnv =
+    typeof process !== 'undefined'
+      ? (process.env as Record<string, string | undefined>)
+      : ({} as Record<string, string | undefined>)
+  const bunEnv = (globalThis as { Bun?: { env?: Record<string, string | undefined> } }).Bun?.env
+  if (bunEnv && typeof bunEnv === 'object') {
+    return {
+      ...processEnv,
+      ...bunEnv
+    }
+  }
+  return processEnv
+}
+
+const runtimeEnv = getRuntimeEnv()
+const isHappyDomRuntime =
+  typeof navigator !== 'undefined' && /HappyDOM/i.test(String(navigator.userAgent || ''))
+const IS_TEST_ENV =
+  isHappyDomRuntime || runtimeEnv.NODE_ENV === 'test' || runtimeEnv.VEOMUSE_TEST_RUNTIME === '1'
 const PREVIEW_ASPECT_RATIO_MAP: Record<PreviewAspect, number> = {
   '16:9': 16 / 9,
   '21:9': 21 / 9
@@ -56,9 +94,20 @@ const CENTER_MODE_WIDTH_BOOST: Record<CenterPanelMode, number> = {
   focus: 56
 }
 type ExportUiStatus = 'idle' | 'pending' | 'done' | 'error'
-type ExportProgressStage = 'idle' | 'validating' | 'composing' | 'packaging' | 'done' | 'error'
-type ExportActionState = { status: 'idle' | 'done' | 'error'; message?: string }
-type ExportQuality = 'standard' | '4k-hdr' | 'spatial-vr'
+export type ExportProgressStage =
+  | 'idle'
+  | 'validating'
+  | 'composing'
+  | 'packaging'
+  | 'done'
+  | 'error'
+type ExportActionState = {
+  status: 'idle' | 'done' | 'error'
+  message?: string
+  httpStatus?: number
+  errorKind?: JourneyErrorKind
+}
+export type ExportQuality = 'standard' | '4k-hdr' | 'spatial-vr'
 
 interface GuideStep {
   title: string
@@ -69,13 +118,13 @@ interface GuideStep {
   onEnter?: () => void
 }
 
-const formatTimecode = (seconds: number) => {
+export const formatTimecode = (seconds: number) => {
   const safe = Math.max(0, seconds)
   const hh = Math.floor(safe / 3600)
   const mm = Math.floor((safe % 3600) / 60)
   const ss = Math.floor(safe % 60)
   const ff = Math.floor((safe - Math.floor(safe)) * fps)
-  return [hh, mm, ss, ff].map(v => String(v).padStart(2, '0')).join(':')
+  return [hh, mm, ss, ff].map((v) => String(v).padStart(2, '0')).join(':')
 }
 
 export const getExportButtonLabel = (
@@ -92,40 +141,348 @@ export const getExportButtonLabel = (
   return '导出'
 }
 
-const resolveExportStageByProgress = (progress: number): ExportProgressStage => {
+export const resolveExportStageByProgress = (progress: number): ExportProgressStage => {
   if (progress < 30) return 'validating'
   if (progress < 78) return 'composing'
   return 'packaging'
 }
 
-const compactExportMessage = (message: string, limit = 92) => {
+export const compactExportMessage = (message: string, limit = 92) => {
   const normalized = message.replace(/\s+/g, ' ').trim()
   if (normalized.length <= limit) return normalized
   return `${normalized.slice(0, limit)}...`
 }
 
+type TrackLike = {
+  id?: string
+  type?: string
+  clips: Array<{ src?: unknown; start: number; end?: number }>
+}
+
+type MetricsLike = {
+  system?: {
+    renderLoad?: number
+    memory?: {
+      total?: number
+      usage?: number
+    }
+  }
+}
+
+export const hasRenderableClipsFromTracks = (tracks: TrackLike[]) =>
+  tracks.some(
+    (track) =>
+      track.type !== 'text' &&
+      track.type !== 'mask' &&
+      track.clips.some((clip) => typeof clip.src === 'string' && clip.src.trim().length > 0)
+  )
+
+export const deriveCurrentMetrics = (metrics?: MetricsLike) => {
+  if (!metrics?.system?.memory) return { gpu: 0, ram: '0 / 0', cache: '0%' }
+  const gpu = Number.isFinite(metrics.system.renderLoad) ? Math.round(metrics.system.renderLoad) : 0
+  const totalMemoryGb = Number(metrics.system.memory.total || 0) / 1024 ** 3
+  const usagePercent = Number(metrics.system.memory.usage || 0) * 100
+  return {
+    gpu,
+    ram: `${totalMemoryGb.toFixed(1)}GB`,
+    cache: `${Math.round(usagePercent)}%`
+  }
+}
+
+export const getNextClipTimeFromTracks = (currentTime: number, tracks: TrackLike[]) => {
+  const allClipStarts = tracks
+    .flatMap((track) => track.clips)
+    .map((clip) => Number(clip.start) || 0)
+    .filter((start) => start > currentTime)
+    .sort((a, b) => a - b)
+  return allClipStarts[0] ?? 0
+}
+
+export const resolveExportQualityLabel = (exportQuality: ExportQuality) => {
+  if (exportQuality === '4k-hdr') return '4K HDR'
+  if (exportQuality === 'spatial-vr') return '空间视频'
+  return '标准导出'
+}
+
+export const resolveExportFeedbackTitle = (exportStage: ExportProgressStage) => {
+  if (exportStage === 'validating') return '准备素材中'
+  if (exportStage === 'composing') return '渲染时间轴中'
+  if (exportStage === 'packaging') return '封装输出中'
+  if (exportStage === 'done') return '导出完成'
+  if (exportStage === 'error') return '导出失败'
+  return '等待导出'
+}
+
+export const resolveExportFeedbackSubtitle = (
+  exportUiStatus: ExportUiStatus,
+  exportQualityLabel: string,
+  exportStateMessage?: string
+) => {
+  if (exportUiStatus === 'pending') return `规格：${exportQualityLabel}`
+  if (exportUiStatus === 'done') return '输出文件已生成'
+  if (exportUiStatus === 'error')
+    return compactExportMessage(exportStateMessage || '请重试或稍后再试')
+  return ''
+}
+
+export const computeCenterPanelMinWidth = (
+  isDesktopLayout: boolean,
+  centerMode: CenterPanelMode,
+  activeMode: string
+) => {
+  if (!isDesktopLayout) return MAIN_PANEL_MIN_WIDTH
+  const boost = CENTER_MODE_WIDTH_BOOST[centerMode]
+  if (activeMode === 'color') return 340 + boost
+  if (activeMode === 'audio') return 320 + boost
+  return MAIN_PANEL_MIN_WIDTH + boost
+}
+
+export const computeCenterPanelFitWidth = (params: {
+  activeMode: string
+  centerMode: CenterPanelMode
+  centerPanelMinWidth: number
+  isDesktopLayout: boolean
+  previewFrameWidth: number
+}) => {
+  if (!params.isDesktopLayout) return CENTER_PANEL_FALLBACK_WIDTH
+  const maxBoost = params.centerMode === 'focus' ? 96 : 0
+  if (params.activeMode === 'color') {
+    return clamp(
+      CENTER_PANEL_LAB_WIDTH + maxBoost,
+      params.centerPanelMinWidth,
+      CENTER_PANEL_LAB_MAX_WIDTH + maxBoost
+    )
+  }
+  if (params.activeMode === 'audio') {
+    return clamp(
+      CENTER_PANEL_AUDIO_WIDTH + maxBoost,
+      params.centerPanelMinWidth,
+      CENTER_PANEL_AUDIO_MAX_WIDTH + maxBoost
+    )
+  }
+  const editFitWidth = Math.max(
+    CENTER_PANEL_EDIT_WIDTH,
+    params.previewFrameWidth > 0 ? params.previewFrameWidth + CENTER_PANEL_FRAME_GUTTER : 0
+  )
+  return clamp(
+    editFitWidth + maxBoost,
+    params.centerPanelMinWidth,
+    CENTER_PANEL_EDIT_MAX_WIDTH + maxBoost
+  )
+}
+
+export const buildShellLayoutVars = (params: {
+  centerMode: CenterPanelMode
+  centerPanelFitWidth: number
+  centerPanelMinWidth: number
+  leftPanelPx: number
+  rightPanelPx: number
+  timelinePx: number
+}) =>
+  ({
+    '--left-panel-w': `${params.leftPanelPx}px`,
+    '--right-panel-w': `${params.rightPanelPx}px`,
+    '--center-panel-min-w': `${params.centerPanelMinWidth}px`,
+    '--center-panel-fit-w': `${Math.round(params.centerPanelFitWidth)}px`,
+    '--left-panel-flex': params.centerMode === 'focus' ? '1.42fr' : '2.05fr',
+    '--right-panel-flex': params.centerMode === 'focus' ? '1.28fr' : '1.86fr',
+    '--timeline-h': `${params.timelinePx}px`
+  }) as CSSProperties
+
+type LayoutLimitsLike = typeof LAYOUT_LIMITS
+
+export const normalizeDesktopPanelWidthsPure = (params: {
+  mainWidth: number
+  centerPanelMinWidth: number
+  leftPanelPx: number
+  rightPanelPx: number
+  limits?: LayoutLimitsLike
+}) => {
+  const limits = params.limits || LAYOUT_LIMITS
+  const availableForSidePanels =
+    params.mainWidth - HORIZONTAL_HANDLE_SIZE * 2 - params.centerPanelMinWidth
+  if (availableForSidePanels <= 0) return null
+
+  const leftMin = limits.leftPanelPx.min
+  const rightMin = limits.rightPanelPx.min
+  const leftMax = Math.min(limits.leftPanelPx.max, availableForSidePanels - rightMin)
+  const rightMax = Math.min(limits.rightPanelPx.max, availableForSidePanels - leftMin)
+  if (leftMax < leftMin || rightMax < rightMin) return null
+
+  let nextLeft = clamp(params.leftPanelPx, leftMin, leftMax)
+  let nextRight = clamp(params.rightPanelPx, rightMin, rightMax)
+
+  const overflow = nextLeft + nextRight - availableForSidePanels
+  if (overflow > 0) {
+    if (nextLeft >= nextRight) {
+      nextLeft = Math.max(leftMin, nextLeft - overflow)
+    } else {
+      nextRight = Math.max(rightMin, nextRight - overflow)
+    }
+  }
+
+  const remainingOverflow = nextLeft + nextRight - availableForSidePanels
+  if (remainingOverflow > 0) {
+    nextRight = Math.max(rightMin, nextRight - remainingOverflow)
+  }
+
+  return {
+    leftPanelPx: nextLeft,
+    rightPanelPx: nextRight
+  }
+}
+
+export const computeLeftPanelWidthAfterDrag = (params: {
+  delta: number
+  mainWidth: number
+  currentLeft: number
+  currentRight: number
+  centerPanelMinWidth: number
+  limits?: LayoutLimitsLike
+}) => {
+  if (!params.mainWidth) return params.currentLeft
+  const limits = params.limits || LAYOUT_LIMITS
+  const maxLeft = Math.min(
+    limits.leftPanelPx.max,
+    params.mainWidth -
+      HORIZONTAL_HANDLE_SIZE * 2 -
+      Math.max(params.currentRight, limits.rightPanelPx.min) -
+      params.centerPanelMinWidth
+  )
+  return clamp(
+    params.currentLeft + params.delta,
+    limits.leftPanelPx.min,
+    Math.max(limits.leftPanelPx.min, maxLeft)
+  )
+}
+
+export const computeRightPanelWidthAfterDrag = (params: {
+  delta: number
+  mainWidth: number
+  currentLeft: number
+  currentRight: number
+  centerPanelMinWidth: number
+  limits?: LayoutLimitsLike
+}) => {
+  if (!params.mainWidth) return params.currentRight
+  const limits = params.limits || LAYOUT_LIMITS
+  const maxRight = Math.min(
+    limits.rightPanelPx.max,
+    params.mainWidth -
+      HORIZONTAL_HANDLE_SIZE * 2 -
+      Math.max(params.currentLeft, limits.leftPanelPx.min) -
+      params.centerPanelMinWidth
+  )
+  return clamp(
+    params.currentRight - params.delta,
+    limits.rightPanelPx.min,
+    Math.max(limits.rightPanelPx.min, maxRight)
+  )
+}
+
+export const computeTimelineHeightAfterDrag = (params: {
+  delta: number
+  shellHeight: number
+  timelinePx: number
+  limits?: LayoutLimitsLike
+}) => {
+  const limits = params.limits || LAYOUT_LIMITS
+  const maxTimelineByShell =
+    params.shellHeight -
+    HEADER_HEIGHT -
+    VERTICAL_HANDLE_SIZE -
+    SHELL_VERTICAL_PADDING -
+    SHELL_VERTICAL_GAP -
+    MAIN_PANEL_MIN_HEIGHT
+  const maxTimeline = Math.min(
+    limits.timelinePx.max,
+    Math.max(limits.timelinePx.min, maxTimelineByShell)
+  )
+  return clamp(params.timelinePx - params.delta, limits.timelinePx.min, maxTimeline)
+}
+
+type GuideAnchorRect = {
+  top: number
+  left: number
+  width: number
+  height: number
+}
+
+export const buildPreviewFrameStyle = (previewFrameSize: { width: number; height: number }) => {
+  if (!previewFrameSize.width || !previewFrameSize.height) return undefined
+  return {
+    width: `${previewFrameSize.width}px`,
+    height: `${previewFrameSize.height}px`
+  } as CSSProperties
+}
+
+export const buildGuideHighlightStyle = (guideAnchorRect: GuideAnchorRect | null | undefined) => {
+  if (!guideAnchorRect) return undefined
+  return {
+    top: `${Math.round(guideAnchorRect.top - 6)}px`,
+    left: `${Math.round(guideAnchorRect.left - 6)}px`,
+    width: `${Math.round(guideAnchorRect.width + 12)}px`,
+    height: `${Math.round(guideAnchorRect.height + 12)}px`
+  } as CSSProperties
+}
+
+export const buildGuideCardStyle = (
+  guideAnchorRect: GuideAnchorRect | null | undefined,
+  viewport: { width: number; height: number }
+) => {
+  if (!guideAnchorRect) return undefined
+  const cardW = 320
+  const cardH = 220
+  let top = guideAnchorRect.top + guideAnchorRect.height + 14
+  if (top + cardH > viewport.height - 12) top = Math.max(12, guideAnchorRect.top - cardH - 14)
+  let left = guideAnchorRect.left
+  if (left + cardW > viewport.width - 12) left = viewport.width - cardW - 12
+  left = Math.max(12, left)
+  return {
+    top: `${Math.round(top)}px`,
+    left: `${Math.round(left)}px`
+  } as CSSProperties
+}
+
 const TimecodeDisplay = memo(() => {
-  const currentTime = useEditorStore(state => state.currentTime)
+  const currentTime = useEditorStore((state) => state.currentTime)
   return <div className="timecode">{formatTimecode(currentTime)}</div>
 })
 
 const LazyFallback = memo(({ label = '加载中...' }: { label?: string }) => (
-  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ap-text-dim)', fontSize: '12px', fontWeight: 700 }}>
+  <div
+    style={{
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'var(--ap-text-dim)',
+      fontSize: '12px',
+      fontWeight: 700
+    }}
+  >
     {label}
   </div>
 ))
+
+type EditorStateSnapshot = ReturnType<typeof useEditorStore.getState>
+type EditorTemporalStore = StoreApi<TemporalState<EditorStateSnapshot>>
+
+const editorTemporalStore = (useEditorStore as unknown as { temporal: EditorTemporalStore })
+  .temporal
 
 function App() {
   useThemeSync()
   useAdminMetricsPolling()
   const { showToast } = useToastStore()
-  const markJourneyStep = useJourneyTelemetryStore(state => state.markStep)
-  const reportJourney = useJourneyTelemetryStore(state => state.reportJourney)
-  const metrics = useAdminMetricsStore(state => state.metrics)
-  const renderLoadHistory = useAdminMetricsStore(state => state.renderLoadHistory)
+  const markJourneyStep = useJourneyTelemetryStore((state) => state.markStep)
+  const reportJourney = useJourneyTelemetryStore((state) => state.reportJourney)
+  const metrics = useAdminMetricsStore((state) => state.metrics)
+  const renderLoadHistory = useAdminMetricsStore((state) => state.renderLoadHistory)
 
   const { isPlaying, togglePlay, setCurrentTime, tracks, setTracks } = useEditorStore(
-    useShallow(state => ({
+    useShallow((state) => ({
       isPlaying: state.isPlaying,
       togglePlay: state.togglePlay,
       setCurrentTime: state.setCurrentTime,
@@ -134,7 +491,7 @@ function App() {
     }))
   )
   const { isSpatialPreview, setSpatialPreview } = useEditorStore(
-    useShallow(state => ({
+    useShallow((state) => ({
       isSpatialPreview: state.isSpatialPreview,
       setSpatialPreview: state.setSpatialPreview
     }))
@@ -152,7 +509,7 @@ function App() {
     setTimelinePx,
     resetLayout
   } = useLayoutStore(
-    useShallow(state => ({
+    useShallow((state) => ({
       leftPanelPx: state.leftPanelPx,
       rightPanelPx: state.rightPanelPx,
       timelinePx: state.timelinePx,
@@ -167,12 +524,21 @@ function App() {
     }))
   )
 
-  // @ts-ignore
-  const { undo, redo, pastStates, futureStates } = useEditorStore.temporal.getState()
+  const { undo, redo, pastStates, futureStates } = useStore(
+    editorTemporalStore,
+    useShallow((state) => ({
+      undo: state.undo,
+      redo: state.redo,
+      pastStates: state.pastStates,
+      futureStates: state.futureStates
+    }))
+  )
 
   const [activeMode, setActiveMode] = useState('edit')
   const [activeTool, setActiveTool] = useState('select')
-  const [activeSidebar, setActiveSidebar] = useState<'assets' | 'director' | 'actors' | 'motion'>('assets')
+  const [activeSidebar, setActiveSidebar] = useState<'assets' | 'director' | 'actors' | 'motion'>(
+    'assets'
+  )
   const [exportQuality, setExportQuality] = useState<ExportQuality>('standard')
   const [directorPrompt, setDirectorPrompt] = useState('')
   const [directorScenes, setDirectorScenes] = useState<any[]>([])
@@ -185,9 +551,20 @@ function App() {
   const [previewFrameSize, setPreviewFrameSize] = useState({ width: 0, height: 0 })
   const [isGuideOpen, setIsGuideOpen] = useState(false)
   const [guideStepIndex, setGuideStepIndex] = useState(0)
-  const [guideAnchorRect, setGuideAnchorRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
-  const [optimisticScenes, setOptimisticScenes] = useOptimistic<any[], any[]>(directorScenes, (_prev, next) => next)
-  const [optimisticExportStatus, setOptimisticExportStatus] = useOptimistic<ExportUiStatus, ExportUiStatus>('idle', (_prev, next) => next)
+  const [guideAnchorRect, setGuideAnchorRect] = useState<{
+    top: number
+    left: number
+    width: number
+    height: number
+  } | null>(null)
+  const [optimisticScenes, setOptimisticScenes] = useOptimistic<any[], any[]>(
+    directorScenes,
+    (_prev, next) => next
+  )
+  const [optimisticExportStatus, setOptimisticExportStatus] = useOptimistic<
+    ExportUiStatus,
+    ExportUiStatus
+  >('idle', (_prev, next) => next)
   const shellRef = useRef<HTMLDivElement | null>(null)
   const mainLayoutRef = useRef<HTMLDivElement | null>(null)
   const leftPanelRef = useRef<HTMLElement | null>(null)
@@ -195,57 +572,55 @@ function App() {
   const previewHostRef = useRef<HTMLDivElement | null>(null)
   const exportProgressTimerRef = useRef<number | null>(null)
   const exportFeedbackResetTimerRef = useRef<number | null>(null)
-  const [exportState, runExportAction, isExportPending] = useActionState<ExportActionState, ExportQuality>(async (_state, quality) => {
-    const timelineData = {
-      tracks: useEditorStore.getState().tracks,
-      exportConfig: { quality }
-    }
-    try {
-      const response = await fetch(`${resolveApiBase()}/api/video/compose`, {
-        method: 'POST',
-        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ timelineData })
-      })
-      const payload = await response.json().catch(() => null) as any
-      if (!response.ok || !payload?.success) {
-        throw new Error(payload?.error || `HTTP ${response.status}`)
+  const [exportState, runExportAction, isExportPending] = useActionState<
+    ExportActionState,
+    ExportQuality
+  >(
+    async (_state, quality) => {
+      const timelineData = {
+        tracks: useEditorStore.getState().tracks,
+        exportConfig: { quality }
       }
-      showToast(`导出成功: ${payload.outputPath}`, 'success')
-      return { status: 'done' as const, message: payload.outputPath }
-    } catch (e: any) {
-      return { status: 'error' as const, message: e.message || '导出失败' }
-    }
-  }, { status: 'idle' })
+      try {
+        const response = await fetch(`${resolveApiBase()}/api/video/compose`, {
+          method: 'POST',
+          headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ timelineData })
+        })
+        const payload = (await response.json().catch(() => null)) as any
+        if (!response.ok || !payload?.success) {
+          const error = new Error(payload?.error || `HTTP ${response.status}`) as Error & {
+            status?: number
+            code?: string
+          }
+          error.status = response.status
+          if (typeof payload?.code === 'string') error.code = payload.code
+          throw error
+        }
+        showToast(`导出成功: ${payload.outputPath}`, 'success')
+        return { status: 'done' as const, message: payload.outputPath }
+      } catch (e: any) {
+        const { errorKind, httpStatus } = classifyRequestError(e)
+        return {
+          status: 'error' as const,
+          message: e.message || '导出失败',
+          errorKind,
+          httpStatus
+        }
+      }
+    },
+    { status: 'idle' }
+  )
   const [exportUiStatus, setExportUiStatus] = useState<ExportUiStatus>('idle')
   const [exportProgress, setExportProgress] = useState(0)
   const [exportStage, setExportStage] = useState<ExportProgressStage>('idle')
   const [lastExportOutput, setLastExportOutput] = useState('')
 
   const telemetryHistory = useMemo(() => renderLoadHistory.slice(-10), [renderLoadHistory])
-  const hasRenderableClips = useMemo(() => (
-    tracks.some(track => (
-      track.type !== 'text'
-      && track.type !== 'mask'
-      && track.clips.some(clip => typeof clip.src === 'string' && clip.src.trim().length > 0)
-    ))
-  ), [tracks])
-  const currentMetrics = useMemo(() => {
-    if (!metrics?.system?.memory) return { gpu: 0, ram: '0 / 0', cache: '0%' }
-    const gpu = Number.isFinite(metrics.system.renderLoad) ? Math.round(metrics.system.renderLoad) : 0
-    const totalMemoryGb = Number(metrics.system.memory.total || 0) / (1024 ** 3)
-    const usagePercent = Number(metrics.system.memory.usage || 0) * 100
-    return {
-      gpu,
-      ram: `${totalMemoryGb.toFixed(1)}GB`,
-      cache: `${Math.round(usagePercent)}%`
-    }
-  }, [metrics])
+  const hasRenderableClips = useMemo(() => hasRenderableClipsFromTracks(tracks), [tracks])
+  const currentMetrics = useMemo(() => deriveCurrentMetrics(metrics), [metrics])
 
-  const showRecoverableToast = (
-    message: string,
-    onRetry: () => void,
-    onFallback: () => void
-  ) => {
+  const showRecoverableToast = (message: string, onRetry: () => void, onFallback: () => void) => {
     showToast(message, 'error', {
       sticky: true,
       actions: [
@@ -273,7 +648,7 @@ function App() {
     setExportProgress(8)
     setExportStage('validating')
     exportProgressTimerRef.current = window.setInterval(() => {
-      setExportProgress(prev => {
+      setExportProgress((prev) => {
         if (prev >= 94) return prev
         const delta = prev < 30 ? 7 : prev < 68 ? 4 : 2
         const next = Math.min(94, prev + delta)
@@ -283,36 +658,49 @@ function App() {
     }, 260)
   }, [clearExportFeedbackTimers])
 
-  const resetExportFeedback = useCallback((status: ExportUiStatus = 'idle') => {
-    clearExportFeedbackTimers()
-    setExportUiStatus(status)
-    startTransition(() => {
-      setOptimisticExportStatus(status)
-    })
-    setExportProgress(0)
-    setExportStage(status === 'error' ? 'error' : status === 'done' ? 'done' : 'idle')
-    if (status === 'idle') setLastExportOutput('')
-  }, [clearExportFeedbackTimers, setOptimisticExportStatus])
+  const resetExportFeedback = useCallback(
+    (status: ExportUiStatus = 'idle') => {
+      clearExportFeedbackTimers()
+      setExportUiStatus(status)
+      startTransition(() => {
+        setOptimisticExportStatus(status)
+      })
+      setExportProgress(0)
+      setExportStage(status === 'error' ? 'error' : status === 'done' ? 'done' : 'idle')
+      if (status === 'idle') setLastExportOutput('')
+    },
+    [clearExportFeedbackTimers, setOptimisticExportStatus]
+  )
 
-  const applyOptimisticScenes = useCallback((next: any[]) => {
-    startTransition(() => {
-      setOptimisticScenes(next)
-    })
-  }, [setOptimisticScenes])
+  const applyOptimisticScenes = useCallback(
+    (next: any[]) => {
+      startTransition(() => {
+        setOptimisticScenes(next)
+      })
+    },
+    [setOptimisticScenes]
+  )
 
-  const applyOptimisticExportStatus = useCallback((status: ExportUiStatus) => {
-    startTransition(() => {
-      setOptimisticExportStatus(status)
-    })
-  }, [setOptimisticExportStatus])
+  const applyOptimisticExportStatus = useCallback(
+    (status: ExportUiStatus) => {
+      startTransition(() => {
+        setOptimisticExportStatus(status)
+      })
+    },
+    [setOptimisticExportStatus]
+  )
 
-  const dispatchExportAction = useCallback((quality: ExportQuality) => {
-    startTransition(() => {
-      void runExportAction(quality)
-    })
-  }, [runExportAction])
+  const dispatchExportAction = useCallback(
+    (quality: ExportQuality) => {
+      startTransition(() => {
+        void runExportAction(quality)
+      })
+    },
+    [runExportAction]
+  )
 
   useEffect(() => {
+    if (IS_TEST_ENV) return
     // 空闲时预热非首屏模块，降低首次切换等待
     const timer = setTimeout(() => {
       void loadComparisonLab()
@@ -349,7 +737,7 @@ function App() {
   }, [isTimelineReady])
 
   const ensureTimelineReady = useCallback(() => {
-    setIsTimelineReady(prev => {
+    setIsTimelineReady((prev) => {
       if (prev) return prev
       void loadVideoEditor()
       return true
@@ -375,62 +763,67 @@ function App() {
   }, [])
 
   const openChannelAccess = useCallback(() => {
-    setActiveMode('color')
+    if (!IS_TEST_ENV) {
+      setActiveMode('color')
+    }
     window.setTimeout(() => {
       window.dispatchEvent(new CustomEvent('veomuse:open-channel-panel'))
     }, 0)
   }, [])
 
-  const guideSteps = useMemo<GuideStep[]>(() => ([
-    {
-      title: '切换工作模式',
-      description: '先在这里切换剪辑、实验室和音频大师，主工作区会随模式变化。',
-      target: '[data-guide=\"mode-selector\"]',
-      onEnter: () => setActiveMode('edit')
-    },
-    {
-      title: '先导入素材',
-      description: '点击导入按钮选择本地视频或音频，素材会进入左侧资源区。',
-      target: '#btn-import',
-      actionLabel: '聚焦导入按钮',
-      onAction: () => openImportFromAnywhere(),
-      onEnter: () => {
-        setActiveMode('edit')
-        setActiveSidebar('assets')
+  const guideSteps = useMemo<GuideStep[]>(
+    () => [
+      {
+        title: '切换工作模式',
+        description: '先在这里切换剪辑、实验室和音频大师，主工作区会随模式变化。',
+        target: '[data-guide=\"mode-selector\"]',
+        onEnter: () => setActiveMode('edit')
+      },
+      {
+        title: '先导入素材',
+        description: '点击导入按钮选择本地视频或音频，素材会进入左侧资源区。',
+        target: '#btn-import',
+        actionLabel: '聚焦导入按钮',
+        onAction: () => openImportFromAnywhere(),
+        onEnter: () => {
+          setActiveMode('edit')
+          setActiveSidebar('assets')
+        }
+      },
+      {
+        title: '拖动调整布局',
+        description: '拖动这个手柄可调整左侧宽度；右侧和时间轴也有同类手柄。',
+        target: '[data-guide=\"left-resize-handle\"]',
+        onEnter: () => setActiveMode('edit')
+      },
+      {
+        title: '时间轴工具区',
+        description: '在这里执行撤销、重做、选择、切割、平移等剪辑操作。',
+        target: '[data-guide=\"timeline-tools\"]',
+        onEnter: () => {
+          setActiveMode('edit')
+          ensureTimelineReady()
+        }
+      },
+      {
+        title: '实验室模式',
+        description: '在实验室里做模型对比、策略治理、创意闭环和协作流程。',
+        target: '[data-guide=\"lab-toolbar\"]',
+        actionLabel: '切到实验室',
+        onAction: () => setActiveMode('color'),
+        onEnter: () => {
+          setActiveMode('color')
+          void loadComparisonLab()
+        }
+      },
+      {
+        title: '最终导出',
+        description: '确认时间轴后，在右上角选择导出规格并执行导出。',
+        target: '#btn-export'
       }
-    },
-    {
-      title: '拖动调整布局',
-      description: '拖动这个手柄可调整左侧宽度；右侧和时间轴也有同类手柄。',
-      target: '[data-guide=\"left-resize-handle\"]',
-      onEnter: () => setActiveMode('edit')
-    },
-    {
-      title: '时间轴工具区',
-      description: '在这里执行撤销、重做、选择、切割、平移等剪辑操作。',
-      target: '[data-guide=\"timeline-tools\"]',
-      onEnter: () => {
-        setActiveMode('edit')
-        ensureTimelineReady()
-      }
-    },
-    {
-      title: '实验室模式',
-      description: '在实验室里做模型对比、策略治理、创意闭环和协作流程。',
-      target: '[data-guide=\"lab-toolbar\"]',
-      actionLabel: '切到实验室',
-      onAction: () => setActiveMode('color'),
-      onEnter: () => {
-        setActiveMode('color')
-        void loadComparisonLab()
-      }
-    },
-    {
-      title: '最终导出',
-      description: '确认时间轴后，在右上角选择导出规格并执行导出。',
-      target: '#btn-export'
-    }
-  ]), [ensureTimelineReady, openImportFromAnywhere])
+    ],
+    [ensureTimelineReady, openImportFromAnywhere]
+  )
 
   const handleDirector = async () => {
     if (!directorPrompt.trim()) return showToast('请输入脚本', 'info')
@@ -439,24 +832,28 @@ function App() {
     applyOptimisticScenes([{ title: 'AI 正在分析脚本...', duration: 1 }])
 
     try {
-      const response = await fetch(`${resolveApiBase()}/api/ai/director/analyze`, {
-        method: 'POST',
-        headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ script: directorPrompt })
-      })
-      const data = await response.json().catch(() => null) as any
-      if (!response.ok || !data || data.success === false) {
-        throw new Error(data?.error || `HTTP ${response.status}`)
-      }
+      const data = await requestJsonWithRetry<any>(
+        '/api/ai/director/analyze',
+        {
+          method: 'POST',
+          body: JSON.stringify({ script: directorPrompt })
+        },
+        {
+          idempotent: true
+        }
+      )
 
       if (data && 'scenes' in data) {
         setDirectorScenes(data.scenes || [])
         applyOptimisticScenes(data.scenes || [])
 
         const latestTracks = useEditorStore.getState().tracks
-        const primaryTrack = latestTracks.find(track => track.id === 'track-v1')
+        const primaryTrack = latestTracks.find((track) => track.id === 'track-v1')
         if (primaryTrack) {
-          let offset = primaryTrack.clips.reduce((max, clip) => Math.max(max, Number(clip.end) || 0), 0)
+          let offset = primaryTrack.clips.reduce(
+            (max, clip) => Math.max(max, Number(clip.end) || 0),
+            0
+          )
           const newClips = (data.scenes || []).map((scene: any, i: number) => {
             const duration = Number(scene.duration || 5)
             const clip = {
@@ -477,20 +874,28 @@ function App() {
             offset += duration
             return clip
           })
-          const mergedTracks = latestTracks.map(track => (
-            track.id === 'track-v1'
-              ? { ...track, clips: [...track.clips, ...newClips] }
-              : track
-          ))
+          const mergedTracks = latestTracks.map((track) =>
+            track.id === 'track-v1' ? { ...track, clips: [...track.clips, ...newClips] } : track
+          )
           setTracks(mergedTracks)
           showToast('分镜序列生成并编排成功', 'success')
         }
       }
     } catch (e: any) {
-      const fallbackScenes = directorScenes.length > 0 ? directorScenes : [{ title: '手动编排片段', duration: 5 }]
+      const { errorKind, httpStatus } = classifyRequestError(e)
+      void reportJourney(false, {
+        reason: 'generation-error',
+        failedStage: 'generate',
+        errorKind,
+        httpStatus
+      })
+      const fallbackScenes =
+        directorScenes.length > 0 ? directorScenes : [{ title: '手动编排片段', duration: 5 }]
       showRecoverableToast(
         e.message || '导演分析失败',
-        () => { void handleDirector() },
+        () => {
+          void handleDirector()
+        },
         () => {
           applyOptimisticScenes(fallbackScenes)
           showToast('已降级为手动编排模式，可继续剪辑', 'warning')
@@ -502,16 +907,8 @@ function App() {
     }
   }
 
-  const getNextClipTime = () => {
-    const currentTime = useEditorStore.getState().currentTime
-    const allClipStarts = tracks
-      .flatMap(t => t.clips)
-      .map(c => c.start)
-      .filter(start => start > currentTime)
-      .sort((a, b) => a - b)
-
-    return allClipStarts[0] ?? 0
-  }
+  const getNextClipTime = () =>
+    getNextClipTimeFromTracks(useEditorStore.getState().currentTime, tracks)
 
   const handleExport = () => {
     markJourneyStep('export_triggered')
@@ -547,7 +944,13 @@ function App() {
       setExportUiStatus('error')
       applyOptimisticExportStatus('error')
       setExportStage('error')
-      void reportJourney(false, { reason: 'export-error' })
+      const fallbackError = classifyRequestError({ message: exportState.message || '' })
+      void reportJourney(false, {
+        reason: 'export-error',
+        failedStage: 'export',
+        errorKind: exportState.errorKind || fallbackError.errorKind,
+        httpStatus: exportState.httpStatus || fallbackError.httpStatus
+      })
       showRecoverableToast(
         exportState.message || '导出失败',
         () => {
@@ -563,31 +966,31 @@ function App() {
         }
       )
     }
-  }, [applyOptimisticExportStatus, clearExportFeedbackTimers, dispatchExportAction, exportState, exportQuality, reportJourney, resetExportFeedback, showToast, startExportProgressFeedback])
+  }, [
+    applyOptimisticExportStatus,
+    clearExportFeedbackTimers,
+    dispatchExportAction,
+    exportState,
+    exportQuality,
+    reportJourney,
+    resetExportFeedback,
+    showToast,
+    startExportProgressFeedback
+  ])
 
   useEffect(() => () => clearExportFeedbackTimers(), [clearExportFeedbackTimers])
 
-  const exportQualityLabel = useMemo(() => {
-    if (exportQuality === '4k-hdr') return '4K HDR'
-    if (exportQuality === 'spatial-vr') return '空间视频'
-    return '标准导出'
-  }, [exportQuality])
+  const exportQualityLabel = useMemo(
+    () => resolveExportQualityLabel(exportQuality),
+    [exportQuality]
+  )
 
-  const exportFeedbackTitle = useMemo(() => {
-    if (exportStage === 'validating') return '准备素材中'
-    if (exportStage === 'composing') return '渲染时间轴中'
-    if (exportStage === 'packaging') return '封装输出中'
-    if (exportStage === 'done') return '导出完成'
-    if (exportStage === 'error') return '导出失败'
-    return '等待导出'
-  }, [exportStage])
+  const exportFeedbackTitle = useMemo(() => resolveExportFeedbackTitle(exportStage), [exportStage])
 
-  const exportFeedbackSubtitle = useMemo(() => {
-    if (exportUiStatus === 'pending') return `规格：${exportQualityLabel}`
-    if (exportUiStatus === 'done') return '输出文件已生成'
-    if (exportUiStatus === 'error') return compactExportMessage(exportState.message || '请重试或稍后再试')
-    return ''
-  }, [exportQualityLabel, exportState.message, exportUiStatus])
+  const exportFeedbackSubtitle = useMemo(
+    () => resolveExportFeedbackSubtitle(exportUiStatus, exportQualityLabel, exportState.message),
+    [exportQualityLabel, exportState.message, exportUiStatus]
+  )
 
   useEffect(() => {
     const handleResize = () => setIsDesktopLayout(window.innerWidth > DESKTOP_BREAKPOINT)
@@ -647,7 +1050,17 @@ function App() {
       window.removeEventListener('resize', updateAnchorRect)
       window.removeEventListener('scroll', updateAnchorRect, true)
     }
-  }, [guideStepIndex, guideSteps, isGuideOpen, activeMode, activeSidebar, isDesktopLayout, leftPanelPx, rightPanelPx, timelinePx])
+  }, [
+    guideStepIndex,
+    guideSteps,
+    isGuideOpen,
+    activeMode,
+    activeSidebar,
+    isDesktopLayout,
+    leftPanelPx,
+    rightPanelPx,
+    timelinePx
+  ])
 
   useEffect(() => {
     if (activeMode !== 'edit') return
@@ -659,17 +1072,18 @@ function App() {
     const syncPreviewFrame = () => {
       rafId = 0
       const style = window.getComputedStyle(host)
-      const horizontalPadding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
-      const verticalPadding = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
+      const horizontalPadding =
+        (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
+      const verticalPadding =
+        (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
       const availableWidth = Math.max(0, host.clientWidth - horizontalPadding)
       const availableHeight = Math.max(0, host.clientHeight - verticalPadding)
-      const previewRatio = PREVIEW_ASPECT_RATIO_MAP[previewAspect] || PREVIEW_ASPECT_RATIO_MAP['16:9']
+      const previewRatio =
+        PREVIEW_ASPECT_RATIO_MAP[previewAspect] || PREVIEW_ASPECT_RATIO_MAP['16:9']
       const fit = calcAspectFit(availableWidth, availableHeight, previewRatio)
-      setPreviewFrameSize(prev => (
-        prev.width === fit.width && prev.height === fit.height
-          ? prev
-          : fit
-      ))
+      setPreviewFrameSize((prev) =>
+        prev.width === fit.width && prev.height === fit.height ? prev : fit
+      )
     }
 
     const scheduleSync = () => {
@@ -687,51 +1101,30 @@ function App() {
     }
   }, [activeMode, leftPanelPx, previewAspect, rightPanelPx, timelinePx])
 
-  const centerPanelMinWidth = useMemo(() => {
-    if (!isDesktopLayout) return MAIN_PANEL_MIN_WIDTH
-    const boost = CENTER_MODE_WIDTH_BOOST[centerMode]
-    if (activeMode === 'color') return 340 + boost
-    if (activeMode === 'audio') return 320 + boost
-    return MAIN_PANEL_MIN_WIDTH + boost
-  }, [activeMode, centerMode, isDesktopLayout])
+  const centerPanelMinWidth = useMemo(
+    () => computeCenterPanelMinWidth(isDesktopLayout, centerMode, activeMode),
+    [activeMode, centerMode, isDesktopLayout]
+  )
 
   const normalizeDesktopPanelWidths = useCallback(() => {
     if (!isDesktopLayout) return
     const mainWidth = mainLayoutRef.current?.clientWidth || 0
     if (!mainWidth) return
 
-    const availableForSidePanels = mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - centerPanelMinWidth
-    if (availableForSidePanels <= 0) return
-
-    const leftMin = LAYOUT_LIMITS.leftPanelPx.min
-    const rightMin = LAYOUT_LIMITS.rightPanelPx.min
-    const leftMax = Math.min(LAYOUT_LIMITS.leftPanelPx.max, availableForSidePanels - rightMin)
-    const rightMax = Math.min(LAYOUT_LIMITS.rightPanelPx.max, availableForSidePanels - leftMin)
-    if (leftMax < leftMin || rightMax < rightMin) return
-
     const layoutState = useLayoutStore.getState()
-    let nextLeft = clamp(layoutState.leftPanelPx, leftMin, leftMax)
-    let nextRight = clamp(layoutState.rightPanelPx, rightMin, rightMax)
+    const normalized = normalizeDesktopPanelWidthsPure({
+      mainWidth,
+      centerPanelMinWidth,
+      leftPanelPx: layoutState.leftPanelPx,
+      rightPanelPx: layoutState.rightPanelPx
+    })
+    if (!normalized) return
 
-    const overflow = nextLeft + nextRight - availableForSidePanels
-    if (overflow > 0) {
-      if (nextLeft >= nextRight) {
-        nextLeft = Math.max(leftMin, nextLeft - overflow)
-      } else {
-        nextRight = Math.max(rightMin, nextRight - overflow)
-      }
+    if (normalized.leftPanelPx !== layoutState.leftPanelPx) {
+      layoutState.setLeftPanelPx(normalized.leftPanelPx)
     }
-
-    const remainingOverflow = nextLeft + nextRight - availableForSidePanels
-    if (remainingOverflow > 0) {
-      nextRight = Math.max(rightMin, nextRight - remainingOverflow)
-    }
-
-    if (nextLeft !== layoutState.leftPanelPx) {
-      layoutState.setLeftPanelPx(nextLeft)
-    }
-    if (nextRight !== layoutState.rightPanelPx) {
-      layoutState.setRightPanelPx(nextRight)
+    if (normalized.rightPanelPx !== layoutState.rightPanelPx) {
+      layoutState.setRightPanelPx(normalized.rightPanelPx)
     }
   }, [centerPanelMinWidth, isDesktopLayout])
 
@@ -749,102 +1142,97 @@ function App() {
     }
   }, [isDesktopLayout, normalizeDesktopPanelWidths])
 
-  const handleLeftPanelResize = useCallback((delta: number) => {
-    if (!isDesktopLayout) return
+  const handleLeftPanelResize = useCallback(
+    (delta: number) => {
+      if (!isDesktopLayout) return
 
-    const mainWidth = mainLayoutRef.current?.clientWidth || 0
-    if (!mainWidth) return
+      const mainWidth = mainLayoutRef.current?.clientWidth || 0
+      if (!mainWidth) return
 
-    const layoutState = useLayoutStore.getState()
-    const currentLeft = leftPanelRef.current?.clientWidth || layoutState.leftPanelPx
-    const currentRight = rightPanelRef.current?.clientWidth || layoutState.rightPanelPx
-    const maxLeft = Math.min(
-      LAYOUT_LIMITS.leftPanelPx.max,
-      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - Math.max(currentRight, LAYOUT_LIMITS.rightPanelPx.min) - centerPanelMinWidth
-    )
+      const layoutState = useLayoutStore.getState()
+      const currentLeft = leftPanelRef.current?.clientWidth || layoutState.leftPanelPx
+      const currentRight = rightPanelRef.current?.clientWidth || layoutState.rightPanelPx
+      layoutState.setLeftPanelPx(
+        computeLeftPanelWidthAfterDrag({
+          delta,
+          mainWidth,
+          currentLeft,
+          currentRight,
+          centerPanelMinWidth
+        })
+      )
+    },
+    [centerPanelMinWidth, isDesktopLayout]
+  )
 
-    layoutState.setLeftPanelPx(
-      clamp(currentLeft + delta, LAYOUT_LIMITS.leftPanelPx.min, Math.max(LAYOUT_LIMITS.leftPanelPx.min, maxLeft))
-    )
-  }, [centerPanelMinWidth, isDesktopLayout])
+  const handleRightPanelResize = useCallback(
+    (delta: number) => {
+      if (!isDesktopLayout) return
 
-  const handleRightPanelResize = useCallback((delta: number) => {
-    if (!isDesktopLayout) return
+      const mainWidth = mainLayoutRef.current?.clientWidth || 0
+      if (!mainWidth) return
 
-    const mainWidth = mainLayoutRef.current?.clientWidth || 0
-    if (!mainWidth) return
+      const layoutState = useLayoutStore.getState()
+      const currentLeft = leftPanelRef.current?.clientWidth || layoutState.leftPanelPx
+      const currentRight = rightPanelRef.current?.clientWidth || layoutState.rightPanelPx
+      layoutState.setRightPanelPx(
+        computeRightPanelWidthAfterDrag({
+          delta,
+          mainWidth,
+          currentLeft,
+          currentRight,
+          centerPanelMinWidth
+        })
+      )
+    },
+    [centerPanelMinWidth, isDesktopLayout]
+  )
 
-    const layoutState = useLayoutStore.getState()
-    const currentLeft = leftPanelRef.current?.clientWidth || layoutState.leftPanelPx
-    const currentRight = rightPanelRef.current?.clientWidth || layoutState.rightPanelPx
-    const maxRight = Math.min(
-      LAYOUT_LIMITS.rightPanelPx.max,
-      mainWidth - (HORIZONTAL_HANDLE_SIZE * 2) - Math.max(currentLeft, LAYOUT_LIMITS.leftPanelPx.min) - centerPanelMinWidth
-    )
+  const handleTimelineResize = useCallback(
+    (delta: number) => {
+      if (!isDesktopLayout) return
 
-    layoutState.setRightPanelPx(
-      clamp(currentRight - delta, LAYOUT_LIMITS.rightPanelPx.min, Math.max(LAYOUT_LIMITS.rightPanelPx.min, maxRight))
-    )
-  }, [centerPanelMinWidth, isDesktopLayout])
+      const shellHeight = shellRef.current?.clientHeight || window.innerHeight
+      setTimelinePx(
+        computeTimelineHeightAfterDrag({
+          delta,
+          shellHeight,
+          timelinePx
+        })
+      )
+    },
+    [isDesktopLayout, setTimelinePx, timelinePx]
+  )
 
-  const handleTimelineResize = useCallback((delta: number) => {
-    if (!isDesktopLayout) return
+  const centerPanelFitWidth = useMemo(
+    () =>
+      computeCenterPanelFitWidth({
+        activeMode,
+        centerMode,
+        centerPanelMinWidth,
+        isDesktopLayout,
+        previewFrameWidth: previewFrameSize.width
+      }),
+    [activeMode, centerMode, centerPanelMinWidth, isDesktopLayout, previewFrameSize.width]
+  )
 
-    const shellHeight = shellRef.current?.clientHeight || window.innerHeight
-    const maxTimelineByShell = shellHeight
-      - HEADER_HEIGHT
-      - VERTICAL_HANDLE_SIZE
-      - SHELL_VERTICAL_PADDING
-      - SHELL_VERTICAL_GAP
-      - MAIN_PANEL_MIN_HEIGHT
-    const maxTimeline = Math.min(
-      LAYOUT_LIMITS.timelinePx.max,
-      Math.max(LAYOUT_LIMITS.timelinePx.min, maxTimelineByShell)
-    )
+  const shellLayoutVars = useMemo(
+    () =>
+      buildShellLayoutVars({
+        centerMode,
+        centerPanelFitWidth,
+        centerPanelMinWidth,
+        leftPanelPx,
+        rightPanelPx,
+        timelinePx
+      }),
+    [centerMode, centerPanelFitWidth, centerPanelMinWidth, leftPanelPx, rightPanelPx, timelinePx]
+  )
 
-    setTimelinePx(clamp(timelinePx - delta, LAYOUT_LIMITS.timelinePx.min, maxTimeline))
-  }, [isDesktopLayout, setTimelinePx, timelinePx])
-
-  const centerPanelFitWidth = useMemo(() => {
-    if (!isDesktopLayout) return CENTER_PANEL_FALLBACK_WIDTH
-    const maxBoost = centerMode === 'focus' ? 96 : 0
-    if (activeMode === 'color') {
-      return clamp(CENTER_PANEL_LAB_WIDTH + maxBoost, centerPanelMinWidth, CENTER_PANEL_LAB_MAX_WIDTH + maxBoost)
-    }
-    if (activeMode === 'audio') {
-      return clamp(CENTER_PANEL_AUDIO_WIDTH + maxBoost, centerPanelMinWidth, CENTER_PANEL_AUDIO_MAX_WIDTH + maxBoost)
-    }
-    const editFitWidth = Math.max(
-      CENTER_PANEL_EDIT_WIDTH,
-      previewFrameSize.width > 0 ? previewFrameSize.width + CENTER_PANEL_FRAME_GUTTER : 0
-    )
-    return clamp(editFitWidth + maxBoost, centerPanelMinWidth, CENTER_PANEL_EDIT_MAX_WIDTH + maxBoost)
-  }, [activeMode, centerMode, centerPanelMinWidth, isDesktopLayout, previewFrameSize.width])
-
-  const shellLayoutVars = useMemo(() => ({
-    '--left-panel-w': `${leftPanelPx}px`,
-    '--right-panel-w': `${rightPanelPx}px`,
-    '--center-panel-min-w': `${centerPanelMinWidth}px`,
-    '--center-panel-fit-w': `${Math.round(centerPanelFitWidth)}px`,
-    '--left-panel-flex': centerMode === 'focus' ? '1.42fr' : '2.05fr',
-    '--right-panel-flex': centerMode === 'focus' ? '1.28fr' : '1.86fr',
-    '--timeline-h': `${timelinePx}px`
-  } as CSSProperties), [
-    centerMode,
-    centerPanelFitWidth,
-    centerPanelMinWidth,
-    leftPanelPx,
-    rightPanelPx,
-    timelinePx
-  ])
-
-  const previewFrameStyle = useMemo(() => {
-    if (!previewFrameSize.width || !previewFrameSize.height) return undefined
-    return {
-      width: `${previewFrameSize.width}px`,
-      height: `${previewFrameSize.height}px`
-    } as CSSProperties
-  }, [previewFrameSize.height, previewFrameSize.width])
+  const previewFrameStyle = useMemo(
+    () => buildPreviewFrameStyle(previewFrameSize),
+    [previewFrameSize.height, previewFrameSize.width]
+  )
 
   const closeGuide = useCallback((completed: boolean) => {
     setIsGuideOpen(false)
@@ -856,7 +1244,7 @@ function App() {
   const currentGuideStep = guideSteps[guideStepIndex]
 
   const goGuidePrev = () => {
-    setGuideStepIndex(prev => Math.max(0, prev - 1))
+    setGuideStepIndex((prev) => Math.max(0, prev - 1))
   }
 
   const goGuideNext = () => {
@@ -864,38 +1252,29 @@ function App() {
       closeGuide(true)
       return
     }
-    setGuideStepIndex(prev => Math.min(guideSteps.length - 1, prev + 1))
+    setGuideStepIndex((prev) => Math.min(guideSteps.length - 1, prev + 1))
   }
 
-  const guideHighlightStyle = useMemo<CSSProperties | undefined>(() => {
-    if (!guideAnchorRect) return undefined
-    return {
-      top: `${Math.round(guideAnchorRect.top - 6)}px`,
-      left: `${Math.round(guideAnchorRect.left - 6)}px`,
-      width: `${Math.round(guideAnchorRect.width + 12)}px`,
-      height: `${Math.round(guideAnchorRect.height + 12)}px`
-    }
-  }, [guideAnchorRect])
+  const guideHighlightStyle = useMemo<CSSProperties | undefined>(
+    () => buildGuideHighlightStyle(guideAnchorRect),
+    [guideAnchorRect]
+  )
 
   const guideCardStyle = useMemo<CSSProperties | undefined>(() => {
-    if (!guideAnchorRect || typeof window === 'undefined') return undefined
-    const cardW = 320
-    const cardH = 220
-    const viewportW = window.innerWidth
-    const viewportH = window.innerHeight
-    let top = guideAnchorRect.top + guideAnchorRect.height + 14
-    if (top + cardH > viewportH - 12) top = Math.max(12, guideAnchorRect.top - cardH - 14)
-    let left = guideAnchorRect.left
-    if (left + cardW > viewportW - 12) left = viewportW - cardW - 12
-    left = Math.max(12, left)
-    return {
-      top: `${Math.round(top)}px`,
-      left: `${Math.round(left)}px`
-    }
+    if (typeof window === 'undefined') return undefined
+    return buildGuideCardStyle(guideAnchorRect, {
+      width: window.innerWidth,
+      height: window.innerHeight
+    })
   }, [guideAnchorRect])
 
   return (
-    <WorkspaceShell shellRef={shellRef} style={shellLayoutVars} layoutMode={centerMode} topBarDensity={topBarDensity}>
+    <WorkspaceShell
+      shellRef={shellRef}
+      style={shellLayoutVars}
+      layoutMode={centerMode}
+      topBarDensity={topBarDensity}
+    >
       <Suspense fallback={null}>
         <ToastContainer />
       </Suspense>
@@ -906,7 +1285,7 @@ function App() {
           <span className="brand-title">VEOMUSE PRO</span>
         </div>
         <div className="mode-selector" data-guide="mode-selector" data-testid="area-mode-selector">
-          {['edit', 'color', 'audio'].map(m => (
+          {['edit', 'color', 'audio'].map((m) => (
             <button
               key={m}
               className={`mode-tab ${activeMode === m ? 'active' : ''}`}
@@ -925,7 +1304,10 @@ function App() {
           ))}
         </div>
         <div className="header-actions" data-testid="area-header-actions">
-          <div className="header-actions-group header-actions-layout" data-testid="group-header-layout">
+          <div
+            className="header-actions-group header-actions-layout"
+            data-testid="group-header-layout"
+          >
             <div className="header-segment" data-testid="group-center-mode">
               <button
                 type="button"
@@ -963,7 +1345,10 @@ function App() {
               </button>
             </div>
           </div>
-          <div className="header-actions-group header-actions-quick" data-testid="group-header-quick-actions">
+          <div
+            className="header-actions-group header-actions-quick"
+            data-testid="group-header-quick-actions"
+          >
             <button
               id="btn-open-channel-access"
               aria-label="打开 AI 渠道接入"
@@ -986,16 +1371,27 @@ function App() {
               使用引导
             </button>
             <ThemeSwitcher />
-            <button id="btn-reset-layout" aria-label="重置布局" className="layout-reset-btn" onClick={resetLayout} data-testid="btn-reset-layout">
+            <button
+              id="btn-reset-layout"
+              aria-label="重置布局"
+              className="layout-reset-btn"
+              onClick={resetLayout}
+              data-testid="btn-reset-layout"
+            >
               重置布局
             </button>
           </div>
-          <div className="header-actions-group header-actions-export" data-testid="group-header-export">
+          <div
+            className="header-actions-group header-actions-export"
+            data-testid="group-header-export"
+          >
             <select
               id="export-quality"
               name="exportQuality"
               value={exportQuality}
-              onChange={(e) => setExportQuality(e.target.value as 'standard' | '4k-hdr' | 'spatial-vr')}
+              onChange={(e) =>
+                setExportQuality(e.target.value as 'standard' | '4k-hdr' | 'spatial-vr')
+              }
               className="header-select"
               data-testid="select-export-quality"
             >
@@ -1026,7 +1422,11 @@ function App() {
                 {getExportButtonLabel(isExportPending, optimisticExportStatus, exportProgress)}
               </button>
               {exportUiStatus !== 'idle' ? (
-                <div className={`export-feedback-pop ${exportUiStatus}`} role="status" aria-live="polite">
+                <div
+                  className={`export-feedback-pop ${exportUiStatus}`}
+                  role="status"
+                  aria-live="polite"
+                >
                   <div className="export-feedback-top">
                     <span className="export-feedback-title">{exportFeedbackTitle}</span>
                     {exportUiStatus === 'pending' ? (
@@ -1036,11 +1436,16 @@ function App() {
                   <div className="export-feedback-subtitle">{exportFeedbackSubtitle}</div>
                   {exportUiStatus === 'pending' ? (
                     <div className="export-progress-track">
-                      <span className="export-progress-fill" style={{ width: `${Math.max(6, Math.min(100, exportProgress))}%` }} />
+                      <span
+                        className="export-progress-fill"
+                        style={{ width: `${Math.max(6, Math.min(100, exportProgress))}%` }}
+                      />
                     </div>
                   ) : null}
                   {exportUiStatus === 'done' && lastExportOutput ? (
-                    <div className="export-feedback-path" title={lastExportOutput}>{lastExportOutput}</div>
+                    <div className="export-feedback-path" title={lastExportOutput}>
+                      {lastExportOutput}
+                    </div>
                   ) : null}
                 </div>
               ) : null}
@@ -1053,10 +1458,30 @@ function App() {
         <aside className="pro-panel panel-left" ref={leftPanelRef} data-testid="area-left-panel">
           <div className="panel-title-bar">
             <div className="sidebar-tabs">
-              <button className={`sidebar-tab ${activeSidebar === 'assets' ? 'active' : ''}`} onClick={() => setActiveSidebar('assets')}>媒体资源</button>
-              <button className={`sidebar-tab ${activeSidebar === 'director' ? 'active' : ''}`} onClick={() => setActiveSidebar('director')}>AI 导演</button>
-              <button className={`sidebar-tab ${activeSidebar === 'actors' ? 'active' : ''}`} onClick={() => setActiveSidebar('actors')}>演员库</button>
-              <button className={`sidebar-tab ${activeSidebar === 'motion' ? 'active' : ''}`} onClick={() => setActiveSidebar('motion')}>动捕实验室</button>
+              <button
+                className={`sidebar-tab ${activeSidebar === 'assets' ? 'active' : ''}`}
+                onClick={() => setActiveSidebar('assets')}
+              >
+                媒体资源
+              </button>
+              <button
+                className={`sidebar-tab ${activeSidebar === 'director' ? 'active' : ''}`}
+                onClick={() => setActiveSidebar('director')}
+              >
+                AI 导演
+              </button>
+              <button
+                className={`sidebar-tab ${activeSidebar === 'actors' ? 'active' : ''}`}
+                onClick={() => setActiveSidebar('actors')}
+              >
+                演员库
+              </button>
+              <button
+                className={`sidebar-tab ${activeSidebar === 'motion' ? 'active' : ''}`}
+                onClick={() => setActiveSidebar('motion')}
+              >
+                动捕实验室
+              </button>
             </div>
           </div>
           <div className="sidebar-content">
@@ -1122,9 +1547,33 @@ function App() {
               </div>
 
               <div className="transport-controls">
-                <button id="tool-prev" aria-label="跳转到开头" className="transport-btn" onClick={() => setCurrentTime(0)} data-testid="btn-player-prev">⏮</button>
-                <button id="tool-play" aria-label={isPlaying ? '暂停播放' : '开始播放'} className="transport-btn play" onClick={togglePlay} data-testid="btn-player-play">{isPlaying ? '⏸' : '▶'}</button>
-                <button id="tool-next" aria-label="跳转到下一片段" className="transport-btn" onClick={() => setCurrentTime(getNextClipTime())} data-testid="btn-player-next">⏭</button>
+                <button
+                  id="tool-prev"
+                  aria-label="跳转到开头"
+                  className="transport-btn"
+                  onClick={() => setCurrentTime(0)}
+                  data-testid="btn-player-prev"
+                >
+                  ⏮
+                </button>
+                <button
+                  id="tool-play"
+                  aria-label={isPlaying ? '暂停播放' : '开始播放'}
+                  className="transport-btn play"
+                  onClick={togglePlay}
+                  data-testid="btn-player-play"
+                >
+                  {isPlaying ? '⏸' : '▶'}
+                </button>
+                <button
+                  id="tool-next"
+                  aria-label="跳转到下一片段"
+                  className="transport-btn"
+                  onClick={() => setCurrentTime(getNextClipTime())}
+                  data-testid="btn-player-next"
+                >
+                  ⏭
+                </button>
               </div>
             </div>
           ) : activeMode === 'color' ? (
@@ -1136,10 +1585,18 @@ function App() {
               <div className="audio-master-icon">🎚️</div>
               <div className="audio-master-title">AUDIO MASTER 引擎已就绪</div>
               <div className="audio-master-actions">
-                <button type="button" className="audio-master-btn primary" onClick={openImportFromAnywhere}>
+                <button
+                  type="button"
+                  className="audio-master-btn primary"
+                  onClick={openImportFromAnywhere}
+                >
                   导入素材开始处理
                 </button>
-                <button type="button" className="audio-master-btn" onClick={() => setActiveMode('color')}>
+                <button
+                  type="button"
+                  className="audio-master-btn"
+                  onClick={() => setActiveMode('color')}
+                >
                   切换到实验室对比
                 </button>
               </div>
@@ -1158,8 +1615,14 @@ function App() {
           />
         ) : null}
 
-        <aside className="pro-panel pro-inspector-outer panel-right" ref={rightPanelRef} data-testid="area-right-panel">
-          <div className="panel-title-bar"><span className="inspector-title">属性检查器</span></div>
+        <aside
+          className="pro-panel pro-inspector-outer panel-right"
+          ref={rightPanelRef}
+          data-testid="area-right-panel"
+        >
+          <div className="panel-title-bar">
+            <span className="inspector-title">属性检查器</span>
+          </div>
           <div className="inspector-scroll">
             <Suspense fallback={<LazyFallback label="属性面板加载中..." />}>
               <PropertyInspector />
@@ -1179,25 +1642,80 @@ function App() {
         />
       ) : null}
 
-      <footer className="pro-panel timeline-container" onMouseEnter={ensureTimelineReady} onFocusCapture={ensureTimelineReady} data-testid="area-timeline">
+      <footer
+        className="pro-panel timeline-container"
+        onMouseEnter={ensureTimelineReady}
+        onFocusCapture={ensureTimelineReady}
+        data-testid="area-timeline"
+      >
         <div className="timeline-actions">
           <div className="timeline-tools" data-guide="timeline-tools">
             <span className="timeline-section-title">编辑工具</span>
             <div className="undo-group">
-              <button id="tool-undo" aria-label="撤销" className="tool-icon" onClick={() => undo()} disabled={pastStates.length === 0} data-testid="btn-tool-undo">↩</button>
-              <button id="tool-redo" aria-label="重做" className="tool-icon" onClick={() => redo()} disabled={futureStates.length === 0} data-testid="btn-tool-redo">↪</button>
+              <button
+                id="tool-undo"
+                aria-label="撤销"
+                className="tool-icon"
+                onClick={() => undo()}
+                disabled={pastStates.length === 0}
+                data-testid="btn-tool-undo"
+              >
+                ↩
+              </button>
+              <button
+                id="tool-redo"
+                aria-label="重做"
+                className="tool-icon"
+                onClick={() => redo()}
+                disabled={futureStates.length === 0}
+                data-testid="btn-tool-redo"
+              >
+                ↪
+              </button>
             </div>
-            <button id="tool-select" aria-label="选择工具" className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`} onClick={() => setActiveTool('select')} data-testid="btn-tool-select">↖</button>
-            <button id="tool-cut" aria-label="切割工具" className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`} onClick={() => setActiveTool('cut')} data-testid="btn-tool-cut">✂</button>
-            <button id="tool-hand" aria-label="平移工具" className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`} onClick={() => setActiveTool('hand')} data-testid="btn-tool-hand">✋</button>
+            <button
+              id="tool-select"
+              aria-label="选择工具"
+              className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`}
+              onClick={() => setActiveTool('select')}
+              data-testid="btn-tool-select"
+            >
+              ↖
+            </button>
+            <button
+              id="tool-cut"
+              aria-label="切割工具"
+              className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`}
+              onClick={() => setActiveTool('cut')}
+              data-testid="btn-tool-cut"
+            >
+              ✂
+            </button>
+            <button
+              id="tool-hand"
+              aria-label="平移工具"
+              className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`}
+              onClick={() => setActiveTool('hand')}
+              data-testid="btn-tool-hand"
+            >
+              ✋
+            </button>
           </div>
 
           <div className="system-telemetry">
             <span className="timeline-section-title telemetry-label">系统状态</span>
             <div className="telemetry-item">
-              <span>GPU LOAD: <b className="telemetry-value success">{currentMetrics.gpu}%</b></span>
+              <span>
+                GPU LOAD: <b className="telemetry-value success">{currentMetrics.gpu}%</b>
+              </span>
               <div className="telemetry-sparkline">
-                {telemetryHistory.map((v, i) => <div key={i} className="spark-bar" style={{ height: `${Math.max(2, Math.min(100, v))}%` }} />)}
+                {telemetryHistory.map((v, i) => (
+                  <div
+                    key={i}
+                    className="spark-bar"
+                    style={{ height: `${Math.max(2, Math.min(100, v))}%` }}
+                  />
+                ))}
               </div>
             </div>
             <div className="telemetry-item telemetry-divider">
@@ -1220,13 +1738,25 @@ function App() {
       </footer>
 
       {isGuideOpen && currentGuideStep ? (
-        <div className="guide-overlay" role="dialog" aria-modal="true" aria-label="新手引导" data-testid="area-guide-overlay">
+        <div
+          className="guide-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="新手引导"
+          data-testid="area-guide-overlay"
+        >
           <div className="guide-dim" />
-          {guideHighlightStyle ? <div className="guide-highlight" style={guideHighlightStyle} /> : null}
+          {guideHighlightStyle ? (
+            <div className="guide-highlight" style={guideHighlightStyle} />
+          ) : null}
           <section className="guide-card" style={guideCardStyle}>
             <div className="guide-card-head">
-              <span className="guide-step">步骤 {guideStepIndex + 1} / {guideSteps.length}</span>
-              <button type="button" className="guide-close" onClick={() => closeGuide(true)}>跳过</button>
+              <span className="guide-step">
+                步骤 {guideStepIndex + 1} / {guideSteps.length}
+              </span>
+              <button type="button" className="guide-close" onClick={() => closeGuide(true)}>
+                跳过
+              </button>
             </div>
             <h3>{currentGuideStep.title}</h3>
             <p>{currentGuideStep.description}</p>
@@ -1236,7 +1766,14 @@ function App() {
                   {currentGuideStep.actionLabel}
                 </button>
               ) : null}
-              <button type="button" className="guide-nav" onClick={goGuidePrev} disabled={guideStepIndex === 0}>上一步</button>
+              <button
+                type="button"
+                className="guide-nav"
+                onClick={goGuidePrev}
+                disabled={guideStepIndex === 0}
+              >
+                上一步
+              </button>
               <button type="button" className="guide-nav primary" onClick={goGuideNext}>
                 {guideStepIndex === guideSteps.length - 1 ? '完成引导' : '下一步'}
               </button>

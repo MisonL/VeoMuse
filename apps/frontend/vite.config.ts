@@ -1,11 +1,19 @@
-import { defineConfig } from 'vite'
+import { createLogger, defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
 const isPlaywrightRuntime = process.env.PLAYWRIGHT_TEST === 'true'
+const logger = createLogger()
+const originalWarn = logger.warn
+
+logger.warn = (msg, options) => {
+  if (msg.includes('[PLUGIN_TIMINGS]')) return
+  originalWarn(msg, options)
+}
 
 // https://vite.dev/config/
 export default defineConfig({
+  customLogger: logger,
   plugins: [react()],
   cacheDir: isPlaywrightRuntime ? 'node_modules/.vite-playwright' : undefined,
   build: {

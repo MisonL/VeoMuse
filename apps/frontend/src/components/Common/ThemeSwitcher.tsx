@@ -21,7 +21,9 @@ const ThemeSwitcher: React.FC = () => {
           onClick={() => setMode(m.id)}
           title={m.label}
         >
-          <span className="btn-dot" aria-hidden>{m.shortLabel}</span>
+          <span className="btn-dot" aria-hidden>
+            {m.shortLabel}
+          </span>
           <span className="btn-text">{m.label}</span>
         </button>
       ))}

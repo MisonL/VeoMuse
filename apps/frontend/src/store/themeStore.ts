@@ -1,28 +1,29 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'light' | 'dark' | 'system'
 
-const createSafeStorage = () => createJSONStorage(() => {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    return window.localStorage
-  }
+const createSafeStorage = () =>
+  createJSONStorage(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage
+    }
 
-  return {
-    getItem: () => null,
-    setItem: (_name, _value) => {},
-    removeItem: (_name) => {}
-  }
-})
+    return {
+      getItem: () => null,
+      setItem: (_name, _value) => {},
+      removeItem: (_name) => {}
+    }
+  })
 
 interface ThemeState {
-  mode: ThemeMode;
-  customPalette: Record<string, string>;
-  
+  mode: ThemeMode
+  customPalette: Record<string, string>
+
   // Actions
-  setMode: (mode: ThemeMode) => void;
-  updateCustomPalette: (palette: Record<string, string>) => void;
-  resetCustomPalette: () => void;
+  setMode: (mode: ThemeMode) => void
+  updateCustomPalette: (palette: Record<string, string>) => void
+  resetCustomPalette: () => void
 }
 
 export const useThemeStore = create<ThemeState>()(
@@ -32,11 +33,12 @@ export const useThemeStore = create<ThemeState>()(
       customPalette: {},
 
       setMode: (mode) => set({ mode }),
-      
-      updateCustomPalette: (palette) => set((state) => ({
-        customPalette: { ...state.customPalette, ...palette }
-      })),
-      
+
+      updateCustomPalette: (palette) =>
+        set((state) => ({
+          customPalette: { ...state.customPalette, ...palette }
+        })),
+
       resetCustomPalette: () => set({ customPalette: {} })
     }),
     {
