@@ -39,6 +39,10 @@ import { ReliabilityService } from './services/ReliabilityService'
 import { CollaborationV4Service } from './services/CollaborationV4Service'
 import { CreativeWorkflowService } from './services/CreativeWorkflowService'
 import { ProviderHealthService } from './services/ProviderHealthService'
+import {
+  VideoGenerationService,
+  VideoGenerationValidationError
+} from './services/VideoGenerationService'
 import { LocalStorageProvider } from './services/storage/LocalStorageProvider'
 import { AuthService } from './services/AuthService'
 import { OrganizationService } from './services/OrganizationService'
@@ -121,6 +125,7 @@ const resolveMetricCategory = (pathname: string) => {
   if (
     pathname.startsWith('/api/ai/') ||
     pathname === '/api/video/generate' ||
+    pathname.startsWith('/api/video/generations') ||
     pathname === '/api/video/compose' ||
     pathname === '/api/models/recommend'
   ) {
@@ -1667,6 +1672,198 @@ export const createApp = () => {
     .post('/api/models/recommend', async ({ body }) => await ModelRouter.recommend(body.prompt), {
       body: t.Object({ prompt: t.String() })
     })
+    .post(
+      '/api/video/generations',
+      async ({ body, request, set }) => {
+        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
+        if (!runtimeContext) {
+          return { success: false, status: 'error', error: 'Forbidden' }
+        }
+        try {
+          let requestDenied: ReturnType<
+            typeof OrganizationGovernanceService.consumeRequestQuota
+          > | null = null
+          const submitResult = await OrganizationGovernanceService.withConcurrencyLimit(
+            runtimeContext.organizationId,
+            async () => {
+              const quotaConsumed = OrganizationGovernanceService.consumeRequestQuota(
+                runtimeContext.organizationId,
+                1
+              )
+              if (!quotaConsumed.allowed) {
+                requestDenied = quotaConsumed
+                return null
+              }
+              return await VideoGenerationService.submit(
+                {
+                  organizationId: runtimeContext.organizationId,
+                  workspaceId: runtimeContext.workspaceId,
+                  createdBy: runtimeContext.actorName,
+                  modelId: body.modelId,
+                  generationMode: body.generationMode,
+                  prompt: body.prompt,
+                  text: body.text,
+                  negativePrompt: body.negativePrompt,
+                  options: body.options,
+                  actorId: body.actorId,
+                  consistencyStrength: body.consistencyStrength,
+                  syncLip: body.syncLip,
+                  sync_lip: body.sync_lip,
+                  worldLink: body.worldLink,
+                  worldId: body.worldId,
+                  inputs: body.inputs
+                },
+                runtimeContext
+              )
+            }
+          )
+
+          if (requestDenied) {
+            set.status = 429
+            return buildQuotaExceededResponse('request', requestDenied)
+          }
+
+          return {
+            success: true,
+            job: submitResult?.job || null,
+            providerResult: submitResult?.providerResult || null
+          }
+        } catch (error: any) {
+          const message = String(error?.message || '')
+          if (message.includes('并发配额')) {
+            const check = OrganizationGovernanceService.checkConcurrencyAllowed(
+              runtimeContext.organizationId
+            )
+            set.status = 429
+            return buildQuotaExceededResponse('concurrency', check)
+          }
+          set.status = 400
+          return {
+            success: false,
+            status: 'error',
+            error: message || 'Invalid video generation payload'
+          }
+        }
+      },
+      {
+        body: t.Object({
+          modelId: t.Optional(t.String()),
+          generationMode: t.Optional(
+            t.Union([
+              t.Literal('text_to_video'),
+              t.Literal('image_to_video'),
+              t.Literal('first_last_frame_transition'),
+              t.Literal('video_extend')
+            ])
+          ),
+          prompt: t.Optional(t.String()),
+          text: t.Optional(t.String()),
+          negativePrompt: t.Optional(t.String()),
+          options: t.Optional(t.Any()),
+          actorId: t.Optional(t.String()),
+          consistencyStrength: t.Optional(t.Number()),
+          syncLip: t.Optional(t.Boolean()),
+          sync_lip: t.Optional(t.Boolean()),
+          worldLink: t.Optional(t.Boolean()),
+          worldId: t.Optional(t.String()),
+          workspaceId: t.Optional(t.String()),
+          inputs: t.Optional(t.Any())
+        })
+      }
+    )
+    .get(
+      '/api/video/generations/:jobId',
+      ({ params, request, set }) => {
+        const organizationContext = resolveOrganizationContext(request, set, 'member')
+        if (!organizationContext) {
+          return { success: false, status: 'error', error: 'Forbidden' }
+        }
+        const job = VideoGenerationService.getById(params.jobId, organizationContext.organizationId)
+        if (!job) {
+          set.status = 404
+          return { success: false, status: 'error', error: 'Generation job not found' }
+        }
+        if (job.workspaceId) {
+          const member = WorkspaceService.getMemberByUserId(
+            job.workspaceId,
+            organizationContext.user.id
+          )
+          if (!member) {
+            set.status = 403
+            return {
+              success: false,
+              status: 'error',
+              error: 'Forbidden: workspace membership required'
+            }
+          }
+        }
+        return {
+          success: true,
+          job
+        }
+      },
+      {
+        params: t.Object({
+          jobId: t.String()
+        })
+      }
+    )
+    .get(
+      '/api/video/generations',
+      ({ query, request, set }) => {
+        const organizationContext = resolveOrganizationContext(request, set, 'member')
+        if (!organizationContext) {
+          return { success: false, status: 'error', error: 'Forbidden' }
+        }
+        const workspaceId = query.workspaceId?.trim()
+        const visibleWorkspaceIds = WorkspaceService.listWorkspaceIdsByUser(
+          organizationContext.organizationId,
+          organizationContext.user.id
+        )
+        if (workspaceId) {
+          const workspace = WorkspaceService.getWorkspace(workspaceId)
+          if (!workspace || workspace.organizationId !== organizationContext.organizationId) {
+            set.status = 403
+            return { success: false, status: 'error', error: 'Workspace not found in organization' }
+          }
+          const member = WorkspaceService.getMemberByUserId(
+            workspaceId,
+            organizationContext.user.id
+          )
+          if (!member) {
+            set.status = 403
+            return {
+              success: false,
+              status: 'error',
+              error: 'Forbidden: workspace membership required'
+            }
+          }
+        }
+        const listed = VideoGenerationService.list({
+          organizationId: organizationContext.organizationId,
+          workspaceId: workspaceId || undefined,
+          visibleWorkspaceIds: workspaceId ? [workspaceId] : visibleWorkspaceIds,
+          status: query.status as 'queued' | 'submitted' | 'failed' | undefined,
+          modelId: query.modelId?.trim() || undefined,
+          cursor: query.cursor?.trim() || undefined,
+          limit: parseBoundedLimit(query.limit, 20, 100)
+        })
+        return {
+          success: true,
+          jobs: listed.jobs,
+          page: listed.page
+        }
+      },
+      {
+        query: t.Object({
+          workspaceId: t.Optional(t.String()),
+          status: t.Optional(t.String()),
+          modelId: t.Optional(t.String()),
+          cursor: t.Optional(t.String()),
+          limit: t.Optional(t.String())
+        })
+      }
+    )
 
     .post(
       '/api/video/generate',
@@ -1675,7 +1872,6 @@ export const createApp = () => {
         if (!runtimeContext) {
           return { success: false, status: 'error', error: 'Forbidden' }
         }
-        const normalizedSyncLip = body.syncLip ?? body.sync_lip
         try {
           let requestDenied: ReturnType<
             typeof OrganizationGovernanceService.consumeRequestQuota
@@ -1692,20 +1888,24 @@ export const createApp = () => {
                 return null
               }
 
+              const driverParams = VideoGenerationService.toDriverParams({
+                organizationId: runtimeContext.organizationId,
+                workspaceId: runtimeContext.workspaceId,
+                createdBy: runtimeContext.actorName,
+                modelId: body.modelId,
+                text: body.text,
+                negativePrompt: body.negativePrompt,
+                options: body.options,
+                actorId: body.actorId,
+                consistencyStrength: body.consistencyStrength,
+                syncLip: body.syncLip,
+                sync_lip: body.sync_lip,
+                worldLink: body.worldLink,
+                worldId: body.worldId
+              })
               return await VideoOrchestrator.generate(
                 body.modelId || 'veo-3.1',
-                {
-                  text: body.text,
-                  negativePrompt: body.negativePrompt,
-                  options: {
-                    ...(body.options || {}),
-                    actorId: body.actorId,
-                    consistencyStrength: body.consistencyStrength,
-                    syncLip: normalizedSyncLip,
-                    worldLink: body.worldLink,
-                    worldId: body.worldId
-                  }
-                },
+                driverParams,
                 runtimeContext
               )
             }
@@ -1724,6 +1924,14 @@ export const createApp = () => {
             )
             set.status = 429
             return buildQuotaExceededResponse('concurrency', check)
+          }
+          if (error instanceof VideoGenerationValidationError) {
+            set.status = 400
+            return {
+              success: false,
+              status: 'error',
+              error: message || 'Invalid video generation payload'
+            }
           }
           throw error
         }

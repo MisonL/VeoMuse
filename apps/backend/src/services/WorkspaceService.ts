@@ -505,6 +505,24 @@ export class WorkspaceService {
     return row ? toMember(row) : null
   }
 
+  static listWorkspaceIdsByUser(organizationId: string, userId: string): string[] {
+    const normalizedOrganizationId = organizationId.trim()
+    const normalizedUserId = userId.trim()
+    if (!normalizedOrganizationId || !normalizedUserId) return []
+    const rows = getLocalDb()
+      .prepare(
+        `
+      SELECT DISTINCT wm.workspace_id
+      FROM workspace_members wm
+      INNER JOIN workspaces ws ON ws.id = wm.workspace_id
+      WHERE wm.user_id = ? AND ws.organization_id = ?
+      ORDER BY wm.workspace_id ASC
+    `
+      )
+      .all(normalizedUserId, normalizedOrganizationId) as Array<{ workspace_id?: string }>
+    return rows.map((row) => String(row.workspace_id || '').trim()).filter(Boolean)
+  }
+
   static getMemberRole(workspaceId: string, name: string): WorkspaceRole | null {
     return this.getMember(workspaceId, name)?.role || null
   }

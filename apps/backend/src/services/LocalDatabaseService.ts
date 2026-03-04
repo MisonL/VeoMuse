@@ -117,6 +117,7 @@ const RECOVERY_TABLES = [
   'reliability_alerts',
   'prompt_workflows',
   'prompt_workflow_runs',
+  'video_generation_jobs',
   'batch_jobs',
   'batch_job_items',
   'asset_reuse_records',
@@ -911,6 +912,46 @@ const migrate = (db: Database) => {
   ensureColumn(db, 'prompt_workflow_runs', 'organization_id', `TEXT NOT NULL DEFAULT 'org_default'`)
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS video_generation_jobs (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT NOT NULL DEFAULT 'org_default',
+      workspace_id TEXT,
+      model_id TEXT NOT NULL,
+      generation_mode TEXT NOT NULL DEFAULT 'text_to_video',
+      request_json TEXT NOT NULL DEFAULT '{}',
+      status TEXT NOT NULL DEFAULT 'queued',
+      provider_status TEXT NOT NULL DEFAULT 'ok',
+      operation_name TEXT,
+      result_json TEXT NOT NULL DEFAULT '{}',
+      error_message TEXT,
+      created_by TEXT NOT NULL DEFAULT 'system',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `)
+  ensureColumn(
+    db,
+    'video_generation_jobs',
+    'organization_id',
+    `TEXT NOT NULL DEFAULT 'org_default'`
+  )
+  ensureColumn(db, 'video_generation_jobs', 'workspace_id', 'TEXT')
+  ensureColumn(
+    db,
+    'video_generation_jobs',
+    'generation_mode',
+    `TEXT NOT NULL DEFAULT 'text_to_video'`
+  )
+  ensureColumn(db, 'video_generation_jobs', 'request_json', `TEXT NOT NULL DEFAULT '{}'`)
+  ensureColumn(db, 'video_generation_jobs', 'status', `TEXT NOT NULL DEFAULT 'queued'`)
+  ensureColumn(db, 'video_generation_jobs', 'provider_status', `TEXT NOT NULL DEFAULT 'ok'`)
+  ensureColumn(db, 'video_generation_jobs', 'operation_name', 'TEXT')
+  ensureColumn(db, 'video_generation_jobs', 'result_json', `TEXT NOT NULL DEFAULT '{}'`)
+  ensureColumn(db, 'video_generation_jobs', 'error_message', 'TEXT')
+  ensureColumn(db, 'video_generation_jobs', 'created_by', `TEXT NOT NULL DEFAULT 'system'`)
+  ensureColumn(db, 'video_generation_jobs', 'updated_at', `TEXT NOT NULL DEFAULT ''`)
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS batch_jobs (
       id TEXT PRIMARY KEY,
       organization_id TEXT NOT NULL DEFAULT 'org_default',
@@ -1255,6 +1296,21 @@ const migrate = (db: Database) => {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_prompt_workflow_runs_org_created
     ON prompt_workflow_runs(organization_id, created_at DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_video_generation_jobs_org_created
+    ON video_generation_jobs(organization_id, created_at DESC, id DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_video_generation_jobs_status_updated
+    ON video_generation_jobs(status, updated_at DESC, id DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_video_generation_jobs_workspace_created
+    ON video_generation_jobs(workspace_id, created_at DESC, id DESC);
   `)
 
   db.exec(`

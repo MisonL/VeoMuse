@@ -80,9 +80,20 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
       }
     }
 
-    const prompt = params.negativePrompt
-      ? `${params.text}\n\nNegative prompt: ${params.negativePrompt}`
-      : params.text
+    const rawPrompt = String(params.text || '').trim()
+    const mode = params.generationMode || 'text_to_video'
+    const promptBase = params.negativePrompt
+      ? `${rawPrompt}\n\nNegative prompt: ${params.negativePrompt}`
+      : rawPrompt
+    const multimodalHint =
+      mode !== 'text_to_video' || params.inputs
+        ? `\n\n[video_generation]\n${JSON.stringify({
+            mode,
+            inputs: params.inputs || null,
+            options: params.options || {}
+          })}`
+        : ''
+    const prompt = `${promptBase}${multimodalHint}`.trim()
     const payload: Record<string, unknown> = {
       model,
       messages: [{ role: 'user', content: prompt }]

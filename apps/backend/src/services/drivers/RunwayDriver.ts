@@ -15,6 +15,7 @@ export class RunwayDriver implements VideoModelDriver {
     params: GenerateParams,
     context?: GenerateRuntimeContext
   ): Promise<GenerateResult> {
+    const prompt = String(params.text || '').trim()
     const channel = context?.organizationId
       ? ChannelConfigService.resolve(this.id, {
           organizationId: context.organizationId,
@@ -42,8 +43,10 @@ export class RunwayDriver implements VideoModelDriver {
           Authorization: `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          prompt: params.text,
+          prompt,
           negative_prompt: params.negativePrompt,
+          generationMode: params.generationMode || 'text_to_video',
+          inputs: params.inputs || {},
           options: params.options || {}
         })
       })

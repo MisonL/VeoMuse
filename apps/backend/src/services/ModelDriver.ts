@@ -1,9 +1,34 @@
 // apps/backend/src/services/ModelDriver.ts
 
+export type VideoGenerationMode =
+  | 'text_to_video'
+  | 'image_to_video'
+  | 'first_last_frame_transition'
+  | 'video_extend'
+
+export type VideoInputSourceType = 'url' | 'objectKey'
+
+export interface VideoGenerationInputSource {
+  sourceType: VideoInputSourceType
+  value: string
+  resolvedUrl: string
+  mimeType?: string
+}
+
+export interface VideoGenerationInputs {
+  image?: VideoGenerationInputSource
+  referenceImages?: VideoGenerationInputSource[]
+  firstFrame?: VideoGenerationInputSource
+  lastFrame?: VideoGenerationInputSource
+  video?: VideoGenerationInputSource
+}
+
 export interface GenerateParams {
-  text: string
+  text?: string
   negativePrompt?: string
   aspectRatio?: string
+  generationMode?: VideoGenerationMode
+  inputs?: VideoGenerationInputs
   options?: {
     motionIntensity?: number
     quality?: 'standard' | 'high' | 'ultra'
@@ -15,6 +40,12 @@ export interface GenerateParams {
     syncLip?: boolean
     worldLink?: boolean
     worldId?: string
+    durationSeconds?: number
+    numberOfVideos?: number
+    resolution?: string
+    fps?: number
+    generateAudio?: boolean
+    [key: string]: unknown
   }
 }
 

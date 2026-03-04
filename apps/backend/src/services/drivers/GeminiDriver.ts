@@ -3,7 +3,8 @@ import type {
   VideoModelDriver,
   GenerateParams,
   GenerateResult,
-  GenerateRuntimeContext
+  GenerateRuntimeContext,
+  VideoGenerationInputSource
 } from '../ModelDriver'
 import { ApiKeyService } from '../ApiKeyService'
 import { ChannelConfigService } from '../ChannelConfigService'
@@ -13,6 +14,14 @@ export class GeminiDriver implements VideoModelDriver {
   name = 'Google Gemini Veo 3.1'
 
   private API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models'
+
+  private toProviderMediaInput(source?: VideoGenerationInputSource) {
+    if (!source) return undefined
+    return {
+      uri: source.resolvedUrl,
+      mimeType: source.mimeType
+    }
+  }
 
   async generate(
     params: GenerateParams,
@@ -46,19 +55,51 @@ export class GeminiDriver implements VideoModelDriver {
 
     for (const key of keys) {
       try {
-        const url = `${apiBase}/veo-3.1-generate-001:predictLongRunning?key=${key}`
+        const configuredModel = String(
+          channel?.extra?.model || process.env.GEMINI_VIDEO_MODEL || ''
+        ).trim()
+        const modelName = configuredModel || 'veo-3.1-generate-001'
+        const url = `${apiBase}/${modelName}:predictLongRunning?key=${key}`
+        const prompt = String(params.text || '').trim()
+        const mode = params.generationMode || 'text_to_video'
+        const source: Record<string, unknown> = {}
+        if (prompt) source.prompt = prompt
+        const sourceImage = params.inputs?.image || params.inputs?.firstFrame
+        if (sourceImage) {
+          source.image = this.toProviderMediaInput(sourceImage)
+        }
+        if (params.inputs?.video) {
+          source.video = this.toProviderMediaInput(params.inputs.video)
+        }
+
+        const referenceImages = (params.inputs?.referenceImages || [])
+          .map((item) => this.toProviderMediaInput(item))
+          .filter(Boolean)
+        const config: Record<string, unknown> = {
+          ...(params.options || {})
+        }
+        if (params.negativePrompt) config.negativePrompt = params.negativePrompt
+        if (params.inputs?.lastFrame) {
+          config.lastFrame = this.toProviderMediaInput(params.inputs.lastFrame)
+        }
+        if (referenceImages.length) {
+          config.referenceImages = referenceImages
+        }
 
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            generationMode: mode,
+            source,
+            config,
             contents: [
               {
                 parts: [
                   {
                     text: params.negativePrompt
-                      ? `${params.text}\n\nNegative: ${params.negativePrompt}`
-                      : params.text
+                      ? `${prompt}\n\nNegative: ${params.negativePrompt}`
+                      : prompt
                   }
                 ]
               }
