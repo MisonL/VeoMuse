@@ -51,14 +51,12 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
   }
 }
 
-if (typeof globalThis.requestAnimationFrame !== 'function') {
-  globalThis.requestAnimationFrame = (callback: FrameRequestCallback) =>
-    setTimeout(() => callback(Date.now()), 16) as unknown as number
-}
-
-if (typeof globalThis.cancelAnimationFrame !== 'function') {
-  globalThis.cancelAnimationFrame = (id: number) => clearTimeout(id)
-}
+// 在 happy-dom 下 requestAnimationFrame 可能以同步/微任务方式执行，
+// 当组件内部存在持续 raf 循环时（例如播放循环），会导致 React 的 act(...) 偶发卡死并引发测试超时。
+// 统一改为 setTimeout(16ms) 以获得稳定、可取消的行为。
+globalThis.requestAnimationFrame = (callback: FrameRequestCallback) =>
+  setTimeout(() => callback(Date.now()), 16) as unknown as number
+globalThis.cancelAnimationFrame = (id: number) => clearTimeout(id)
 
 const fallback2dContext = {
   clearRect: () => {},
