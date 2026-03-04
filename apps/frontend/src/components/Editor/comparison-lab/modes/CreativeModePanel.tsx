@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import type {
   V4AssetReuseRecord,
   CreativeRun,
@@ -12,7 +12,13 @@ import type {
   VideoGenerationMode,
   VideoInputSourceType
 } from '../types'
-import { VIDEO_GENERATION_MODES, resolveVideoGenerationRequiredInputs } from '../types'
+import {
+  VIDEO_GENERATION_MODES,
+  isVideoGenerationActiveStatus,
+  resolveVideoGenerationRequiredInputs,
+  resolveVideoGenerationStatusText,
+  sortVideoGenerationJobsForWorkbench
+} from '../types'
 
 interface CreativeModePanelProps {
   creativeScript: string
@@ -41,6 +47,8 @@ interface CreativeModePanelProps {
   videoGenerationHasMore: boolean
   videoGenerationSelectedJobId: string
   videoGenerationPollingEnabled: boolean
+  videoGenerationLastAutoSyncAt: string
+  isVideoGenerationAutoSyncTicking: boolean
   isVideoGenerationBusy: boolean
   workflows: V4Workflow[]
   selectedWorkflowId: string
@@ -154,6 +162,8 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
   videoGenerationHasMore,
   videoGenerationSelectedJobId,
   videoGenerationPollingEnabled,
+  videoGenerationLastAutoSyncAt,
+  isVideoGenerationAutoSyncTicking,
   isVideoGenerationBusy,
   workflows,
   selectedWorkflowId,
@@ -239,7 +249,32 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
   onAssetReuseHistoryOffsetChange,
   onQueryAssetReuseHistory
 }) => {
+  const [showAllTerminalVideoJobs, setShowAllTerminalVideoJobs] = useState(false)
   const requiredVideoInputs = resolveVideoGenerationRequiredInputs(videoGenerationMode)
+  const sortedVideoGenerationJobs = useMemo(
+    () => sortVideoGenerationJobsForWorkbench(videoGenerationJobs),
+    [videoGenerationJobs]
+  )
+  const activeVideoGenerationJobs = sortedVideoGenerationJobs.filter((job) =>
+    isVideoGenerationActiveStatus(job.status)
+  )
+  const terminalVideoGenerationJobs = sortedVideoGenerationJobs.filter(
+    (job) => !isVideoGenerationActiveStatus(job.status)
+  )
+  const visibleTerminalVideoGenerationJobs = showAllTerminalVideoJobs
+    ? terminalVideoGenerationJobs
+    : terminalVideoGenerationJobs.slice(0, 6)
+  const hiddenTerminalJobCount = Math.max(
+    0,
+    terminalVideoGenerationJobs.length - visibleTerminalVideoGenerationJobs.length
+  )
+  const renderedVideoGenerationJobs = [
+    ...activeVideoGenerationJobs,
+    ...visibleTerminalVideoGenerationJobs
+  ]
+  const latestAutoSyncText = videoGenerationLastAutoSyncAt
+    ? new Date(videoGenerationLastAutoSyncAt).toLocaleString()
+    : '-'
 
   return (
     <div className="creative-shell">
@@ -565,12 +600,28 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
             自动轮询：{videoGenerationPollingEnabled ? '开' : '关'}
           </button>
         </div>
+        <div className="video-generation-polling-hint">
+          后端自动同步终态已启用，前端自动轮询仅刷新展示。最近轮询：{latestAutoSyncText}
+          {isVideoGenerationAutoSyncTicking ? '（刷新中）' : ''}
+        </div>
         <div className="video-generation-pagination">
           Cursor: {videoGenerationCursor || '-'} · hasMore:{' '}
           {videoGenerationHasMore ? 'true' : 'false'}
         </div>
+        <div className="video-generation-list-head">
+          <span>活跃任务：{activeVideoGenerationJobs.length}</span>
+          <span>终态任务：{terminalVideoGenerationJobs.length}</span>
+          <button
+            type="button"
+            className="video-generation-terminal-toggle"
+            onClick={() => setShowAllTerminalVideoJobs((prev) => !prev)}
+            disabled={terminalVideoGenerationJobs.length === 0}
+          >
+            {showAllTerminalVideoJobs ? '折叠终态任务' : '展开终态任务'}
+          </button>
+        </div>
         <div className="video-generation-job-list">
-          {videoGenerationJobs.map((job) => {
+          {renderedVideoGenerationJobs.map((job) => {
             const requestPromptValue = job.request?.['prompt']
             const requestTextValue = job.request?.['text']
             const requestPrompt =
@@ -598,7 +649,7 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
                   </span>
                 </button>
                 <div className="video-generation-job-meta">
-                  <span>状态：{job.status}</span>
+                  <span>状态：{resolveVideoGenerationStatusText(job.status)}</span>
                   <span>渠道：{job.providerStatus}</span>
                   <span>{new Date(job.updatedAt).toLocaleString()}</span>
                 </div>
@@ -609,6 +660,7 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
                 <div className="video-generation-job-meta">
                   <span>输出：{job.outputUrl || '-'}</span>
                   <span>重试次数：{job.retryCount ?? 0}</span>
+                  <span>最近同步：{job.lastSyncedAt ? new Date(job.lastSyncedAt).toLocaleString() : '-'}</span>
                 </div>
                 <div className="video-generation-job-actions">
                   <button
@@ -659,7 +711,14 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
               </div>
             )
           })}
-          {videoGenerationJobs.length === 0 ? <div className="api-empty">暂无视频任务</div> : null}
+          {renderedVideoGenerationJobs.length === 0 ? (
+            <div className="api-empty">暂无视频任务</div>
+          ) : null}
+          {hiddenTerminalJobCount > 0 ? (
+            <div className="video-generation-terminal-collapsed">
+              还有 {hiddenTerminalJobCount} 条终态任务已折叠，点击“展开终态任务”查看。
+            </div>
+          ) : null}
         </div>
       </section>
 

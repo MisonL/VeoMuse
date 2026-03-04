@@ -25,6 +25,7 @@ import {
   listProjectGovernanceComments,
   listProjectGovernanceReviews,
   listProjectGovernanceTemplates,
+  isVideoGenerationActiveStatus,
   normalizeProjectGovernanceLimit,
   resolveGeminiQuickCheck,
   resolveProjectGovernanceComment
@@ -149,6 +150,8 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const [videoGenerationHasMore, setVideoGenerationHasMore] = useState(false)
   const [videoGenerationSelectedJobId, setVideoGenerationSelectedJobId] = useState('')
   const [videoGenerationPollingEnabled, setVideoGenerationPollingEnabled] = useState(true)
+  const [videoGenerationLastAutoSyncAt, setVideoGenerationLastAutoSyncAt] = useState('')
+  const [isVideoGenerationAutoSyncTicking, setIsVideoGenerationAutoSyncTicking] = useState(false)
   const [isVideoGenerationBusy, setIsVideoGenerationBusy] = useState(false)
   const [v4Workflows, setV4Workflows] = useState<V4Workflow[]>([])
   const [v4SelectedWorkflowId, setV4SelectedWorkflowId] = useState('')
@@ -1734,22 +1737,27 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
 
   useEffect(() => {
     if (labMode !== 'creative' || !authProfile || !videoGenerationPollingEnabled) return
-    if (isVideoGenerationBusy) return
-    const trackedJobs = videoGenerationJobs.filter(
-      (job) =>
-        job.status === 'queued' ||
-        job.status === 'submitted' ||
-        job.status === 'processing' ||
-        job.status === 'cancel_requested'
-    )
-    if (trackedJobs.length === 0 && !videoGenerationSelectedJobId) return
+    const trackedJobs = videoGenerationJobs.filter((job) => isVideoGenerationActiveStatus(job.status))
+    const selectedJobId = String(videoGenerationSelectedJobId || '').trim()
+    if (trackedJobs.length === 0 && !selectedJobId) return
 
-    const timer = window.setInterval(() => {
-      void loadVideoGenerationJobs(false, { silent: true })
-      const candidateJobId = videoGenerationSelectedJobId || trackedJobs[0]?.id || ''
-      if (candidateJobId) {
-        void syncVideoGenerationJob(candidateJobId, { silent: true })
+    const tick = async () => {
+      if (isVideoGenerationBusy) return
+      setIsVideoGenerationAutoSyncTicking(true)
+      try {
+        await loadVideoGenerationJobs(false, { silent: true })
+        if (selectedJobId) {
+          await queryVideoGenerationJobDetail(selectedJobId, { silent: true })
+        }
+        setVideoGenerationLastAutoSyncAt(new Date().toISOString())
+      } finally {
+        setIsVideoGenerationAutoSyncTicking(false)
       }
+    }
+
+    void tick()
+    const timer = window.setInterval(() => {
+      void tick()
     }, 6_000)
 
     return () => {
@@ -3367,6 +3375,8 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
           videoGenerationHasMore={videoGenerationHasMore}
           videoGenerationSelectedJobId={videoGenerationSelectedJobId}
           videoGenerationPollingEnabled={videoGenerationPollingEnabled}
+          videoGenerationLastAutoSyncAt={videoGenerationLastAutoSyncAt}
+          isVideoGenerationAutoSyncTicking={isVideoGenerationAutoSyncTicking}
           isVideoGenerationBusy={isVideoGenerationBusy}
           workflows={v4Workflows}
           selectedWorkflowId={v4SelectedWorkflowId}

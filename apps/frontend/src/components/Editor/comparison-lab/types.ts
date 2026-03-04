@@ -154,6 +154,55 @@ export const resolveVideoGenerationRequiredInputs = (mode: VideoGenerationMode) 
   return [] as const
 }
 
+const VIDEO_GENERATION_STATUS_LABELS: Record<VideoGenerationJobStatus, string> = {
+  queued: '排队中',
+  submitted: '已提交',
+  processing: '生成中',
+  succeeded: '已成功',
+  failed: '已失败',
+  cancel_requested: '取消中',
+  canceled: '已取消'
+}
+
+const VIDEO_GENERATION_STATUS_PRIORITY: Record<VideoGenerationJobStatus, number> = {
+  processing: 0,
+  submitted: 1,
+  queued: 2,
+  cancel_requested: 3,
+  failed: 4,
+  succeeded: 5,
+  canceled: 6
+}
+
+const toTimestamp = (value: string | null | undefined) => {
+  const parsed = Date.parse(String(value || ''))
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+export const isVideoGenerationActiveStatus = (status: VideoGenerationJobStatus) => {
+  return (
+    status === 'queued' ||
+    status === 'submitted' ||
+    status === 'processing' ||
+    status === 'cancel_requested'
+  )
+}
+
+export const resolveVideoGenerationStatusText = (status: VideoGenerationJobStatus) => {
+  return VIDEO_GENERATION_STATUS_LABELS[status] || status
+}
+
+export const sortVideoGenerationJobsForWorkbench = (jobs: VideoGenerationJob[]) => {
+  return [...jobs].sort((left, right) => {
+    const statusDelta =
+      VIDEO_GENERATION_STATUS_PRIORITY[left.status] - VIDEO_GENERATION_STATUS_PRIORITY[right.status]
+    if (statusDelta !== 0) return statusDelta
+    const updatedDelta = toTimestamp(right.updatedAt) - toTimestamp(left.updatedAt)
+    if (updatedDelta !== 0) return updatedDelta
+    return String(right.id).localeCompare(String(left.id))
+  })
+}
+
 export const resolveGeminiQuickCheck = (
   capabilities?: CapabilityPayload | null
 ): GeminiQuickCheckState => {
