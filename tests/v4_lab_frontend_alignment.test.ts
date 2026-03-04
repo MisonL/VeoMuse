@@ -33,6 +33,13 @@ describe('V4 实验室前端闭环对齐', () => {
     )
     expect(repoSources).toContain('/admin/reliability/error-budget')
     expect(repoSources).toContain('/assets/reuse-history')
+    expect(comparisonLabSources).toContain('/api/video/generations')
+    expect(comparisonLabSources).toContain(
+      '/api/video/generations/${encodeURIComponent(targetJobId)}'
+    )
+    expect(comparisonLabSources).toContain('/api/video/generations/${encodeURIComponent(normalizedJobId)}/sync')
+    expect(comparisonLabSources).toContain('/api/video/generations/${encodeURIComponent(normalizedJobId)}/retry')
+    expect(comparisonLabSources).toContain('/api/video/generations/${encodeURIComponent(normalizedJobId)}/cancel')
     expect(comparisonLabSources).toMatch(/\/admin\/reliability\/(alerts|error-budget|drills)/)
     expect(comparisonLabSources).toMatch(
       /\/admin\/reliability\/error-budget[\s\S]{0,300}method:\s*'PUT'/
@@ -76,6 +83,8 @@ describe('V4 实验室前端闭环对齐', () => {
     expect(comparisonLabSources).toMatch(/告警列表|ACK|错误预算|回滚演练|更新错误预算策略/)
     expect(comparisonLabSources).toMatch(/复用历史|Asset Reuse|目标项目|来源项目|偏移量/)
     expect(comparisonLabSources).toMatch(/加载更多|Workflow Runs|Batch Job Items|mentions/)
+    expect(comparisonLabSources).toMatch(/统一视频生成工作台|Gemini 快速自检/)
+    expect(comparisonLabSources).toMatch(/同步|重试|取消|刷新详情/)
     expect(comparisonLabSources).toContain('v4RollbackPlan')
     expect(comparisonLabSources).toContain('v4RollbackResult')
     expect(comparisonLabSources).toContain('项目治理闭环')

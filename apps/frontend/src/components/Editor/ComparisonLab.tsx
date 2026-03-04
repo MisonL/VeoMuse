@@ -26,6 +26,7 @@ import {
   listProjectGovernanceReviews,
   listProjectGovernanceTemplates,
   normalizeProjectGovernanceLimit,
+  resolveGeminiQuickCheck,
   resolveProjectGovernanceComment
 } from './comparison-lab/types'
 import type {
@@ -67,7 +68,12 @@ import type {
   ProjectGovernanceTemplateApplyResult,
   CapabilityPayload,
   AuthProfile,
-  ChannelFormState
+  ChannelFormState,
+  VideoGenerationCreatePayload,
+  VideoGenerationJob,
+  VideoGenerationJobStatus,
+  VideoGenerationMode,
+  VideoInputSourceType
 } from './comparison-lab/types'
 import { DEFAULT_POLICY_WEIGHTS, POLICY_EXEC_PAGE_SIZE } from './comparison-lab/constants'
 import { requestJson, requestJsonWithRetry, requestV4, wsBaseFromApi } from './comparison-lab/api'
@@ -122,6 +128,28 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const [sceneFeedbackMap, setSceneFeedbackMap] = useState<Record<string, string>>({})
   const [commitScore, setCommitScore] = useState<number>(0.9)
   const [isCreativeBusy, setIsCreativeBusy] = useState(false)
+  const [videoGenerationMode, setVideoGenerationMode] =
+    useState<VideoGenerationMode>('text_to_video')
+  const [videoGenerationModelId, setVideoGenerationModelId] = useState('veo-3.1')
+  const [videoGenerationPrompt, setVideoGenerationPrompt] = useState('')
+  const [videoGenerationNegativePrompt, setVideoGenerationNegativePrompt] = useState('')
+  const [videoGenerationInputSourceType, setVideoGenerationInputSourceType] =
+    useState<VideoInputSourceType>('url')
+  const [videoGenerationImageInput, setVideoGenerationImageInput] = useState('')
+  const [videoGenerationReferenceImagesInput, setVideoGenerationReferenceImagesInput] = useState('')
+  const [videoGenerationVideoInput, setVideoGenerationVideoInput] = useState('')
+  const [videoGenerationFirstFrameInput, setVideoGenerationFirstFrameInput] = useState('')
+  const [videoGenerationLastFrameInput, setVideoGenerationLastFrameInput] = useState('')
+  const [videoGenerationListLimit, setVideoGenerationListLimit] = useState('20')
+  const [videoGenerationStatusFilter, setVideoGenerationStatusFilter] = useState<
+    'all' | VideoGenerationJobStatus
+  >('all')
+  const [videoGenerationJobs, setVideoGenerationJobs] = useState<VideoGenerationJob[]>([])
+  const [videoGenerationCursor, setVideoGenerationCursor] = useState('')
+  const [videoGenerationHasMore, setVideoGenerationHasMore] = useState(false)
+  const [videoGenerationSelectedJobId, setVideoGenerationSelectedJobId] = useState('')
+  const [videoGenerationPollingEnabled, setVideoGenerationPollingEnabled] = useState(true)
+  const [isVideoGenerationBusy, setIsVideoGenerationBusy] = useState(false)
   const [v4Workflows, setV4Workflows] = useState<V4Workflow[]>([])
   const [v4SelectedWorkflowId, setV4SelectedWorkflowId] = useState('')
   const [v4WorkflowName, setV4WorkflowName] = useState('默认 Workflow')
@@ -284,6 +312,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     () => assets.find((a) => a.id === rightAssetId),
     [assets, rightAssetId]
   )
+  const geminiQuickCheck = useMemo(() => resolveGeminiQuickCheck(capabilities), [capabilities])
   const currentActorName = memberName.trim() || workspaceOwner.trim() || 'Owner'
   const effectiveOrganizationId = selectedOrganizationId.trim() || organizations[0]?.id || ''
   const buildIdempotencyKey = useCallback((action: string) => {
@@ -343,6 +372,31 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
         )
       ),
     []
+  )
+
+  const parseVideoReferenceInputs = useCallback((raw: string) => {
+    return raw
+      .split(/[\n,]/g)
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }, [])
+
+  const isRecord = useCallback(
+    (value: unknown): value is Record<string, unknown> =>
+      Boolean(value) && typeof value === 'object' && !Array.isArray(value),
+    []
+  )
+
+  const normalizeVideoSourceInput = useCallback(
+    (raw: string) => {
+      const value = raw.trim()
+      if (!value) return undefined
+      return {
+        sourceType: videoGenerationInputSourceType,
+        value
+      } as const
+    },
+    [videoGenerationInputSourceType]
   )
 
   const buildV4AdminHeaders = useCallback(
@@ -1367,6 +1421,350 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       setIsCreativeBusy(false)
     }
   }
+
+  const upsertVideoGenerationJob = useCallback((job: VideoGenerationJob) => {
+    setVideoGenerationJobs((prev) => {
+      const index = prev.findIndex((item) => item.id === job.id)
+      if (index < 0) return [job, ...prev]
+      const next = [...prev]
+      next[index] = job
+      return next
+    })
+  }, [])
+
+  const createVideoGenerationTask = async () => {
+    const prompt = videoGenerationPrompt.trim()
+    const negativePrompt = videoGenerationNegativePrompt.trim()
+    const imageInput = normalizeVideoSourceInput(videoGenerationImageInput)
+    const videoInput = normalizeVideoSourceInput(videoGenerationVideoInput)
+    const firstFrameInput = normalizeVideoSourceInput(videoGenerationFirstFrameInput)
+    const lastFrameInput = normalizeVideoSourceInput(videoGenerationLastFrameInput)
+    const referenceImages = parseVideoReferenceInputs(videoGenerationReferenceImagesInput)
+      .map((value) => normalizeVideoSourceInput(value))
+      .filter(Boolean) as Array<NonNullable<VideoGenerationCreatePayload['inputs']>['image']>
+
+    if (videoGenerationMode === 'text_to_video' && !prompt) {
+      showToast('文生视频模式需要填写 Prompt', 'warning')
+      return
+    }
+    if (videoGenerationMode === 'image_to_video' && !imageInput && referenceImages.length === 0) {
+      showToast('图生视频模式需要填写图片输入或参考图列表', 'warning')
+      return
+    }
+    if (videoGenerationMode === 'video_extend' && !videoInput) {
+      showToast('视频扩展模式需要填写视频输入', 'warning')
+      return
+    }
+    if (
+      videoGenerationMode === 'first_last_frame_transition' &&
+      (!firstFrameInput || !lastFrameInput)
+    ) {
+      showToast('首末帧过渡模式需要同时填写首帧与末帧输入', 'warning')
+      return
+    }
+    if (isVideoGenerationBusy) return
+
+    const inputs: VideoGenerationCreatePayload['inputs'] = {}
+    if (imageInput) inputs.image = imageInput
+    if (referenceImages.length > 0) inputs.referenceImages = referenceImages
+    if (videoInput) inputs.video = videoInput
+    if (firstFrameInput) inputs.firstFrame = firstFrameInput
+    if (lastFrameInput) inputs.lastFrame = lastFrameInput
+
+    const payloadBody: VideoGenerationCreatePayload = {
+      modelId: videoGenerationModelId.trim() || undefined,
+      generationMode: videoGenerationMode,
+      prompt: prompt || undefined,
+      text: prompt || undefined,
+      negativePrompt: negativePrompt || undefined,
+      workspaceId: workspaceId.trim() || undefined,
+      inputs: Object.keys(inputs).length > 0 ? inputs : undefined
+    }
+
+    setIsVideoGenerationBusy(true)
+    try {
+      const payload = await requestJson<{
+        success: boolean
+        job: VideoGenerationJob | null
+        providerResult?: { status?: string; message?: string } | null
+      }>('/api/video/generations', {
+        method: 'POST',
+        body: JSON.stringify(payloadBody)
+      })
+      if (!payload.job) {
+        showToast('任务创建成功，但未返回任务对象', 'warning')
+        return
+      }
+      setVideoGenerationSelectedJobId(payload.job.id)
+      setVideoGenerationCancelledJobIds((prev) => {
+        if (!prev[payload.job!.id]) return prev
+        const next = { ...prev }
+        delete next[payload.job!.id]
+        return next
+      })
+      upsertVideoGenerationJob(payload.job)
+      showToast(
+        `视频任务已创建：${payload.job.id}（${payload.providerResult?.status || payload.job.status}）`,
+        'success'
+      )
+    } catch (error: any) {
+      showToast(error.message || '创建视频任务失败', 'error')
+    } finally {
+      setIsVideoGenerationBusy(false)
+    }
+  }
+
+  const loadVideoGenerationJobs = useCallback(
+    async (append = false, options?: { silent?: boolean }) => {
+      const limitRaw = videoGenerationListLimit.trim() || '20'
+      const limit = Number.parseInt(limitRaw, 10)
+      if (!Number.isFinite(limit) || limit <= 0) {
+        showToast('视频任务列表 limit 必须是大于 0 的整数', 'warning')
+        return
+      }
+
+      const cursor = append ? videoGenerationCursor.trim() : ''
+      if (append && !cursor) {
+        setVideoGenerationHasMore(false)
+        return
+      }
+      if (isVideoGenerationBusy) return
+
+      setIsVideoGenerationBusy(true)
+      try {
+        const query = new URLSearchParams({
+          limit: String(Math.min(limit, 100))
+        })
+        if (workspaceId.trim()) query.set('workspaceId', workspaceId.trim())
+        if (videoGenerationStatusFilter !== 'all') query.set('status', videoGenerationStatusFilter)
+        if (cursor) query.set('cursor', cursor)
+        if (videoGenerationModelId.trim()) query.set('modelId', videoGenerationModelId.trim())
+
+        const payload = await requestJson<{
+          success: boolean
+          jobs: VideoGenerationJob[]
+          page?: {
+            cursor?: string | null
+            nextCursor?: string | null
+            limit?: number
+            hasMore?: boolean
+          }
+        }>(`/api/video/generations?${query.toString()}`)
+        const rows = payload.jobs || []
+        const merged = append
+          ? [
+              ...videoGenerationJobs,
+              ...rows.filter((item) => videoGenerationJobs.every((prev) => prev.id !== item.id))
+            ]
+          : rows
+        setVideoGenerationJobs(merged)
+
+        const inferredCursor = rows.length > 0 ? rows[rows.length - 1]?.createdAt || '' : ''
+        const cursorFromPage =
+          typeof payload.page?.nextCursor === 'string'
+            ? payload.page.nextCursor
+            : typeof payload.page?.cursor === 'string'
+              ? payload.page.cursor
+              : inferredCursor
+        const hasMore =
+          typeof payload.page?.hasMore === 'boolean'
+            ? payload.page.hasMore
+            : rows.length >= Math.min(limit, 100)
+        setVideoGenerationCursor(cursorFromPage || '')
+        setVideoGenerationHasMore(Boolean(cursorFromPage) && hasMore)
+        if (!options?.silent) {
+          showToast(`已加载 ${rows.length} 条视频任务`, 'success')
+        }
+      } catch (error: any) {
+        if (!options?.silent) {
+          showToast(error.message || '加载视频任务失败', 'error')
+        }
+      } finally {
+        setIsVideoGenerationBusy(false)
+      }
+    },
+    [
+      isVideoGenerationBusy,
+      showToast,
+      videoGenerationCursor,
+      videoGenerationJobs,
+      videoGenerationListLimit,
+      videoGenerationModelId,
+      videoGenerationStatusFilter,
+      workspaceId
+    ]
+  )
+
+  const queryVideoGenerationJobDetail = useCallback(
+    async (jobId?: string, options?: { silent?: boolean }) => {
+      const targetJobId = String(jobId || videoGenerationSelectedJobId || '').trim()
+      if (!targetJobId) {
+        if (!options?.silent) showToast('请先选择任务 ID', 'info')
+        return
+      }
+      if (isVideoGenerationBusy) return
+      setIsVideoGenerationBusy(true)
+      try {
+        const payload = await requestJson<{ success: boolean; job: VideoGenerationJob }>(
+          `/api/video/generations/${encodeURIComponent(targetJobId)}`
+        )
+        if (payload.job) {
+          upsertVideoGenerationJob(payload.job)
+          setVideoGenerationSelectedJobId(payload.job.id)
+        }
+        if (!options?.silent) {
+          showToast(`任务详情已刷新：${payload.job?.status || '-'}`, 'success')
+        }
+      } catch (error: any) {
+        if (!options?.silent) {
+          showToast(error.message || '查询任务详情失败', 'error')
+        }
+      } finally {
+        setIsVideoGenerationBusy(false)
+      }
+    },
+    [isVideoGenerationBusy, showToast, upsertVideoGenerationJob, videoGenerationSelectedJobId]
+  )
+
+  const syncVideoGenerationJob = async (jobId: string, options?: { silent?: boolean }) => {
+    const normalizedJobId = jobId.trim()
+    if (!normalizedJobId) return
+    if (isVideoGenerationBusy) return
+    setIsVideoGenerationBusy(true)
+    try {
+      const payload = await requestJson<{
+        success: boolean
+        job: VideoGenerationJob
+        queryResult?: { state?: string; status?: string } | null
+      }>(`/api/video/generations/${encodeURIComponent(normalizedJobId)}/sync`, {
+        method: 'POST'
+      })
+      if (payload.job) {
+        setVideoGenerationSelectedJobId(payload.job.id)
+        upsertVideoGenerationJob(payload.job)
+      }
+      if (!options?.silent) {
+        showToast(
+          `同步完成：${payload.queryResult?.state || payload.job?.status || '-'}`,
+          payload.job?.status === 'failed' ? 'warning' : 'success'
+        )
+      }
+    } catch (error: any) {
+      if (!options?.silent) {
+        showToast(error.message || '同步任务失败', 'error')
+      }
+    } finally {
+      setIsVideoGenerationBusy(false)
+    }
+  }
+
+  const retryVideoGenerationJob = async (jobId: string) => {
+    const normalizedJobId = jobId.trim()
+    if (!normalizedJobId) return
+    if (isVideoGenerationBusy) return
+    setIsVideoGenerationBusy(true)
+    try {
+      const payload = await requestJson<{
+        success: boolean
+        job: VideoGenerationJob
+        providerResult?: { status?: string } | null
+      }>(`/api/video/generations/${encodeURIComponent(normalizedJobId)}/retry`, {
+        method: 'POST'
+      })
+      setVideoGenerationSelectedJobId(payload.job.id)
+      upsertVideoGenerationJob(payload.job)
+      showToast(
+        `重试任务已创建：${payload.job.id}（${payload.providerResult?.status || payload.job.status}）`,
+        'success'
+      )
+    } catch (error: any) {
+      showToast(error.message || '重试任务失败', 'error')
+    } finally {
+      setIsVideoGenerationBusy(false)
+    }
+  }
+
+  const cancelVideoGenerationJob = async (jobId: string) => {
+    const normalizedJobId = jobId.trim()
+    if (!normalizedJobId) return
+    if (isVideoGenerationBusy) return
+    setIsVideoGenerationBusy(true)
+    try {
+      const payload = await requestJson<{
+        success: boolean
+        job: VideoGenerationJob
+        cancelResult?: { state?: string } | null
+      }>(`/api/video/generations/${encodeURIComponent(normalizedJobId)}/cancel`, {
+        method: 'POST'
+      })
+      setVideoGenerationSelectedJobId(payload.job.id)
+      upsertVideoGenerationJob(payload.job)
+      showToast(
+        `取消结果：${payload.cancelResult?.state || payload.job.status}`,
+        payload.job.status === 'canceled' ? 'success' : 'info'
+      )
+    } catch (error: any) {
+      showToast(error.message || '取消任务失败', 'error')
+    } finally {
+      setIsVideoGenerationBusy(false)
+    }
+  }
+
+  const refreshVideoGenerationJobDetail = async (jobId: string) => {
+    await queryVideoGenerationJobDetail(jobId)
+  }
+
+  useEffect(() => {
+    if (labMode !== 'creative' || !authProfile) return
+    if (!capabilities && !isCapabilitiesLoading) {
+      void loadCapabilities()
+    }
+    if (videoGenerationJobs.length === 0) {
+      void loadVideoGenerationJobs(false, { silent: true })
+    }
+  }, [
+    authProfile,
+    capabilities,
+    isCapabilitiesLoading,
+    labMode,
+    loadCapabilities,
+    loadVideoGenerationJobs,
+    videoGenerationJobs.length
+  ])
+
+  useEffect(() => {
+    if (labMode !== 'creative' || !authProfile || !videoGenerationPollingEnabled) return
+    if (isVideoGenerationBusy) return
+    const trackedJobs = videoGenerationJobs.filter(
+      (job) =>
+        job.status === 'queued' ||
+        job.status === 'submitted' ||
+        job.status === 'processing' ||
+        job.status === 'cancel_requested'
+    )
+    if (trackedJobs.length === 0 && !videoGenerationSelectedJobId) return
+
+    const timer = window.setInterval(() => {
+      void loadVideoGenerationJobs(false, { silent: true })
+      const candidateJobId = videoGenerationSelectedJobId || trackedJobs[0]?.id || ''
+      if (candidateJobId) {
+        void syncVideoGenerationJob(candidateJobId, { silent: true })
+      }
+    }, 6_000)
+
+    return () => {
+      window.clearInterval(timer)
+    }
+  }, [
+    authProfile,
+    isVideoGenerationBusy,
+    labMode,
+    loadVideoGenerationJobs,
+    queryVideoGenerationJobDetail,
+    videoGenerationJobs,
+    videoGenerationPollingEnabled,
+    videoGenerationSelectedJobId
+  ])
 
   const refreshV4Workflows = async () => {
     setIsV4CreativeBusy(true)
@@ -2951,6 +3349,25 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
           creativeRunFeedback={creativeRunFeedback}
           sceneFeedbackMap={sceneFeedbackMap}
           creativeVersions={creativeVersions}
+          geminiQuickCheck={geminiQuickCheck}
+          videoGenerationMode={videoGenerationMode}
+          videoGenerationModelId={videoGenerationModelId}
+          videoGenerationPrompt={videoGenerationPrompt}
+          videoGenerationNegativePrompt={videoGenerationNegativePrompt}
+          videoGenerationInputSourceType={videoGenerationInputSourceType}
+          videoGenerationImageInput={videoGenerationImageInput}
+          videoGenerationReferenceImagesInput={videoGenerationReferenceImagesInput}
+          videoGenerationVideoInput={videoGenerationVideoInput}
+          videoGenerationFirstFrameInput={videoGenerationFirstFrameInput}
+          videoGenerationLastFrameInput={videoGenerationLastFrameInput}
+          videoGenerationListLimit={videoGenerationListLimit}
+          videoGenerationStatusFilter={videoGenerationStatusFilter}
+          videoGenerationJobs={videoGenerationJobs}
+          videoGenerationCursor={videoGenerationCursor}
+          videoGenerationHasMore={videoGenerationHasMore}
+          videoGenerationSelectedJobId={videoGenerationSelectedJobId}
+          videoGenerationPollingEnabled={videoGenerationPollingEnabled}
+          isVideoGenerationBusy={isVideoGenerationBusy}
           workflows={v4Workflows}
           selectedWorkflowId={v4SelectedWorkflowId}
           workflowName={v4WorkflowName}
@@ -2982,6 +3399,30 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
           onApplyCreativeFeedback={() => void applyCreativeFeedback()}
           onCommitCreativeRun={() => void commitCreativeRun()}
           onRefreshCreativeVersions={() => void refreshCreativeVersions()}
+          onRunGeminiQuickCheck={() => void loadCapabilities()}
+          onOpenChannelPanel={openChannelPanel}
+          onVideoGenerationModeChange={setVideoGenerationMode}
+          onVideoGenerationModelIdChange={setVideoGenerationModelId}
+          onVideoGenerationPromptChange={setVideoGenerationPrompt}
+          onVideoGenerationNegativePromptChange={setVideoGenerationNegativePrompt}
+          onVideoGenerationInputSourceTypeChange={setVideoGenerationInputSourceType}
+          onVideoGenerationImageInputChange={setVideoGenerationImageInput}
+          onVideoGenerationReferenceImagesInputChange={setVideoGenerationReferenceImagesInput}
+          onVideoGenerationVideoInputChange={setVideoGenerationVideoInput}
+          onVideoGenerationFirstFrameInputChange={setVideoGenerationFirstFrameInput}
+          onVideoGenerationLastFrameInputChange={setVideoGenerationLastFrameInput}
+          onVideoGenerationListLimitChange={setVideoGenerationListLimit}
+          onVideoGenerationStatusFilterChange={setVideoGenerationStatusFilter}
+          onVideoGenerationSelectedJobIdChange={setVideoGenerationSelectedJobId}
+          onVideoGenerationPollingEnabledChange={setVideoGenerationPollingEnabled}
+          onCreateVideoGenerationTask={() => void createVideoGenerationTask()}
+          onRefreshVideoGenerationJobs={() => void loadVideoGenerationJobs(false)}
+          onLoadMoreVideoGenerationJobs={() => void loadVideoGenerationJobs(true)}
+          onQueryVideoGenerationJobDetail={() => void queryVideoGenerationJobDetail()}
+          onSyncVideoGenerationJob={(jobId) => void syncVideoGenerationJob(jobId)}
+          onRetryVideoGenerationJob={(jobId) => void retryVideoGenerationJob(jobId)}
+          onCancelVideoGenerationJob={(jobId) => void cancelVideoGenerationJob(jobId)}
+          onRefreshVideoGenerationJobDetail={(jobId) => void refreshVideoGenerationJobDetail(jobId)}
           onCreativeRunFeedbackChange={setCreativeRunFeedback}
           onSceneFeedbackChange={(sceneId, value) =>
             setSceneFeedbackMap((prev) => ({ ...prev, [sceneId]: value }))

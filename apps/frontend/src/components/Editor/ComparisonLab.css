@@ -821,6 +821,108 @@
   color: var(--ap-accent);
 }
 
+.video-generation-card {
+  grid-column: span 2;
+}
+
+.video-generation-quick-check {
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--ap-panel) 86%, #ffffff 14%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.video-generation-quick-check--ready {
+  border-color: color-mix(in srgb, #2a8f5b 55%, var(--ap-border));
+}
+
+.video-generation-quick-check--missing {
+  border-color: color-mix(in srgb, #e4a11b 58%, var(--ap-border));
+}
+
+.video-generation-quick-check--unknown {
+  border-color: color-mix(in srgb, var(--ap-accent) 40%, var(--ap-border));
+}
+
+.video-generation-quick-check-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ap-text);
+}
+
+.video-generation-quick-check-desc,
+.video-generation-required,
+.video-generation-pagination {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+}
+
+.video-generation-job-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.video-generation-job-item {
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.video-generation-job-item.selected {
+  border-color: color-mix(in srgb, var(--ap-accent) 55%, var(--ap-border));
+}
+
+.video-generation-job-item.cancelled {
+  opacity: 0.72;
+}
+
+.video-generation-job-select {
+  border: 0;
+  background: transparent;
+  color: var(--ap-text);
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.video-generation-job-select span:last-child {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+}
+
+.video-generation-job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--ap-text-dim);
+}
+
+.video-generation-job-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.video-generation-polling-toggle.active {
+  border-color: color-mix(in srgb, var(--ap-accent) 55%, var(--ap-border));
+  color: var(--ap-accent);
+}
+
 .collab-shell {
   flex: 1;
   min-height: 0;
@@ -1124,6 +1226,10 @@
 @container lab-frame (max-width: 1260px) {
   .creative-shell {
     grid-template-columns: 1fr;
+  }
+
+  .video-generation-card {
+    grid-column: span 1;
   }
 
   .collab-shell {

@@ -48,6 +48,136 @@ export interface CapabilityPayload {
   timestamp?: string
 }
 
+export type VideoGenerationMode =
+  | 'text_to_video'
+  | 'image_to_video'
+  | 'first_last_frame_transition'
+  | 'video_extend'
+
+export type VideoInputSourceType = 'url' | 'objectKey'
+
+export type VideoGenerationJobStatus =
+  | 'queued'
+  | 'submitted'
+  | 'processing'
+  | 'succeeded'
+  | 'failed'
+  | 'cancel_requested'
+  | 'canceled'
+
+export type VideoGenerationProviderStatus = 'ok' | 'degraded' | 'not_implemented' | 'error'
+
+export interface VideoGenerationSourceInput {
+  sourceType?: VideoInputSourceType
+  value: string
+  mimeType?: string
+}
+
+export interface VideoGenerationInputsInput {
+  image?: VideoGenerationSourceInput
+  referenceImages?: VideoGenerationSourceInput[]
+  firstFrame?: VideoGenerationSourceInput
+  lastFrame?: VideoGenerationSourceInput
+  video?: VideoGenerationSourceInput
+}
+
+export interface VideoGenerationCreatePayload {
+  modelId?: string
+  generationMode?: VideoGenerationMode
+  prompt?: string
+  text?: string
+  negativePrompt?: string
+  options?: Record<string, unknown>
+  actorId?: string
+  consistencyStrength?: number
+  syncLip?: boolean
+  sync_lip?: boolean
+  worldLink?: boolean
+  worldId?: string
+  workspaceId?: string
+  inputs?: VideoGenerationInputsInput
+}
+
+export interface VideoGenerationJob {
+  id: string
+  organizationId: string
+  workspaceId: string | null
+  modelId: string
+  generationMode: VideoGenerationMode
+  request: Record<string, unknown>
+  status: VideoGenerationJobStatus
+  providerStatus: VideoGenerationProviderStatus
+  operationName: string | null
+  result: Record<string, unknown>
+  errorMessage: string | null
+  errorCode?: string | null
+  outputUrl?: string | null
+  startedAt?: string | null
+  finishedAt?: string | null
+  durationMs?: number | null
+  retryCount?: number
+  cancelRequestedAt?: string | null
+  lastSyncedAt?: string | null
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface VideoGenerationPageResult {
+  jobs: VideoGenerationJob[]
+  page: CursorPageMeta
+}
+
+export interface GeminiQuickCheckState {
+  status: 'ready' | 'missing' | 'unknown'
+  title: string
+  description: string
+}
+
+export const VIDEO_GENERATION_MODES: Array<{ value: VideoGenerationMode; label: string }> = [
+  { value: 'text_to_video', label: '文生视频' },
+  { value: 'image_to_video', label: '图生视频' },
+  { value: 'video_extend', label: '视频扩展' },
+  { value: 'first_last_frame_transition', label: '首末帧过渡' }
+]
+
+export const resolveVideoGenerationRequiredInputs = (mode: VideoGenerationMode) => {
+  if (mode === 'image_to_video') {
+    return ['image_or_referenceImages'] as const
+  }
+  if (mode === 'video_extend') {
+    return ['video'] as const
+  }
+  if (mode === 'first_last_frame_transition') {
+    return ['firstFrame', 'lastFrame'] as const
+  }
+  return [] as const
+}
+
+export const resolveGeminiQuickCheck = (
+  capabilities?: CapabilityPayload | null
+): GeminiQuickCheckState => {
+  if (!capabilities || !capabilities.models) {
+    return {
+      status: 'unknown',
+      title: 'Gemini 可用性未知',
+      description: '先点击“Gemini 快速自检”刷新 /api/capabilities。'
+    }
+  }
+  if (capabilities.models['veo-3.1']) {
+    return {
+      status: 'ready',
+      title: 'Gemini Veo 3.1 已就绪',
+      description: '可直接创建视频生成任务。'
+    }
+  }
+  return {
+    status: 'missing',
+    title: 'Gemini Veo 3.1 未就绪',
+    description: '请在渠道接入面板配置 Gemini Key/Endpoint 后重试。'
+  }
+}
+
 export interface AuthProfile {
   id: string
   email: string
