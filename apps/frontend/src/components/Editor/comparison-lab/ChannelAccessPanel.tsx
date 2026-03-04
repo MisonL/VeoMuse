@@ -160,12 +160,14 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
             <input
               name={`channelBaseUrl-${row.id}`}
               value={form.baseUrl}
+              aria-label={`${row.label} Base URL`}
               onChange={(event) => onUpdateChannelForm(row.id, { baseUrl: event.target.value })}
               placeholder="Base URL（可选）"
             />
             <input
               name={`channelApiKey-${row.id}`}
               value={form.apiKey}
+              aria-label={`${row.label} API Key`}
               onChange={(event) => onUpdateChannelForm(row.id, { apiKey: event.target.value })}
               placeholder="填写 API Key"
               type="password"
@@ -176,18 +178,21 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                 <input
                   name={`channelModel-${row.id}`}
                   value={form.model}
+                  aria-label={`${row.label} 模型 ID`}
                   onChange={(event) => onUpdateChannelForm(row.id, { model: event.target.value })}
                   placeholder="模型 ID（必填）"
                 />
                 <input
                   name={`channelPath-${row.id}`}
                   value={form.path}
+                  aria-label={`${row.label} 兼容路径`}
                   onChange={(event) => onUpdateChannelForm(row.id, { path: event.target.value })}
                   placeholder="兼容路径（默认 /v1/chat/completions）"
                 />
                 <input
                   name={`channelTemperature-${row.id}`}
                   value={form.temperature}
+                  aria-label={`${row.label} temperature`}
                   onChange={(event) =>
                     onUpdateChannelForm(row.id, { temperature: event.target.value })
                   }
@@ -200,6 +205,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                 name={`channelEnabled-${row.id}`}
                 type="checkbox"
                 checked={form.enabled}
+                aria-label={`启用 ${row.label} 渠道`}
                 onChange={(event) => onUpdateChannelForm(row.id, { enabled: event.target.checked })}
               />
               <span>启用</span>
@@ -279,6 +285,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                     <input
                       name="loginEmail"
                       value={loginEmail}
+                      aria-label="登录邮箱"
                       onChange={(event) => onLoginEmailChange(event.target.value)}
                       placeholder="邮箱"
                       autoComplete="email"
@@ -288,6 +295,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                       name="loginPassword"
                       type="password"
                       value={loginPassword}
+                      aria-label="登录密码"
                       onChange={(event) => onLoginPasswordChange(event.target.value)}
                       placeholder="密码（至少 8 位）"
                       autoComplete={registerMode ? 'new-password' : 'current-password'}
@@ -297,6 +305,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                       <input
                         name="registerOrgName"
                         value={registerOrgName}
+                        aria-label="注册组织名"
                         onChange={(event) => onRegisterOrgNameChange(event.target.value)}
                         placeholder="初始组织名"
                         data-testid="input-register-organization"
@@ -330,6 +339,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                     <select
                       name="selectedOrganizationId"
                       value={selectedOrganizationId}
+                      aria-label="当前组织"
                       onChange={(event) => onSelectedOrganizationChange(event.target.value)}
                       data-testid="select-organization"
                     >
@@ -342,6 +352,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                     <input
                       name="newOrganizationName"
                       value={newOrgName}
+                      aria-label="新组织名称"
                       onChange={(event) => onNewOrgNameChange(event.target.value)}
                       placeholder="新组织名称"
                       data-testid="input-new-organization-name"
@@ -357,6 +368,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                     <input
                       name="inviteMemberEmail"
                       value={inviteMemberEmail}
+                      aria-label="邀请成员邮箱"
                       onChange={(event) => onInviteMemberEmailChange(event.target.value)}
                       placeholder="成员邮箱（需已注册）"
                       autoComplete="email"
@@ -364,6 +376,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                     <select
                       name="inviteOrganizationRole"
                       value={inviteOrgRole}
+                      aria-label="邀请成员角色"
                       onChange={(event) =>
                         onInviteOrgRoleChange(event.target.value as OrganizationRole)
                       }
@@ -397,6 +410,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                     <select
                       name="activeChannelScope"
                       value={activeChannelScope}
+                      aria-label="渠道作用域"
                       onChange={(event) =>
                         onActiveChannelScopeChange(
                           event.target.value as 'organization' | 'workspace'
@@ -420,12 +434,14 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                     <input
                       name="quotaRequestLimit"
                       value={quotaForm.requestLimit}
+                      aria-label="请求配额"
                       onChange={(event) => onQuotaFormChange({ requestLimit: event.target.value })}
                       placeholder="请求配额（0 为不限制）"
                     />
                     <input
                       name="quotaStorageLimitMb"
                       value={quotaForm.storageLimitMb}
+                      aria-label="存储配额 MB"
                       onChange={(event) =>
                         onQuotaFormChange({ storageLimitMb: event.target.value })
                       }
@@ -434,6 +450,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                     <input
                       name="quotaConcurrencyLimit"
                       value={quotaForm.concurrencyLimit}
+                      aria-label="并发配额"
                       onChange={(event) =>
                         onQuotaFormChange({ concurrencyLimit: event.target.value })
                       }

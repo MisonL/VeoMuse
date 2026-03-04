@@ -20,7 +20,12 @@ const ToastContainer: React.FC = () => {
   }
 
   return (
-    <div className="toast-container">
+    <div
+      className="toast-container"
+      aria-live="polite"
+      aria-relevant="additions text"
+      aria-atomic="false"
+    >
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div
@@ -29,12 +34,30 @@ const ToastContainer: React.FC = () => {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             className={`toast-item glass-panel-inner ${toast.type}`}
-            onClick={() => removeToast(toast.id)}
+            role={toast.type === 'error' ? 'alert' : 'status'}
+            aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
+            aria-atomic="true"
           >
-            <span className="toast-icon">{getIcon(toast.type)}</span>
+            <span className="toast-icon" aria-hidden="true">
+              {getIcon(toast.type)}
+            </span>
             <span className="toast-message">{toast.message}</span>
+            <button
+              type="button"
+              className="toast-dismiss-btn"
+              aria-label={`关闭通知：${toast.message}`}
+              onClick={() => removeToast(toast.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  removeToast(toast.id)
+                }
+              }}
+            >
+              关闭
+            </button>
             {toast.actions && toast.actions.length > 0 ? (
-              <div className="toast-actions" onClick={(e) => e.stopPropagation()}>
+              <div className="toast-actions">
                 {toast.actions.map((action, index) => (
                   <button
                     key={`${toast.id}-${index}`}

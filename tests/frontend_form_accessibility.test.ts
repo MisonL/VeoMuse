@@ -10,7 +10,8 @@ describe('前端表单可访问性回归', () => {
       'apps/frontend/src/components/Editor/comparison-lab/modes/CompareModePanel.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/MarketplaceModePanel.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
-      'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/ChannelAccessPanel.tsx'
     ]
       .map((file) => readFileSync(path.resolve(process.cwd(), file), 'utf8'))
       .join('\n')
@@ -19,6 +20,20 @@ describe('前端表单可访问性回归', () => {
     expect(content).toContain('name="creativeScript"')
     expect(content).toContain('name="workspaceName"')
     expect(content).toContain('name="syncPlayback"')
+  })
+
+  it('Compare/渠道面板关键输入应具备 aria-label 语义', () => {
+    const content = [
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CompareModePanel.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/ChannelAccessPanel.tsx'
+    ]
+      .map((file) => readFileSync(path.resolve(process.cwd(), file), 'utf8'))
+      .join('\n')
+    expect(content).toContain('aria-label="A 通道模型"')
+    expect(content).toContain('aria-label="B 通道模型"')
+    expect(content).toContain('aria-label="登录邮箱"')
+    expect(content).toContain('aria-label="当前组织"')
+    expect(content).toContain('aria-label="请求配额"')
   })
 
   it('TelemetryDashboard 数据库字段应具备 id/name 属性', () => {

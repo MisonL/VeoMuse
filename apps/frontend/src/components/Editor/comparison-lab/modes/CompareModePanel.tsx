@@ -52,6 +52,7 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
             <select
               name="leftModel"
               value={leftModel}
+              aria-label="A 通道模型"
               onChange={(e) => onLeftModelChange(e.target.value)}
             >
               {availableModels.map((m) => (
@@ -63,6 +64,7 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
             <select
               name="leftAssetId"
               value={leftAssetId}
+              aria-label="A 通道素材"
               onChange={(e) => onLeftAssetChange(e.target.value)}
             >
               <option value="">选择素材</option>
@@ -72,7 +74,9 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
                 </option>
               ))}
             </select>
-            <button onClick={() => onRequestRecommendation('left')}>推荐</button>
+            <button aria-label="推荐 A 通道" onClick={() => onRequestRecommendation('left')}>
+              推荐
+            </button>
           </div>
         </div>
         <div className="pane-viewport">
@@ -108,6 +112,7 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
             <select
               name="rightModel"
               value={rightModel}
+              aria-label="B 通道模型"
               onChange={(e) => onRightModelChange(e.target.value)}
             >
               {availableModels.map((m) => (
@@ -119,6 +124,7 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
             <select
               name="rightAssetId"
               value={rightAssetId}
+              aria-label="B 通道素材"
               onChange={(e) => onRightAssetChange(e.target.value)}
             >
               <option value="">选择素材</option>
@@ -128,7 +134,9 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
                 </option>
               ))}
             </select>
-            <button onClick={() => onRequestRecommendation('right')}>推荐</button>
+            <button aria-label="推荐 B 通道" onClick={() => onRequestRecommendation('right')}>
+              推荐
+            </button>
           </div>
         </div>
         <div className="pane-viewport">
