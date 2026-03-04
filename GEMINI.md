@@ -17,7 +17,7 @@
 | :------------------ | :----------------------------------------------------- |
 | `bun run dev`       | 物理拉起全栈开发环境 (Backend: 33117, Frontend: 42873) |
 | `bun run build`     | 执行 Vite 8 + Oxc 极速生产混淆构建                     |
-| `bun test`          | 运行全量 35 项原子级回归测试套件                       |
+| `bun run test`      | 运行全量回归测试套件（单测/DOM/API/脚本守卫）          |
 | `bun run docker:up` | **结项推荐**: 一键部署 Nginx 18081 + Bun 生产容器总线  |
 
 ## ⚖️ 工程红线 (Strict Guidelines)
