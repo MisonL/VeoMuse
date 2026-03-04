@@ -1,9 +1,9 @@
-# VeoMuse 旗舰版生产部署指南 (V3.1)
+# VeoMuse 生产部署指南（V3.1）
 
-## 🚀 一键部署 (Recommended)
+## 一键部署
 
 系统已完全容器化，前端镜像会在构建阶段自动执行前端构建（无需宿主机预先生成 `dist`）。
-V3.1 正式发版支持三大平台一键安装部署：
+支持 macOS/Linux/Windows 三平台一键部署：
 
 ```bash
 # macOS / Linux
@@ -46,18 +46,18 @@ docker compose -f config/docker/docker-compose.yml ps
 - `--skip-build` / `-SkipBuild`：跳过镜像重建，直接 `up -d`。
 - `--api-port <port>` / `-ApiPort <port>`：自定义健康检查端口。
 
-## 🏗️ 架构详情
+## 架构说明
 
 - **Nginx**: 入口网关，负责静态资源托管、`/api` 反代与 `/ws` WebSocket 转发。
 - **Bun Backend**: 模型调度、AI 服务编排、FFmpeg 合成。
 - **Redis**: 内网任务与状态缓存。
 
-## 🔐 暴露策略
+## 端口与暴露策略
 
 - 仅前端网关暴露 `18081` 端口。
 - Backend/Redis 使用容器内网 `expose`，不直接对宿主机暴露。
 
-## ⚙️ 关键环境变量
+## 关键环境变量
 
 | Key                                  | Default                    | Note                                                      |
 | ------------------------------------ | -------------------------- | --------------------------------------------------------- |
@@ -88,12 +88,12 @@ docker compose -f config/docker/docker-compose.yml ps
 | `FEATURE_COLLAB_WS`                  | `true`                     | 兼容性环境变量；当前实现默认开启，暂未作为运行时动态开关  |
 | `NODE_ENV`                           | production                 | 生产模式                                                  |
 
-## 🗄️ 数据持久化
+## 数据持久化
 
 - `docker-compose.yml` 当前使用命名卷 `veomuse-data:/app/data` 持久化 SQLite 数据目录。
 - 若需改为宿主机 bind mount，可在 `docker-compose.yml` 将该卷改写为目录映射，并同步 `VEOMUSE_DB_PATH`。
 
-## ✅ 验证命令
+## 验证命令
 
 ```bash
 curl -s http://127.0.0.1:18081/api/health
@@ -146,7 +146,7 @@ curl -I http://127.0.0.1:18081 | grep -E "Content-Security-Policy|X-Frame-Option
 curl -s http://127.0.0.1:18081/api/admin/metrics -H "x-admin-token: $ADMIN_TOKEN" | jq '.api["System-Cleanup"]'
 ```
 
-## 🚦 发布门禁
+## 发布门禁
 
 ```bash
 # 标准发布门禁（默认包含稳定 Mock 回归）
@@ -269,7 +269,7 @@ bun run stress:collab-ws
 - DB repair drill：适用于数据库修复逻辑调整、SQLite 升级、损坏告警演练；产物位于 `data/drills/`，核心报告为 `db-repair-drill-*.json`（含 `backupPath`、`quarantinePath`、`copiedRows`）。
 - stress：适用于协作协议/广播路径改动与容量基线复测；产物为脚本标准输出 JSON 摘要（`ackRate`、`avgAckMs`、`p95AckMs`、`errors`、`broadcasts`）。
 
-## 🛡️ Secrets 防泄漏
+## Secrets 防泄漏
 
 ```bash
 # 安装本地 pre-push 钩子（提交前自动扫描）
@@ -284,13 +284,13 @@ CI 已内置双层扫描：
 - `Bun Secrets Guard`（轻量正则）
 - `Gitleaks Deep Scan`（历史级深度扫描 + SARIF）
 
-## 🔒 协作鉴权要求
+## 协作鉴权要求
 
 - 所有工作区接口统一使用 `Authorization: Bearer <accessToken>`，并以真实工作区成员角色做鉴权（`viewer/editor/owner`）。
 - 邀请与成员管理接口要求 `owner` 角色；上传令牌与本地上传要求至少 `editor` 角色。
 - WebSocket 协作通道推荐携带 `veomuse-auth.<accessToken>` 子协议；服务端兼容 `Authorization: Bearer <accessToken>`。仅允许已加入工作区的成员连接，非成员会被立即断开。
 
-## 🧪 协作 WS 压测脚本
+## 协作 WS 压测脚本
 
 默认对运行中的后端执行协作通道压测（创建工作区 -> 多客户端并发连接 -> timeline/cursor/heartbeat ACK 统计）。
 
@@ -311,5 +311,3 @@ COLLAB_STRESS_CLIENTS=24 COLLAB_STRESS_ROUNDS=20 bun run stress:collab-ws
 说明：未显式配置 `API_BASE_URL` 时，脚本会自动优先探测 `http://127.0.0.1:18081`（Docker 网关）并回退到 `http://127.0.0.1:33117`（直连后端）。
 
 ---
-
-**VeoMuse - 工业级稳定性，旗舰级表现。**
