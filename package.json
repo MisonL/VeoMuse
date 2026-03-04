@@ -10,8 +10,8 @@
   "scripts": {
     "dev": "concurrently -n backend,frontend -c blue,green \"bun run --cwd apps/backend dev\" \"bun run --cwd apps/frontend dev\"",
     "build": "bun run --cwd packages/shared build && bun run --cwd apps/backend build && bun run --cwd apps/frontend build",
-    "test": "bun test tests/*.test.ts tests/*.test.tsx",
-    "test:dom": "bun test tests/*.dom.test.tsx",
+    "test": "NODE_ENV=test bun test tests/*.test.ts tests/*.test.tsx --max-concurrency 1",
+    "test:dom": "NODE_ENV=test bun test tests/*.dom.test.tsx --max-concurrency 1",
     "test:coverage:raw": "bun test tests/*.test.ts tests/*.test.tsx --coverage --coverage-reporter=text --coverage-reporter=lcov --max-concurrency 1",
     "test:coverage": "bun run scripts/coverage_gate.ts",
     "e2e": "env -u NO_COLOR playwright test",
