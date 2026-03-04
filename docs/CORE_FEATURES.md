@@ -4,11 +4,12 @@
 
 ## 1. AI 创作引擎
 
-### 1.1 文本到视频与导演能力
+### 1.1 视频生成与导演能力
 
-- 能力：导演分析、镜头建议、提示词增强、智能剪辑。
-- 关键入口：`/api/ai/director/analyze`、`/api/ai/suggest-cuts`、`/api/ai/enhance`。
-- 关键测试：`tests/ai_api.test.ts`、`tests/prompt_enhance.test.ts`、`tests/ai_clip.test.ts`。
+- 能力：导演分析、镜头建议、提示词增强、智能剪辑，以及统一任务化视频生成。
+- 视频生成模式：`text_to_video`、`image_to_video`、`first_last_frame_transition`、`video_extend`。
+- 关键入口：`/api/video/generations*`、`/api/video/generate`、`/api/ai/director/analyze`、`/api/ai/suggest-cuts`、`/api/ai/enhance`。
+- 关键测试：`tests/video_generation_api_modes.test.ts`、`tests/video_generation_service_cursor.test.ts`、`tests/ai_api.test.ts`、`tests/prompt_enhance.test.ts`、`tests/ai_clip.test.ts`。
 
 ### 1.2 媒体炼金能力
 
@@ -32,7 +33,7 @@
 ### 2.1 模型编排
 
 - 默认模型：`veo-3.1`、`kling-v1`、`sora-preview`、`luma-dream`、`runway-gen3`、`pika-1.5`、`openai-compatible`。
-- 关键入口：`/api/models`、`/api/models/marketplace`、`/api/generate`。
+- 关键入口：`/api/models`、`/api/models/marketplace`、`/api/video/generations`、`/api/video/generate`。
 - 关键测试：`tests/model_channels.test.ts`、`tests/model_marketplace_api.test.ts`。
 
 ### 2.2 策略治理

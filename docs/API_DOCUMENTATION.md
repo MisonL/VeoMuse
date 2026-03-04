@@ -277,12 +277,52 @@
 - **Response**: `config`
 - **告警落库规则**: `simulate`/`simulate-batch` 产生 `warning`/`critical`/`degraded` 时会写入告警事件表。
 
+### POST `/api/video/generations`
+
+创建并提交视频生成任务（推荐新接口）。
+
+- **Params**:
+  - `modelId`(optional，默认 `veo-3.1`)
+  - `generationMode`(optional): `text_to_video` | `image_to_video` | `first_last_frame_transition` | `video_extend`
+  - `prompt`(optional，兼容 `text`)
+  - `negativePrompt`(optional)
+  - `inputs`(optional)
+    - `image` / `video` / `firstFrame` / `lastFrame`: `{ sourceType, value, mimeType? }`
+    - `referenceImages[]`: 同上
+    - `sourceType`: `url` | `objectKey`
+  - `options`(optional)
+  - `workspaceId`(optional)
+  - 兼容字段：`actorId`、`consistencyStrength`、`syncLip` / `sync_lip`、`worldLink`、`worldId`
+- **校验规则**:
+  - `text_to_video` 需要 `prompt` 或 `text`
+  - `image_to_video` 需要 `inputs.image` 或 `inputs.referenceImages`
+  - `first_last_frame_transition` 需要 `inputs.firstFrame + inputs.lastFrame`
+  - `video_extend` 需要 `inputs.video`
+  - `objectKey` 输入必须带 `workspaceId` 且首段与 `workspaceId` 一致
+- **Response**: `job`（落库任务） + `providerResult`（驱动提交结果）
+- **配额治理**: 请求额度/并发额度超限返回 `429` 与 `code: QUOTA_EXCEEDED`。
+
+### GET `/api/video/generations/:jobId`
+
+按任务 ID 查询单个视频生成任务。
+
+- 组织外访问返回 `403`，任务不存在返回 `404`。
+- 若任务绑定 `workspaceId`，调用方还需要该工作区成员身份。
+
+### GET `/api/video/generations`
+
+分页查询视频生成任务列表。
+
+- **Query**: `workspaceId`(optional), `status`(optional), `modelId`(optional), `limit`(optional), `cursor`(optional)
+- **排序与游标**: 使用 `(created_at DESC, id DESC)` 复合排序，游标格式为 `createdAt|id`，并兼容旧时间戳游标。
+- **Response**: `jobs[]` + `page`
+
 ### POST `/api/video/generate`
 
-向模型驱动提交生成任务。
+兼容旧版本的即时提交接口（保留）。
 
-- **Params**: `modelId` (optional), `text`, `negativePrompt`, `options`, `actorId` (optional), `consistencyStrength` (optional), `syncLip` (optional), `sync_lip` (optional, 兼容字段), `worldLink` (optional), `worldId` (optional)
-- `sync_lip` 会在服务端标准化为 `syncLip` 后继续透传到模型驱动。
+- **Params**: `modelId` (optional), `text`, `negativePrompt`, `options`, `actorId` (optional), `consistencyStrength` (optional), `syncLip` (optional), `sync_lip` (optional), `worldLink` (optional), `worldId` (optional)
+- 服务端会将旧字段归一化为统一驱动参数后再分发。
 - **配额治理**: 若组织请求额度或并发额度超限，返回 `429` 与 `code: QUOTA_EXCEEDED`。
 - **注意**: 未配置 provider 时将返回 `status: not_implemented`，不会再返回“假成功”。
 
