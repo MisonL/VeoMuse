@@ -8,11 +8,13 @@ import {
   isCiEnvironment,
   isLocalSloApiBase,
   parseArgValue,
+  parsePlaywrightResultCounters,
   parseSloMode,
   resolveFailureDomain,
   resolveSloApiBase,
   resolveSloBootstrapEnabled,
-  resolveSloMode
+  resolveSloMode,
+  validateRealE2EExecution
 } from '../scripts/release_gate'
 
 const envOf = (input: Record<string, string | undefined>) => input as NodeJS.ProcessEnv
@@ -262,6 +264,46 @@ describe('发布门禁脚本策略', () => {
     expect(classifyVideoGenerateLoopFailure('request timed out after 30s')).toBe('timeout')
     expect(classifyVideoGenerateLoopFailure('upstream bad gateway 502')).toBe('upstream_5xx')
     expect(classifyVideoGenerateLoopFailure('unknown failure')).toBe('unknown')
+  })
+
+  it('应解析 Playwright 结果汇总计数', () => {
+    const counters = parsePlaywrightResultCounters(`
+Running 2 tests using 1 worker
+  ✓ real case A
+  - real case B
+
+  1 passed
+  1 skipped
+`)
+
+    expect(counters.passed).toBe(1)
+    expect(counters.skipped).toBe(1)
+    expect(counters.failed).toBe(0)
+    expect(counters.timedOut).toBe(0)
+  })
+
+  it('real 回归全跳过时应触发语义失败', () => {
+    const message = validateRealE2EExecution(`
+Running 1 test using 1 worker
+  - real case A
+
+  1 skipped
+`)
+
+    expect(message).toContain('未执行任何 real E2E 用例')
+  })
+
+  it('real 回归存在执行样本时应通过语义校验', () => {
+    const message = validateRealE2EExecution(`
+Running 2 tests using 1 worker
+  ✓ real case A
+  - real case B
+
+  1 passed
+  1 skipped
+`)
+
+    expect(message).toBeNull()
   })
 
   it('finalize 后应生成可执行 recommendations 并去重', () => {

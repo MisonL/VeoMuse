@@ -152,7 +152,7 @@ curl -s http://127.0.0.1:18081/api/admin/metrics -H "x-admin-token: $ADMIN_TOKEN
 # 标准发布门禁（默认包含稳定 Mock 回归）
 bun run release:gate
 
-# 含真实渠道回归（需要真实 AI 凭据）
+# 含真实渠道回归（需要真实 AI 凭据，real 用例若全部 skipped 将直接失败）
 bun run release:gate:real
 ```
 
@@ -246,6 +246,7 @@ CI 质量门禁策略（`.github/workflows/ci-quality-gate.yml`）：
 
 - `E2E_REAL_CHANNELS=true`
 - `GEMINI_API_KEYS` 已配置（用于真实导演生成链路）
+- `release:gate:real` 会校验 real 用例执行结果；若 `passed/failed/flaky/timed out/interrupted` 全为 0（即全部 skipped），门禁判定失败。
 - 真实渠道回归默认仍为手动执行（本地命令或手动 workflow），不纳入 PR/main 自动流水线。
 
 手动 workflow 入口（按需执行）：

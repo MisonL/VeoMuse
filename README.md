@@ -116,6 +116,8 @@ docker compose -f config/docker/docker-compose.yml ps
 ## 质量与发布基线
 
 - 发布门禁入口：`bun run release:gate`
+- 实网门禁入口：`bun run release:gate:real`
+- `release:gate:real` 现在会校验 real 用例是否真正执行；若全部 `skipped` 会直接失败，避免“假绿灯”。
 - 默认检查链路：`security -> build -> unit -> e2e(smoke/mock) -> slo`
 - 质量汇总产物：`artifacts/quality-summary.json`
 - SLO 报告产物：`artifacts/slo-report.json`

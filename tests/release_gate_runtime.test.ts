@@ -6,10 +6,22 @@ import { runReleaseGate } from '../scripts/release_gate'
 const QUALITY_SUMMARY_PATH = path.resolve(process.cwd(), 'artifacts/quality-summary.json')
 const originalFetch = globalThis.fetch
 
-const createSubprocess = (exitCode: number) =>
+const toStream = (text: string) =>
+  new ReadableStream<Uint8Array>({
+    start(controller) {
+      if (text) {
+        controller.enqueue(new TextEncoder().encode(text))
+      }
+      controller.close()
+    }
+  })
+
+const createSubprocess = (exitCode: number, output = '', errorOutput = '') =>
   ({
     exited: Promise.resolve(exitCode),
-    kill: () => {}
+    kill: () => {},
+    stdout: toStream(output),
+    stderr: toStream(errorOutput)
   }) as unknown as Bun.Subprocess
 
 const readSummary = async () => {
@@ -49,6 +61,41 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(summary.videoGenerateLoop?.trackedStepName).toBe('E2E Regression (Mock)')
     expect(summary.videoGenerateLoop?.status).toBe('passed')
     expect(summary.videoGenerateLoop?.attempts).toBe(1)
+  })
+
+  it('with-real-e2e 场景下 real 用例全跳过应失败', async () => {
+    const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
+      if (Array.isArray(cmd)) {
+        const shellCmd = String(cmd[2] || '')
+        if (shellCmd.includes('e2e:regression:real')) {
+          return createSubprocess(
+            0,
+            '\nRunning 1 test using 1 worker\n\n  - real test case\n\n  1 skipped\n'
+          )
+        }
+      }
+      return createSubprocess(0, '\n  1 passed\n')
+    })
+    globalThis.fetch = mock(
+      async () =>
+        new Response(JSON.stringify({ status: 'ok' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+    ) as any
+
+    await expect(
+      runReleaseGate(['--with-real-e2e'], {
+        GITHUB_REF_NAME: 'feature/real-e2e-skipped'
+      } as NodeJS.ProcessEnv)
+    ).rejects.toThrow('未执行任何 real E2E 用例')
+
+    const summary = await readSummary()
+    const realStep = summary.steps.find((step: any) => step.name === 'E2E Regression (Real)')
+    expect(summary.status).toBe('failed')
+    expect(realStep?.status).toBe('failed')
+    expect(String(realStep?.failure?.message || '')).toContain('未执行任何 real E2E 用例')
+    expect(spawnSpy).toHaveBeenCalled()
   })
 
   it('SLO Check 默认应至少重试 1 次', async () => {

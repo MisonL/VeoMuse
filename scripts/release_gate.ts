@@ -7,6 +7,7 @@ interface GateStep {
   env?: Record<string, string>
   retries?: number
   qualityTags?: string[]
+  outputCheck?: GateStepOutputCheck
 }
 
 type SloMode = 'soft' | 'hard'
@@ -18,6 +19,7 @@ type QualitySloBootstrapStatus = SloBootstrapStatus | 'not-needed' | 'failed'
 type VideoGenerateLoopStatus = 'not-run' | 'passed' | 'failed'
 type VideoGenerateLoopFailureType = 'auth' | 'quota' | 'timeout' | 'upstream_5xx' | 'unknown'
 type FailureDomain = 'security' | 'build' | 'test' | 'e2e' | 'slo' | 'unknown'
+type GateStepOutputCheck = 'require_real_e2e_executed'
 
 interface SloBootstrapResult {
   status: SloBootstrapStatus
@@ -541,6 +543,84 @@ export const buildSloGateCommand = (mode: SloMode, apiBase: string) => {
   return `bun run scripts/slo_gate.ts --mode ${mode} --api-base ${quoteShellArg(apiBase)}`
 }
 
+interface PlaywrightResultCounters {
+  passed: number
+  failed: number
+  skipped: number
+  flaky: number
+  timedOut: number
+  interrupted: number
+  didNotRun: number
+}
+
+const createPlaywrightResultCounters = (): PlaywrightResultCounters => ({
+  passed: 0,
+  failed: 0,
+  skipped: 0,
+  flaky: 0,
+  timedOut: 0,
+  interrupted: 0,
+  didNotRun: 0
+})
+
+export const parsePlaywrightResultCounters = (output: string): PlaywrightResultCounters => {
+  const counters = createPlaywrightResultCounters()
+  const pattern =
+    /(\d+)\s+(passed|failed|skipped|flaky|timed out|interrupted|did not run)\b/gi
+  let match: RegExpExecArray | null = null
+  while ((match = pattern.exec(String(output || '')))) {
+    const amount = Number.parseInt(String(match[1] || '0'), 10)
+    if (!Number.isFinite(amount) || amount <= 0) continue
+    const label = String(match[2] || '').toLowerCase()
+    if (label === 'passed') counters.passed += amount
+    if (label === 'failed') counters.failed += amount
+    if (label === 'skipped') counters.skipped += amount
+    if (label === 'flaky') counters.flaky += amount
+    if (label === 'timed out') counters.timedOut += amount
+    if (label === 'interrupted') counters.interrupted += amount
+    if (label === 'did not run') counters.didNotRun += amount
+  }
+  return counters
+}
+
+export const validateRealE2EExecution = (output: string): string | null => {
+  const counters = parsePlaywrightResultCounters(output)
+  const executed =
+    counters.passed +
+    counters.failed +
+    counters.flaky +
+    counters.timedOut +
+    counters.interrupted
+  if (executed > 0) return null
+  return '未执行任何 real E2E 用例（全部 skipped 或未匹配）。请先配置真实渠道凭据后重试，或移除 --with-real-e2e。'
+}
+
+const validateStepOutput = (step: GateStep, output: string): string | null => {
+  if (step.outputCheck === 'require_real_e2e_executed') {
+    return validateRealE2EExecution(output)
+  }
+  return null
+}
+
+const streamToBuffer = async (
+  stream: ReadableStream<Uint8Array> | null | undefined,
+  sink: (text: string) => void
+) => {
+  if (!stream) return ''
+  const reader = stream.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (!value) continue
+    const text = decoder.decode(value)
+    buffer += text
+    sink(text)
+  }
+  return buffer
+}
+
 export const resolveSloCheckRetries = (params: { argv: string[]; env: NodeJS.ProcessEnv }) => {
   const raw = parseArgValue(params.argv, '--slo-retries') || params.env.RELEASE_GATE_SLO_RETRIES
   return parseNonNegativeInt(raw, 1)
@@ -578,7 +658,8 @@ const createSteps = (params: {
     steps.push({
       name: 'E2E Regression (Real)',
       command: 'bun run e2e:regression:real -- --workers=1',
-      env: { E2E_REAL_CHANNELS: 'true' }
+      env: { E2E_REAL_CHANNELS: 'true' },
+      outputCheck: 'require_real_e2e_executed'
     })
   }
 
@@ -597,22 +678,57 @@ const runStep = async (
       `\n[release-gate] >>> ${step.name}${maxAttempts > 1 ? ` (attempt ${attempt}/${maxAttempts})` : ''}`
     )
     const startedAtMs = Date.now()
+    const shouldCaptureOutput = Boolean(step.outputCheck)
     const proc = Bun.spawn(['zsh', '-lc', step.command], {
       cwd: process.cwd(),
       env: {
         ...env,
         ...(step.env || {})
       },
-      stdout: 'inherit',
-      stderr: 'inherit',
+      stdout: shouldCaptureOutput ? 'pipe' : 'inherit',
+      stderr: shouldCaptureOutput ? 'pipe' : 'inherit',
       stdin: 'inherit'
     })
+    const stdoutPromise = shouldCaptureOutput
+      ? streamToBuffer(proc.stdout, (chunk) => process.stdout.write(chunk))
+      : Promise.resolve('')
+    const stderrPromise = shouldCaptureOutput
+      ? streamToBuffer(proc.stderr, (chunk) => process.stderr.write(chunk))
+      : Promise.resolve('')
 
     const code = await proc.exited
+    const [stdoutText, stderrText] = shouldCaptureOutput
+      ? await Promise.all([stdoutPromise, stderrPromise])
+      : ['', '']
     const endedAtMs = Date.now()
     const duration = endedAtMs - startedAtMs
+    const combinedOutput = `${stdoutText}${stderrText}`
 
     if (code === 0) {
+      const validationError = validateStepOutput(step, combinedOutput)
+      if (validationError) {
+        const failureMessage = `${step.name} semantic check failed: ${validationError}`
+        attempts.push({
+          attempt,
+          startedAtMs,
+          endedAtMs,
+          durationMs: duration,
+          status: 'failed',
+          exitCode: 0,
+          failureMessage
+        })
+
+        if (attempt >= maxAttempts) {
+          throw new ReleaseGateStepError(failureMessage, {
+            exitCode: 0,
+            attempts
+          })
+        }
+
+        console.warn(`[release-gate] ${failureMessage}，重试中...`)
+        continue
+      }
+
       attempts.push({
         attempt,
         startedAtMs,
