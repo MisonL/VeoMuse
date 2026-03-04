@@ -6,6 +6,7 @@ interface GateStep {
   command: string
   env?: Record<string, string>
   retries?: number
+  qualityTags?: string[]
 }
 
 type SloMode = 'soft' | 'hard'
@@ -14,6 +15,7 @@ type ReleaseGateStatus = 'passed' | 'failed'
 type ReleaseGateStepStatus = 'passed' | 'failed'
 type ReleaseGateStepAttemptStatus = 'passed' | 'failed'
 type QualitySloBootstrapStatus = SloBootstrapStatus | 'not-needed' | 'failed'
+type VideoGenerateLoopStatus = 'not-run' | 'passed' | 'failed'
 type FailureDomain = 'security' | 'build' | 'test' | 'e2e' | 'slo' | 'unknown'
 
 interface SloBootstrapResult {
@@ -57,6 +59,15 @@ interface QualitySummaryStep {
   }
 }
 
+interface QualitySummaryVideoGenerateLoop {
+  trackedStepName: string
+  status: VideoGenerateLoopStatus
+  attempts: number
+  detail: string
+  startedAt?: string
+  endedAt?: string
+}
+
 interface QualitySummary {
   schemaVersion: string
   generatedAt: string
@@ -74,6 +85,7 @@ interface QualitySummary {
     endedAt?: string
     stopExitCode?: number | null
   }
+  videoGenerateLoop: QualitySummaryVideoGenerateLoop
   steps: QualitySummaryStep[]
   recommendations: string[]
   failure?: {
@@ -98,6 +110,8 @@ const DEFAULT_SLO_BOOTSTRAP_TIMEOUT_MS = 15_000
 const DEFAULT_SLO_HEALTH_TIMEOUT_MS = 1_200
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '0.0.0.0', '::1'])
 const QUALITY_SUMMARY_RELATIVE_PATH = path.join('artifacts', 'quality-summary.json')
+const QUALITY_TAG_VIDEO_GENERATE_LOOP = 'video_generate_loop'
+const VIDEO_GENERATE_LOOP_DEFAULT_STEP_NAME = 'E2E Regression (Mock)'
 const FAILURE_DOMAIN_RULES: Array<{
   domain: Exclude<FailureDomain, 'unknown'>
   patterns: RegExp[]
@@ -170,6 +184,57 @@ const uniquePush = (items: string[], item: string) => {
   items.push(item)
 }
 
+const hasQualityTag = (step: Pick<GateStep, 'qualityTags'>, tag: string) => {
+  return Array.isArray(step.qualityTags) && step.qualityTags.includes(tag)
+}
+
+const syncVideoGenerateLoopStatus = (
+  summary: QualitySummary,
+  params: {
+    step: Pick<GateStep, 'name' | 'qualityTags'>
+    status: ReleaseGateStepStatus
+    attempts: StepAttemptResult[]
+    startedAtMs: number
+    endedAtMs: number
+    failureMessage?: string
+  }
+): QualitySummary => {
+  if (!hasQualityTag(params.step, QUALITY_TAG_VIDEO_GENERATE_LOOP)) return summary
+
+  if (params.status === 'passed') {
+    return {
+      ...summary,
+      videoGenerateLoop: {
+        trackedStepName: params.step.name,
+        status: 'passed',
+        attempts: params.attempts.length,
+        detail: `视频生成闭环步骤「${params.step.name}」已通过`,
+        startedAt: toIsoString(params.startedAtMs),
+        endedAt: toIsoString(params.endedAtMs)
+      }
+    }
+  }
+
+  const lastAttempt =
+    params.attempts.length > 0 ? params.attempts[params.attempts.length - 1] : null
+  const detail =
+    params.failureMessage ||
+    lastAttempt?.failureMessage ||
+    `视频生成闭环步骤「${params.step.name}」失败`
+
+  return {
+    ...summary,
+    videoGenerateLoop: {
+      trackedStepName: params.step.name,
+      status: 'failed',
+      attempts: params.attempts.length,
+      detail,
+      startedAt: toIsoString(params.startedAtMs),
+      endedAt: toIsoString(params.endedAtMs)
+    }
+  }
+}
+
 const buildRecommendations = (summary: QualitySummary, status: ReleaseGateStatus) => {
   if (status !== 'failed') return []
 
@@ -196,6 +261,17 @@ const buildRecommendations = (summary: QualitySummary, status: ReleaseGateStatus
 
   for (const domain of failedDomains) {
     uniquePush(recommendations, DOMAIN_RECOMMENDATIONS[domain])
+  }
+  if (summary.videoGenerateLoop.status === 'failed') {
+    uniquePush(
+      recommendations,
+      '视频生成闭环失败：先执行 `bun run e2e:regression:mock -- --workers=1` 定位“注册/组织/工作区/生成/导出”链路。'
+    )
+  } else if (summary.videoGenerateLoop.status === 'not-run') {
+    uniquePush(
+      recommendations,
+      `视频生成闭环步骤「${summary.videoGenerateLoop.trackedStepName}」未执行，请先修复前置失败步骤后再重跑门禁。`
+    )
   }
   uniquePush(recommendations, '修复完成后执行 `bun run release:gate` 做一次全链路复验。')
 
@@ -314,6 +390,12 @@ export const createQualitySummary = (params: {
     status: 'not-needed',
     detail: 'not-run'
   },
+  videoGenerateLoop: {
+    trackedStepName: VIDEO_GENERATE_LOOP_DEFAULT_STEP_NAME,
+    status: 'not-run',
+    attempts: 0,
+    detail: 'not-run'
+  },
   steps: [],
   recommendations: []
 })
@@ -425,7 +507,8 @@ const createSteps = (params: {
     {
       name: 'E2E Regression (Mock)',
       command: 'bun run e2e:regression:mock -- --workers=1',
-      retries: 1
+      retries: 1,
+      qualityTags: [QUALITY_TAG_VIDEO_GENERATE_LOOP]
     },
     {
       name: `SLO Check (${params.sloMode})`,
@@ -745,7 +828,7 @@ export const runReleaseGate = async (argv = process.argv.slice(2), env = process
 
         const stepResult = await runStep(step, env)
         const stepEndedAtMs = Date.now()
-        summary = {
+        const nextSummary: QualitySummary = {
           ...summary,
           steps: [
             ...summary.steps,
@@ -758,10 +841,17 @@ export const runReleaseGate = async (argv = process.argv.slice(2), env = process
             })
           ]
         }
+        summary = syncVideoGenerateLoopStatus(nextSummary, {
+          step,
+          status: 'passed',
+          attempts: stepResult.attempts,
+          startedAtMs: stepStartedAtMs,
+          endedAtMs: stepEndedAtMs
+        })
       } catch (error: unknown) {
         const stepEndedAtMs = Date.now()
         const failure = extractFailureInfo(error)
-        summary = {
+        const nextSummary: QualitySummary = {
           ...summary,
           steps: [
             ...summary.steps,
@@ -776,6 +866,14 @@ export const runReleaseGate = async (argv = process.argv.slice(2), env = process
             })
           ]
         }
+        summary = syncVideoGenerateLoopStatus(nextSummary, {
+          step,
+          status: 'failed',
+          attempts: failure.attempts,
+          startedAtMs: stepStartedAtMs,
+          endedAtMs: stepEndedAtMs,
+          failureMessage: failure.message
+        })
         throw error
       }
     }

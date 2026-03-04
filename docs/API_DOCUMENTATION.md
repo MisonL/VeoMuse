@@ -308,6 +308,10 @@
 
 - 组织外访问返回 `403`，任务不存在返回 `404`。
 - 若任务绑定 `workspaceId`，调用方还需要该工作区成员身份。
+- 任务状态：
+  - 活动态：`queued` / `submitted` / `processing` / `cancel_requested`
+  - 终态：`succeeded` / `failed` / `canceled`
+- 终态字段：`outputUrl`、`errorCode`、`finishedAt`、`durationMs`、`retryCount`、`lastSyncedAt`。
 
 ### GET `/api/video/generations`
 
@@ -316,6 +320,36 @@
 - **Query**: `workspaceId`(optional), `status`(optional), `modelId`(optional), `limit`(optional), `cursor`(optional)
 - **排序与游标**: 使用 `(created_at DESC, id DESC)` 复合排序，游标格式为 `createdAt|id`，并兼容旧时间戳游标。
 - **Response**: `jobs[]` + `page`
+
+### POST `/api/video/generations/:jobId/sync`
+
+触发一次 provider operation 状态同步（按模型驱动能力降级）。
+
+- **权限**：组织成员可访问；若任务绑定 `workspaceId`，需工作区成员身份。
+- **Response**:
+  - `job`（同步后的任务）
+  - `queryResult`（驱动查询结果，含 `state` / `status` / `message` / `outputUrl` 等）
+- **降级行为**：驱动未实现 operation 查询时返回 `not_implemented`，并保留任务现状。
+
+### POST `/api/video/generations/:jobId/retry`
+
+重试已结束任务（复用历史请求体并重新提交到模型驱动）。
+
+- **可重试状态**：`failed` / `succeeded` / `canceled`
+- **不可重试状态**：`queued` / `submitted` / `processing` / `cancel_requested`
+- **Response**: `job`（已更新） + `providerResult`
+- **配额治理**：请求额度/并发额度超限时返回 `429`。
+
+### POST `/api/video/generations/:jobId/cancel`
+
+请求取消任务（按模型驱动能力降级）。
+
+- **可取消状态**：`queued` / `submitted` / `processing` / `cancel_requested`
+- **不可取消状态**：`succeeded` / `failed` / `canceled`
+- **Response**: `job`（已更新） + `cancelResult`
+- **状态流转**：
+  - 支持取消的驱动：`cancel_requested -> canceled`
+  - 不支持取消的驱动：返回 `not_supported` 并保留任务活动状态（或标记 `cancel_requested`）。
 
 ### POST `/api/video/generate`
 

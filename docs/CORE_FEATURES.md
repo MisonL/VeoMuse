@@ -95,6 +95,8 @@
 - SLO 摘要/分解/失败诊断：`/api/admin/slo/**`。
 - 数据库健康与修复：`/api/admin/db/**`。
 - 发布门禁脚本：`scripts/release_gate.ts`、`scripts/slo_gate.ts`、`scripts/api_contract_guard.ts`。
+- `release:gate` 质量汇总（`artifacts/quality-summary.json`）新增 `videoGenerateLoop` 字段，用于追踪视频生成闭环（注册/组织/工作区/生成/导出）在门禁中的执行状态。
+- `videoGenerateLoop` 状态与 `E2E Regression (Mock)` 步骤同步：通过则标记 `passed`，失败则标记 `failed` 并记录重试次数；当重试耗尽后会终止后续步骤（例如 SLO Check），在质量报告中体现“失败即取消后续”。
 
 ## 7. 质量基线
 

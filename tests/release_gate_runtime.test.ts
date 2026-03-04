@@ -46,6 +46,9 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(Array.isArray(summary.steps)).toBe(true)
     expect(summary.steps.length).toBe(6)
     expect(summary.sloBootstrap?.status).toBe('reused')
+    expect(summary.videoGenerateLoop?.trackedStepName).toBe('E2E Regression (Mock)')
+    expect(summary.videoGenerateLoop?.status).toBe('passed')
+    expect(summary.videoGenerateLoop?.attempts).toBe(1)
   })
 
   it('SLO Check 默认应至少重试 1 次', async () => {
@@ -134,6 +137,7 @@ describe('发布门禁运行时路径（mock）', () => {
     const summary = await readSummary()
     expect(summary.status).toBe('failed')
     expect(summary.failure?.message).toContain('Build failed with exit code 1')
+    expect(summary.videoGenerateLoop?.status).toBe('not-run')
     expect(Array.isArray(summary.steps)).toBe(true)
     expect(
       summary.steps.some((step: any) => step.name === 'Build' && step.status === 'failed')
@@ -157,8 +161,48 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(summary.status).toBe('passed')
     expect(summary.sloBootstrap?.status).toBe('skipped')
     expect(String(summary.sloBootstrap?.detail || '')).toContain('bootstrap-disabled')
+    expect(summary.videoGenerateLoop?.status).toBe('passed')
     expect(Array.isArray(summary.steps)).toBe(true)
     expect(summary.steps.length).toBe(6)
+    expect(spawnSpy).toHaveBeenCalledTimes(6)
+  })
+
+  it('视频生成闭环步骤重试耗尽时应失败并阻断后续步骤', async () => {
+    const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
+      if (Array.isArray(cmd)) {
+        const shellCmd = String(cmd[2] || '')
+        if (shellCmd.includes('e2e:regression:mock')) {
+          return createSubprocess(1)
+        }
+      }
+      return createSubprocess(0)
+    })
+    globalThis.fetch = mock(
+      async () =>
+        new Response(JSON.stringify({ status: 'ok' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+    ) as any
+
+    await expect(
+      runReleaseGate([], { GITHUB_REF_NAME: 'feature/video-loop-fail' } as NodeJS.ProcessEnv)
+    ).rejects.toThrow('E2E Regression (Mock) failed with exit code 1')
+
+    const summary = await readSummary()
+    expect(summary.status).toBe('failed')
+    expect(summary.videoGenerateLoop?.trackedStepName).toBe('E2E Regression (Mock)')
+    expect(summary.videoGenerateLoop?.status).toBe('failed')
+    expect(summary.videoGenerateLoop?.attempts).toBe(2)
+    expect(String(summary.videoGenerateLoop?.detail || '')).toContain(
+      'E2E Regression (Mock) failed with exit code 1'
+    )
+    expect(
+      summary.steps.some(
+        (step: any) => step.name === 'E2E Regression (Mock)' && step.status === 'failed'
+      )
+    ).toBe(true)
+    expect(summary.steps.some((step: any) => String(step.name).includes('SLO Check'))).toBe(false)
     expect(spawnSpy).toHaveBeenCalledTimes(6)
   })
 
@@ -185,6 +229,7 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(String(summary.sloBootstrap?.detail || '')).toContain(
       'SLO bootstrap backend exited early'
     )
+    expect(summary.videoGenerateLoop?.status).toBe('passed')
     expect(
       summary.steps.some((step: any) => step.name.includes('SLO Check') && step.status === 'failed')
     ).toBe(true)
