@@ -1129,6 +1129,14 @@ const TelemetryDashboard: React.FC = () => {
           }}
         >
           <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            tabIndex={-1}
+            aria-hidden="true"
+            hidden
+          />
+          <input
             type="password"
             id="db-admin-token"
             name="dbAdminToken"
