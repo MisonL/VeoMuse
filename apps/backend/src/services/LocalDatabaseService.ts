@@ -924,6 +924,14 @@ const migrate = (db: Database) => {
       operation_name TEXT,
       result_json TEXT NOT NULL DEFAULT '{}',
       error_message TEXT,
+      error_code TEXT,
+      output_url TEXT,
+      started_at TEXT,
+      finished_at TEXT,
+      duration_ms REAL,
+      retry_count INTEGER NOT NULL DEFAULT 0,
+      cancel_requested_at TEXT,
+      last_synced_at TEXT,
       created_by TEXT NOT NULL DEFAULT 'system',
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -948,6 +956,14 @@ const migrate = (db: Database) => {
   ensureColumn(db, 'video_generation_jobs', 'operation_name', 'TEXT')
   ensureColumn(db, 'video_generation_jobs', 'result_json', `TEXT NOT NULL DEFAULT '{}'`)
   ensureColumn(db, 'video_generation_jobs', 'error_message', 'TEXT')
+  ensureColumn(db, 'video_generation_jobs', 'error_code', 'TEXT')
+  ensureColumn(db, 'video_generation_jobs', 'output_url', 'TEXT')
+  ensureColumn(db, 'video_generation_jobs', 'started_at', 'TEXT')
+  ensureColumn(db, 'video_generation_jobs', 'finished_at', 'TEXT')
+  ensureColumn(db, 'video_generation_jobs', 'duration_ms', 'REAL')
+  ensureColumn(db, 'video_generation_jobs', 'retry_count', 'INTEGER NOT NULL DEFAULT 0')
+  ensureColumn(db, 'video_generation_jobs', 'cancel_requested_at', 'TEXT')
+  ensureColumn(db, 'video_generation_jobs', 'last_synced_at', 'TEXT')
   ensureColumn(db, 'video_generation_jobs', 'created_by', `TEXT NOT NULL DEFAULT 'system'`)
   ensureColumn(db, 'video_generation_jobs', 'updated_at', `TEXT NOT NULL DEFAULT ''`)
 
@@ -1311,6 +1327,11 @@ const migrate = (db: Database) => {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_video_generation_jobs_workspace_created
     ON video_generation_jobs(workspace_id, created_at DESC, id DESC);
+  `)
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_video_generation_jobs_operation_name
+    ON video_generation_jobs(operation_name);
   `)
 
   db.exec(`

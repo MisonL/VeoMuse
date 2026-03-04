@@ -63,8 +63,58 @@ export interface GenerateResult {
   error?: string
 }
 
+export type VideoGenerationOperationState =
+  | 'queued'
+  | 'processing'
+  | 'succeeded'
+  | 'failed'
+  | 'cancel_requested'
+  | 'canceled'
+  | 'unknown'
+
+export interface QueryOperationResult {
+  success: boolean
+  status: GenerateResult['status']
+  operationName: string
+  state: VideoGenerationOperationState
+  message: string
+  provider?: string
+  outputUrl?: string
+  error?: string
+  errorCode?: string
+  raw?: Record<string, unknown>
+}
+
+export type CancelOperationState = 'cancel_requested' | 'canceled' | 'failed' | 'not_supported'
+
+export interface CancelOperationResult {
+  success: boolean
+  status: GenerateResult['status']
+  operationName: string
+  state: CancelOperationState
+  message: string
+  provider?: string
+  error?: string
+  errorCode?: string
+}
+
+export interface VideoModelDriverCapabilities {
+  supportsOperationQuery: boolean
+  supportsOperationCancel: boolean
+  supportedGenerationModes?: VideoGenerationMode[]
+}
+
 export interface VideoModelDriver {
   id: string
   name: string
   generate(params: GenerateParams, context?: GenerateRuntimeContext): Promise<GenerateResult>
+  queryOperation?(
+    operationName: string,
+    context?: GenerateRuntimeContext
+  ): Promise<QueryOperationResult>
+  cancelOperation?(
+    operationName: string,
+    context?: GenerateRuntimeContext
+  ): Promise<CancelOperationResult>
+  getCapabilities?(): VideoModelDriverCapabilities
 }

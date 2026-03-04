@@ -43,6 +43,7 @@ import {
   VideoGenerationService,
   VideoGenerationValidationError
 } from './services/VideoGenerationService'
+import type { VideoGenerationJobStatus } from './services/VideoGenerationService'
 import { LocalStorageProvider } from './services/storage/LocalStorageProvider'
 import { AuthService } from './services/AuthService'
 import { OrganizationService } from './services/OrganizationService'
@@ -355,6 +356,31 @@ const authorizeProjectRole = (
     ...authorized,
     workspaceId: project.workspaceId,
     project
+  }
+}
+
+const resolveVideoGenerationJobContext = (
+  jobId: string,
+  request: Request,
+  set: { status?: number | string }
+) => {
+  const organizationContext = resolveOrganizationContext(request, set, 'member')
+  if (!organizationContext) return null
+  const job = VideoGenerationService.getById(jobId, organizationContext.organizationId)
+  if (!job) {
+    set.status = 404
+    return null
+  }
+  if (job.workspaceId) {
+    const member = WorkspaceService.getMemberByUserId(job.workspaceId, organizationContext.user.id)
+    if (!member) {
+      set.status = 403
+      return null
+    }
+  }
+  return {
+    organizationContext,
+    job
   }
 }
 
@@ -1774,32 +1800,189 @@ export const createApp = () => {
     .get(
       '/api/video/generations/:jobId',
       ({ params, request, set }) => {
-        const organizationContext = resolveOrganizationContext(request, set, 'member')
-        if (!organizationContext) {
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        const job = VideoGenerationService.getById(params.jobId, organizationContext.organizationId)
-        if (!job) {
-          set.status = 404
-          return { success: false, status: 'error', error: 'Generation job not found' }
-        }
-        if (job.workspaceId) {
-          const member = WorkspaceService.getMemberByUserId(
-            job.workspaceId,
-            organizationContext.user.id
-          )
-          if (!member) {
-            set.status = 403
-            return {
-              success: false,
-              status: 'error',
-              error: 'Forbidden: workspace membership required'
-            }
+        const resolved = resolveVideoGenerationJobContext(params.jobId, request, set)
+        if (!resolved) {
+          if (set.status === 404) {
+            return { success: false, status: 'error', error: 'Generation job not found' }
           }
+          if (typeof set.status !== 'number' || set.status < 400) set.status = 403
+          return { success: false, status: 'error', error: 'Forbidden' }
         }
         return {
           success: true,
-          job
+          job: resolved.job
+        }
+      },
+      {
+        params: t.Object({
+          jobId: t.String()
+        })
+      }
+    )
+    .post(
+      '/api/video/generations/:jobId/retry',
+      async ({ params, request, set }) => {
+        const resolved = resolveVideoGenerationJobContext(params.jobId, request, set)
+        if (!resolved) {
+          if (set.status === 404) {
+            return { success: false, status: 'error', error: 'Generation job not found' }
+          }
+          if (typeof set.status !== 'number' || set.status < 400) set.status = 403
+          return { success: false, status: 'error', error: 'Forbidden' }
+        }
+        const runtimeContext = resolveRuntimeContext(
+          request,
+          set,
+          resolved.job.workspaceId || undefined
+        )
+        if (!runtimeContext) {
+          return { success: false, status: 'error', error: 'Forbidden' }
+        }
+        try {
+          let requestDenied: ReturnType<
+            typeof OrganizationGovernanceService.consumeRequestQuota
+          > | null = null
+          const retryResult = await OrganizationGovernanceService.withConcurrencyLimit(
+            runtimeContext.organizationId,
+            async () => {
+              const quotaConsumed = OrganizationGovernanceService.consumeRequestQuota(
+                runtimeContext.organizationId,
+                1
+              )
+              if (!quotaConsumed.allowed) {
+                requestDenied = quotaConsumed
+                return null
+              }
+              return await VideoGenerationService.retry(
+                resolved.job.id,
+                runtimeContext.organizationId,
+                runtimeContext
+              )
+            }
+          )
+          if (requestDenied) {
+            set.status = 429
+            return buildQuotaExceededResponse('request', requestDenied)
+          }
+          return {
+            success: true,
+            job: retryResult?.job || null,
+            providerResult: retryResult?.providerResult || null
+          }
+        } catch (error: any) {
+          const message = String(error?.message || '')
+          if (message.includes('并发配额')) {
+            const check = OrganizationGovernanceService.checkConcurrencyAllowed(
+              runtimeContext.organizationId
+            )
+            set.status = 429
+            return buildQuotaExceededResponse('concurrency', check)
+          }
+          if (error instanceof VideoGenerationValidationError) {
+            set.status = 400
+            return {
+              success: false,
+              status: 'error',
+              error: message || 'Video generation retry failed'
+            }
+          }
+          throw error
+        }
+      },
+      {
+        params: t.Object({
+          jobId: t.String()
+        })
+      }
+    )
+    .post(
+      '/api/video/generations/:jobId/cancel',
+      async ({ params, request, set }) => {
+        const resolved = resolveVideoGenerationJobContext(params.jobId, request, set)
+        if (!resolved) {
+          if (set.status === 404) {
+            return { success: false, status: 'error', error: 'Generation job not found' }
+          }
+          if (typeof set.status !== 'number' || set.status < 400) set.status = 403
+          return { success: false, status: 'error', error: 'Forbidden' }
+        }
+        const runtimeContext = resolveRuntimeContext(
+          request,
+          set,
+          resolved.job.workspaceId || undefined
+        )
+        if (!runtimeContext) {
+          return { success: false, status: 'error', error: 'Forbidden' }
+        }
+        try {
+          const cancelResult = await VideoGenerationService.cancel(
+            resolved.job.id,
+            runtimeContext.organizationId,
+            runtimeContext
+          )
+          return {
+            success: true,
+            job: cancelResult.job,
+            cancelResult: cancelResult.cancelResult
+          }
+        } catch (error: any) {
+          if (error instanceof VideoGenerationValidationError) {
+            set.status = 400
+            return {
+              success: false,
+              status: 'error',
+              error: String(error?.message || 'Video generation cancel failed')
+            }
+          }
+          throw error
+        }
+      },
+      {
+        params: t.Object({
+          jobId: t.String()
+        })
+      }
+    )
+    .post(
+      '/api/video/generations/:jobId/sync',
+      async ({ params, request, set }) => {
+        const resolved = resolveVideoGenerationJobContext(params.jobId, request, set)
+        if (!resolved) {
+          if (set.status === 404) {
+            return { success: false, status: 'error', error: 'Generation job not found' }
+          }
+          if (typeof set.status !== 'number' || set.status < 400) set.status = 403
+          return { success: false, status: 'error', error: 'Forbidden' }
+        }
+        const runtimeContext = resolveRuntimeContext(
+          request,
+          set,
+          resolved.job.workspaceId || undefined
+        )
+        if (!runtimeContext) {
+          return { success: false, status: 'error', error: 'Forbidden' }
+        }
+        try {
+          const syncResult = await VideoGenerationService.syncByJobId(
+            resolved.job.id,
+            runtimeContext.organizationId,
+            runtimeContext
+          )
+          return {
+            success: true,
+            job: syncResult.job,
+            queryResult: syncResult.queryResult
+          }
+        } catch (error: any) {
+          if (error instanceof VideoGenerationValidationError) {
+            set.status = 400
+            return {
+              success: false,
+              status: 'error',
+              error: String(error?.message || 'Video generation sync failed')
+            }
+          }
+          throw error
         }
       },
       {
@@ -1843,7 +2026,7 @@ export const createApp = () => {
           organizationId: organizationContext.organizationId,
           workspaceId: workspaceId || undefined,
           visibleWorkspaceIds: workspaceId ? [workspaceId] : visibleWorkspaceIds,
-          status: query.status as 'queued' | 'submitted' | 'failed' | undefined,
+          status: query.status as VideoGenerationJobStatus | undefined,
           modelId: query.modelId?.trim() || undefined,
           cursor: query.cursor?.trim() || undefined,
           limit: parseBoundedLimit(query.limit, 20, 100)

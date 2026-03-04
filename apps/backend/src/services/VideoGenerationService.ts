@@ -1,8 +1,11 @@
 import type { CursorPageMeta } from '@veomuse/shared'
 import type {
+  CancelOperationResult,
   GenerateParams,
   GenerateResult,
   GenerateRuntimeContext,
+  QueryOperationResult,
+  VideoGenerationOperationState,
   VideoGenerationInputSource,
   VideoGenerationInputs,
   VideoGenerationMode,
@@ -220,36 +223,107 @@ const normalizePrompt = (promptValue: unknown, textValue: unknown) => {
   return String(textValue || '').trim()
 }
 
-const toJobStatus = (result: GenerateResult): 'submitted' | 'failed' | 'queued' =>
+export type VideoGenerationJobStatus =
+  | 'queued'
+  | 'submitted'
+  | 'processing'
+  | 'succeeded'
+  | 'failed'
+  | 'cancel_requested'
+  | 'canceled'
+
+const TERMINAL_JOB_STATUSES = new Set<VideoGenerationJobStatus>(['succeeded', 'failed', 'canceled'])
+const ACTIVE_JOB_STATUSES = new Set<VideoGenerationJobStatus>([
+  'queued',
+  'submitted',
+  'processing',
+  'cancel_requested'
+])
+
+const normalizeProviderStatus = (value: unknown): GenerateResult['status'] => {
+  if (value === 'ok' || value === 'degraded' || value === 'not_implemented' || value === 'error') {
+    return value
+  }
+  return 'error'
+}
+
+const normalizeJobStatus = (value: unknown): VideoGenerationJobStatus => {
+  if (value === 'queued') return 'queued'
+  if (value === 'submitted') return 'submitted'
+  if (value === 'processing') return 'processing'
+  if (value === 'succeeded') return 'succeeded'
+  if (value === 'failed') return 'failed'
+  if (value === 'cancel_requested') return 'cancel_requested'
+  if (value === 'canceled') return 'canceled'
+  return 'queued'
+}
+
+const toSubmitJobStatus = (result: GenerateResult): VideoGenerationJobStatus =>
   result.success && (result.status === 'ok' || result.status === 'degraded')
     ? 'submitted'
     : 'failed'
 
-const toVideoGenerationJob = (row: any): VideoGenerationJob => ({
-  id: String(row.id || ''),
-  organizationId: String(row.organization_id || 'org_default'),
-  workspaceId: row.workspace_id ? String(row.workspace_id) : null,
-  modelId: String(row.model_id || DEFAULT_MODEL_ID),
-  generationMode: normalizeGenerationMode(row.generation_mode),
-  request: parseRecord(row.request_json),
-  status: row.status === 'failed' ? 'failed' : row.status === 'submitted' ? 'submitted' : 'queued',
-  providerStatus:
-    row.provider_status === 'ok'
-      ? 'ok'
-      : row.provider_status === 'degraded'
-        ? 'degraded'
-        : row.provider_status === 'not_implemented'
-          ? 'not_implemented'
-          : row.provider_status === 'error'
-            ? 'error'
-            : 'error',
-  operationName: row.operation_name ? String(row.operation_name) : null,
-  result: parseRecord(row.result_json),
-  errorMessage: row.error_message ? String(row.error_message) : null,
-  createdBy: String(row.created_by || 'system'),
-  createdAt: String(row.created_at || now()),
-  updatedAt: String(row.updated_at || row.created_at || now())
-})
+const mapOperationStateToJobStatus = (
+  state: VideoGenerationOperationState,
+  currentStatus: VideoGenerationJobStatus
+): VideoGenerationJobStatus => {
+  if (state === 'queued') return 'queued'
+  if (state === 'processing') return 'processing'
+  if (state === 'succeeded') return 'succeeded'
+  if (state === 'failed') return 'failed'
+  if (state === 'cancel_requested') return 'cancel_requested'
+  if (state === 'canceled') return 'canceled'
+  return currentStatus
+}
+
+const calculateDurationMs = (
+  startedAt: string | null | undefined,
+  finishedAt: string | null | undefined
+): number | null => {
+  const startedValue = Date.parse(String(startedAt || ''))
+  const finishedValue = Date.parse(String(finishedAt || ''))
+  if (!Number.isFinite(startedValue) || !Number.isFinite(finishedValue)) return null
+  return Math.max(0, Math.round(finishedValue - startedValue))
+}
+
+const toVideoGenerationJob = (row: any): VideoGenerationJob => {
+  const status = normalizeJobStatus(row.status)
+  const startedAt = toNullableString(row.started_at) || null
+  const finishedAt = toNullableString(row.finished_at) || null
+  const durationFromRow =
+    typeof row.duration_ms === 'number' && Number.isFinite(row.duration_ms)
+      ? Math.max(0, Math.round(row.duration_ms))
+      : null
+  const durationMs = durationFromRow ?? calculateDurationMs(startedAt, finishedAt)
+
+  return {
+    id: String(row.id || ''),
+    organizationId: String(row.organization_id || 'org_default'),
+    workspaceId: row.workspace_id ? String(row.workspace_id) : null,
+    modelId: String(row.model_id || DEFAULT_MODEL_ID),
+    generationMode: normalizeGenerationMode(row.generation_mode),
+    request: parseRecord(row.request_json),
+    status,
+    providerStatus: normalizeProviderStatus(row.provider_status),
+    operationName: row.operation_name ? String(row.operation_name) : null,
+    result: parseRecord(row.result_json),
+    errorMessage: row.error_message ? String(row.error_message) : null,
+    errorCode: row.error_code ? String(row.error_code) : null,
+    outputUrl: row.output_url ? String(row.output_url) : null,
+    startedAt,
+    finishedAt,
+    durationMs,
+    retryCount:
+      typeof row.retry_count === 'number' && Number.isFinite(row.retry_count)
+        ? Math.max(0, Math.floor(row.retry_count))
+        : 0,
+    cancelRequestedAt: row.cancel_requested_at ? String(row.cancel_requested_at) : null,
+    lastSyncedAt: row.last_synced_at ? String(row.last_synced_at) : null,
+    createdBy: String(row.created_by || 'system'),
+    createdAt: String(row.created_at || now()),
+    updatedAt: String(row.updated_at || row.created_at || now())
+  }
+}
 
 export interface VideoGenerationSourceInput {
   sourceType?: VideoInputSourceType
@@ -291,17 +365,40 @@ export interface VideoGenerationJob {
   modelId: string
   generationMode: VideoGenerationMode
   request: Record<string, unknown>
-  status: 'queued' | 'submitted' | 'failed'
+  status: VideoGenerationJobStatus
   providerStatus: GenerateResult['status']
   operationName: string | null
   result: Record<string, unknown>
   errorMessage: string | null
+  errorCode: string | null
+  outputUrl: string | null
+  startedAt: string | null
+  finishedAt: string | null
+  durationMs: number | null
+  retryCount: number
+  cancelRequestedAt: string | null
+  lastSyncedAt: string | null
   createdBy: string
   createdAt: string
   updatedAt: string
 }
 
 export interface VideoGenerationSubmitResult {
+  job: VideoGenerationJob
+  providerResult: GenerateResult
+}
+
+export interface VideoGenerationSyncResult {
+  job: VideoGenerationJob
+  queryResult: QueryOperationResult
+}
+
+export interface VideoGenerationCancelResult {
+  job: VideoGenerationJob
+  cancelResult: CancelOperationResult
+}
+
+export interface VideoGenerationRetryResult {
   job: VideoGenerationJob
   providerResult: GenerateResult
 }
@@ -329,6 +426,28 @@ interface NormalizedGenerationRequest {
   options: DriverOptions
   inputs?: VideoGenerationInputs
 }
+
+interface StoredGenerationRequestPayload {
+  modelId?: string
+  generationMode?: VideoGenerationMode
+  prompt?: string
+  text?: string
+  negativePrompt?: string | null
+  inputs?: VideoGenerationInputs | null
+  options?: DriverOptions
+}
+
+const buildProviderResultPayload = (
+  providerResult: GenerateResult,
+  fallbackProvider: string
+): Record<string, unknown> => ({
+  success: providerResult.success,
+  status: providerResult.status,
+  provider: providerResult.provider || fallbackProvider,
+  message: providerResult.message,
+  operationName: providerResult.operationName,
+  error: providerResult.error || null
+})
 
 export class VideoGenerationService {
   static normalizeRequest(input: VideoGenerationCreateInput): NormalizedGenerationRequest {
@@ -413,7 +532,10 @@ export class VideoGenerationService {
 
     const jobId = `vgj_${crypto.randomUUID()}`
     const timestamp = now()
-    const status = toJobStatus(providerResult)
+    const status = toSubmitJobStatus(providerResult)
+    const startedAt = timestamp
+    const finishedAt = TERMINAL_JOB_STATUSES.has(status) ? timestamp : null
+    const durationMs = finishedAt ? calculateDurationMs(startedAt, finishedAt) : null
     const requestPayload = {
       modelId: normalized.modelId,
       generationMode: normalized.generationMode,
@@ -422,14 +544,7 @@ export class VideoGenerationService {
       inputs: normalized.inputs || null,
       options: normalized.options || {}
     }
-    const resultPayload = {
-      success: providerResult.success,
-      status: providerResult.status,
-      provider: providerResult.provider || normalized.modelId,
-      message: providerResult.message,
-      operationName: providerResult.operationName,
-      error: providerResult.error || null
-    }
+    const resultPayload = buildProviderResultPayload(providerResult, normalized.modelId)
 
     getLocalDb()
       .prepare(
@@ -437,8 +552,10 @@ export class VideoGenerationService {
       INSERT INTO video_generation_jobs (
         id, organization_id, workspace_id, model_id, generation_mode, request_json,
         status, provider_status, operation_name, result_json, error_message,
+        error_code, output_url, started_at, finished_at, duration_ms,
+        retry_count, cancel_requested_at, last_synced_at,
         created_by, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
       )
       .run(
@@ -455,6 +572,14 @@ export class VideoGenerationService {
         toNullableString(
           providerResult.error || (providerResult.success ? null : providerResult.message)
         ),
+        null,
+        null,
+        startedAt,
+        finishedAt,
+        durationMs,
+        0,
+        null,
+        null,
         toNullableString(input.createdBy) || 'system',
         timestamp,
         timestamp
@@ -468,6 +593,289 @@ export class VideoGenerationService {
     return {
       job: created,
       providerResult
+    }
+  }
+
+  static async syncByJobId(
+    jobId: string,
+    organizationId: string,
+    runtimeContext?: GenerateRuntimeContext
+  ): Promise<VideoGenerationSyncResult> {
+    const existingJob = this.getById(jobId, organizationId)
+    if (!existingJob) {
+      throw new VideoGenerationValidationError('Generation job not found')
+    }
+    const operationName = existingJob.operationName
+    if (!operationName) {
+      throw new VideoGenerationValidationError('任务缺少 operationName，无法同步状态')
+    }
+    const job = existingJob
+
+    const queryResult = await VideoOrchestrator.queryOperation(
+      job.modelId,
+      operationName,
+      runtimeContext
+    )
+    const timestamp = now()
+    const nextStatus = mapOperationStateToJobStatus(queryResult.state, job.status)
+    const nextOutputUrl = toNullableString(queryResult.outputUrl) || job.outputUrl
+    const shouldClearError = nextStatus === 'succeeded' || nextStatus === 'canceled'
+    const nextErrorMessage = shouldClearError
+      ? null
+      : toNullableString(queryResult.error || (queryResult.success ? null : queryResult.message)) ||
+        job.errorMessage
+    const nextErrorCode = shouldClearError
+      ? null
+      : toNullableString(queryResult.errorCode) || job.errorCode
+    const finishedAt = TERMINAL_JOB_STATUSES.has(nextStatus) ? job.finishedAt || timestamp : null
+    const durationMs = finishedAt
+      ? calculateDurationMs(job.startedAt || job.createdAt, finishedAt)
+      : null
+    const cancelRequestedAt =
+      nextStatus === 'cancel_requested'
+        ? job.cancelRequestedAt || timestamp
+        : nextStatus === 'canceled'
+          ? job.cancelRequestedAt || timestamp
+          : null
+    const resultPayload = {
+      ...job.result,
+      latestQuery: {
+        state: queryResult.state,
+        status: queryResult.status,
+        message: queryResult.message,
+        outputUrl: queryResult.outputUrl || null,
+        error: queryResult.error || null,
+        errorCode: queryResult.errorCode || null,
+        queriedAt: timestamp
+      }
+    }
+
+    getLocalDb()
+      .prepare(
+        `
+      UPDATE video_generation_jobs
+      SET status = ?, provider_status = ?, result_json = ?, error_message = ?,
+          error_code = ?, output_url = ?, finished_at = ?, duration_ms = ?,
+          cancel_requested_at = ?, last_synced_at = ?, updated_at = ?
+      WHERE id = ? AND organization_id = ?
+    `
+      )
+      .run(
+        nextStatus,
+        queryResult.status,
+        JSON.stringify(resultPayload),
+        nextErrorMessage,
+        nextErrorCode,
+        nextOutputUrl,
+        finishedAt,
+        durationMs,
+        cancelRequestedAt,
+        timestamp,
+        timestamp,
+        job.id,
+        job.organizationId
+      )
+
+    const updated = this.getById(job.id, job.organizationId)
+    if (!updated) {
+      throw new Error('同步后任务读取失败')
+    }
+    return {
+      job: updated,
+      queryResult
+    }
+  }
+
+  static async retry(
+    jobId: string,
+    organizationId: string,
+    runtimeContext?: GenerateRuntimeContext
+  ): Promise<VideoGenerationRetryResult> {
+    const existingJob = this.getById(jobId, organizationId)
+    if (!existingJob) {
+      throw new VideoGenerationValidationError('Generation job not found')
+    }
+    const job = existingJob
+    if (ACTIVE_JOB_STATUSES.has(job.status)) {
+      throwValidationError('任务仍在处理中，暂不支持重试')
+    }
+
+    const storedRequest = (job.request || {}) as StoredGenerationRequestPayload
+    const retryInput: VideoGenerationCreateInput = {
+      organizationId: job.organizationId,
+      workspaceId: job.workspaceId || undefined,
+      createdBy: job.createdBy,
+      modelId: toNullableString(storedRequest.modelId) || job.modelId,
+      generationMode: storedRequest.generationMode || job.generationMode,
+      prompt: toNullableString(storedRequest.prompt) || toNullableString(storedRequest.text) || '',
+      negativePrompt: toNullableString(storedRequest.negativePrompt) || undefined,
+      options: isPlainObject(storedRequest.options) ? storedRequest.options : {},
+      inputs: isPlainObject(storedRequest.inputs) ? (storedRequest.inputs as any) : undefined
+    }
+    const driverParams = this.toDriverParams(retryInput)
+    const providerResult = await VideoOrchestrator.generate(
+      retryInput.modelId || job.modelId,
+      driverParams,
+      runtimeContext
+    )
+
+    const timestamp = now()
+    const nextStatus = toSubmitJobStatus(providerResult)
+    const startedAt = timestamp
+    const finishedAt = TERMINAL_JOB_STATUSES.has(nextStatus) ? timestamp : null
+    const durationMs = finishedAt ? calculateDurationMs(startedAt, finishedAt) : null
+    const resultPayload = buildProviderResultPayload(
+      providerResult,
+      retryInput.modelId || job.modelId
+    )
+
+    getLocalDb()
+      .prepare(
+        `
+      UPDATE video_generation_jobs
+      SET status = ?, provider_status = ?, operation_name = ?, result_json = ?,
+          error_message = ?, error_code = NULL, output_url = NULL,
+          started_at = ?, finished_at = ?, duration_ms = ?,
+          retry_count = COALESCE(retry_count, 0) + 1,
+          cancel_requested_at = NULL, last_synced_at = NULL, updated_at = ?
+      WHERE id = ? AND organization_id = ?
+    `
+      )
+      .run(
+        nextStatus,
+        providerResult.status,
+        toNullableString(providerResult.operationName),
+        JSON.stringify(resultPayload),
+        toNullableString(
+          providerResult.error || (providerResult.success ? null : providerResult.message)
+        ),
+        startedAt,
+        finishedAt,
+        durationMs,
+        timestamp,
+        job.id,
+        job.organizationId
+      )
+
+    const updated = this.getById(job.id, job.organizationId)
+    if (!updated) {
+      throw new Error('重试后任务读取失败')
+    }
+    return {
+      job: updated,
+      providerResult
+    }
+  }
+
+  static async cancel(
+    jobId: string,
+    organizationId: string,
+    runtimeContext?: GenerateRuntimeContext
+  ): Promise<VideoGenerationCancelResult> {
+    const existingJob = this.getById(jobId, organizationId)
+    if (!existingJob) {
+      throw new VideoGenerationValidationError('Generation job not found')
+    }
+    const job = existingJob
+
+    if (job.status === 'succeeded' || job.status === 'failed' || job.status === 'canceled') {
+      throwValidationError(`当前状态 ${job.status} 不支持取消`)
+    }
+
+    let cancelResult: CancelOperationResult
+    if (!job.operationName) {
+      cancelResult = {
+        success: true,
+        status: 'ok',
+        operationName: '',
+        state: 'canceled',
+        message: '任务尚未提交到 provider，已在本地取消',
+        provider: job.modelId
+      }
+    } else {
+      cancelResult = await VideoOrchestrator.cancelOperation(
+        job.modelId,
+        job.operationName,
+        runtimeContext
+      )
+    }
+
+    let nextStatus: VideoGenerationJobStatus
+    if (cancelResult.state === 'canceled') {
+      nextStatus = 'canceled'
+    } else if (
+      cancelResult.state === 'cancel_requested' ||
+      cancelResult.state === 'not_supported'
+    ) {
+      nextStatus = 'cancel_requested'
+    } else {
+      nextStatus = job.status
+    }
+
+    const timestamp = now()
+    const finishedAt = TERMINAL_JOB_STATUSES.has(nextStatus) ? job.finishedAt || timestamp : null
+    const durationMs = finishedAt
+      ? calculateDurationMs(job.startedAt || job.createdAt, finishedAt)
+      : null
+    const shouldClearError = nextStatus === 'canceled'
+    const nextErrorMessage = shouldClearError
+      ? null
+      : cancelResult.state === 'failed'
+        ? toNullableString(cancelResult.error || cancelResult.message) || job.errorMessage
+        : job.errorMessage
+    const nextErrorCode = shouldClearError
+      ? null
+      : cancelResult.state === 'failed'
+        ? toNullableString(cancelResult.errorCode) || job.errorCode
+        : job.errorCode
+    const cancelRequestedAt =
+      nextStatus === 'cancel_requested' || nextStatus === 'canceled'
+        ? job.cancelRequestedAt || timestamp
+        : null
+    const resultPayload = {
+      ...job.result,
+      latestCancel: {
+        state: cancelResult.state,
+        status: cancelResult.status,
+        message: cancelResult.message,
+        error: cancelResult.error || null,
+        errorCode: cancelResult.errorCode || null,
+        canceledAt: timestamp
+      }
+    }
+
+    getLocalDb()
+      .prepare(
+        `
+      UPDATE video_generation_jobs
+      SET status = ?, provider_status = ?, result_json = ?, error_message = ?,
+          error_code = ?, finished_at = ?, duration_ms = ?,
+          cancel_requested_at = ?, last_synced_at = ?, updated_at = ?
+      WHERE id = ? AND organization_id = ?
+    `
+      )
+      .run(
+        nextStatus,
+        cancelResult.status,
+        JSON.stringify(resultPayload),
+        nextErrorMessage,
+        nextErrorCode,
+        finishedAt,
+        durationMs,
+        cancelRequestedAt,
+        timestamp,
+        timestamp,
+        job.id,
+        job.organizationId
+      )
+
+    const updated = this.getById(job.id, job.organizationId)
+    if (!updated) {
+      throw new Error('取消后任务读取失败')
+    }
+    return {
+      job: updated,
+      cancelResult
     }
   }
 
