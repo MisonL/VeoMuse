@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from '../apps/backend/src/index'
 import { VideoOrchestrator } from '../apps/backend/src/services/VideoOrchestrator'
+import { VideoGenerationService } from '../apps/backend/src/services/VideoGenerationService'
 import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 const MODEL_ID = 'test-video-lifecycle-driver'
@@ -233,5 +234,58 @@ describe('视频生成任务生命周期 API', () => {
     expect(secondCancelResp.status).toBe(400)
     expect(secondCancelData.success).toBe(false)
     expect(String(secondCancelData.error || '')).toContain('不支持取消')
+  })
+
+  it('应支持批量自动同步活跃任务并遵守 olderThan 门限', async () => {
+    const session = await createTestSession('video-lifecycle-batch-sync')
+    const headers = createAuthHeaders(session.accessToken, {
+      organizationId: session.organizationId,
+      contentTypeJson: true
+    })
+
+    const createResp = await app.handle(
+      new Request('http://localhost/api/video/generations', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          modelId: MODEL_ID,
+          generationMode: 'text_to_video',
+          prompt: '自动同步任务'
+        })
+      })
+    )
+    const createData = (await createResp.json()) as any
+    expect(createResp.status).toBe(200)
+    expect(createData.success).toBe(true)
+    const jobId = String(createData.job.id)
+
+    const blockedByAge = await VideoGenerationService.syncPendingJobsBatch({
+      limit: 10,
+      olderThanMs: 60_000,
+      organizationId: session.organizationId
+    })
+    expect(blockedByAge.syncedJobIds.includes(jobId)).toBe(false)
+
+    const firstBatch = await VideoGenerationService.syncPendingJobsBatch({
+      limit: 10,
+      olderThanMs: 0,
+      organizationId: session.organizationId
+    })
+    expect(firstBatch.scannedCount).toBeGreaterThanOrEqual(1)
+    expect(firstBatch.syncedJobIds).toContain(jobId)
+
+    const afterFirstSync = VideoGenerationService.getById(jobId, session.organizationId)
+    expect(afterFirstSync?.status).toBe('processing')
+
+    const secondBatch = await VideoGenerationService.syncPendingJobsBatch({
+      limit: 10,
+      olderThanMs: 0,
+      organizationId: session.organizationId
+    })
+    expect(secondBatch.syncedJobIds).toContain(jobId)
+
+    const afterSecondSync = VideoGenerationService.getById(jobId, session.organizationId)
+    expect(afterSecondSync?.status).toBe('succeeded')
+    expect(String(afterSecondSync?.outputUrl || '')).toContain('https://cdn.local/')
   })
 })

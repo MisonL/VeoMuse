@@ -418,6 +418,25 @@ export interface VideoGenerationListResult {
   page: CursorPageMeta
 }
 
+export interface VideoGenerationSyncBatchOptions {
+  limit?: number
+  olderThanMs?: number
+  organizationId?: string
+  workspaceId?: string | null
+}
+
+export interface VideoGenerationSyncBatchResult {
+  scannedCount: number
+  syncedCount: number
+  skippedCount: number
+  failedCount: number
+  syncedJobIds: string[]
+  failedJobs: Array<{
+    jobId: string
+    error: string
+  }>
+}
+
 interface NormalizedGenerationRequest {
   modelId: string
   generationMode: VideoGenerationMode
@@ -969,5 +988,85 @@ export class VideoGenerationService {
         nextCursor
       }
     }
+  }
+
+  static async syncPendingJobsBatch(
+    options: VideoGenerationSyncBatchOptions = {}
+  ): Promise<VideoGenerationSyncBatchResult> {
+    const safeLimit =
+      Number.isFinite(options.limit) && (options.limit || 0) > 0
+        ? Math.min(100, Math.floor(options.limit as number))
+        : 10
+    const olderThanMs =
+      Number.isFinite(options.olderThanMs) && (options.olderThanMs || 0) >= 0
+        ? Math.floor(options.olderThanMs as number)
+        : 0
+    const activeStatuses = Array.from(ACTIVE_JOB_STATUSES.values())
+    const placeholders = activeStatuses.map(() => '?').join(', ')
+    const whereParts: string[] = [`status IN (${placeholders})`, `operation_name IS NOT NULL`]
+    const params: Array<string | number> = [...activeStatuses]
+    const organizationId = toNullableString(options.organizationId)
+    const workspaceIdInput = String(options.workspaceId || '').trim()
+
+    if (organizationId) {
+      whereParts.push(`organization_id = ?`)
+      params.push(organizationId)
+    }
+    if (workspaceIdInput) {
+      whereParts.push(`workspace_id = ?`)
+      params.push(workspaceIdInput)
+    } else if (options.workspaceId === null) {
+      whereParts.push(`workspace_id IS NULL`)
+    }
+
+    if (olderThanMs > 0) {
+      whereParts.push(`COALESCE(last_synced_at, updated_at, created_at) <= ?`)
+      params.push(new Date(Date.now() - olderThanMs).toISOString())
+    }
+
+    params.push(safeLimit)
+    const rows = getLocalDb()
+      .prepare(
+        `
+      SELECT * FROM video_generation_jobs
+      WHERE ${whereParts.join(' AND ')}
+      ORDER BY COALESCE(last_synced_at, updated_at, created_at) ASC, updated_at ASC, id ASC
+      LIMIT ?
+    `
+      )
+      .all(...params) as any[]
+
+    const result: VideoGenerationSyncBatchResult = {
+      scannedCount: rows.length,
+      syncedCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+      syncedJobIds: [],
+      failedJobs: []
+    }
+
+    for (const row of rows) {
+      const job = toVideoGenerationJob(row)
+      if (!ACTIVE_JOB_STATUSES.has(job.status) || !String(job.operationName || '').trim()) {
+        result.skippedCount += 1
+        continue
+      }
+      try {
+        const synced = await this.syncByJobId(job.id, job.organizationId, {
+          organizationId: job.organizationId,
+          workspaceId: job.workspaceId || undefined
+        })
+        result.syncedCount += 1
+        result.syncedJobIds.push(synced.job.id)
+      } catch (error: any) {
+        result.failedCount += 1
+        result.failedJobs.push({
+          jobId: job.id,
+          error: String(error?.message || 'unknown sync error')
+        })
+      }
+    }
+
+    return result
   }
 }

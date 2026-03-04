@@ -4225,6 +4225,11 @@ const parseMs = (value: string | undefined, fallback: number) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
+const parsePositiveInt = (value: string | undefined, fallback: number) => {
+  const parsed = Number.parseInt(String(value || ''), 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
 const isWeakSecret = (value: string | undefined, placeholders: string[]) => {
   const secret = String(value || '').trim()
   if (!secret) return true
@@ -4263,7 +4268,17 @@ if (import.meta.main) {
   const sloCleanupIntervalMs = parseMs(process.env.SLO_CLEANUP_INTERVAL_MS, 86_400_000)
   const marketplaceMetricIntervalMs = parseMs(process.env.MARKETPLACE_METRIC_INTERVAL_MS, 300_000)
   const dbHealthcheckIntervalMs = parseMs(process.env.DB_HEALTHCHECK_INTERVAL_MS, 0)
+  const videoJobAutoSyncEnabled = process.env.VIDEO_JOB_AUTO_SYNC_ENABLED
+    ? parseBooleanEnv(process.env.VIDEO_JOB_AUTO_SYNC_ENABLED)
+    : true
+  const videoJobAutoSyncIntervalMs = parseMs(process.env.VIDEO_JOB_AUTO_SYNC_INTERVAL_MS, 20_000)
+  const videoJobAutoSyncBatchSize = parsePositiveInt(process.env.VIDEO_JOB_AUTO_SYNC_BATCH_SIZE, 8)
+  const videoJobAutoSyncOlderThanMs = parsePositiveInt(
+    process.env.VIDEO_JOB_AUTO_SYNC_OLDER_THAN_MS,
+    5_000
+  )
   let dbRepairing = false
+  let videoJobSyncing = false
   void cleanupGeneratedFiles(generatedDir, { maxAgeMs: cleanupRetentionMs, retries: 2 })
   SloService.cleanupExpiredData()
   const cleanupTask = startCleanupScheduler(generatedDir, cleanupIntervalMs, cleanupRetentionMs)
@@ -4305,12 +4320,48 @@ if (import.meta.main) {
           }
         }, dbHealthcheckIntervalMs)
       : null
+  const videoJobSyncTask =
+    videoJobAutoSyncEnabled && videoJobAutoSyncIntervalMs > 0
+      ? setInterval(() => {
+          if (videoJobSyncing) return
+          videoJobSyncing = true
+          void VideoGenerationService.syncPendingJobsBatch({
+            limit: videoJobAutoSyncBatchSize,
+            olderThanMs: videoJobAutoSyncOlderThanMs
+          })
+            .then((batch) => {
+              if (batch.syncedCount > 0 || batch.failedCount > 0) {
+                console.log(
+                  `[video-job-sync] scanned=${batch.scannedCount}, synced=${batch.syncedCount}, failed=${batch.failedCount}, skipped=${batch.skippedCount}`
+                )
+              }
+              if (batch.failedCount > 0) {
+                const sample = batch.failedJobs
+                  .slice(0, 2)
+                  .map((item) => `${item.jobId}:${item.error}`)
+                  .join('; ')
+                console.warn(`[video-job-sync] failed sample: ${sample}`)
+              }
+            })
+            .catch((error: any) => {
+              console.warn(
+                `[video-job-sync] unexpected error: ${String(
+                  error?.message || error || 'unknown sync error'
+                )}`
+              )
+            })
+            .finally(() => {
+              videoJobSyncing = false
+            })
+        }, videoJobAutoSyncIntervalMs)
+      : null
 
   const dispose = () => {
     clearInterval(cleanupTask)
     clearInterval(sloCleanupTask)
     clearInterval(metricTask)
     if (dbHealthTask) clearInterval(dbHealthTask)
+    if (videoJobSyncTask) clearInterval(videoJobSyncTask)
   }
   process.on('SIGTERM', dispose)
   process.on('SIGINT', dispose)
