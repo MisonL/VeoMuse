@@ -137,9 +137,47 @@ const parseNonNegativeInt = (value: string | undefined, fallback: number) => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
 }
 
-const parseNonNegativeNumber = (value: string | undefined, fallback: number) => {
-  const parsed = Number.parseFloat(String(value || ''))
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
+const parseRatio01 = (value: string | undefined, fallback: number) => {
+  const raw = String(value || '').trim()
+  const parsed = Number.parseFloat(raw)
+  if (!raw) {
+    return {
+      value: fallback,
+      changed: false,
+      reason: 'default' as const,
+      raw
+    }
+  }
+  if (!Number.isFinite(parsed)) {
+    return {
+      value: fallback,
+      changed: true,
+      reason: 'invalid' as const,
+      raw
+    }
+  }
+  if (parsed < 0) {
+    return {
+      value: 0,
+      changed: true,
+      reason: 'clamped_low' as const,
+      raw
+    }
+  }
+  if (parsed > 1) {
+    return {
+      value: 1,
+      changed: true,
+      reason: 'clamped_high' as const,
+      raw
+    }
+  }
+  return {
+    value: parsed,
+    changed: false,
+    reason: 'ok' as const,
+    raw
+  }
 }
 
 const parseBoolean = (value: string | undefined) => {
@@ -232,10 +270,20 @@ const minJourneySamples = parseNonNegativeInt(
   parseArgValue('--min-journey-samples') || process.env.SLO_GATE_MIN_JOURNEY_SAMPLES,
   10
 )
-const minFrontendSourceRatio = parseNonNegativeNumber(
-  parseArgValue('--min-frontend-source-ratio') || process.env.SLO_GATE_MIN_FRONTEND_SOURCE_RATIO,
-  0
-)
+const minFrontendSourceRatioRawInput =
+  parseArgValue('--min-frontend-source-ratio') || process.env.SLO_GATE_MIN_FRONTEND_SOURCE_RATIO
+const minFrontendSourceRatioResolved = parseRatio01(minFrontendSourceRatioRawInput, 0)
+const minFrontendSourceRatio = minFrontendSourceRatioResolved.value
+const minFrontendSourceRatioSource = parseArgValue('--min-frontend-source-ratio')
+  ? '--min-frontend-source-ratio'
+  : process.env.SLO_GATE_MIN_FRONTEND_SOURCE_RATIO
+    ? 'SLO_GATE_MIN_FRONTEND_SOURCE_RATIO'
+    : 'default'
+const frontendSourceRatioConfigExplain = minFrontendSourceRatioResolved.changed
+  ? minFrontendSourceRatioResolved.reason === 'invalid'
+    ? `${minFrontendSourceRatioSource}="${minFrontendSourceRatioResolved.raw}" 非法，已回退为 ${minFrontendSourceRatio.toFixed(3)}（允许区间 [0,1]）`
+    : `${minFrontendSourceRatioSource}="${minFrontendSourceRatioResolved.raw}" 已归一化为 ${minFrontendSourceRatio.toFixed(3)}（允许区间 [0,1]）`
+  : null
 const frontendSourceKey = resolveFrontendSourceKey()
 const timeoutMs = parsePositiveInt(process.env.SLO_GATE_TIMEOUT_MS, 10_000)
 const adminToken = (process.env.SLO_GATE_ADMIN_TOKEN || process.env.ADMIN_TOKEN || '').trim()
@@ -278,6 +326,13 @@ const requestJson = async <T>(url: string): Promise<T> => {
   if (!response.ok) {
     const message = payload?.error || payload?.message || `HTTP ${response.status}`
     const failure = new Error(String(message))
+    ;(failure as any).httpStatus = response.status
+    throw failure
+  }
+  if (payload && typeof payload === 'object' && 'success' in payload && payload.success === false) {
+    const message =
+      payload?.error || payload?.message || `HTTP ${response.status} returned success=false`
+    const failure = new Error(`success=false: ${String(message)}`)
     ;(failure as any).httpStatus = response.status
     throw failure
   }
@@ -485,6 +540,15 @@ const run = async () => {
   let summary: SloSummaryPayload | null = null
   let breakdown: SloGateReport['breakdown'] = null
   let journeyFailures: JourneyFailuresPayload | null = null
+
+  if (frontendSourceRatioConfigExplain) {
+    diagnostics.push({
+      level: 'warn',
+      kind: 'none',
+      target: 'gate',
+      message: frontendSourceRatioConfigExplain
+    })
+  }
 
   try {
     const summaryPayload = await requestJson<{ success?: boolean; summary?: SloSummaryPayload }>(

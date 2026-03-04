@@ -21,6 +21,9 @@ const startMockSloServer = async (payload: {
   summary?: Record<string, unknown>
   breakdown?: Record<string, unknown>
   journeyFailures?: Record<string, unknown>
+  summarySuccess?: boolean
+  breakdownSuccess?: boolean
+  journeySuccess?: boolean
   summaryStatus?: number
   breakdownStatus?: number
   journeyStatus?: number
@@ -41,6 +44,12 @@ const startMockSloServer = async (payload: {
             status
           )
         }
+        if (payload.summarySuccess === false) {
+          return createJsonResponse(
+            { success: false, error: payload.summaryError || 'summary semantic failure' },
+            status
+          )
+        }
         return createJsonResponse(
           {
             success: true,
@@ -54,6 +63,12 @@ const startMockSloServer = async (payload: {
         if (status >= 400) {
           return createJsonResponse(
             { success: false, error: payload.breakdownError || `HTTP ${status}` },
+            status
+          )
+        }
+        if (payload.breakdownSuccess === false) {
+          return createJsonResponse(
+            { success: false, error: payload.breakdownError || 'breakdown semantic failure' },
             status
           )
         }
@@ -74,6 +89,12 @@ const startMockSloServer = async (payload: {
         if (status >= 400) {
           return createJsonResponse(
             { success: false, error: payload.journeyError || `HTTP ${status}` },
+            status
+          )
+        }
+        if (payload.journeySuccess === false) {
+          return createJsonResponse(
+            { success: false, error: payload.journeyError || 'journey semantic failure' },
             status
           )
         }
@@ -268,6 +289,30 @@ describe('SLO 门禁脚本', () => {
     expect(result.report.diagnostics.some((item: any) => item.kind === 'auth')).toBe(true)
   })
 
+  it('HTTP 200 且 success=false 时应识别为接口失败并进入 errorKind/diagnostics', async () => {
+    const apiBase = await startMockSloServer({
+      summarySuccess: false,
+      summaryError: 'summary semantic error'
+    })
+
+    const result = await runSloGate({
+      mode: 'soft',
+      apiBase
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.report.status).toBe('unavailable')
+    expect(result.report.errorKind).toBe('http')
+    expect(
+      result.report.diagnostics.some(
+        (item: any) =>
+          item.target === 'summary' &&
+          item.kind === 'http' &&
+          item.message.includes('success=false')
+      )
+    ).toBe(true)
+  })
+
   it('journey-failures 异常时不应改变主判定，但应写入诊断', async () => {
     const apiBase = await startMockSloServer({
       summary: buildSummaryPayload(),
@@ -423,6 +468,61 @@ describe('SLO 门禁脚本', () => {
     expect(
       result.report.failedRules.some((item: any) => item.key === 'samples.frontendSourceRatio')
     ).toBe(false)
+  })
+
+  it('来源占比阈值超出区间时应归一化到 [0,1] 并在诊断中解释', async () => {
+    const apiBase = await startMockSloServer({
+      summary: buildSummaryPayload({
+        counts: {
+          totalJourneys: 10,
+          successJourneys: 10,
+          nonAiSamples: 30
+        },
+        sourceBreakdown: {
+          frontend: { total: 8, success: 8 },
+          e2e: { total: 2, success: 2 }
+        }
+      })
+    })
+
+    const highResult = await runSloGate({
+      mode: 'soft',
+      apiBase,
+      env: {
+        SLO_GATE_MIN_FRONTEND_SOURCE_RATIO: '1.8',
+        SLO_GATE_MIN_NON_AI_SAMPLES: '1',
+        SLO_GATE_MIN_JOURNEY_SAMPLES: '1'
+      }
+    })
+    expect(highResult.exitCode).toBe(0)
+    expect(highResult.report.status).toBe('warn')
+    expect(highResult.report.errorKind).toBe('sample_insufficient')
+    expect(highResult.report.minFrontendSourceRatio).toBe(1)
+    expect(highResult.report.sampleChecks.frontendSourceRatio.minimum).toBe(1)
+    expect(
+      highResult.report.diagnostics.some(
+        (item: any) =>
+          item.target === 'gate' &&
+          item.level === 'warn' &&
+          item.message.includes('SLO_GATE_MIN_FRONTEND_SOURCE_RATIO') &&
+          item.message.includes('归一化')
+      )
+    ).toBe(true)
+
+    const lowResult = await runSloGate({
+      mode: 'soft',
+      apiBase,
+      env: {
+        SLO_GATE_MIN_FRONTEND_SOURCE_RATIO: '-0.2',
+        SLO_GATE_MIN_NON_AI_SAMPLES: '1',
+        SLO_GATE_MIN_JOURNEY_SAMPLES: '1'
+      }
+    })
+    expect(lowResult.exitCode).toBe(0)
+    expect(lowResult.report.status).toBe('pass')
+    expect(lowResult.report.errorKind).toBe('none')
+    expect(lowResult.report.minFrontendSourceRatio).toBe(0)
+    expect(lowResult.report.sampleChecks.frontendSourceRatio.minimum).toBe(0)
   })
 
   it('来源占比阈值启用且不达标时 soft 警告、hard 失败', async () => {

@@ -29,6 +29,7 @@ scripts\\one-click-deploy.cmd
 ### Compose 健康检查与启动顺序
 
 - `docker-compose.yml` 已为 `redis/backend/frontend` 配置 `healthcheck`。
+- 后端与前端容器均通过 `/api/health` 进行 HTTP 健康探测（分别为 `33117/18081` 端口）。
 - 服务依赖链采用 `depends_on.condition: service_healthy`：
   - `backend` 等待 `redis` 健康后启动。
   - `frontend` 等待 `backend` 健康后启动。
@@ -223,6 +224,7 @@ RELEASE_SLO_MODE=soft bun run release:gate
 - `RELEASE_GATE_SLO_BOOTSTRAP`：是否启用本地 SLO 自举（默认本地 `true`、CI `false`）
 - `RELEASE_GATE_SLO_BOOTSTRAP_TIMEOUT_MS`：本地自举超时（默认 `15000`）
 - `RELEASE_GATE_SLO_HEALTH_TIMEOUT_MS`：单次健康探测超时（默认 `1200`）
+- `RELEASE_GATE_SLO_RETRIES` / `--slo-retries`：SLO Check 重试次数（默认 `1`，即失败后至少再试一次）
 - 地址优先级：`--api-base` > `SLO_GATE_API_BASE` > `API_BASE_URL` > 默认地址
 
 样本不足策略：

@@ -48,6 +48,78 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(summary.sloBootstrap?.status).toBe('reused')
   })
 
+  it('SLO Check 默认应至少重试 1 次', async () => {
+    let sloAttempts = 0
+    const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
+      if (Array.isArray(cmd)) {
+        const shellCmd = String(cmd[2] || '')
+        if (shellCmd.includes('scripts/slo_gate.ts')) {
+          sloAttempts += 1
+          return createSubprocess(sloAttempts === 1 ? 1 : 0)
+        }
+      }
+      return createSubprocess(0)
+    })
+    globalThis.fetch = mock(
+      async () =>
+        new Response(JSON.stringify({ status: 'ok' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+    ) as any
+
+    await runReleaseGate([], { GITHUB_REF_NAME: 'feature/slo-retry-default' } as NodeJS.ProcessEnv)
+
+    const summary = await readSummary()
+    const sloStep = summary.steps.find((step: any) => String(step.name).includes('SLO Check'))
+    expect(summary.status).toBe('passed')
+    expect(sloAttempts).toBe(2)
+    expect(spawnSpy).toHaveBeenCalledTimes(7)
+    expect(sloStep?.status).toBe('passed')
+    expect(Array.isArray(sloStep?.attempts)).toBe(true)
+    expect(sloStep?.attempts?.length).toBe(2)
+    expect(sloStep?.attempts?.[0]?.status).toBe('failed')
+    expect(sloStep?.attempts?.[1]?.status).toBe('passed')
+  })
+
+  it('SLO Check 应支持通过 RELEASE_GATE_SLO_RETRIES 配置重试次数', async () => {
+    let sloAttempts = 0
+    const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
+      if (Array.isArray(cmd)) {
+        const shellCmd = String(cmd[2] || '')
+        if (shellCmd.includes('scripts/slo_gate.ts')) {
+          sloAttempts += 1
+          return createSubprocess(sloAttempts <= 2 ? 1 : 0)
+        }
+      }
+      return createSubprocess(0)
+    })
+    globalThis.fetch = mock(
+      async () =>
+        new Response(JSON.stringify({ status: 'ok' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+    ) as any
+
+    await runReleaseGate([], {
+      GITHUB_REF_NAME: 'feature/slo-retry-config',
+      RELEASE_GATE_SLO_RETRIES: '2'
+    } as NodeJS.ProcessEnv)
+
+    const summary = await readSummary()
+    const sloStep = summary.steps.find((step: any) => String(step.name).includes('SLO Check'))
+    expect(summary.status).toBe('passed')
+    expect(sloAttempts).toBe(3)
+    expect(spawnSpy).toHaveBeenCalledTimes(8)
+    expect(sloStep?.status).toBe('passed')
+    expect(Array.isArray(sloStep?.attempts)).toBe(true)
+    expect(sloStep?.attempts?.length).toBe(3)
+    expect(sloStep?.attempts?.[0]?.status).toBe('failed')
+    expect(sloStep?.attempts?.[1]?.status).toBe('failed')
+    expect(sloStep?.attempts?.[2]?.status).toBe('passed')
+  })
+
   it('runReleaseGate 失败路径应写入 failed 汇总并抛错', async () => {
     let callCount = 0
     spyOn(Bun, 'spawn').mockImplementation((_cmd: any) => {

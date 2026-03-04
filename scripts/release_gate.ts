@@ -143,6 +143,11 @@ const parsePositiveInt = (value: string | undefined, fallback: number) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
+const parseNonNegativeInt = (value: string | undefined, fallback: number) => {
+  const parsed = Number.parseInt(String(value || ''), 10)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
+}
+
 const toIsoString = (timestampMs: number) => new Date(timestampMs).toISOString()
 
 const toErrorMessage = (error: unknown) => {
@@ -397,7 +402,17 @@ export const buildSloGateCommand = (mode: SloMode, apiBase: string) => {
   return `bun run scripts/slo_gate.ts --mode ${mode} --api-base ${quoteShellArg(apiBase)}`
 }
 
-const createSteps = (params: { sloMode: SloMode; runRealE2E: boolean; sloApiBase: string }) => {
+export const resolveSloCheckRetries = (params: { argv: string[]; env: NodeJS.ProcessEnv }) => {
+  const raw = parseArgValue(params.argv, '--slo-retries') || params.env.RELEASE_GATE_SLO_RETRIES
+  return parseNonNegativeInt(raw, 1)
+}
+
+const createSteps = (params: {
+  sloMode: SloMode
+  runRealE2E: boolean
+  sloApiBase: string
+  sloCheckRetries: number
+}) => {
   const steps: GateStep[] = [
     { name: 'Secrets Scan', command: 'bun run security:scan' },
     { name: 'Build', command: 'bun run build' },
@@ -414,7 +429,8 @@ const createSteps = (params: { sloMode: SloMode; runRealE2E: boolean; sloApiBase
     },
     {
       name: `SLO Check (${params.sloMode})`,
-      command: buildSloGateCommand(params.sloMode, params.sloApiBase)
+      command: buildSloGateCommand(params.sloMode, params.sloApiBase),
+      retries: params.sloCheckRetries
     }
   ]
 
@@ -671,7 +687,8 @@ export const runReleaseGate = async (argv = process.argv.slice(2), env = process
     isCi: ci,
     apiBase: sloApiBase
   })
-  const steps = createSteps({ sloMode, runRealE2E, sloApiBase })
+  const sloCheckRetries = resolveSloCheckRetries({ argv, env })
+  const steps = createSteps({ sloMode, runRealE2E, sloApiBase, sloCheckRetries })
   let bootstrapProc: Bun.Subprocess | null = null
   let gateError: unknown = null
   let summary = createQualitySummary({
