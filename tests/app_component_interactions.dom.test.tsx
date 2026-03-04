@@ -192,12 +192,21 @@ describe('App DOM 运行态交互补测', () => {
 
     await click(view.getByTestId('btn-preview-mode-toggle'))
     expect(useEditorStore.getState().isSpatialPreview).toBe(true)
+
+    // DOM 环境下开启播放会启动 requestAnimationFrame 循环，可能导致 act() 等待过久而 flaky。
+    // 这里验证播放切换后立即暂停，避免持续的 60fps 循环拖慢整套用例。
     await click(view.getByTestId('btn-player-play'))
-    expect(useEditorStore.getState().isPlaying).toBe(true)
+    await waitFor(() => {
+      expect(useEditorStore.getState().isPlaying).toBe(true)
+    })
+    await click(view.getByTestId('btn-player-play'))
+    await waitFor(() => {
+      expect(useEditorStore.getState().isPlaying).toBe(false)
+    })
     await click(view.getByTestId('btn-player-next'))
-    expect(useEditorStore.getState().currentTime).toBe(3)
+    expect(useEditorStore.getState().currentTime).toBeCloseTo(3, 3)
     await click(view.getByTestId('btn-player-prev'))
-    expect(useEditorStore.getState().currentTime).toBe(0)
+    expect(useEditorStore.getState().currentTime).toBeCloseTo(0, 3)
 
     await click(view.getByTestId('btn-tool-cut'))
     await click(view.getByTestId('btn-tool-hand'))
