@@ -17,6 +17,15 @@ describe('TelemetryDashboard DOM 交互', () => {
   const originalFetch = globalThis.fetch
   let pollingSpy: ReturnType<typeof spyOn> | null = null
 
+  it('未填写 Admin Token 时不应主动请求数据库修复历史', async () => {
+    localStorage.removeItem('veomuse-admin-token')
+    render(<TelemetryDashboard />)
+    await new Promise((resolve) => setTimeout(resolve, 120))
+    expect(
+      fetchMock.mock.calls.some((args) => String(args[0]).includes('/api/admin/db/repairs'))
+    ).toBe(false)
+  })
+
   const renderDashboardReady = async () => {
     const view = render(<TelemetryDashboard />)
     await waitFor(() => {
@@ -36,6 +45,7 @@ describe('TelemetryDashboard DOM 交互', () => {
 
   beforeEach(() => {
     localStorage.clear()
+    localStorage.setItem('veomuse-admin-token', 'test-admin-token')
     pollingSpy = spyOn(adminMetricsStore, 'useAdminMetricsPolling').mockImplementation(() => {})
     useAdminMetricsStore.setState({
       metrics: {

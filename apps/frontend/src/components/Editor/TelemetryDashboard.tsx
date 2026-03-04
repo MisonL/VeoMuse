@@ -289,6 +289,16 @@ const TelemetryDashboard: React.FC = () => {
   }
 
   const fetchRepairHistory = async (append: boolean) => {
+    if (!getAdminToken().trim()) {
+      // 未配置管理员令牌时不主动触发 admin 请求，避免 401 噪音与控制台报错。
+      setDbError('')
+      setIsRepairLoading(false)
+      setDbRepairs([])
+      setRepairTotal(null)
+      setRepairHasMore(false)
+      return
+    }
+
     const nextOffset = append ? dbRepairs.length : 0
     const queryToken = ++latestRepairQueryToken.current
     setIsRepairLoading(true)
@@ -378,7 +388,9 @@ const TelemetryDashboard: React.FC = () => {
       schedule(nextBackoff.nextDelayMs)
     }
 
-    void fetchRepairHistory(false)
+    if (getAdminToken().trim()) {
+      void fetchRepairHistory(false)
+    }
     void tick()
 
     return () => {
@@ -388,6 +400,7 @@ const TelemetryDashboard: React.FC = () => {
   }, [])
 
   useEffect(() => {
+    if (!getAdminToken().trim()) return
     void fetchRepairHistory(false)
   }, [repairRange, repairStatusFilter, repairReasonFilter])
 
