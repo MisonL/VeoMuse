@@ -920,6 +920,9 @@ const TelemetryDashboard: React.FC = () => {
           <input
             type="number"
             min={1}
+            id="governance-comment-limit"
+            name="governanceCommentLimit"
+            aria-label="评论 limit"
             value={governanceCommentLimit}
             onChange={(event) => setGovernanceCommentLimit(event.target.value)}
             placeholder="评论 limit"
@@ -937,18 +940,27 @@ const TelemetryDashboard: React.FC = () => {
         <div className="governance-input-grid">
           <input
             type="text"
+            id="governance-comment-anchor"
+            name="governanceCommentAnchor"
+            aria-label="评论锚点（可选）"
             value={governanceCommentAnchor}
             onChange={(event) => setGovernanceCommentAnchor(event.target.value)}
             placeholder="评论锚点（可选）"
           />
           <input
             type="text"
+            id="governance-comment-content"
+            name="governanceCommentContent"
+            aria-label="评论内容"
             value={governanceCommentContent}
             onChange={(event) => setGovernanceCommentContent(event.target.value)}
             placeholder="评论内容"
           />
           <input
             type="text"
+            id="governance-comment-mentions"
+            name="governanceCommentMentions"
+            aria-label="评论 mentions"
             value={governanceCommentMentions}
             onChange={(event) => setGovernanceCommentMentions(event.target.value)}
             placeholder="mentions: owner,editor"
@@ -959,6 +971,9 @@ const TelemetryDashboard: React.FC = () => {
         </div>
         <div className="governance-action-row">
           <select
+            id="governance-selected-comment-id"
+            name="governanceSelectedCommentId"
+            aria-label="选择评论"
             value={governanceSelectedCommentId}
             onChange={(event) => setGovernanceSelectedCommentId(event.target.value)}
           >
@@ -994,11 +1009,17 @@ const TelemetryDashboard: React.FC = () => {
           <input
             type="number"
             min={1}
+            id="governance-review-limit"
+            name="governanceReviewLimit"
+            aria-label="评审 limit"
             value={governanceReviewLimit}
             onChange={(event) => setGovernanceReviewLimit(event.target.value)}
             placeholder="评审 limit"
           />
           <select
+            id="governance-review-decision"
+            name="governanceReviewDecision"
+            aria-label="评审决策"
             value={governanceReviewDecision}
             onChange={(event) =>
               setGovernanceReviewDecision(event.target.value as ProjectGovernanceReview['decision'])
@@ -1009,12 +1030,18 @@ const TelemetryDashboard: React.FC = () => {
           </select>
           <input
             type="text"
+            id="governance-review-summary"
+            name="governanceReviewSummary"
+            aria-label="评审摘要"
             value={governanceReviewSummary}
             onChange={(event) => setGovernanceReviewSummary(event.target.value)}
             placeholder="评审摘要"
           />
           <input
             type="text"
+            id="governance-review-score"
+            name="governanceReviewScore"
+            aria-label="评审评分（可选）"
             value={governanceReviewScore}
             onChange={(event) => setGovernanceReviewScore(event.target.value)}
             placeholder="评分（可选）"
@@ -1039,6 +1066,9 @@ const TelemetryDashboard: React.FC = () => {
             刷新模板
           </button>
           <select
+            id="governance-selected-template-id"
+            name="governanceSelectedTemplateId"
+            aria-label="选择模板"
             value={governanceSelectedTemplateId}
             onChange={(event) => setGovernanceSelectedTemplateId(event.target.value)}
           >
@@ -1057,6 +1087,9 @@ const TelemetryDashboard: React.FC = () => {
           </button>
         </div>
         <textarea
+          id="governance-template-options"
+          name="governanceTemplateOptions"
+          aria-label="模板应用参数 JSON"
           value={governanceTemplateOptions}
           onChange={(event) => setGovernanceTemplateOptions(event.target.value)}
           placeholder='模板应用参数 JSON，例如 {"targetTrack":"track-v1"}'
@@ -1067,6 +1100,9 @@ const TelemetryDashboard: React.FC = () => {
         </div>
 
         <textarea
+          id="governance-batch-operations"
+          name="governanceBatchOperations"
+          aria-label="片段批量更新 operations JSON 数组"
           value={governanceBatchOperations}
           onChange={(event) => setGovernanceBatchOperations(event.target.value)}
           placeholder="片段批量更新 operations JSON 数组"
@@ -1084,7 +1120,13 @@ const TelemetryDashboard: React.FC = () => {
 
       <section className="db-ops-panel">
         <label>数据库自愈中心</label>
-        <div className="db-token-row">
+        <form
+          className="db-token-row"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void handleSaveToken()
+          }}
+        >
           <input
             type="password"
             id="db-admin-token"
@@ -1093,8 +1135,8 @@ const TelemetryDashboard: React.FC = () => {
             onChange={(event) => setAdminTokenInput(event.target.value)}
             placeholder="输入管理员令牌（x-admin-token）"
           />
-          <button onClick={() => void handleSaveToken()}>保存令牌</button>
-        </div>
+          <button type="submit">保存令牌</button>
+        </form>
 
         <div className="db-actions-row">
           <button disabled={isDbBusy} onClick={() => void fetchDbHealth('full')}>
