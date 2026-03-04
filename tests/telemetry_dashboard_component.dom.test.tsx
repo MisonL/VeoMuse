@@ -144,6 +144,16 @@ describe('TelemetryDashboard DOM 交互', () => {
     expect(view.getByText('数据库自愈中心')).toBeInTheDocument()
   })
 
+  it('首次挂载仅请求一次数据库修复历史', async () => {
+    await renderDashboardReady()
+    await waitFor(() => {
+      const repairsCalls = fetchMock.mock.calls.filter((args) =>
+        String(args[0]).includes('/api/admin/db/repairs')
+      ).length
+      expect(repairsCalls).toBe(1)
+    })
+  })
+
   it('点击刷新 Provider 状态应触发对应请求', async () => {
     const view = await renderDashboardReady()
     const providerEndpoint = '/api/admin/providers/health'

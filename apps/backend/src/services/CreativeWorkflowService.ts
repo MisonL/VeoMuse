@@ -591,19 +591,33 @@ export class CreativeWorkflowService {
     const hasMore = rows.length > safeLimit
     const pageRows = hasMore ? rows.slice(0, safeLimit) : rows
 
-    const jobs = pageRows.map((row) => {
-      const items = getLocalDb()
+    const jobIds = pageRows.map((row) => String(row.id)).filter(Boolean)
+    const itemsByJobId = new Map<string, BatchJobItem[]>()
+
+    if (jobIds.length > 0) {
+      const placeholders = jobIds.map(() => '?').join(', ')
+      const itemRows = getLocalDb()
         .prepare(
           `
         SELECT * FROM batch_job_items
-        WHERE job_id = ?
+        WHERE job_id IN (${placeholders})
         ORDER BY created_at ASC
       `
         )
-        .all(String(row.id))
-        .map(toBatchJobItem)
-      return toBatchJob(row, items)
-    })
+        .all(...jobIds) as any[]
+
+      for (const itemRow of itemRows) {
+        const item = toBatchJobItem(itemRow)
+        const existing = itemsByJobId.get(item.jobId)
+        if (existing) {
+          existing.push(item)
+        } else {
+          itemsByJobId.set(item.jobId, [item])
+        }
+      }
+    }
+
+    const jobs = pageRows.map((row) => toBatchJob(row, itemsByJobId.get(String(row.id)) || []))
 
     const nextCursor = hasMore
       ? encodeStableCursor(

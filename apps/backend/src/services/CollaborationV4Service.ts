@@ -292,16 +292,32 @@ export class CollaborationV4Service {
     const hasMore = rows.length > safeLimit
     const pageRows = hasMore ? rows.slice(0, safeLimit) : rows
 
-    const countStatement = getLocalDb().prepare(`
-      SELECT COUNT(1) AS total
-      FROM comment_replies
-      WHERE thread_id = ?
-    `)
+    const threadIds = pageRows.map((row) => String(row.id)).filter(Boolean)
+    const replyCountByThreadId = new Map<string, number>()
 
-    const threads = pageRows.map((row: any) => {
-      const countRow = countStatement.get(row.id) as { total?: number } | null
-      return toCommentThread(row, Number(countRow?.total || 0))
-    })
+    if (threadIds.length > 0) {
+      const placeholders = threadIds.map(() => '?').join(', ')
+      const countRows = getLocalDb()
+        .prepare(
+          `
+        SELECT thread_id, COUNT(1) AS total
+        FROM comment_replies
+        WHERE thread_id IN (${placeholders})
+        GROUP BY thread_id
+      `
+        )
+        .all(...threadIds) as Array<{ thread_id?: string; total?: number }>
+
+      for (const countRow of countRows) {
+        const threadId = String(countRow.thread_id || '').trim()
+        if (!threadId) continue
+        replyCountByThreadId.set(threadId, Number(countRow.total || 0))
+      }
+    }
+
+    const threads = pageRows.map((row: any) =>
+      toCommentThread(row, replyCountByThreadId.get(String(row.id)) ?? 0)
+    )
 
     const nextCursor = hasMore
       ? encodeStableCursor(

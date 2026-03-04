@@ -849,7 +849,6 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     }
     void loadModels()
     void refreshMarketplace(false)
-    void loadPolicies(false)
   }, [])
 
   useEffect(() => {
@@ -964,22 +963,12 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
 
   const openChannelPanel = useCallback(() => {
     setShowChannelPanel(true)
-    void loadCapabilities()
-    void refreshChannelConfigs()
-    void refreshOrganizationMembers()
-    void refreshOrganizationQuota()
-  }, [
-    loadCapabilities,
-    refreshChannelConfigs,
-    refreshOrganizationMembers,
-    refreshOrganizationQuota
-  ])
+  }, [])
 
   useEffect(() => {
     const handleOpenChannelPanel = () => {
       setLabMode('marketplace')
       setShowChannelPanel(true)
-      void loadCapabilities()
     }
 
     window.addEventListener('veomuse:open-channel-panel', handleOpenChannelPanel as EventListener)
@@ -989,7 +978,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
         handleOpenChannelPanel as EventListener
       )
     }
-  }, [loadCapabilities])
+  }, [])
 
   useEffect(() => {
     if (!showChannelPanel || !authProfile) return

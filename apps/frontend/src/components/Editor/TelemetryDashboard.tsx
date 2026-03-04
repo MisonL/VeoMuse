@@ -388,9 +388,6 @@ const TelemetryDashboard: React.FC = () => {
       schedule(nextBackoff.nextDelayMs)
     }
 
-    if (getAdminToken().trim()) {
-      void fetchRepairHistory(false)
-    }
     void tick()
 
     return () => {
