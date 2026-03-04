@@ -6,18 +6,14 @@
   font-size: 12px;
 }
 
-.metrics-section label,
-.api-metrics label,
-.slo-panel > label,
-.db-ops-panel > label,
-.project-governance-panel > label,
-.provider-health-panel > label {
+.telemetry-dashboard .telemetry-section-title {
   display: block;
   color: var(--text-sub);
-  margin-bottom: 8px;
+  margin: 0 0 8px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-size: 12px;
 }
 
 .fps-chart {

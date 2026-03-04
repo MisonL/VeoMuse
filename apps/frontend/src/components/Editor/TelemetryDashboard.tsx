@@ -735,7 +735,7 @@ const TelemetryDashboard: React.FC = () => {
   return (
     <div className="telemetry-dashboard">
       <section className="metrics-section">
-        <label>播放 FPS 稳定性</label>
+        <h3 className="telemetry-section-title">播放 FPS 稳定性</h3>
         <canvas ref={canvasRef} width={260} height={60} className="fps-chart" />
       </section>
 
@@ -760,7 +760,7 @@ const TelemetryDashboard: React.FC = () => {
       ) : null}
 
       <section className="api-metrics">
-        <label>AI 服务运行状态</label>
+        <h3 className="telemetry-section-title">AI 服务运行状态</h3>
         {metricsOverview.apiEntries.length > 0 ? (
           metricsOverview.apiEntries.map(([name, stats]) => (
             <div key={name} className="api-stat-row">
@@ -775,7 +775,7 @@ const TelemetryDashboard: React.FC = () => {
       </section>
 
       <section className="slo-panel">
-        <label>北极星 SLO（24h）</label>
+        <h3 className="telemetry-section-title">北极星 SLO（24h）</h3>
         {sloSummary ? (
           <>
             <div className="slo-grid">
@@ -870,7 +870,7 @@ const TelemetryDashboard: React.FC = () => {
       </section>
 
       <section className="provider-health-panel">
-        <label>Provider 健康检查</label>
+        <h3 className="telemetry-section-title">Provider 健康检查</h3>
         <div className="governance-action-row">
           <button disabled={isProviderHealthLoading} onClick={() => void fetchProviderHealth()}>
             {isProviderHealthLoading ? '检查中...' : '刷新 Provider 状态'}
@@ -897,7 +897,7 @@ const TelemetryDashboard: React.FC = () => {
       </section>
 
       <section className="project-governance-panel" data-testid="project-governance-card">
-        <label>项目治理卡片（第二入口）</label>
+        <h3 className="telemetry-section-title">项目治理卡片（第二入口）</h3>
         <div className="governance-project-row">
           <input
             type="text"
@@ -1120,7 +1120,7 @@ const TelemetryDashboard: React.FC = () => {
       </section>
 
       <section className="db-ops-panel">
-        <label>数据库自愈中心</label>
+        <h3 className="telemetry-section-title">数据库自愈中心</h3>
         <form
           className="db-token-row"
           onSubmit={(event) => {
@@ -1133,6 +1133,7 @@ const TelemetryDashboard: React.FC = () => {
             id="db-admin-token"
             name="dbAdminToken"
             aria-label="管理员令牌（x-admin-token）"
+            autoComplete="new-password"
             value={adminTokenInput}
             onChange={(event) => setAdminTokenInput(event.target.value)}
             placeholder="输入管理员令牌（x-admin-token）"

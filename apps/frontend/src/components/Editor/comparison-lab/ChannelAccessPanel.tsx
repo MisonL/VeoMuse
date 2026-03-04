@@ -169,7 +169,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
               onChange={(event) => onUpdateChannelForm(row.id, { apiKey: event.target.value })}
               placeholder="填写 API Key"
               type="password"
-              autoComplete="off"
+              autoComplete="new-password"
             />
             {row.id === 'openai-compatible' ? (
               <>
