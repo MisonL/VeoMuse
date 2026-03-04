@@ -177,7 +177,7 @@ describe('发布门禁脚本策略', () => {
     const step = buildQualitySummaryStep({
       step: {
         name: 'Unit Tests',
-        command: 'bun run test -- --max-concurrency 1'
+        command: 'bun run test'
       },
       status: 'failed',
       startedAtMs: 1000,
@@ -217,7 +217,7 @@ describe('发布门禁脚本策略', () => {
       { step: { name: 'Secrets Scan', command: 'bun run security:scan' }, expected: 'security' },
       { step: { name: 'Build', command: 'bun run build' }, expected: 'build' },
       {
-        step: { name: 'Unit Tests', command: 'bun run test -- --max-concurrency 1' },
+        step: { name: 'Unit Tests', command: 'bun run test' },
         expected: 'test'
       },
       { step: { name: 'E2E Smoke', command: 'bun run e2e:smoke -- --workers=1' }, expected: 'e2e' },

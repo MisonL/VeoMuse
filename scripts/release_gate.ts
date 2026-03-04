@@ -127,7 +127,7 @@ const FAILURE_DOMAIN_RULES: Array<{
 const DOMAIN_RECOMMENDATIONS: Record<FailureDomain, string> = {
   security: '先执行 `bun run security:scan` 修复敏感信息或高危配置，再重新触发门禁。',
   build: '先本地执行 `bun run build` 修复编译或打包错误，再继续后续校验。',
-  test: '先执行 `bun run test -- --max-concurrency 1` 修复失败用例并补充必要断言。',
+  test: '先执行 `bun run test` 修复失败用例并补充必要断言。',
   e2e: '先按失败场景单独执行对应 E2E 命令（smoke/regression）定位根因，再重跑门禁。',
   slo: '先确认 `/api/health` 可达与 SLO 样本充足，再执行 `bun run scripts/slo_gate.ts` 校验。',
   unknown: '根据失败日志定位根因，补充可复现命令后重新执行门禁。'
@@ -403,7 +403,7 @@ const createSteps = (params: { sloMode: SloMode; runRealE2E: boolean; sloApiBase
     { name: 'Build', command: 'bun run build' },
     {
       name: 'Unit Tests',
-      command: 'bun run test -- --max-concurrency 1',
+      command: 'bun run test',
       env: { NODE_ENV: 'test' }
     },
     { name: 'E2E Smoke', command: 'bun run e2e:smoke -- --workers=1', retries: 1 },
