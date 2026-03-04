@@ -903,6 +903,7 @@ const TelemetryDashboard: React.FC = () => {
             type="text"
             id="governance-project-id"
             name="governanceProjectId"
+            aria-label="项目 ID（prj_xxx）"
             value={governanceProjectId}
             onChange={(event) => setGovernanceProjectId(event.target.value)}
             placeholder="输入项目 ID（prj_xxx）"
@@ -1131,6 +1132,7 @@ const TelemetryDashboard: React.FC = () => {
             type="password"
             id="db-admin-token"
             name="dbAdminToken"
+            aria-label="管理员令牌（x-admin-token）"
             value={adminTokenInput}
             onChange={(event) => setAdminTokenInput(event.target.value)}
             placeholder="输入管理员令牌（x-admin-token）"
@@ -1204,6 +1206,7 @@ const TelemetryDashboard: React.FC = () => {
             type="text"
             id="db-repair-reason"
             name="dbRepairReason"
+            aria-label="修复原因关键词筛选"
             value={repairReasonInput}
             onChange={(event) => setRepairReasonInput(event.target.value)}
             placeholder="按修复原因关键词筛选"

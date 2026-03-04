@@ -1388,6 +1388,7 @@ function App() {
             <select
               id="export-quality"
               name="exportQuality"
+              aria-label="导出规格"
               value={exportQuality}
               onChange={(e) =>
                 setExportQuality(e.target.value as 'standard' | '4k-hdr' | 'spatial-vr')
@@ -1402,6 +1403,7 @@ function App() {
             <select
               id="preview-aspect"
               name="previewAspect"
+              aria-label="预览宽高比"
               value={previewAspect}
               onChange={(e) => setPreviewAspect(e.target.value as PreviewAspect)}
               className="header-select preview-aspect-select"

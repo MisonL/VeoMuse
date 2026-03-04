@@ -276,7 +276,9 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
     <div className="pro-asset-panel">
       <input
         type="file"
+        id="asset-upload-files"
         name="assetUploadFiles"
+        aria-label="导入素材文件"
         ref={fileInputRef}
         onChange={handleFileChange}
         multiple
@@ -292,6 +294,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               <input
                 id="asset-search-input"
                 name="assetSearch"
+                aria-label="搜索素材"
                 type="text"
                 placeholder="搜索或导入素材..."
                 value={searchQuery}
