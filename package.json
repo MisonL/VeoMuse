@@ -36,8 +36,8 @@
     "format": "prettier . --write --ignore-unknown",
     "format:check": "prettier . --check --ignore-unknown",
     "quality:full": "bun run format:check && bun run lint && bun run build && bun run test:coverage && bun run quality:coverage-targets && bun run quality:api-contract && bun run e2e:smoke -- --workers=1 --retries=0 && bun run release:gate",
-    "docker:up": "docker-compose -f config/docker/docker-compose.yml up -d --build",
-    "docker:down": "docker-compose -f config/docker/docker-compose.yml down",
+    "docker:up": "docker compose -f config/docker/docker-compose.yml up -d --build --wait --wait-timeout 180",
+    "docker:down": "docker compose -f config/docker/docker-compose.yml down",
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/dist"
   },
   "devDependencies": {
