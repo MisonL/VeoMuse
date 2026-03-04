@@ -1,15 +1,46 @@
-import { describe, it, expect } from 'bun:test'
+import { beforeEach, describe, it, expect } from 'bun:test'
 import { useEditorStore } from '../apps/frontend/src/store/editorStore'
+import { calculateSnap } from '../apps/frontend/src/utils/snapService'
+
+const resetEditorStore = () => {
+  useEditorStore.setState({
+    tracks: [
+      { id: 'track-mask1', name: '智能蒙版', type: 'mask', clips: [] },
+      { id: 'track-v1', name: '主视频轨道', type: 'video', clips: [] },
+      { id: 'track-a1', name: '背景音乐', type: 'audio', clips: [] },
+      { id: 'track-t1', name: '文字层', type: 'text', clips: [] }
+    ],
+    markers: [],
+    beatPoints: [],
+    assets: [],
+    currentTime: 0,
+    duration: 120,
+    isPlaying: false,
+    selectedClipId: null,
+    zoomLevel: 10,
+    isMotionCaptureActive: false,
+    latestMotionData: null,
+    isSpatialPreview: false,
+    spatialCamera: { yaw: 0, pitch: 0, scale: 1 }
+  })
+}
 
 describe('编辑器高级功能验证', () => {
+  beforeEach(() => {
+    resetEditorStore()
+  })
+
   it('磁吸算法应在靠近边缘时返回修正后的时间点', () => {
-    const snapThreshold = 0.5
-    const neighbors = [0, 10, 20]
-    const calculateSnap = (time: number) => {
-      const nearest = neighbors.find((n) => Math.abs(n - time) < snapThreshold)
-      return nearest !== undefined ? nearest : time
-    }
-    expect(calculateSnap(9.8)).toBe(10)
+    useEditorStore.getState().addClip('track-v1', {
+      id: 'clip-snap',
+      start: 10,
+      end: 20,
+      src: 'file:///demo.mp4',
+      name: 'snap-demo',
+      type: 'video'
+    } as any)
+    expect(calculateSnap(9.8).time).toBe(10)
+    expect(calculateSnap(9.8, 'clip-snap').snapped).toBe(false)
   })
 
   it('Store 应能正确管理选中片段 ID', () => {
@@ -19,19 +50,25 @@ describe('编辑器高级功能验证', () => {
   })
 
   it('分割算法逻辑验证', () => {
-    const splitClip = (original: any, at: number) => {
-      if (at <= original.start || at >= original.end) return [original]
-      return [
-        { ...original, end: at },
-        { ...original, id: original.id + '-split', start: at }
-      ]
-    }
+    useEditorStore.getState().addClip('track-v1', {
+      id: 'clip-split',
+      start: 0,
+      end: 10,
+      src: 'file:///demo.mp4',
+      name: 'split-demo',
+      type: 'video'
+    } as any)
 
-    const clip = { id: 'c1', start: 0, end: 10 }
-    const [c1, c2] = splitClip(clip, 4)
-    expect(c1.end).toBe(4)
-    expect(c2.start).toBe(4)
-    expect(c2.id).toContain('-split')
+    useEditorStore.getState().splitClip('track-v1', 'clip-split', 4)
+    const clips = useEditorStore
+      .getState()
+      .tracks.find((t) => t.id === 'track-v1')
+      ?.clips.slice()
+    expect(clips?.length).toBe(2)
+    const c1 = clips?.find((c) => c.id === 'clip-split')
+    const c2 = clips?.find((c) => c.id !== 'clip-split')
+    expect(c1?.end).toBe(4)
+    expect(c2?.start).toBe(4)
   })
 
   it('Clip 应支持存储转场 (Transition) 配置', () => {
