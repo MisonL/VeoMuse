@@ -15,20 +15,35 @@
 }
 
 .lab-toolbar {
-  min-height: 60px;
+  min-height: 74px;
   border-bottom: 1px solid var(--ap-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px 10px;
-  padding: 9px 12px;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 9px 12px 10px;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--ap-surface) 72%, var(--ap-panel) 28%),
     color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%)
   );
   z-index: 10;
+}
+
+.lab-toolbar-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 10px;
+  flex-wrap: wrap;
+}
+
+.lab-toolbar-left {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .lab-status {
@@ -41,6 +56,15 @@
   gap: 7px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.lab-toolbar-cta {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .live-dot {
@@ -63,11 +87,8 @@
 .lab-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 6px 7px;
+  justify-content: stretch;
   min-width: 0;
-  flex: 1;
 }
 
 .sync-toggle {
@@ -105,22 +126,27 @@
   filter: brightness(1.03);
 }
 
+.lab-btn--secondary {
+  background: color-mix(in srgb, var(--ap-panel) 85%, #ffffff 15%);
+  color: var(--ap-text-dim);
+  border-color: color-mix(in srgb, var(--ap-border) 82%, #ffffff 18%);
+}
+
+.lab-btn--secondary:hover {
+  color: var(--ap-text);
+}
+
 .lab-mode-switch {
-  display: inline-flex;
-  flex-wrap: nowrap;
-  align-items: center;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
   border: 1px solid var(--ap-border);
   border-radius: 9px;
   padding: 2px;
   gap: 2px;
-  max-width: 100%;
   background: color-mix(in srgb, var(--ap-surface) 84%, var(--ap-panel) 16%);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.lab-mode-switch::-webkit-scrollbar {
-  display: none;
 }
 
 .lab-mode-btn {
@@ -129,10 +155,11 @@
   color: var(--ap-text-dim);
   font-size: 11px;
   font-weight: 800;
-  padding: 6px 9px;
+  padding: 6px 10px;
   cursor: pointer;
   border-radius: 7px;
   white-space: nowrap;
+  text-align: center;
 }
 
 .lab-mode-btn.active {
@@ -215,8 +242,9 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr);
-  overflow: auto;
-  scrollbar-gutter: stable;
+  overflow: hidden;
+  gap: 10px;
+  padding: 10px;
 }
 
 .model-pane {
@@ -225,16 +253,18 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   background: color-mix(in srgb, var(--ap-panel) 86%, #ffffff 14%);
-  overflow: auto;
-  scrollbar-gutter: stable;
+  border: 1px solid var(--ap-border);
+  border-radius: 12px;
+  box-shadow: var(--ap-shadow-subtle);
+  overflow: hidden;
 }
 
 .pane-head {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
   align-items: start;
-  padding: 10px 10px 9px;
+  padding: 12px 12px 10px;
   border-bottom: 1px solid var(--ap-border);
   background: linear-gradient(
     180deg,
@@ -287,8 +317,9 @@
   min-width: 0;
   display: grid;
   width: 100%;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
-  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: end;
 }
 
 .pane-controls select {
@@ -302,14 +333,15 @@
   cursor: pointer;
   background: color-mix(in srgb, var(--ap-accent-soft) 78%, #ffffff 22%);
   color: var(--ap-accent);
+  min-width: 82px;
+  justify-self: end;
 }
 
 .pane-viewport {
   width: 100%;
   height: 100%;
   position: relative;
-  min-height: 0;
-  min-height: 140px;
+  min-height: 200px;
 }
 
 .pane-viewport video {
@@ -322,7 +354,7 @@
 .empty-pane {
   width: 100%;
   height: 100%;
-  min-height: 140px;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1072,11 +1104,12 @@
   }
 
   .pane-controls {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .pane-controls button {
-    grid-column: 1 / -1;
+    grid-column: 2;
+    justify-self: end;
   }
 
   .market-grid {
@@ -1104,16 +1137,30 @@
 
 @container lab-frame (max-width: 720px) {
   .lab-toolbar {
+    gap: 8px;
+  }
+
+  .lab-toolbar-main {
     align-items: flex-start;
     justify-content: flex-start;
   }
 
-  .lab-actions {
+  .lab-toolbar-cta {
     justify-content: flex-start;
   }
 
   .lab-mode-switch {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pane-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .pane-controls button {
+    grid-column: 1;
     width: 100%;
+    justify-self: stretch;
   }
 
   .lab-split-engine {

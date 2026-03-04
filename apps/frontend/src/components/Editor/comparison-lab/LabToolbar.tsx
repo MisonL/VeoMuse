@@ -22,21 +22,43 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
 }) => {
   return (
     <div className="lab-toolbar" data-guide="lab-toolbar" data-testid="area-lab-toolbar">
-      <div className="lab-status">
-        <span className="live-dot">●</span> 实验室在线
+      <div className="lab-toolbar-main">
+        <div className="lab-toolbar-left">
+          <div className="lab-status">
+            <span className="live-dot">●</span> 实验室在线
+          </div>
+          {labMode === 'compare' ? (
+            <label className="sync-toggle">
+              <input
+                name="syncPlayback"
+                type="checkbox"
+                checked={syncPlayback}
+                onChange={(e) => onSyncPlaybackChange(e.target.checked)}
+              />
+              <span>同步预览</span>
+            </label>
+          ) : null}
+        </div>
+        <div className="lab-toolbar-cta">
+          {labMode === 'compare' ? (
+            <button id="btn-export-compare-report" className="lab-btn" onClick={onExportReport}>
+              导出对比报告
+            </button>
+          ) : (
+            <button className="lab-btn" onClick={onRefreshMarketplace}>
+              刷新超市
+            </button>
+          )}
+          <button
+            className="lab-btn lab-btn--secondary"
+            onClick={onOpenChannelPanel}
+            data-testid="btn-open-channel-panel"
+          >
+            渠道接入
+          </button>
+        </div>
       </div>
       <div className="lab-actions">
-        {labMode === 'compare' ? (
-          <label className="sync-toggle">
-            <input
-              name="syncPlayback"
-              type="checkbox"
-              checked={syncPlayback}
-              onChange={(e) => onSyncPlaybackChange(e.target.checked)}
-            />
-            <span>同步预览</span>
-          </label>
-        ) : null}
         <div className="lab-mode-switch">
           <button
             className={`lab-mode-btn ${labMode === 'compare' ? 'active' : ''}`}
@@ -67,22 +89,6 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
             协作平台
           </button>
         </div>
-        {labMode === 'compare' ? (
-          <button id="btn-export-compare-report" className="lab-btn" onClick={onExportReport}>
-            导出对比报告
-          </button>
-        ) : (
-          <button className="lab-btn" onClick={onRefreshMarketplace}>
-            刷新超市
-          </button>
-        )}
-        <button
-          className="lab-btn"
-          onClick={onOpenChannelPanel}
-          data-testid="btn-open-channel-panel"
-        >
-          渠道接入
-        </button>
       </div>
     </div>
   )
