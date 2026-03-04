@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import {
   buildSloGateCommand,
   buildQualitySummaryStep,
+  classifyVideoGenerateLoopFailure,
   createQualitySummary,
   finalizeQualitySummary,
   isCiEnvironment,
@@ -171,6 +172,7 @@ describe('发布门禁脚本策略', () => {
     expect(summary.videoGenerateLoop.status).toBe('not-run')
     expect(summary.videoGenerateLoop.attempts).toBe(0)
     expect(summary.videoGenerateLoop.detail).toBe('not-run')
+    expect(summary.videoGenerateLoop.failureType).toBeNull()
     expect(Array.isArray(summary.steps)).toBe(true)
     expect(summary.steps.length).toBe(0)
     expect(Array.isArray(summary.recommendations)).toBe(true)
@@ -252,6 +254,14 @@ describe('发布门禁脚本策略', () => {
   it('resolveFailureDomain 应在无规则匹配时返回 unknown', () => {
     expect(resolveFailureDomain({ name: 'Deploy', command: 'bun run deploy' })).toBe('unknown')
     expect(resolveFailureDomain({ name: 'SLO Probe', command: 'curl /api/health' })).toBe('slo')
+  })
+
+  it('视频闭环失败类型应按关键错误线索分类', () => {
+    expect(classifyVideoGenerateLoopFailure('HTTP 401 unauthorized')).toBe('auth')
+    expect(classifyVideoGenerateLoopFailure('provider quota exceeded (429)')).toBe('quota')
+    expect(classifyVideoGenerateLoopFailure('request timed out after 30s')).toBe('timeout')
+    expect(classifyVideoGenerateLoopFailure('upstream bad gateway 502')).toBe('upstream_5xx')
+    expect(classifyVideoGenerateLoopFailure('unknown failure')).toBe('unknown')
   })
 
   it('finalize 后应生成可执行 recommendations 并去重', () => {

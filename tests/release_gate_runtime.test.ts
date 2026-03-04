@@ -194,6 +194,7 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(summary.videoGenerateLoop?.trackedStepName).toBe('E2E Regression (Mock)')
     expect(summary.videoGenerateLoop?.status).toBe('failed')
     expect(summary.videoGenerateLoop?.attempts).toBe(2)
+    expect(summary.videoGenerateLoop?.failureType).toBe('unknown')
     expect(String(summary.videoGenerateLoop?.detail || '')).toContain(
       'E2E Regression (Mock) failed with exit code 1'
     )

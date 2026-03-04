@@ -331,6 +331,16 @@
   - `queryResult`（驱动查询结果，含 `state` / `status` / `message` / `outputUrl` 等）
 - **降级行为**：驱动未实现 operation 查询时返回 `not_implemented`，并保留任务现状。
 
+### 视频任务自动同步（后台）
+
+- 服务启动后默认开启后台自动同步活跃任务（`queued/submitted/processing/cancel_requested`），用于推进到终态并回填 `outputUrl/errorCode/lastSyncedAt`。
+- 环境变量：
+  - `VIDEO_JOB_AUTO_SYNC_ENABLED`：是否启用（默认 `true`）
+  - `VIDEO_JOB_AUTO_SYNC_INTERVAL_MS`：轮询间隔（默认 `20000`）
+  - `VIDEO_JOB_AUTO_SYNC_BATCH_SIZE`：每批同步任务数（默认 `8`）
+  - `VIDEO_JOB_AUTO_SYNC_OLDER_THAN_MS`：仅同步“距上次更新时间超过该阈值”的任务（默认 `5000`）
+- 说明：前端“自动轮询”主要负责刷新展示；真正的 provider 状态推进由该后台机制和手动 `/sync` 共同完成。
+
 ### POST `/api/video/generations/:jobId/retry`
 
 重试已结束任务（复用历史请求体并重新提交到模型驱动）。

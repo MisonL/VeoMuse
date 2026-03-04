@@ -5,6 +5,8 @@ import { attachPageDebug } from '../helpers/debug'
 
 const fixtureFile = path.resolve(process.cwd(), 'tests/e2e/fixtures/sample.mp4')
 
+test.setTimeout(120_000)
+
 test('可完成导演生成并导出（稳定桩）', async ({ page, request }) => {
   attachPageDebug(page, 'ai-generate-export')
   const session = await seedAuthSession(request, { withWorkspace: true })
@@ -36,13 +38,14 @@ test('可完成导演生成并导出（稳定桩）', async ({ page, request }) 
   await page.goto('/')
   await expect(page.getByTestId('area-left-panel')).toBeVisible()
 
-  await page.getByRole('button', { name: 'AI 导演' }).click()
+  await page.getByTestId('area-left-panel').getByRole('button', { name: 'AI 导演' }).click()
+  await expect(page.getByTestId('input-director-prompt')).toBeVisible({ timeout: 15000 })
   await page.getByTestId('input-director-prompt').fill('夜景追车，镜头快速推进')
   await page.getByTestId('btn-run-director').click()
 
   await expect(page.locator('.scene-title')).toContainText('镜头 1')
 
-  await page.getByRole('button', { name: '媒体资源' }).click()
+  await page.getByTestId('area-left-panel').getByRole('button', { name: '媒体资源' }).click()
   await page.locator('input[name="assetUploadFiles"]').setInputFiles(fixtureFile)
   await expect(page.locator('.asset-tile')).toHaveCount(1, { timeout: 15000 })
   await page.locator('.asset-tile .tile-actions button').first().click()

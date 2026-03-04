@@ -66,6 +66,11 @@ cp .env.example .env
 
 - 开发场景可先使用最小配置启动。
 - 生产场景必须配置安全项（如 `JWT_SECRET`、`SECRET_ENCRYPTION_KEY`、`REDIS_PASSWORD`、`ADMIN_TOKEN`）。
+- 视频任务自动同步可通过环境变量调整（默认已开启）：
+  - `VIDEO_JOB_AUTO_SYNC_ENABLED=true`
+  - `VIDEO_JOB_AUTO_SYNC_INTERVAL_MS=20000`
+  - `VIDEO_JOB_AUTO_SYNC_BATCH_SIZE=8`
+  - `VIDEO_JOB_AUTO_SYNC_OLDER_THAN_MS=5000`
 
 ### 4. 启动服务
 

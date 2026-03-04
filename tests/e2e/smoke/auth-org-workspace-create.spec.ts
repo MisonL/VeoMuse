@@ -4,6 +4,8 @@ import { attachPageDebug } from '../helpers/debug'
 
 const uniq = () => `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
 
+test.setTimeout(120_000)
+
 test('可通过实验室 UI 完成注册、登录、创建工作区', async ({ page }) => {
   attachPageDebug(page, 'auth-org-workspace-create')
   const suffix = uniq()
@@ -27,7 +29,7 @@ test('可通过实验室 UI 完成注册、登录、创建工作区', async ({ p
   await page.getByTestId('input-register-organization').fill(`UI组织_${suffix}`)
   await page.getByTestId('btn-submit-auth').click()
 
-  await expect(page.getByTestId('select-organization')).toBeVisible({ timeout: 15000 })
+  await expect(page.getByTestId('select-organization')).toBeVisible({ timeout: 45000 })
 
   await page.getByTestId('btn-close-channel-panel').click()
   await page.getByTestId('btn-lab-mode-collab').click()

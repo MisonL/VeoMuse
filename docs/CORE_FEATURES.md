@@ -8,8 +8,9 @@
 
 - 能力：导演分析、镜头建议、提示词增强、智能剪辑，以及统一任务化视频生成。
 - 视频生成模式：`text_to_video`、`image_to_video`、`first_last_frame_transition`、`video_extend`。
+- 生命周期能力：支持 `sync / retry / cancel`，并可通过后端自动同步将活跃任务推进到终态。
 - 关键入口：`/api/video/generations*`、`/api/video/generate`、`/api/ai/director/analyze`、`/api/ai/suggest-cuts`、`/api/ai/enhance`。
-- 关键测试：`tests/video_generation_api_modes.test.ts`、`tests/video_generation_service_cursor.test.ts`、`tests/ai_api.test.ts`、`tests/prompt_enhance.test.ts`、`tests/ai_clip.test.ts`。
+- 关键测试：`tests/video_generation_api_modes.test.ts`、`tests/video_generation_lifecycle_api.test.ts`、`tests/video_generation_service_cursor.test.ts`、`tests/ai_api.test.ts`、`tests/prompt_enhance.test.ts`、`tests/ai_clip.test.ts`。
 
 ### 1.2 媒体炼金能力
 
@@ -97,6 +98,11 @@
 - 发布门禁脚本：`scripts/release_gate.ts`、`scripts/slo_gate.ts`、`scripts/api_contract_guard.ts`。
 - `release:gate` 质量汇总（`artifacts/quality-summary.json`）新增 `videoGenerateLoop` 字段，用于追踪视频生成闭环（注册/组织/工作区/生成/导出）在门禁中的执行状态。
 - `videoGenerateLoop` 状态与 `E2E Regression (Mock)` 步骤同步：通过则标记 `passed`，失败则标记 `failed` 并记录重试次数；当重试耗尽后会终止后续步骤（例如 SLO Check），在质量报告中体现“失败即取消后续”。
+- 后端支持视频任务自动同步配置：
+  - `VIDEO_JOB_AUTO_SYNC_ENABLED`（默认开启）
+  - `VIDEO_JOB_AUTO_SYNC_INTERVAL_MS`（默认 `20000`）
+  - `VIDEO_JOB_AUTO_SYNC_BATCH_SIZE`（默认 `8`）
+  - `VIDEO_JOB_AUTO_SYNC_OLDER_THAN_MS`（默认 `5000`）
 
 ## 7. 质量基线
 

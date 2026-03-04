@@ -16,6 +16,7 @@ type ReleaseGateStepStatus = 'passed' | 'failed'
 type ReleaseGateStepAttemptStatus = 'passed' | 'failed'
 type QualitySloBootstrapStatus = SloBootstrapStatus | 'not-needed' | 'failed'
 type VideoGenerateLoopStatus = 'not-run' | 'passed' | 'failed'
+type VideoGenerateLoopFailureType = 'auth' | 'quota' | 'timeout' | 'upstream_5xx' | 'unknown'
 type FailureDomain = 'security' | 'build' | 'test' | 'e2e' | 'slo' | 'unknown'
 
 interface SloBootstrapResult {
@@ -64,6 +65,7 @@ interface QualitySummaryVideoGenerateLoop {
   status: VideoGenerateLoopStatus
   attempts: number
   detail: string
+  failureType?: VideoGenerateLoopFailureType | null
   startedAt?: string
   endedAt?: string
 }
@@ -188,6 +190,49 @@ const hasQualityTag = (step: Pick<GateStep, 'qualityTags'>, tag: string) => {
   return Array.isArray(step.qualityTags) && step.qualityTags.includes(tag)
 }
 
+export const classifyVideoGenerateLoopFailure = (
+  detail: string
+): VideoGenerateLoopFailureType => {
+  const text = String(detail || '').toLowerCase()
+  if (!text) return 'unknown'
+  if (
+    text.includes('401') ||
+    text.includes('403') ||
+    text.includes('unauthorized') ||
+    text.includes('forbidden') ||
+    text.includes('invalid token') ||
+    text.includes('api key') ||
+    text.includes('credential')
+  ) {
+    return 'auth'
+  }
+  if (
+    text.includes('429') ||
+    text.includes('quota') ||
+    text.includes('rate limit') ||
+    text.includes('resource exhausted')
+  ) {
+    return 'quota'
+  }
+  if (
+    text.includes('timeout') ||
+    text.includes('timed out') ||
+    text.includes('etimedout') ||
+    text.includes('deadline exceeded')
+  ) {
+    return 'timeout'
+  }
+  if (
+    /\b5\d\d\b/.test(text) ||
+    text.includes('bad gateway') ||
+    text.includes('service unavailable') ||
+    text.includes('upstream')
+  ) {
+    return 'upstream_5xx'
+  }
+  return 'unknown'
+}
+
 const syncVideoGenerateLoopStatus = (
   summary: QualitySummary,
   params: {
@@ -209,6 +254,7 @@ const syncVideoGenerateLoopStatus = (
         status: 'passed',
         attempts: params.attempts.length,
         detail: `视频生成闭环步骤「${params.step.name}」已通过`,
+        failureType: null,
         startedAt: toIsoString(params.startedAtMs),
         endedAt: toIsoString(params.endedAtMs)
       }
@@ -229,6 +275,7 @@ const syncVideoGenerateLoopStatus = (
       status: 'failed',
       attempts: params.attempts.length,
       detail,
+      failureType: classifyVideoGenerateLoopFailure(detail),
       startedAt: toIsoString(params.startedAtMs),
       endedAt: toIsoString(params.endedAtMs)
     }
@@ -267,6 +314,15 @@ const buildRecommendations = (summary: QualitySummary, status: ReleaseGateStatus
       recommendations,
       '视频生成闭环失败：先执行 `bun run e2e:regression:mock -- --workers=1` 定位“注册/组织/工作区/生成/导出”链路。'
     )
+    if (summary.videoGenerateLoop.failureType === 'auth') {
+      uniquePush(recommendations, '检测到鉴权类失败：优先核对真实渠道凭据与令牌作用域。')
+    } else if (summary.videoGenerateLoop.failureType === 'quota') {
+      uniquePush(recommendations, '检测到配额/限流失败：优先检查 provider 配额与组织并发额度。')
+    } else if (summary.videoGenerateLoop.failureType === 'timeout') {
+      uniquePush(recommendations, '检测到超时失败：优先检查网络连通性、超时阈值与重试策略。')
+    } else if (summary.videoGenerateLoop.failureType === 'upstream_5xx') {
+      uniquePush(recommendations, '检测到上游 5xx 失败：建议记录 trace 并回退至稳定模型通道。')
+    }
   } else if (summary.videoGenerateLoop.status === 'not-run') {
     uniquePush(
       recommendations,
@@ -394,7 +450,8 @@ export const createQualitySummary = (params: {
     trackedStepName: VIDEO_GENERATE_LOOP_DEFAULT_STEP_NAME,
     status: 'not-run',
     attempts: 0,
-    detail: 'not-run'
+    detail: 'not-run',
+    failureType: null
   },
   steps: [],
   recommendations: []
