@@ -1,4 +1,5 @@
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
 import { Database } from 'bun:sqlite'
 
@@ -126,6 +127,13 @@ const RECOVERY_TABLES = [
 const resolveDbPath = () => {
   const fromEnv = process.env.VEOMUSE_DB_PATH?.trim()
   if (fromEnv) return fromEnv
+  const nodeEnv = String(process.env.NODE_ENV || '')
+    .trim()
+    .toLowerCase()
+  const isTestRuntime = nodeEnv === 'test' || process.env.VEOMUSE_TEST_RUNTIME === '1'
+  if (isTestRuntime) {
+    return path.join(os.tmpdir(), `veomuse-test-${process.pid}.sqlite`)
+  }
   return path.resolve(process.cwd(), '../../data/veomuse.sqlite')
 }
 
