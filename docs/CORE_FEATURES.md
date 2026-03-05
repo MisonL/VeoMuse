@@ -98,6 +98,7 @@
 - 发布门禁脚本：`scripts/release_gate.ts`、`scripts/slo_gate.ts`、`scripts/api_contract_guard.ts`。
 - `release:gate` 质量汇总（`artifacts/quality-summary.json`）新增 `videoGenerateLoop` 字段，用于追踪视频生成闭环（注册/组织/工作区/生成/导出）在门禁中的执行状态。
 - `videoGenerateLoop` 状态与 `E2E Regression (Mock)` 步骤同步：通过则标记 `passed`，失败则标记 `failed` 并记录重试次数；当重试耗尽后会终止后续步骤（例如 SLO Check），在质量报告中体现“失败即取消后续”。
+- `quality-summary.json` 同步新增 `realE2E` 字段：与 `E2E Regression (Real)` 同步记录执行状态、重试次数、失败明细与失败类型（`auth/quota/timeout/upstream_5xx/unknown`），用于实网问题分流。
 - 后端支持视频任务自动同步配置：
   - `VIDEO_JOB_AUTO_SYNC_ENABLED`（默认开启）
   - `VIDEO_JOB_AUTO_SYNC_INTERVAL_MS`（默认 `20000`）

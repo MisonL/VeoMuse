@@ -199,6 +199,7 @@ SLO 门禁说明：
 - 报告输出默认路径：`artifacts/slo-report.json`。
 - 质量汇总输出：`artifacts/quality-summary.json`，失败步骤新增 `steps[].failure.domain`（`security/build/test/e2e/slo/unknown`）。
 - 质量汇总新增 `recommendations` 字段：输出中文可执行修复动作，并按失败域自动去重。
+- 质量汇总中 `videoGenerateLoop` 追踪 mock 闭环；`realE2E` 追踪实网回归，失败时会按 `auth/quota/timeout/upstream_5xx/unknown` 输出 `failureType`，便于快速分流。
 - 本地执行 `release:gate` 时会在 SLO 检查前自动探测 `/api/health`；若 SLO API 不可达且地址为本机（`127.0.0.1/localhost/0.0.0.0`），会自动拉起后端并在结束后回收。
 - 仍兼容历史开关 `SLO_GATE_ENFORCE=true`，等价于 `mode=hard`。
 - 若需手动覆盖模式，请在执行前设置：
@@ -300,15 +301,23 @@ CI 已内置双层扫描：
 # 对当前后端压测（默认 12 客户端 x 10 轮）
 bun run stress:collab-ws
 
+# 预设短压（8 客户端 x 6 轮）/ 长压（24 客户端 x 48 轮）
+COLLAB_STRESS_PROFILE=short bun run stress:collab-ws
+COLLAB_STRESS_PROFILE=long bun run stress:collab-ws
+
 # 自启动后端压测（脚本内部临时监听随机端口）
 SELF_HOST=1 bun run stress:collab-ws
 
 # 自定义规模
 COLLAB_STRESS_CLIENTS=24 COLLAB_STRESS_ROUNDS=20 bun run stress:collab-ws
+
+# 自定义 JSON 报告路径（默认 artifacts/collab-ws-stress-summary.json）
+COLLAB_STRESS_OUTPUT=artifacts/collab-ws-longrun.json bun run stress:collab-ws
 ```
 
 返回摘要包括：`ackRate`、`avgAckMs`、`p95AckMs`、`errors`、`broadcasts`。  
 当 `ackRate < 0.99` 或存在 `errors` 时，脚本将以非 0 状态退出。
+同时会写入 JSON 报告文件，便于 CI 归档与对比基线。
 
 说明：未显式配置 `API_BASE_URL` 时，脚本会自动优先探测 `http://127.0.0.1:18081`（Docker 网关）并回退到 `http://127.0.0.1:33117`（直连后端）。
 

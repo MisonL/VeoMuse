@@ -1,4 +1,4 @@
-# VeoMuse 剩余任务清单（2026-03-04）
+# VeoMuse 剩余任务清单（2026-03-05）
 
 ## 结论
 
@@ -16,13 +16,21 @@
 2. 长稳与并发压测
 
 - 目标：建立 24h 稳定性基线与高并发下的协作 ACK 指标基线。
-- 建议命令：`bun run stress:collab-ws`
+- 建议命令：`COLLAB_STRESS_PROFILE=short bun run stress:collab-ws`（短压）、`COLLAB_STRESS_PROFILE=long bun run stress:collab-ws`（长压）
+- 24h soak 命令：`COLLAB_STRESS_PROFILE=long COLLAB_STRESS_DURATION_MINUTES=1440 bun run stress:collab-ws`
+- 报告产物：默认写入 `artifacts/collab-ws-stress-summary.json`（可用 `COLLAB_STRESS_OUTPUT` 覆盖）
+- 进展：`short` 基线（2026-03-05）`ackRate=1.00`、`errors=0`、`p95AckMs=1417.89`（`artifacts/collab-ws-short-latest.json`）。
+- 进展：`long` 基线（2026-03-05）`ackRate=1.00`、`errors=0`、`p95AckMs=465.92`（`artifacts/collab-ws-long-latest.json`）。
+- 待完成：24h 连续压测与阈值固化（当前 long 为高并发短周期基线）。
 - 验收建议：`ackRate >= 0.99` 且无错误退出
 
 3. 创意工作台体验优化（均衡布局）
 
 - 目标：优化 creative 模式在常见桌面分辨率（1366/1440/1920）下的信息密度与操作可达性。
 - 范围：三栏比例、任务列表可读性、终态折叠、自动轮询状态提示。
+- 进展：已完成首轮布局参数优化（中心最小宽度 + 左右面板默认值 + 中屏头部密度）与多分辨率 smoke 断言补强。
+- 进展：已完成第二轮创意工作台可读性优化（轮询状态徽标、Cursor 可读化、任务状态徽标、Prompt/错误/输出长文本省略显示）并补充前端逻辑单测。
+- 进展：已完成第三轮密度优化（主动作前置、查询/分页折叠区、高级输入折叠区、任务列表单主滚动区），并在 1366/1440/1920 smoke 用例中新增关键按钮可达断言。
 - 验收建议：无关键控件遮挡、无明显滚动跳动、核心操作一屏可达。
 
 ## 仓库描述能力对齐补全状态（更新，2026-03-04）
@@ -52,21 +60,22 @@
 4. `WP-4` 质量门禁与实网回归集成（P1，已完成）
 
 - 范围：把“图文生成闭环”纳入质量门禁报告（mock + real），输出成功率、耗时、失败类型分布。
-- 结果：`quality-summary.json` 新增 `videoGenerateLoop`，已绑定 `E2E Regression (Mock)` 并记录重试/失败阻断。
+- 结果：`quality-summary.json` 新增 `videoGenerateLoop` 与 `realE2E`，分别追踪 mock 闭环与实网回归，并记录重试/失败阻断及失败类型分类。
 - 测试：`tests/release_gate_script.test.ts`、`tests/release_gate_runtime.test.ts`。
 
 ## 下一阶段建议顺序
 
 1. 先执行实网回归（`e2e:regression:real` + `release:gate:real`）并收敛问题。
-2. 再执行 24h 压测并固化基线阈值。
+2. 执行 24h 压测并固化基线阈值。
 3. 最后收口 UI/UX 与文档，做一次全链路复验。
 
 ## 已完成基线（摘要）
 
 - 质量门禁：`release:gate` 已通过（build/unit/e2e/slo）
-- Docker 健康：`frontend/backend/redis` 均为 healthy
+- Docker 健康：`frontend/backend/redis` 均为 healthy（2026-03-05 复核）
 - API 契约守卫：`quality:api-contract` 已通过
 - 覆盖率门禁：`test:coverage` 与 `quality:coverage-targets` 已通过
+- 协作压测：`short` 与 `long` 基线均 `ackRate=1.00`、`errors=0`
 
 ## 备注
 

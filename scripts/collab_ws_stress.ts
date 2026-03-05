@@ -1,15 +1,22 @@
+import fs from 'fs/promises'
+import path from 'path'
+
 type CollabRole = 'owner' | 'editor' | 'viewer'
+type StressProfile = 'default' | 'short' | 'long'
 
 interface StressConfig {
   selfHost: boolean
   apiBase: string
+  profile: StressProfile
   clients: number
   rounds: number
+  durationMinutes: number | null
   ackTimeoutMs: number
   workspaceName: string
   ownerName: string
   ownerEmail: string
   ownerPassword: string
+  outputPath: string
   runTag: string
 }
 
@@ -41,6 +48,11 @@ interface StressSummary {
   apiBase: string
   workspaceId: string
   projectId: string
+  executionMode: 'rounds' | 'duration'
+  configuredRounds: number
+  configuredDurationMinutes: number | null
+  actualRoundsMin: number
+  actualRoundsMax: number
   clients: number
   rounds: number
   totalMessages: number
@@ -86,22 +98,71 @@ const parsePositiveInt = (value: string | undefined, fallback: number) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
-const parseConfig = (): StressConfig => {
+const parsePositiveFloat = (value: string | undefined) => {
+  const parsed = Number.parseFloat(String(value || '').trim())
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+const PROFILE_DEFAULTS: Record<
+  StressProfile,
+  { clients: number; rounds: number; ackTimeoutMs: number }
+> = {
+  default: {
+    clients: 12,
+    rounds: 10,
+    ackTimeoutMs: 6000
+  },
+  short: {
+    clients: 8,
+    rounds: 6,
+    ackTimeoutMs: 4500
+  },
+  long: {
+    clients: 24,
+    rounds: 48,
+    ackTimeoutMs: 8000
+  }
+}
+
+export const resolveStressProfile = (value: string | undefined): StressProfile => {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+  if (normalized === 'short' || normalized === 'long') return normalized
+  return 'default'
+}
+
+const DEFAULT_OUTPUT_RELATIVE_PATH = path.join('artifacts', 'collab-ws-stress-summary.json')
+
+export const resolveStressOutputPath = (value: string | undefined, cwd = process.cwd()) => {
+  const raw = String(value || '').trim()
+  if (!raw) {
+    return path.resolve(cwd, DEFAULT_OUTPUT_RELATIVE_PATH)
+  }
+  return path.resolve(cwd, raw)
+}
+
+export const parseConfig = (env: NodeJS.ProcessEnv = process.env): StressConfig => {
   const runTag = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-  const ownerName = process.env.COLLAB_STRESS_OWNER || 'StressOwner'
-  const apiBase = String(process.env.API_BASE_URL || '')
+  const ownerName = env.COLLAB_STRESS_OWNER || 'StressOwner'
+  const apiBase = String(env.API_BASE_URL || '')
     .trim()
     .replace(/\/+$/, '')
+  const profile = resolveStressProfile(env.COLLAB_STRESS_PROFILE)
+  const profileDefaults = PROFILE_DEFAULTS[profile]
   return {
-    selfHost: process.env.SELF_HOST === '1' || process.env.SELF_HOST === 'true',
+    selfHost: env.SELF_HOST === '1' || env.SELF_HOST === 'true',
     apiBase,
-    clients: parsePositiveInt(process.env.COLLAB_STRESS_CLIENTS, 12),
-    rounds: parsePositiveInt(process.env.COLLAB_STRESS_ROUNDS, 10),
-    ackTimeoutMs: parsePositiveInt(process.env.COLLAB_STRESS_ACK_TIMEOUT_MS, 6000),
-    workspaceName: process.env.COLLAB_STRESS_WORKSPACE || `WS 压测 ${Date.now()}`,
+    profile,
+    clients: parsePositiveInt(env.COLLAB_STRESS_CLIENTS, profileDefaults.clients),
+    rounds: parsePositiveInt(env.COLLAB_STRESS_ROUNDS, profileDefaults.rounds),
+    durationMinutes: parsePositiveFloat(env.COLLAB_STRESS_DURATION_MINUTES),
+    ackTimeoutMs: parsePositiveInt(env.COLLAB_STRESS_ACK_TIMEOUT_MS, profileDefaults.ackTimeoutMs),
+    workspaceName: env.COLLAB_STRESS_WORKSPACE || `WS 压测 ${Date.now()}`,
     ownerName,
-    ownerEmail: process.env.COLLAB_STRESS_OWNER_EMAIL || `stress-owner-${runTag}@veomuse.local`,
-    ownerPassword: process.env.COLLAB_STRESS_OWNER_PASSWORD || 'StressOwner!2026',
+    ownerEmail: env.COLLAB_STRESS_OWNER_EMAIL || `stress-owner-${runTag}@veomuse.local`,
+    ownerPassword: env.COLLAB_STRESS_OWNER_PASSWORD || 'StressOwner!2026',
+    outputPath: resolveStressOutputPath(env.COLLAB_STRESS_OUTPUT),
     runTag
   }
 }
@@ -350,8 +411,13 @@ const resolveApiBase = async (configuredApiBase: string) => {
   return candidates[0]
 }
 
+const writeStressSummary = async (summary: StressSummary, outputPath: string) => {
+  await fs.mkdir(path.dirname(outputPath), { recursive: true })
+  await fs.writeFile(outputPath, `${JSON.stringify(summary, null, 2)}\n`, 'utf8')
+}
+
 const run = async () => {
-  const config = parseConfig()
+  const config = parseConfig(process.env)
   const startedAt = performance.now()
   let apiBase = await resolveApiBase(config.apiBase)
   let runtimeApp: any = null
@@ -396,6 +462,12 @@ const run = async () => {
   const clients: StressClient[] = []
   const latencies: number[] = []
   const memberSessions: AuthContext[] = []
+  const executionMode: StressSummary['executionMode'] = config.durationMinutes
+    ? 'duration'
+    : 'rounds'
+  const durationTargetMs = config.durationMinutes
+    ? Math.max(1, Math.round(config.durationMinutes * 60 * 1000))
+    : null
 
   try {
     for (let i = 1; i < config.clients; i += 1) {
@@ -449,7 +521,14 @@ const run = async () => {
     }
 
     const workers = clients.map(async (client, clientIndex) => {
-      for (let round = 0; round < config.rounds; round += 1) {
+      let round = 0
+      let sentCount = 0
+      while (true) {
+        if (executionMode === 'rounds') {
+          if (round >= config.rounds) break
+        } else {
+          if (durationTargetMs !== null && performance.now() - startedAt >= durationTargetMs) break
+        }
         const patchLatency = await sendAndWaitAck(
           client,
           'timeline.patch',
@@ -465,6 +544,7 @@ const run = async () => {
           config.ackTimeoutMs
         )
         latencies.push(patchLatency)
+        sentCount += 1
 
         if (round % 3 === 0) {
           const cursorLatency = await sendAndWaitAck(
@@ -482,7 +562,9 @@ const run = async () => {
             config.ackTimeoutMs
           )
           latencies.push(cursorLatency)
+          sentCount += 1
         }
+        round += 1
       }
 
       const heartbeatLatency = await sendAndWaitAck(
@@ -492,25 +574,37 @@ const run = async () => {
         config.ackTimeoutMs
       )
       latencies.push(heartbeatLatency)
+      sentCount += 1
+      return {
+        roundsCompleted: round,
+        sentCount
+      }
     })
 
-    await Promise.all(workers)
+    const workerResults = await Promise.all(workers)
     await sleep(120)
 
-    const expectedPerClient = config.rounds + Math.floor((config.rounds + 2) / 3) + 1
-    const totalMessages = config.clients * expectedPerClient
+    const totalMessages = workerResults.reduce((sum, item) => sum + item.sentCount, 0)
     const ackCount = clients.reduce((sum, client) => sum + client.ackCount, 0)
     const errors = clients.reduce((sum, client) => sum + client.errorCount, 0)
     const broadcasts = clients.reduce((sum, client) => sum + client.broadcastCount, 0)
     const ackRate = totalMessages > 0 ? Number((ackCount / totalMessages).toFixed(4)) : 0
+    const completedRounds = workerResults.map((item) => item.roundsCompleted)
+    const actualRoundsMin = completedRounds.length > 0 ? Math.min(...completedRounds) : 0
+    const actualRoundsMax = completedRounds.length > 0 ? Math.max(...completedRounds) : 0
 
     const summary: StressSummary = {
       timestamp: new Date().toISOString(),
       apiBase,
       workspaceId,
       projectId,
+      executionMode,
+      configuredRounds: config.rounds,
+      configuredDurationMinutes: config.durationMinutes,
+      actualRoundsMin,
+      actualRoundsMax,
       clients: config.clients,
-      rounds: config.rounds,
+      rounds: executionMode === 'rounds' ? config.rounds : actualRoundsMin,
       totalMessages,
       ackCount,
       ackRate,
@@ -523,6 +617,8 @@ const run = async () => {
 
     console.log('--- COLLISION STRESS SUMMARY ---')
     console.log(JSON.stringify(summary, null, 2))
+    await writeStressSummary(summary, config.outputPath)
+    console.log(`[collab-ws-stress] summary=${config.outputPath}`)
 
     if (summary.ackRate < 0.99 || summary.errors > 0) {
       process.exitCode = 2
@@ -538,7 +634,9 @@ const run = async () => {
   }
 }
 
-run().catch((error) => {
-  console.error('[collab-ws-stress] failed:', error?.message || error)
-  process.exit(1)
-})
+if (import.meta.main) {
+  run().catch((error) => {
+    console.error('[collab-ws-stress] failed:', error?.message || error)
+    process.exit(1)
+  })
+}

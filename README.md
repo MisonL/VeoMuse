@@ -120,6 +120,7 @@ docker compose -f config/docker/docker-compose.yml ps
 - `release:gate:real` 现在包含两层保护：启动阶段预检必需实网凭据；执行后再校验 real 用例是否真正执行。若全部 `skipped` 会直接失败，避免“假绿灯”。
 - 默认检查链路：`security -> build -> unit -> e2e(smoke/mock) -> slo`
 - 质量汇总产物：`artifacts/quality-summary.json`
+- 质量汇总重点字段：`videoGenerateLoop`（mock 闭环状态）与 `realE2E`（实网回归状态 + 失败类型分类）
 - SLO 报告产物：`artifacts/slo-report.json`
 
 建议在发布前至少执行：
