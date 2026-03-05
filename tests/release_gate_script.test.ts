@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import {
+  buildRealE2EPrecheckMessage,
   buildSloGateCommand,
   buildQualitySummaryStep,
   classifyVideoGenerateLoopFailure,
@@ -10,6 +11,7 @@ import {
   parseArgValue,
   parsePlaywrightResultCounters,
   parseSloMode,
+  resolveRealE2EPrecheckMissingEnv,
   resolveFailureDomain,
   resolveSloApiBase,
   resolveSloBootstrapEnabled,
@@ -304,6 +306,25 @@ Running 2 tests using 1 worker
 `)
 
     expect(message).toBeNull()
+  })
+
+  it('应识别 real 回归预检缺失的环境变量', () => {
+    const missing = resolveRealE2EPrecheckMissingEnv(envOf({}))
+    expect(Array.isArray(missing)).toBe(true)
+    expect(missing).toContain('GEMINI_API_KEYS')
+
+    const noneMissing = resolveRealE2EPrecheckMissingEnv(
+      envOf({
+        GEMINI_API_KEYS: 'key-a,key-b'
+      })
+    )
+    expect(noneMissing.length).toBe(0)
+  })
+
+  it('应生成 real 回归预检失败提示', () => {
+    const message = buildRealE2EPrecheckMessage(['GEMINI_API_KEYS'])
+    expect(message).toContain('缺少真实回归必需环境变量')
+    expect(message).toContain('GEMINI_API_KEYS')
   })
 
   it('finalize 后应生成可执行 recommendations 并去重', () => {

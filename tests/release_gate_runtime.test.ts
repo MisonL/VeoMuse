@@ -86,7 +86,8 @@ describe('发布门禁运行时路径（mock）', () => {
 
     await expect(
       runReleaseGate(['--with-real-e2e'], {
-        GITHUB_REF_NAME: 'feature/real-e2e-skipped'
+        GITHUB_REF_NAME: 'feature/real-e2e-skipped',
+        GEMINI_API_KEYS: 'fake-real-key'
       } as NodeJS.ProcessEnv)
     ).rejects.toThrow('未执行任何 real E2E 用例')
 
@@ -96,6 +97,25 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(realStep?.status).toBe('failed')
     expect(String(realStep?.failure?.message || '')).toContain('未执行任何 real E2E 用例')
     expect(spawnSpy).toHaveBeenCalled()
+  })
+
+  it('with-real-e2e 缺少凭据时应在开头快速失败', async () => {
+    const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((_cmd: any) =>
+      createSubprocess(0, '\n  1 passed\n')
+    )
+
+    await expect(
+      runReleaseGate(['--with-real-e2e'], {
+        GITHUB_REF_NAME: 'feature/real-e2e-precheck'
+      } as NodeJS.ProcessEnv)
+    ).rejects.toThrow('缺少真实回归必需环境变量')
+
+    const summary = await readSummary()
+    const precheckStep = summary.steps.find((step: any) => step.name === 'E2E Regression (Real) Precheck')
+    expect(summary.status).toBe('failed')
+    expect(precheckStep?.status).toBe('failed')
+    expect(String(precheckStep?.failure?.message || '')).toContain('GEMINI_API_KEYS')
+    expect(spawnSpy).not.toHaveBeenCalled()
   })
 
   it('SLO Check 默认应至少重试 1 次', async () => {

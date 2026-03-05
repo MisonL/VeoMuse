@@ -246,6 +246,7 @@ CI 质量门禁策略（`.github/workflows/ci-quality-gate.yml`）：
 
 - `E2E_REAL_CHANNELS=true`
 - `GEMINI_API_KEYS` 已配置（用于真实导演生成链路）
+- 门禁启动阶段会先做 real 回归凭据预检；缺少必需变量会快速失败并输出缺失项。
 - `release:gate:real` 会校验 real 用例执行结果；若 `passed/failed/flaky/timed out/interrupted` 全为 0（即全部 skipped），门禁判定失败。
 - 真实渠道回归默认仍为手动执行（本地命令或手动 workflow），不纳入 PR/main 自动流水线。
 

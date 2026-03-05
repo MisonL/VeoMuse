@@ -543,6 +543,19 @@ export const buildSloGateCommand = (mode: SloMode, apiBase: string) => {
   return `bun run scripts/slo_gate.ts --mode ${mode} --api-base ${quoteShellArg(apiBase)}`
 }
 
+const REAL_E2E_REQUIRED_ENV_KEYS = ['GEMINI_API_KEYS'] as const
+
+export const resolveRealE2EPrecheckMissingEnv = (
+  env: NodeJS.ProcessEnv
+): ReadonlyArray<(typeof REAL_E2E_REQUIRED_ENV_KEYS)[number]> => {
+  return REAL_E2E_REQUIRED_ENV_KEYS.filter((key) => !String(env[key] || '').trim())
+}
+
+export const buildRealE2EPrecheckMessage = (missingEnv: ReadonlyArray<string>) => {
+  if (!missingEnv.length) return ''
+  return `缺少真实回归必需环境变量：${missingEnv.join(', ')}。请配置后重试，或移除 --with-real-e2e。`
+}
+
 interface PlaywrightResultCounters {
   passed: number
   failed: number
@@ -961,6 +974,33 @@ export const runReleaseGate = async (argv = process.argv.slice(2), env = process
   )
 
   try {
+    if (runRealE2E) {
+      const missingEnv = resolveRealE2EPrecheckMissingEnv(env)
+      if (missingEnv.length) {
+        const nowMs = Date.now()
+        const precheckMessage = buildRealE2EPrecheckMessage(missingEnv)
+        summary = {
+          ...summary,
+          steps: [
+            ...summary.steps,
+            buildQualitySummaryStep({
+              step: {
+                name: 'E2E Regression (Real) Precheck',
+                command: 'validate real-e2e required env'
+              },
+              status: 'failed',
+              startedAtMs: nowMs,
+              endedAtMs: nowMs,
+              attempts: [],
+              failureMessage: precheckMessage,
+              failureExitCode: null
+            })
+          ]
+        }
+        throw new Error(precheckMessage)
+      }
+    }
+
     for (const step of steps) {
       const stepStartedAtMs = Date.now()
       try {
