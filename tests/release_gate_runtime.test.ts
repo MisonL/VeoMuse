@@ -61,6 +61,9 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(summary.videoGenerateLoop?.trackedStepName).toBe('E2E Regression (Mock)')
     expect(summary.videoGenerateLoop?.status).toBe('passed')
     expect(summary.videoGenerateLoop?.attempts).toBe(1)
+    expect(summary.realE2E?.trackedStepName).toBe('E2E Regression (Real)')
+    expect(summary.realE2E?.status).toBe('not-run')
+    expect(summary.realE2E?.attempts).toBe(0)
   })
 
   it('with-real-e2e 场景下 real 用例全跳过应失败', async () => {
@@ -96,6 +99,45 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(summary.status).toBe('failed')
     expect(realStep?.status).toBe('failed')
     expect(String(realStep?.failure?.message || '')).toContain('未执行任何 real E2E 用例')
+    expect(summary.realE2E?.status).toBe('failed')
+    expect(summary.realE2E?.attempts).toBe(1)
+    expect(summary.realE2E?.failureType).toBe('unknown')
+    expect(spawnSpy).toHaveBeenCalled()
+  })
+
+  it('with-real-e2e 场景下应基于 real 失败输出分类 failureType', async () => {
+    const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
+      if (Array.isArray(cmd)) {
+        const shellCmd = String(cmd[2] || '')
+        if (shellCmd.includes('e2e:regression:real')) {
+          return createSubprocess(1, '', 'HTTP 401 unauthorized: invalid api key')
+        }
+      }
+      return createSubprocess(0, '\n  1 passed\n')
+    })
+    globalThis.fetch = mock(
+      async () =>
+        new Response(JSON.stringify({ status: 'ok' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+    ) as any
+
+    await expect(
+      runReleaseGate(['--with-real-e2e'], {
+        GITHUB_REF_NAME: 'feature/real-e2e-auth-fail',
+        GEMINI_API_KEYS: 'fake-real-key'
+      } as NodeJS.ProcessEnv)
+    ).rejects.toThrow('E2E Regression (Real) failed with exit code 1')
+
+    const summary = await readSummary()
+    const realStep = summary.steps.find((step: any) => step.name === 'E2E Regression (Real)')
+    expect(summary.status).toBe('failed')
+    expect(realStep?.status).toBe('failed')
+    expect(String(realStep?.failure?.message || '')).toContain('401 unauthorized')
+    expect(summary.realE2E?.status).toBe('failed')
+    expect(summary.realE2E?.attempts).toBe(1)
+    expect(summary.realE2E?.failureType).toBe('auth')
     expect(spawnSpy).toHaveBeenCalled()
   })
 
@@ -111,7 +153,9 @@ describe('发布门禁运行时路径（mock）', () => {
     ).rejects.toThrow('缺少真实回归必需环境变量')
 
     const summary = await readSummary()
-    const precheckStep = summary.steps.find((step: any) => step.name === 'E2E Regression (Real) Precheck')
+    const precheckStep = summary.steps.find(
+      (step: any) => step.name === 'E2E Regression (Real) Precheck'
+    )
     expect(summary.status).toBe('failed')
     expect(precheckStep?.status).toBe('failed')
     expect(String(precheckStep?.failure?.message || '')).toContain('GEMINI_API_KEYS')

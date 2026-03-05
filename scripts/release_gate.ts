@@ -17,7 +17,10 @@ type ReleaseGateStepStatus = 'passed' | 'failed'
 type ReleaseGateStepAttemptStatus = 'passed' | 'failed'
 type QualitySloBootstrapStatus = SloBootstrapStatus | 'not-needed' | 'failed'
 type VideoGenerateLoopStatus = 'not-run' | 'passed' | 'failed'
-type VideoGenerateLoopFailureType = 'auth' | 'quota' | 'timeout' | 'upstream_5xx' | 'unknown'
+type RealE2EStatus = 'not-run' | 'passed' | 'failed'
+type ClassifiedFailureType = 'auth' | 'quota' | 'timeout' | 'upstream_5xx' | 'unknown'
+type VideoGenerateLoopFailureType = ClassifiedFailureType
+type RealE2EFailureType = ClassifiedFailureType
 type FailureDomain = 'security' | 'build' | 'test' | 'e2e' | 'slo' | 'unknown'
 type GateStepOutputCheck = 'require_real_e2e_executed'
 
@@ -72,6 +75,16 @@ interface QualitySummaryVideoGenerateLoop {
   endedAt?: string
 }
 
+interface QualitySummaryRealE2E {
+  trackedStepName: string
+  status: RealE2EStatus
+  attempts: number
+  detail: string
+  failureType?: RealE2EFailureType | null
+  startedAt?: string
+  endedAt?: string
+}
+
 interface QualitySummary {
   schemaVersion: string
   generatedAt: string
@@ -90,6 +103,7 @@ interface QualitySummary {
     stopExitCode?: number | null
   }
   videoGenerateLoop: QualitySummaryVideoGenerateLoop
+  realE2E: QualitySummaryRealE2E
   steps: QualitySummaryStep[]
   recommendations: string[]
   failure?: {
@@ -115,7 +129,9 @@ const DEFAULT_SLO_HEALTH_TIMEOUT_MS = 1_200
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '0.0.0.0', '::1'])
 const QUALITY_SUMMARY_RELATIVE_PATH = path.join('artifacts', 'quality-summary.json')
 const QUALITY_TAG_VIDEO_GENERATE_LOOP = 'video_generate_loop'
+const QUALITY_TAG_REAL_E2E = 'real_e2e'
 const VIDEO_GENERATE_LOOP_DEFAULT_STEP_NAME = 'E2E Regression (Mock)'
+const REAL_E2E_STEP_NAME = 'E2E Regression (Real)'
 const REAL_E2E_PRECHECK_STEP_NAME = 'E2E Regression (Real) Precheck'
 const REAL_E2E_PRECHECK_COMMAND = 'validate real-e2e required env'
 const FAILURE_DOMAIN_RULES: Array<{
@@ -194,9 +210,7 @@ const hasQualityTag = (step: Pick<GateStep, 'qualityTags'>, tag: string) => {
   return Array.isArray(step.qualityTags) && step.qualityTags.includes(tag)
 }
 
-export const classifyVideoGenerateLoopFailure = (
-  detail: string
-): VideoGenerateLoopFailureType => {
+const classifyFailureType = (detail: string): ClassifiedFailureType => {
   const text = String(detail || '').toLowerCase()
   if (!text) return 'unknown'
   if (
@@ -236,6 +250,12 @@ export const classifyVideoGenerateLoopFailure = (
   }
   return 'unknown'
 }
+
+export const classifyVideoGenerateLoopFailure = (detail: string): VideoGenerateLoopFailureType =>
+  classifyFailureType(detail)
+
+export const classifyRealE2EFailure = (detail: string): RealE2EFailureType =>
+  classifyFailureType(detail)
 
 const syncVideoGenerateLoopStatus = (
   summary: QualitySummary,
@@ -280,6 +300,55 @@ const syncVideoGenerateLoopStatus = (
       attempts: params.attempts.length,
       detail,
       failureType: classifyVideoGenerateLoopFailure(detail),
+      startedAt: toIsoString(params.startedAtMs),
+      endedAt: toIsoString(params.endedAtMs)
+    }
+  }
+}
+
+const syncRealE2EStatus = (
+  summary: QualitySummary,
+  params: {
+    step: Pick<GateStep, 'name' | 'qualityTags'>
+    status: ReleaseGateStepStatus
+    attempts: StepAttemptResult[]
+    startedAtMs: number
+    endedAtMs: number
+    failureMessage?: string
+  }
+): QualitySummary => {
+  if (!hasQualityTag(params.step, QUALITY_TAG_REAL_E2E)) return summary
+
+  if (params.status === 'passed') {
+    return {
+      ...summary,
+      realE2E: {
+        trackedStepName: params.step.name,
+        status: 'passed',
+        attempts: params.attempts.length,
+        detail: `真实回归步骤「${params.step.name}」已通过`,
+        failureType: null,
+        startedAt: toIsoString(params.startedAtMs),
+        endedAt: toIsoString(params.endedAtMs)
+      }
+    }
+  }
+
+  const lastAttempt =
+    params.attempts.length > 0 ? params.attempts[params.attempts.length - 1] : null
+  const detail =
+    params.failureMessage ||
+    lastAttempt?.failureMessage ||
+    `真实回归步骤「${params.step.name}」失败`
+
+  return {
+    ...summary,
+    realE2E: {
+      trackedStepName: params.step.name,
+      status: 'failed',
+      attempts: params.attempts.length,
+      detail,
+      failureType: classifyRealE2EFailure(detail),
       startedAt: toIsoString(params.startedAtMs),
       endedAt: toIsoString(params.endedAtMs)
     }
@@ -339,6 +408,21 @@ const buildRecommendations = (summary: QualitySummary, status: ReleaseGateStatus
       recommendations,
       `视频生成闭环步骤「${summary.videoGenerateLoop.trackedStepName}」未执行，请先修复前置失败步骤后再重跑门禁。`
     )
+  }
+  if (summary.realE2E.status === 'failed') {
+    uniquePush(
+      recommendations,
+      '真实渠道回归失败：建议先执行 `bun run e2e:regression:real -- --workers=1` 单独复现。'
+    )
+    if (summary.realE2E.failureType === 'auth') {
+      uniquePush(recommendations, '真实渠道鉴权失败：优先核对 `GEMINI_API_KEYS` 与供应商凭据权限。')
+    } else if (summary.realE2E.failureType === 'quota') {
+      uniquePush(recommendations, '真实渠道配额/限流失败：优先检查供应商额度与组织并发配额。')
+    } else if (summary.realE2E.failureType === 'timeout') {
+      uniquePush(recommendations, '真实渠道超时失败：优先检查出口网络、超时阈值与重试参数。')
+    } else if (summary.realE2E.failureType === 'upstream_5xx') {
+      uniquePush(recommendations, '真实渠道上游 5xx：建议记录 trace 并切换到稳定通道后重试。')
+    }
   }
   uniquePush(recommendations, '修复完成后执行 `bun run release:gate` 做一次全链路复验。')
 
@@ -459,6 +543,13 @@ export const createQualitySummary = (params: {
   },
   videoGenerateLoop: {
     trackedStepName: VIDEO_GENERATE_LOOP_DEFAULT_STEP_NAME,
+    status: 'not-run',
+    attempts: 0,
+    detail: 'not-run',
+    failureType: null
+  },
+  realE2E: {
+    trackedStepName: REAL_E2E_STEP_NAME,
     status: 'not-run',
     attempts: 0,
     detail: 'not-run',
@@ -587,8 +678,7 @@ const createPlaywrightResultCounters = (): PlaywrightResultCounters => ({
 
 export const parsePlaywrightResultCounters = (output: string): PlaywrightResultCounters => {
   const counters = createPlaywrightResultCounters()
-  const pattern =
-    /(\d+)\s+(passed|failed|skipped|flaky|timed out|interrupted|did not run)\b/gi
+  const pattern = /(\d+)\s+(passed|failed|skipped|flaky|timed out|interrupted|did not run)\b/gi
   let match: RegExpExecArray | null = null
   while ((match = pattern.exec(String(output || '')))) {
     const amount = Number.parseInt(String(match[1] || '0'), 10)
@@ -608,11 +698,7 @@ export const parsePlaywrightResultCounters = (output: string): PlaywrightResultC
 export const validateRealE2EExecution = (output: string): string | null => {
   const counters = parsePlaywrightResultCounters(output)
   const executed =
-    counters.passed +
-    counters.failed +
-    counters.flaky +
-    counters.timedOut +
-    counters.interrupted
+    counters.passed + counters.failed + counters.flaky + counters.timedOut + counters.interrupted
   if (executed > 0) return null
   return '未执行任何 real E2E 用例（全部 skipped 或未匹配）。请先配置真实渠道凭据后重试，或移除 --with-real-e2e。'
 }
@@ -678,10 +764,11 @@ const createSteps = (params: {
 
   if (params.runRealE2E) {
     steps.push({
-      name: 'E2E Regression (Real)',
+      name: REAL_E2E_STEP_NAME,
       command: 'bun run e2e:regression:real -- --workers=1',
       env: { E2E_REAL_CHANNELS: 'true' },
-      outputCheck: 'require_real_e2e_executed'
+      outputCheck: 'require_real_e2e_executed',
+      qualityTags: [QUALITY_TAG_REAL_E2E]
     })
   }
 
@@ -764,7 +851,16 @@ const runStep = async (
     }
 
     const exitCode = code ?? null
-    const failureMessage = `${step.name} failed with exit code ${exitCode ?? 'null'} (${duration}ms)`
+    let failureMessage = `${step.name} failed with exit code ${exitCode ?? 'null'} (${duration}ms)`
+    if (shouldCaptureOutput) {
+      const compressedOutput = String(combinedOutput || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 320)
+      if (compressedOutput) {
+        failureMessage = `${failureMessage}; output: ${compressedOutput}`
+      }
+    }
     attempts.push({
       attempt,
       startedAtMs,
@@ -1063,7 +1159,14 @@ export const runReleaseGate = async (argv = process.argv.slice(2), env = process
             })
           ]
         }
-        summary = syncVideoGenerateLoopStatus(nextSummary, {
+        const loopSyncedSummary = syncVideoGenerateLoopStatus(nextSummary, {
+          step,
+          status: 'passed',
+          attempts: stepResult.attempts,
+          startedAtMs: stepStartedAtMs,
+          endedAtMs: stepEndedAtMs
+        })
+        summary = syncRealE2EStatus(loopSyncedSummary, {
           step,
           status: 'passed',
           attempts: stepResult.attempts,
@@ -1088,7 +1191,15 @@ export const runReleaseGate = async (argv = process.argv.slice(2), env = process
             })
           ]
         }
-        summary = syncVideoGenerateLoopStatus(nextSummary, {
+        const loopSyncedSummary = syncVideoGenerateLoopStatus(nextSummary, {
+          step,
+          status: 'failed',
+          attempts: failure.attempts,
+          startedAtMs: stepStartedAtMs,
+          endedAtMs: stepEndedAtMs,
+          failureMessage: failure.message
+        })
+        summary = syncRealE2EStatus(loopSyncedSummary, {
           step,
           status: 'failed',
           attempts: failure.attempts,

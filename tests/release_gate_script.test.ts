@@ -3,6 +3,7 @@ import {
   buildRealE2EPrecheckMessage,
   buildSloGateCommand,
   buildQualitySummaryStep,
+  classifyRealE2EFailure,
   classifyVideoGenerateLoopFailure,
   createQualitySummary,
   finalizeQualitySummary,
@@ -177,6 +178,11 @@ describe('发布门禁脚本策略', () => {
     expect(summary.videoGenerateLoop.attempts).toBe(0)
     expect(summary.videoGenerateLoop.detail).toBe('not-run')
     expect(summary.videoGenerateLoop.failureType).toBeNull()
+    expect(summary.realE2E.trackedStepName).toBe('E2E Regression (Real)')
+    expect(summary.realE2E.status).toBe('not-run')
+    expect(summary.realE2E.attempts).toBe(0)
+    expect(summary.realE2E.detail).toBe('not-run')
+    expect(summary.realE2E.failureType).toBeNull()
     expect(Array.isArray(summary.steps)).toBe(true)
     expect(summary.steps.length).toBe(0)
     expect(Array.isArray(summary.recommendations)).toBe(true)
@@ -266,6 +272,14 @@ describe('发布门禁脚本策略', () => {
     expect(classifyVideoGenerateLoopFailure('request timed out after 30s')).toBe('timeout')
     expect(classifyVideoGenerateLoopFailure('upstream bad gateway 502')).toBe('upstream_5xx')
     expect(classifyVideoGenerateLoopFailure('unknown failure')).toBe('unknown')
+  })
+
+  it('real 回归失败类型应按关键错误线索分类', () => {
+    expect(classifyRealE2EFailure('401 unauthorized: invalid api key')).toBe('auth')
+    expect(classifyRealE2EFailure('429 rate limit exceeded')).toBe('quota')
+    expect(classifyRealE2EFailure('request timeout after 60s')).toBe('timeout')
+    expect(classifyRealE2EFailure('upstream service unavailable 503')).toBe('upstream_5xx')
+    expect(classifyRealE2EFailure('real case was skipped')).toBe('unknown')
   })
 
   it('应解析 Playwright 结果汇总计数', () => {
@@ -426,8 +440,62 @@ Running 2 tests using 1 worker
       failed.recommendations.some((item) => item.includes('export GEMINI_API_KEYS=<your_keys>'))
     ).toBe(true)
     expect(
-      failed.recommendations.some((item) => item.includes('优先单独复现失败步骤「E2E Regression (Real) Precheck」'))
+      failed.recommendations.some((item) =>
+        item.includes('优先单独复现失败步骤「E2E Regression (Real) Precheck」')
+      )
     ).toBe(false)
+  })
+
+  it('real 回归失败时应输出按失败类型分类的建议', () => {
+    const base = createQualitySummary({
+      branch: 'feature/real-failure-recommendation',
+      ci: false,
+      sloMode: 'soft',
+      sloApiBase: 'http://127.0.0.1:33117',
+      runRealE2E: true,
+      sloBootstrapEnabled: true,
+      generatedAt: '2026-03-02T00:00:00.000Z'
+    })
+
+    const realFailure = buildQualitySummaryStep({
+      step: {
+        name: 'E2E Regression (Real)',
+        command: 'bun run e2e:regression:real -- --workers=1'
+      },
+      status: 'failed',
+      startedAtMs: 2_000,
+      endedAtMs: 2_100,
+      attempts: [],
+      failureMessage: 'E2E Regression (Real) failed with exit code 1; output: HTTP 429 rate limit',
+      failureExitCode: 1
+    })
+
+    const failed = finalizeQualitySummary(
+      {
+        ...base,
+        steps: [realFailure],
+        realE2E: {
+          trackedStepName: 'E2E Regression (Real)',
+          status: 'failed',
+          attempts: 1,
+          detail: 'E2E Regression (Real) failed with exit code 1; output: HTTP 429 rate limit',
+          failureType: 'quota',
+          startedAt: '2026-03-02T00:00:01.000Z',
+          endedAt: '2026-03-02T00:00:02.000Z'
+        }
+      },
+      {
+        status: 'failed',
+        failureMessage: 'real e2e failed'
+      }
+    )
+
+    expect(
+      failed.recommendations.some((item) =>
+        item.includes('bun run e2e:regression:real -- --workers=1')
+      )
+    ).toBe(true)
+    expect(failed.recommendations.some((item) => item.includes('配额/限流失败'))).toBe(true)
   })
 
   it('失败收敛时应输出 failed 状态与顶层失败信息', () => {
