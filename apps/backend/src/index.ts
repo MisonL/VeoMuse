@@ -39,18 +39,44 @@ import { ReliabilityService } from './services/ReliabilityService'
 import { CollaborationV4Service } from './services/CollaborationV4Service'
 import { CreativeWorkflowService } from './services/CreativeWorkflowService'
 import { ProviderHealthService } from './services/ProviderHealthService'
-import {
-  VideoGenerationService,
-  VideoGenerationValidationError
-} from './services/VideoGenerationService'
-import type { VideoGenerationJobStatus } from './services/VideoGenerationService'
+import { VideoGenerationService } from './services/VideoGenerationService'
 import { LocalStorageProvider } from './services/storage/LocalStorageProvider'
 import { AuthService } from './services/AuthService'
 import { OrganizationService } from './services/OrganizationService'
 import { ChannelConfigService } from './services/ChannelConfigService'
 import { OrganizationGovernanceService } from './services/OrganizationGovernanceService'
 import { SloService } from './services/SloService'
-import type { WorkspaceRole, OrganizationRole } from '@veomuse/shared'
+import {
+  handleCancelVideoGeneration,
+  handleCreateVideoGeneration,
+  handleGetVideoGeneration,
+  handleLegacyVideoGenerate,
+  handleListVideoGenerations,
+  handleRetryVideoGeneration,
+  handleSyncVideoGeneration
+} from './http/videoGenerationHandlers'
+import {
+  authorizeAdmin,
+  authorizeOrganizationRole,
+  authorizeProjectRole,
+  authorizeWorkspaceRole,
+  buildGeminiNotConfiguredResponse,
+  buildQuotaExceededResponse,
+  getCapabilities,
+  hasRenderableSources,
+  isDevRuntime,
+  isGeminiNotConfiguredError,
+  isSloAdminSeedEnabled,
+  parseBooleanEnv,
+  parseBoundedLimit,
+  resolveRequestBytes,
+  requireAuthenticatedUser,
+  resolveOrganizationContext,
+  resolveRequestTraceId,
+  resolveRuntimeContext,
+  resolveWsAccessToken
+} from './http/context'
+import { normalizeRoutePath, resolveMetricCategory, resolveStatusCode } from './http/metrics'
 
 const ensureDriversRegistered = (() => {
   let initialized = false
@@ -91,449 +117,39 @@ const sanitizeImportFileName = (fileName: string) => {
 }
 const storageProvider = new LocalStorageProvider()
 
-const isLikelyDynamicSegment = (segment: string) => {
-  if (!segment) return false
-  if (/^\d+$/.test(segment)) return true
-  if (/^[a-f0-9]{8,}$/i.test(segment)) return true
-  if (/^[a-f0-9-]{16,}$/i.test(segment)) return true
-  if (
-    /^(ws|prj|project|policy|scene|run|invite|member|audit|dbr|org|user)_[a-z0-9_-]+$/i.test(
-      segment
-    )
-  )
-    return true
-  if (/^[A-Za-z0-9_-]{20,}$/.test(segment)) return true
-  return false
-}
-
-const normalizeRoutePath = (pathname: string) => {
-  const cleaned = pathname.trim()
-  if (!cleaned) return '/'
-  return cleaned
-    .split('/')
-    .map((segment, index) => {
-      if (index === 0 || !segment) return segment
-      return isLikelyDynamicSegment(segment) ? ':id' : segment
-    })
-    .join('/')
-}
-
-const resolveMetricCategory = (pathname: string) => {
-  if (!pathname.startsWith('/api/')) return 'system' as const
-  if (pathname === '/api/health') return 'system' as const
-  if (pathname.startsWith('/api/admin/')) return 'system' as const
-  if (pathname.startsWith('/api/telemetry/')) return 'system' as const
-  if (
-    pathname.startsWith('/api/ai/') ||
-    pathname === '/api/video/generate' ||
-    pathname.startsWith('/api/video/generations') ||
-    pathname === '/api/video/compose' ||
-    pathname === '/api/models/recommend'
-  ) {
-    return 'ai' as const
-  }
-  return 'non_ai' as const
-}
-
-const resolveStatusCode = (status: number | string | undefined) => {
-  if (typeof status === 'number' && Number.isFinite(status)) return status
-  if (typeof status === 'string') {
-    const parsed = Number.parseInt(status, 10)
-    if (Number.isFinite(parsed)) return parsed
-  }
-  return 200
-}
-
-const isDevRuntime = () => {
-  const nodeEnv = String(process.env.NODE_ENV || '').toLowerCase()
-  return nodeEnv === 'development' || nodeEnv === 'test'
-}
-
-const parseBooleanEnv = (value: string | undefined) => {
-  if (!value) return false
-  return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase())
-}
-
-const isSloAdminSeedEnabled = () => parseBooleanEnv(process.env.SLO_ADMIN_SEED_ENABLED)
-
-const authorizeAdmin = (request: Request, set: { status?: number | string }) => {
-  const token = process.env.ADMIN_TOKEN
-  if (!token) {
-    if (isDevRuntime()) return true
-    set.status = 503
-    return false
-  }
-
-  const provided = request.headers.get('x-admin-token')
-  if (provided === token) return true
-
-  set.status = 401
-  return false
-}
-
-const getAuthenticatedUser = (request: Request) => {
-  const authorization = request.headers.get('authorization') || ''
-  const token = authorization.toLowerCase().startsWith('bearer ')
-    ? authorization.slice(7).trim()
-    : ''
-  if (!token) return null
-  return AuthService.verifyAccessToken(token)
-}
-
-const requireAuthenticatedUser = (request: Request, set: { status?: number | string }) => {
-  const user = getAuthenticatedUser(request)
-  if (!user) {
-    set.status = 401
-    return null
-  }
-  return user
-}
-
-const resolveRequestTraceId = (request: Request, prefix = 'trace') => {
-  const fromHeader = String(request.headers.get('x-request-id') || '').trim()
-  if (fromHeader) return fromHeader
-  return `${prefix}_${crypto.randomUUID()}`
-}
-
-const ORGANIZATION_ROLE_ORDER: Record<OrganizationRole, number> = {
-  member: 1,
-  admin: 2,
-  owner: 3
-}
-
-const authorizeOrganizationRole = (
-  organizationId: string,
-  request: Request,
-  set: { status?: number | string },
-  requiredRole: OrganizationRole
-) => {
-  const user = requireAuthenticatedUser(request, set)
-  if (!user) return null
-  const actualRole = OrganizationService.getMemberRole(organizationId, user.id)
-  if (!actualRole || ORGANIZATION_ROLE_ORDER[actualRole] < ORGANIZATION_ROLE_ORDER[requiredRole]) {
-    set.status = 403
-    return null
-  }
-  return {
-    user,
-    role: actualRole
-  }
-}
-
-const WORKSPACE_ROLE_ORDER: Record<WorkspaceRole, number> = {
-  viewer: 1,
-  editor: 2,
-  owner: 3
-}
-
-const authorizeWorkspaceRole = (
-  workspaceId: string,
-  request: Request,
-  set: { status?: number | string },
-  requiredRole: WorkspaceRole
-) => {
-  const user = requireAuthenticatedUser(request, set)
-  if (!user) return null
-
-  const member = WorkspaceService.getMemberByUserId(workspaceId, user.id)
-  if (!member) {
-    set.status = 403
-    return null
-  }
-
-  const actualRole = member.role
-  if (WORKSPACE_ROLE_ORDER[actualRole] < WORKSPACE_ROLE_ORDER[requiredRole]) {
-    set.status = 403
-    return null
-  }
-
-  return {
-    user,
-    actorName: member.name,
-    role: actualRole,
-    member
-  }
-}
-
-const resolveOrganizationContext = (
-  request: Request,
-  set: { status?: number | string },
-  requiredRole: OrganizationRole = 'member'
-) => {
-  const user = requireAuthenticatedUser(request, set)
-  if (!user) return null
-  const organizations = OrganizationService.listOrganizationsForUser(user.id)
-  if (!organizations.length) {
-    set.status = 403
-    return null
-  }
-  const headerOrganizationId = request.headers.get('x-organization-id')?.trim()
-  const matchedOrganizationId = headerOrganizationId
-    ? organizations.find((item) => item.id === headerOrganizationId)?.id
-    : organizations[0]?.id
-  if (!matchedOrganizationId) {
-    set.status = 403
-    return null
-  }
-  const role = OrganizationService.getMemberRole(matchedOrganizationId, user.id)
-  if (!role || ORGANIZATION_ROLE_ORDER[role] < ORGANIZATION_ROLE_ORDER[requiredRole]) {
-    set.status = 403
-    return null
-  }
-  return {
-    user,
-    organizationId: matchedOrganizationId,
-    role
-  }
-}
-
-const resolveRuntimeContext = (
-  request: Request,
-  set: { status?: number | string },
-  workspaceId?: string
-) => {
-  const user = requireAuthenticatedUser(request, set)
-  if (!user) return null
-  const headerWorkspaceId = request.headers.get('x-workspace-id')?.trim()
-  const finalWorkspaceId = workspaceId?.trim() || headerWorkspaceId || undefined
-
-  if (finalWorkspaceId) {
-    const workspace = WorkspaceService.getWorkspace(finalWorkspaceId)
-    if (!workspace) {
-      set.status = 404
-      return null
-    }
-    const orgRole = OrganizationService.getMemberRole(workspace.organizationId, user.id)
-    if (!orgRole) {
-      set.status = 403
-      return null
-    }
-    const workspaceMember = WorkspaceService.getMemberByUserId(finalWorkspaceId, user.id)
-    if (!workspaceMember) {
-      set.status = 403
-      return null
-    }
-    return {
-      organizationId: workspace.organizationId,
-      workspaceId: finalWorkspaceId,
-      actorName: workspaceMember.name,
-      user
-    }
-  }
-
-  const organizationContext = resolveOrganizationContext(request, set, 'member')
-  if (!organizationContext) return null
-
-  return {
-    organizationId: organizationContext.organizationId,
-    workspaceId: undefined,
-    actorName: organizationContext.user.email.split('@')[0] || 'member',
-    user: organizationContext.user
-  }
-}
-
-const isGeminiNotConfiguredError = (error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error || '')
-  return message.includes('GEMINI_API_KEYS') || message.includes('未配置 Gemini API 密钥')
-}
-
-const buildGeminiNotConfiguredResponse = () => ({
-  success: false,
-  status: 'not_implemented',
-  message: 'Gemini provider 未配置 (GEMINI_API_KEYS)'
-})
-
-const authorizeProjectRole = (
-  projectId: string,
-  request: Request,
-  set: { status?: number | string },
-  requiredRole: WorkspaceRole
-) => {
-  const project = WorkspaceService.getProject(projectId)
-  if (!project) {
-    set.status = 404
-    return null
-  }
-
-  const authorized = authorizeWorkspaceRole(project.workspaceId, request, set, requiredRole)
-  if (!authorized) return null
-
-  return {
-    ...authorized,
-    workspaceId: project.workspaceId,
-    project
-  }
-}
-
-const resolveVideoGenerationJobContext = (
-  jobId: string,
-  request: Request,
-  set: { status?: number | string }
-) => {
-  const organizationContext = resolveOrganizationContext(request, set, 'member')
-  if (!organizationContext) return null
-  const job = VideoGenerationService.getById(jobId, organizationContext.organizationId)
-  if (!job) {
-    set.status = 404
-    return null
-  }
-  if (job.workspaceId) {
-    const member = WorkspaceService.getMemberByUserId(job.workspaceId, organizationContext.user.id)
-    if (!member) {
-      set.status = 403
-      return null
-    }
-  }
-  return {
-    organizationContext,
-    job
-  }
-}
-
-const getCapabilities = (request?: Request, workspaceId?: string) => {
-  if (request) {
-    const runtimeContext = resolveRuntimeContext(request, {}, workspaceId)
-    const capabilities = runtimeContext
-      ? ChannelConfigService.getCapabilities({
-          organizationId: runtimeContext.organizationId,
-          workspaceId: runtimeContext.workspaceId
-        })
-      : null
-    const hasConfigured = capabilities
-      ? Object.values(capabilities.models).some(Boolean) ||
-        Object.values(capabilities.services).some(Boolean)
-      : false
-    if (capabilities && hasConfigured) {
-      return {
-        models: capabilities.models,
-        services: {
-          ...capabilities.services,
-          marketplace: true,
-          creativePipeline: true,
-          workspace: true,
-          collaboration: true,
-          storageProvider: storageProvider.type
-        },
-        timestamp: new Date().toISOString()
-      }
-    }
-  }
-  const configured = (key?: string) => Boolean(key && key.trim().length > 0)
-
-  return {
-    models: {
-      'veo-3.1': configured(process.env.GEMINI_API_KEYS),
-      'kling-v1': configured(process.env.KLING_API_URL) && configured(process.env.KLING_API_KEY),
-      'sora-preview': configured(process.env.SORA_API_URL) && configured(process.env.SORA_API_KEY),
-      'luma-dream': configured(process.env.LUMA_API_URL) && configured(process.env.LUMA_API_KEY),
-      'runway-gen3':
-        configured(process.env.RUNWAY_API_URL) && configured(process.env.RUNWAY_API_KEY),
-      'pika-1.5': configured(process.env.PIKA_API_URL) && configured(process.env.PIKA_API_KEY),
-      'openai-compatible':
-        configured(process.env.OPENAI_COMPATIBLE_BASE_URL || process.env.OPENAI_BASE_URL) &&
-        configured(process.env.OPENAI_COMPATIBLE_API_KEY || process.env.OPENAI_API_KEY) &&
-        configured(process.env.OPENAI_COMPATIBLE_MODEL || process.env.OPENAI_MODEL)
-    },
-    services: {
-      tts: configured(process.env.TTS_API_URL) && configured(process.env.TTS_API_KEY),
-      voiceMorph:
-        configured(process.env.VOICE_MORPH_API_URL) && configured(process.env.VOICE_MORPH_API_KEY),
-      spatialRender:
-        configured(process.env.SPATIAL_API_URL) && configured(process.env.SPATIAL_API_KEY),
-      vfx: configured(process.env.VFX_API_URL) && configured(process.env.VFX_API_KEY),
-      lipSync: configured(process.env.LIP_SYNC_API_URL) && configured(process.env.LIP_SYNC_API_KEY),
-      audioAnalysis:
-        configured(process.env.AUDIO_ANALYSIS_API_URL) &&
-        configured(process.env.AUDIO_ANALYSIS_API_KEY),
-      relighting:
-        configured(process.env.RELIGHT_API_URL) && configured(process.env.RELIGHT_API_KEY),
-      styleTransfer:
-        configured(process.env.ALCHEMY_API_URL) && configured(process.env.ALCHEMY_API_KEY),
-      marketplace: true,
-      creativePipeline: true,
-      workspace: true,
-      collaboration: true,
-      storageProvider: storageProvider.type
-    },
-    timestamp: new Date().toISOString()
-  }
-}
-
-const hasRenderableSources = (timelineData: any) => {
-  if (!timelineData || !Array.isArray(timelineData.tracks)) return false
-
-  return timelineData.tracks.some(
-    (track: any) =>
-      track?.type !== 'text' &&
-      track?.type !== 'mask' &&
-      Array.isArray(track?.clips) &&
-      track.clips.some((clip: any) => typeof clip?.src === 'string' && clip.src.trim().length > 0)
-  )
-}
-
-const buildQuotaExceededResponse = (
-  reason: 'request' | 'storage' | 'concurrency',
-  check: {
-    limit: number
-    current: number
-    upcoming: number
-    remaining: number
-    usage: unknown
-    quota: unknown
-  }
-) => {
-  const reasonMessage =
-    reason === 'request'
-      ? '组织请求配额已达上限'
-      : reason === 'storage'
-        ? '组织存储配额已达上限'
-        : '组织并发配额已达上限'
-  return {
-    success: false,
-    status: 'error',
-    code: 'QUOTA_EXCEEDED',
-    reason,
-    error: `${reasonMessage}（limit=${check.limit}, current=${check.current}, upcoming=${check.upcoming}）`,
-    quota: check.quota,
-    usage: check.usage,
-    remaining: Number.isFinite(check.remaining) ? check.remaining : null
-  }
-}
-
-const parseBoundedLimit = (value: string | undefined, fallback: number, max: number) => {
-  const parsed = Number.parseInt(String(value || ''), 10)
-  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
-  return Math.min(max, parsed)
-}
-
-const WS_AUTH_PROTOCOL_PREFIX = 'veomuse-auth.'
-
-const resolveWsAccessToken = (headers: Record<string, unknown>) => {
-  const protocolHeader = String(
-    headers['sec-websocket-protocol'] || headers['Sec-WebSocket-Protocol'] || ''
-  )
-  const fromProtocol = protocolHeader
-    .split(',')
-    .map((token) => token.trim())
-    .find((token) => token.startsWith(WS_AUTH_PROTOCOL_PREFIX))
-  if (fromProtocol) {
-    const token = fromProtocol.slice(WS_AUTH_PROTOCOL_PREFIX.length).trim()
-    if (token) return token
-  }
-  const authorizationHeader = String(headers.authorization || headers.Authorization || '').trim()
-  if (authorizationHeader.toLowerCase().startsWith('bearer ')) {
-    const token = authorizationHeader.slice(7).trim()
-    if (token) return token
-  }
-  return ''
-}
-
 export const createApp = () => {
   ensureDriversRegistered()
   ModelMarketplaceService.ensureInitialized()
   OrganizationService.ensureDefaultOrganization()
   const requestStartAt = new WeakMap<Request, number>()
   const requestPathname = new WeakMap<Request, string>()
+  type RequestContextLike = {
+    request?: Request
+    set?: {
+      status?: number | string
+      headers?: Record<string, string>
+    }
+    code?: string
+    error?: unknown
+  }
+  type CollabSocketLike = {
+    data?: Record<string, unknown>
+    send: (payload: string | Record<string, unknown>) => void
+    close: () => void
+  }
+  const isCollabSocketLike = (value: unknown): value is CollabSocketLike => {
+    if (!value || typeof value !== 'object') return false
+    const candidate = value as { send?: unknown; close?: unknown }
+    return typeof candidate.send === 'function' && typeof candidate.close === 'function'
+  }
+  const readRequestContext = (context: unknown): RequestContextLike => {
+    if (!context || typeof context !== 'object') return {}
+    return context as RequestContextLike
+  }
+  const readRecord = (value: unknown) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+    return value as Record<string, unknown>
+  }
 
   const finalizeRequestMetric = (
     request: Request | null | undefined,
@@ -570,7 +186,7 @@ export const createApp = () => {
   return new Elysia()
     .use(cors())
     .onRequest((context) => {
-      const request = (context as any)?.request as Request | undefined
+      const request = readRequestContext(context).request
       if (!request) return
       requestStartAt.set(request, performance.now())
       try {
@@ -587,18 +203,17 @@ export const createApp = () => {
       })
     })
     .onAfterHandle((context) => {
-      const request = (context as any)?.request as Request | undefined
-      const status = (context as any)?.set?.status as number | string | undefined
+      const normalized = readRequestContext(context)
+      const request = normalized.request
+      const status = normalized.set?.status
       finalizeRequestMetric(request, status)
     })
     .onError((context) => {
-      const code = (context as any)?.code as string
-      const error = (context as any)?.error
-      const set = (context as any)?.set as {
-        status?: number | string
-        headers?: Record<string, string>
-      }
-      const request = (context as any)?.request as Request | undefined
+      const normalized = readRequestContext(context)
+      const code = String(normalized.code || 'UNKNOWN')
+      const error = normalized.error
+      const set = normalized.set || {}
+      const request = normalized.request
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       const currentStatus = typeof set.status === 'number' ? set.status : 500
       set.status = currentStatus >= 400 ? currentStatus : 500
@@ -612,7 +227,7 @@ export const createApp = () => {
       '/api/capabilities',
       ({ request, query }) => {
         const workspaceId = query.workspaceId?.trim() || undefined
-        return getCapabilities(request, workspaceId)
+        return getCapabilities(request, workspaceId, storageProvider.type)
       },
       {
         query: t.Object({
@@ -924,7 +539,7 @@ export const createApp = () => {
         return {
           success: true,
           configs: ChannelConfigService.listConfigs(params.id),
-          capabilities: getCapabilities(request)
+          capabilities: getCapabilities(request, undefined, storageProvider.type)
         }
       },
       {
@@ -976,7 +591,7 @@ export const createApp = () => {
         return {
           success: true,
           configs: ChannelConfigService.listConfigs(workspace.organizationId, workspace.id),
-          capabilities: getCapabilities(request, workspace.id)
+          capabilities: getCapabilities(request, workspace.id, storageProvider.type)
         }
       },
       {
@@ -1696,443 +1311,76 @@ export const createApp = () => {
     .post('/api/models/recommend', async ({ body }) => await ModelRouter.recommend(body.prompt), {
       body: t.Object({ prompt: t.String() })
     })
-    .post(
-      '/api/video/generations',
-      async ({ body, request, set }) => {
-        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
-        if (!runtimeContext) {
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        try {
-          let requestDenied: ReturnType<
-            typeof OrganizationGovernanceService.consumeRequestQuota
-          > | null = null
-          const submitResult = await OrganizationGovernanceService.withConcurrencyLimit(
-            runtimeContext.organizationId,
-            async () => {
-              const quotaConsumed = OrganizationGovernanceService.consumeRequestQuota(
-                runtimeContext.organizationId,
-                1
-              )
-              if (!quotaConsumed.allowed) {
-                requestDenied = quotaConsumed
-                return null
-              }
-              return await VideoGenerationService.submit(
-                {
-                  organizationId: runtimeContext.organizationId,
-                  workspaceId: runtimeContext.workspaceId,
-                  createdBy: runtimeContext.actorName,
-                  modelId: body.modelId,
-                  generationMode: body.generationMode,
-                  prompt: body.prompt,
-                  text: body.text,
-                  negativePrompt: body.negativePrompt,
-                  options: body.options,
-                  actorId: body.actorId,
-                  consistencyStrength: body.consistencyStrength,
-                  syncLip: body.syncLip,
-                  sync_lip: body.sync_lip,
-                  worldLink: body.worldLink,
-                  worldId: body.worldId,
-                  inputs: body.inputs
-                },
-                runtimeContext
-              )
-            }
-          )
+    .post('/api/video/generations', handleCreateVideoGeneration, {
+      body: t.Object({
+        modelId: t.Optional(t.String()),
+        generationMode: t.Optional(
+          t.Union([
+            t.Literal('text_to_video'),
+            t.Literal('image_to_video'),
+            t.Literal('first_last_frame_transition'),
+            t.Literal('video_extend')
+          ])
+        ),
+        prompt: t.Optional(t.String()),
+        text: t.Optional(t.String()),
+        negativePrompt: t.Optional(t.String()),
+        options: t.Optional(t.Any()),
+        actorId: t.Optional(t.String()),
+        consistencyStrength: t.Optional(t.Number()),
+        syncLip: t.Optional(t.Boolean()),
+        sync_lip: t.Optional(t.Boolean()),
+        worldLink: t.Optional(t.Boolean()),
+        worldId: t.Optional(t.String()),
+        workspaceId: t.Optional(t.String()),
+        inputs: t.Optional(t.Any())
+      })
+    })
+    .get('/api/video/generations/:jobId', handleGetVideoGeneration, {
+      params: t.Object({
+        jobId: t.String()
+      })
+    })
+    .post('/api/video/generations/:jobId/retry', handleRetryVideoGeneration, {
+      params: t.Object({
+        jobId: t.String()
+      })
+    })
+    .post('/api/video/generations/:jobId/cancel', handleCancelVideoGeneration, {
+      params: t.Object({
+        jobId: t.String()
+      })
+    })
+    .post('/api/video/generations/:jobId/sync', handleSyncVideoGeneration, {
+      params: t.Object({
+        jobId: t.String()
+      })
+    })
+    .get('/api/video/generations', handleListVideoGenerations, {
+      query: t.Object({
+        workspaceId: t.Optional(t.String()),
+        status: t.Optional(t.String()),
+        modelId: t.Optional(t.String()),
+        cursor: t.Optional(t.String()),
+        limit: t.Optional(t.String())
+      })
+    })
 
-          if (requestDenied) {
-            set.status = 429
-            return buildQuotaExceededResponse('request', requestDenied)
-          }
-
-          return {
-            success: true,
-            job: submitResult?.job || null,
-            providerResult: submitResult?.providerResult || null
-          }
-        } catch (error: any) {
-          const message = String(error?.message || '')
-          if (message.includes('并发配额')) {
-            const check = OrganizationGovernanceService.checkConcurrencyAllowed(
-              runtimeContext.organizationId
-            )
-            set.status = 429
-            return buildQuotaExceededResponse('concurrency', check)
-          }
-          set.status = 400
-          return {
-            success: false,
-            status: 'error',
-            error: message || 'Invalid video generation payload'
-          }
-        }
-      },
-      {
-        body: t.Object({
-          modelId: t.Optional(t.String()),
-          generationMode: t.Optional(
-            t.Union([
-              t.Literal('text_to_video'),
-              t.Literal('image_to_video'),
-              t.Literal('first_last_frame_transition'),
-              t.Literal('video_extend')
-            ])
-          ),
-          prompt: t.Optional(t.String()),
-          text: t.Optional(t.String()),
-          negativePrompt: t.Optional(t.String()),
-          options: t.Optional(t.Any()),
-          actorId: t.Optional(t.String()),
-          consistencyStrength: t.Optional(t.Number()),
-          syncLip: t.Optional(t.Boolean()),
-          sync_lip: t.Optional(t.Boolean()),
-          worldLink: t.Optional(t.Boolean()),
-          worldId: t.Optional(t.String()),
-          workspaceId: t.Optional(t.String()),
-          inputs: t.Optional(t.Any())
-        })
-      }
-    )
-    .get(
-      '/api/video/generations/:jobId',
-      ({ params, request, set }) => {
-        const resolved = resolveVideoGenerationJobContext(params.jobId, request, set)
-        if (!resolved) {
-          if (set.status === 404) {
-            return { success: false, status: 'error', error: 'Generation job not found' }
-          }
-          if (typeof set.status !== 'number' || set.status < 400) set.status = 403
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        return {
-          success: true,
-          job: resolved.job
-        }
-      },
-      {
-        params: t.Object({
-          jobId: t.String()
-        })
-      }
-    )
-    .post(
-      '/api/video/generations/:jobId/retry',
-      async ({ params, request, set }) => {
-        const resolved = resolveVideoGenerationJobContext(params.jobId, request, set)
-        if (!resolved) {
-          if (set.status === 404) {
-            return { success: false, status: 'error', error: 'Generation job not found' }
-          }
-          if (typeof set.status !== 'number' || set.status < 400) set.status = 403
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        const runtimeContext = resolveRuntimeContext(
-          request,
-          set,
-          resolved.job.workspaceId || undefined
-        )
-        if (!runtimeContext) {
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        try {
-          let requestDenied: ReturnType<
-            typeof OrganizationGovernanceService.consumeRequestQuota
-          > | null = null
-          const retryResult = await OrganizationGovernanceService.withConcurrencyLimit(
-            runtimeContext.organizationId,
-            async () => {
-              const quotaConsumed = OrganizationGovernanceService.consumeRequestQuota(
-                runtimeContext.organizationId,
-                1
-              )
-              if (!quotaConsumed.allowed) {
-                requestDenied = quotaConsumed
-                return null
-              }
-              return await VideoGenerationService.retry(
-                resolved.job.id,
-                runtimeContext.organizationId,
-                runtimeContext
-              )
-            }
-          )
-          if (requestDenied) {
-            set.status = 429
-            return buildQuotaExceededResponse('request', requestDenied)
-          }
-          return {
-            success: true,
-            job: retryResult?.job || null,
-            providerResult: retryResult?.providerResult || null
-          }
-        } catch (error: any) {
-          const message = String(error?.message || '')
-          if (message.includes('并发配额')) {
-            const check = OrganizationGovernanceService.checkConcurrencyAllowed(
-              runtimeContext.organizationId
-            )
-            set.status = 429
-            return buildQuotaExceededResponse('concurrency', check)
-          }
-          if (error instanceof VideoGenerationValidationError) {
-            set.status = 400
-            return {
-              success: false,
-              status: 'error',
-              error: message || 'Video generation retry failed'
-            }
-          }
-          throw error
-        }
-      },
-      {
-        params: t.Object({
-          jobId: t.String()
-        })
-      }
-    )
-    .post(
-      '/api/video/generations/:jobId/cancel',
-      async ({ params, request, set }) => {
-        const resolved = resolveVideoGenerationJobContext(params.jobId, request, set)
-        if (!resolved) {
-          if (set.status === 404) {
-            return { success: false, status: 'error', error: 'Generation job not found' }
-          }
-          if (typeof set.status !== 'number' || set.status < 400) set.status = 403
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        const runtimeContext = resolveRuntimeContext(
-          request,
-          set,
-          resolved.job.workspaceId || undefined
-        )
-        if (!runtimeContext) {
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        try {
-          const cancelResult = await VideoGenerationService.cancel(
-            resolved.job.id,
-            runtimeContext.organizationId,
-            runtimeContext
-          )
-          return {
-            success: true,
-            job: cancelResult.job,
-            cancelResult: cancelResult.cancelResult
-          }
-        } catch (error: any) {
-          if (error instanceof VideoGenerationValidationError) {
-            set.status = 400
-            return {
-              success: false,
-              status: 'error',
-              error: String(error?.message || 'Video generation cancel failed')
-            }
-          }
-          throw error
-        }
-      },
-      {
-        params: t.Object({
-          jobId: t.String()
-        })
-      }
-    )
-    .post(
-      '/api/video/generations/:jobId/sync',
-      async ({ params, request, set }) => {
-        const resolved = resolveVideoGenerationJobContext(params.jobId, request, set)
-        if (!resolved) {
-          if (set.status === 404) {
-            return { success: false, status: 'error', error: 'Generation job not found' }
-          }
-          if (typeof set.status !== 'number' || set.status < 400) set.status = 403
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        const runtimeContext = resolveRuntimeContext(
-          request,
-          set,
-          resolved.job.workspaceId || undefined
-        )
-        if (!runtimeContext) {
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        try {
-          const syncResult = await VideoGenerationService.syncByJobId(
-            resolved.job.id,
-            runtimeContext.organizationId,
-            runtimeContext
-          )
-          return {
-            success: true,
-            job: syncResult.job,
-            queryResult: syncResult.queryResult
-          }
-        } catch (error: any) {
-          if (error instanceof VideoGenerationValidationError) {
-            set.status = 400
-            return {
-              success: false,
-              status: 'error',
-              error: String(error?.message || 'Video generation sync failed')
-            }
-          }
-          throw error
-        }
-      },
-      {
-        params: t.Object({
-          jobId: t.String()
-        })
-      }
-    )
-    .get(
-      '/api/video/generations',
-      ({ query, request, set }) => {
-        const organizationContext = resolveOrganizationContext(request, set, 'member')
-        if (!organizationContext) {
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        const workspaceId = query.workspaceId?.trim()
-        const visibleWorkspaceIds = WorkspaceService.listWorkspaceIdsByUser(
-          organizationContext.organizationId,
-          organizationContext.user.id
-        )
-        if (workspaceId) {
-          const workspace = WorkspaceService.getWorkspace(workspaceId)
-          if (!workspace || workspace.organizationId !== organizationContext.organizationId) {
-            set.status = 403
-            return { success: false, status: 'error', error: 'Workspace not found in organization' }
-          }
-          const member = WorkspaceService.getMemberByUserId(
-            workspaceId,
-            organizationContext.user.id
-          )
-          if (!member) {
-            set.status = 403
-            return {
-              success: false,
-              status: 'error',
-              error: 'Forbidden: workspace membership required'
-            }
-          }
-        }
-        const listed = VideoGenerationService.list({
-          organizationId: organizationContext.organizationId,
-          workspaceId: workspaceId || undefined,
-          visibleWorkspaceIds: workspaceId ? [workspaceId] : visibleWorkspaceIds,
-          status: query.status as VideoGenerationJobStatus | undefined,
-          modelId: query.modelId?.trim() || undefined,
-          cursor: query.cursor?.trim() || undefined,
-          limit: parseBoundedLimit(query.limit, 20, 100)
-        })
-        return {
-          success: true,
-          jobs: listed.jobs,
-          page: listed.page
-        }
-      },
-      {
-        query: t.Object({
-          workspaceId: t.Optional(t.String()),
-          status: t.Optional(t.String()),
-          modelId: t.Optional(t.String()),
-          cursor: t.Optional(t.String()),
-          limit: t.Optional(t.String())
-        })
-      }
-    )
-
-    .post(
-      '/api/video/generate',
-      async ({ body, request, set }) => {
-        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
-        if (!runtimeContext) {
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        try {
-          let requestDenied: ReturnType<
-            typeof OrganizationGovernanceService.consumeRequestQuota
-          > | null = null
-          const output = await OrganizationGovernanceService.withConcurrencyLimit(
-            runtimeContext.organizationId,
-            async () => {
-              const quotaConsumed = OrganizationGovernanceService.consumeRequestQuota(
-                runtimeContext.organizationId,
-                1
-              )
-              if (!quotaConsumed.allowed) {
-                requestDenied = quotaConsumed
-                return null
-              }
-
-              const driverParams = VideoGenerationService.toDriverParams({
-                organizationId: runtimeContext.organizationId,
-                workspaceId: runtimeContext.workspaceId,
-                createdBy: runtimeContext.actorName,
-                modelId: body.modelId,
-                text: body.text,
-                negativePrompt: body.negativePrompt,
-                options: body.options,
-                actorId: body.actorId,
-                consistencyStrength: body.consistencyStrength,
-                syncLip: body.syncLip,
-                sync_lip: body.sync_lip,
-                worldLink: body.worldLink,
-                worldId: body.worldId
-              })
-              return await VideoOrchestrator.generate(
-                body.modelId || 'veo-3.1',
-                driverParams,
-                runtimeContext
-              )
-            }
-          )
-
-          if (requestDenied) {
-            set.status = 429
-            return buildQuotaExceededResponse('request', requestDenied)
-          }
-          return output
-        } catch (error: any) {
-          const message = String(error?.message || '')
-          if (message.includes('并发配额')) {
-            const check = OrganizationGovernanceService.checkConcurrencyAllowed(
-              runtimeContext.organizationId
-            )
-            set.status = 429
-            return buildQuotaExceededResponse('concurrency', check)
-          }
-          if (error instanceof VideoGenerationValidationError) {
-            set.status = 400
-            return {
-              success: false,
-              status: 'error',
-              error: message || 'Invalid video generation payload'
-            }
-          }
-          throw error
-        }
-      },
-      {
-        body: t.Object({
-          text: t.String(),
-          modelId: t.Optional(t.String()),
-          negativePrompt: t.Optional(t.String()),
-          options: t.Optional(t.Any()),
-          actorId: t.Optional(t.String()),
-          consistencyStrength: t.Optional(t.Number()),
-          syncLip: t.Optional(t.Boolean()),
-          sync_lip: t.Optional(t.Boolean()),
-          worldLink: t.Optional(t.Boolean()),
-          worldId: t.Optional(t.String()),
-          workspaceId: t.Optional(t.String())
-        })
-      }
-    )
+    .post('/api/video/generate', handleLegacyVideoGenerate, {
+      body: t.Object({
+        text: t.String(),
+        modelId: t.Optional(t.String()),
+        negativePrompt: t.Optional(t.String()),
+        options: t.Optional(t.Any()),
+        actorId: t.Optional(t.String()),
+        consistencyStrength: t.Optional(t.Number()),
+        syncLip: t.Optional(t.Boolean()),
+        sync_lip: t.Optional(t.Boolean()),
+        worldLink: t.Optional(t.Boolean()),
+        worldId: t.Optional(t.String()),
+        workspaceId: t.Optional(t.String())
+      })
+    })
 
     .group('/api/ai', (group) =>
       group
@@ -3968,7 +3216,7 @@ export const createApp = () => {
     )
     .put(
       '/api/storage/local-upload/:objectKey',
-      async ({ params, request, set }) => {
+      async ({ params, request, set, body }) => {
         try {
           const decodedObjectKey = decodeURIComponent(params.objectKey || '').trim()
           if (!decodedObjectKey) {
@@ -4016,7 +3264,7 @@ export const createApp = () => {
               error: 'Forbidden: editor membership required'
             }
           }
-          const bytes = new Uint8Array(await request.arrayBuffer())
+          const bytes = await resolveRequestBytes(request, body)
           if (bytes.byteLength > maxUploadBytes) {
             set.status = 413
             return {
@@ -4158,29 +3406,34 @@ export const createApp = () => {
     })
     .ws('/ws/collab/:workspaceId', {
       open(ws) {
-        const params = (ws.data as any)?.params || {}
-        const query = (ws.data as any)?.query || {}
-        const headers = (ws.data as any)?.headers || {}
+        if (!isCollabSocketLike(ws)) {
+          return
+        }
+        const socket = ws
+        const data = readRecord(socket.data)
+        const params = readRecord(data.params)
+        const query = readRecord(data.query)
+        const headers = readRecord(data.headers)
         const workspaceId = String(params.workspaceId || query.workspaceId || '')
         if (!workspaceId) {
-          ws.send(JSON.stringify({ type: 'error', error: 'workspaceId is required' }))
-          ws.close()
+          socket.send(JSON.stringify({ type: 'error', error: 'workspaceId is required' }))
+          socket.close()
           return
         }
         const accessToken = resolveWsAccessToken(headers)
         const user = accessToken ? AuthService.verifyAccessToken(accessToken) : null
         if (!user) {
-          ws.send(JSON.stringify({ type: 'error', error: 'Unauthorized websocket request' }))
-          ws.close()
+          socket.send(JSON.stringify({ type: 'error', error: 'Unauthorized websocket request' }))
+          socket.close()
           return
         }
         const member = WorkspaceService.getMemberByUserId(workspaceId, user.id)
         if (!member) {
-          ws.send(JSON.stringify({ type: 'error', error: 'Member is not part of workspace' }))
-          ws.close()
+          socket.send(JSON.stringify({ type: 'error', error: 'Member is not part of workspace' }))
+          socket.close()
           return
         }
-        const joined = CollaborationService.join(ws as any, {
+        const joined = CollaborationService.join(socket, {
           workspaceId,
           memberName: member.name,
           userId: user.id,
@@ -4188,10 +3441,12 @@ export const createApp = () => {
           sessionId: query.sessionId ? String(query.sessionId) : undefined
         })
         if (!joined) {
-          ws.close()
+          socket.close()
         }
       },
       message(ws, message) {
+        if (!isCollabSocketLike(ws)) return
+        const socket = ws
         const content = (() => {
           if (typeof message === 'string') return message
           if (message instanceof Uint8Array) return Buffer.from(message).toString('utf8')
@@ -4210,10 +3465,12 @@ export const createApp = () => {
           }
           return ''
         })()
-        CollaborationService.onMessage(ws as any, content)
+        CollaborationService.onMessage(socket, content)
       },
       close(ws) {
-        CollaborationService.leave(ws as any)
+        if (!isCollabSocketLike(ws)) return
+        const socket = ws
+        CollaborationService.leave(socket)
       }
     })
 }

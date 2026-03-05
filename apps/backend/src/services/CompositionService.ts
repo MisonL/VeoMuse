@@ -4,6 +4,7 @@ import fs from 'fs/promises'
 import type { TimelineData } from '@veomuse/shared'
 
 type ExportQuality = NonNullable<TimelineData['exportConfig']>['quality']
+type ClipWithExportData = { data?: { exportSrc?: string } }
 
 export class CompositionService {
   private static getBaseUploadsDir() {
@@ -109,7 +110,9 @@ export class CompositionService {
 
     try {
       await fs.mkdir(outputDir, { recursive: true })
-    } catch (e) {}
+    } catch (error) {
+      console.warn('[Composition] 创建输出目录失败，将继续尝试写入', error)
+    }
     const outputPath = path.join(outputDir, outputFileName)
 
     if (process.env.NODE_ENV === 'test') {
@@ -124,7 +127,8 @@ export class CompositionService {
         timelineData.tracks.forEach((track) => {
           if (track.type !== 'text' && track.type !== 'mask') {
             track.clips.forEach((clip) => {
-              const candidate = (clip as any)?.data?.exportSrc || clip.src
+              const clipWithData = clip as ClipWithExportData
+              const candidate = clipWithData.data?.exportSrc || clip.src
               if (!candidate) return
               const safeSource = this.validateInputSource(candidate)
               command.input(safeSource)

@@ -2,8 +2,25 @@ import type { WorkspaceRole } from '@veomuse/shared'
 import { WorkspaceService } from './WorkspaceService'
 
 interface WsLike {
-  send: (payload: any) => void
-  data?: Record<string, any>
+  send: (payload: string) => void
+  data?: Record<string, unknown>
+}
+
+const asRecord = (value: unknown): Record<string, unknown> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return value as Record<string, unknown>
+}
+
+const readStringField = (container: Record<string, unknown>, key: string) => {
+  const raw = container[key]
+  if (typeof raw === 'string') return raw
+  if (typeof raw === 'number' || typeof raw === 'boolean') return String(raw)
+  return ''
+}
+
+const readWorkspaceRole = (raw: unknown): WorkspaceRole | undefined => {
+  if (raw === 'owner' || raw === 'editor' || raw === 'viewer') return raw
+  return undefined
 }
 
 interface JoinPayload {
@@ -80,23 +97,33 @@ export class CollaborationService {
 
   private static resolveSession(ws: WsLike) {
     const meta = this.sessionMeta.get(ws)
-    const data = (ws.data || {}) as Record<string, any>
-    const query = (data.query || {}) as Record<string, any>
-    const params = (data.params || {}) as Record<string, any>
-    const roleFromQuery = query.role === 'owner' || query.role === 'editor' ? query.role : 'viewer'
-    const roleFromData =
-      data.role === 'owner' || data.role === 'editor' || data.role === 'viewer'
-        ? data.role
-        : undefined
-    const userId = meta?.userId || data.userId || query.userId || null
+    const data = asRecord(ws.data)
+    const query = asRecord(data.query)
+    const params = asRecord(data.params)
+    const roleFromQuery = readWorkspaceRole(query.role)
+    const roleFromData = readWorkspaceRole(data.role)
+    const userId =
+      meta?.userId || readStringField(data, 'userId') || readStringField(query, 'userId') || null
 
     return {
       workspaceId:
-        meta?.workspaceId || data.workspaceId || params.workspaceId || query.workspaceId || null,
-      sessionId: meta?.sessionId || data.sessionId || query.sessionId || null,
-      memberName: meta?.memberName || data.memberName || query.memberName || 'Guest',
+        meta?.workspaceId ||
+        readStringField(data, 'workspaceId') ||
+        readStringField(params, 'workspaceId') ||
+        readStringField(query, 'workspaceId') ||
+        null,
+      sessionId:
+        meta?.sessionId ||
+        readStringField(data, 'sessionId') ||
+        readStringField(query, 'sessionId') ||
+        null,
+      memberName:
+        meta?.memberName ||
+        readStringField(data, 'memberName') ||
+        readStringField(query, 'memberName') ||
+        'Guest',
       userId: userId ? String(userId) : null,
-      role: (meta?.role || roleFromData || roleFromQuery || 'viewer') as WorkspaceRole
+      role: meta?.role || roleFromData || roleFromQuery || 'viewer'
     }
   }
 
@@ -171,7 +198,7 @@ export class CollaborationService {
 
   static leave(ws: WsLike) {
     const meta = this.sessionMeta.get(ws)
-    const data = (ws.data || {}) as Record<string, any>
+    const data = asRecord(ws.data)
     const session = this.resolveSession(ws)
     let workspaceId = session.workspaceId ? String(session.workspaceId).trim() : ''
     let sessionId = session.sessionId ? String(session.sessionId).trim() : ''
@@ -229,9 +256,9 @@ export class CollaborationService {
     }
 
     const meta = this.sessionMeta.get(ws)
-    const data = (ws.data || {}) as Record<string, any>
-    const query = (data.query || {}) as Record<string, any>
-    const params = (data.params || {}) as Record<string, any>
+    const data = asRecord(ws.data)
+    const query = asRecord(data.query)
+    const params = asRecord(data.params)
     const session = this.resolveSession(ws)
     let workspaceId = session.workspaceId
     let sessionId = session.sessionId

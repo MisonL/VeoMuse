@@ -36,7 +36,9 @@ export class TtsService extends BaseAiService {
 
     try {
       await fs.mkdir(outputDir, { recursive: true })
-    } catch (e) {}
+    } catch (error) {
+      console.warn('[AI-TTS] 创建音频输出目录失败，将继续尝试写入', error)
+    }
 
     const outputPath = path.join(outputDir, fileName)
 
@@ -71,12 +73,13 @@ export class TtsService extends BaseAiService {
         status: 'error',
         message: 'TTS 响应缺少 audioBase64/audioUrl'
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error || '')
       return {
         success: false,
         status: 'error',
         message: 'TTS 网络请求失败',
-        error: error.message
+        error: message
       }
     }
   }

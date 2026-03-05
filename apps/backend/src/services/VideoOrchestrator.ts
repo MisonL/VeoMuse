@@ -10,6 +10,12 @@ import type {
 } from './ModelDriver'
 import { TelemetryService } from './TelemetryService'
 
+const resolveErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  const text = String(error || '').trim()
+  return text || fallback
+}
+
 export class VideoOrchestrator {
   private static drivers: Map<string, VideoModelDriver> = new Map()
 
@@ -95,7 +101,7 @@ export class VideoOrchestrator {
         timestamp: new Date().toISOString()
       })
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       TelemetryService.getInstance().recordApiCall({
         service: `MODEL-${modelId}-QUERY`,
         durationMs: Date.now() - start,
@@ -109,7 +115,7 @@ export class VideoOrchestrator {
         state: 'unknown',
         message: '驱动状态查询异常',
         provider: modelId,
-        error: String(error?.message || error || 'unknown query error')
+        error: resolveErrorMessage(error, 'unknown query error')
       }
     }
   }
@@ -154,7 +160,7 @@ export class VideoOrchestrator {
         timestamp: new Date().toISOString()
       })
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       TelemetryService.getInstance().recordApiCall({
         service: `MODEL-${modelId}-CANCEL`,
         durationMs: Date.now() - start,
@@ -168,7 +174,7 @@ export class VideoOrchestrator {
         state: 'failed',
         message: '驱动取消任务异常',
         provider: modelId,
-        error: String(error?.message || error || 'unknown cancel error')
+        error: resolveErrorMessage(error, 'unknown cancel error')
       }
     }
   }
