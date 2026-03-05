@@ -8,7 +8,8 @@
     "baseUrl": ".",
     "paths": {
       "@veomuse/*": ["packages/*/src"]
-    }
+    },
+    "jsx": "react-jsx"
   },
   "exclude": ["node_modules"]
 }

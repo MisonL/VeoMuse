@@ -8,12 +8,12 @@
     "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "elysia": "latest",
-    "@elysiajs/cors": "latest",
-    "fluent-ffmpeg": "latest"
+    "elysia": "1.4.27",
+    "@elysiajs/cors": "1.4.1",
+    "fluent-ffmpeg": "2.1.3"
   },
   "devDependencies": {
-    "@types/fluent-ffmpeg": "latest",
+    "@types/fluent-ffmpeg": "2.1.28",
     "@types/node": "^24.10.1",
     "@veomuse/shared": "workspace:*"
   }

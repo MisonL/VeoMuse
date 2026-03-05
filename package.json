@@ -33,7 +33,7 @@
     "release:gate": "bun run scripts/release_gate.ts",
     "release:real:precheck": "bun run scripts/real_e2e_precheck.ts",
     "release:gate:real": "bun run scripts/release_gate.ts --with-real-e2e",
-    "lint": "bun run --cwd packages/shared lint && bun run --cwd apps/backend lint",
+    "lint": "bun run --cwd packages/shared lint && bun run --cwd apps/backend lint && bun run --cwd apps/frontend lint && bun run --cwd apps/frontend lint:eslint",
     "format": "prettier . --write --ignore-unknown",
     "format:prettier": "prettier . --write --ignore-unknown",
     "format:check": "prettier . --check --ignore-unknown",
@@ -43,13 +43,16 @@
     "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/dist"
   },
   "devDependencies": {
-    "@happy-dom/global-registrator": "latest",
+    "@happy-dom/global-registrator": "20.8.3",
     "@playwright/test": "^1.58.2",
-    "@testing-library/dom": "latest",
-    "@testing-library/jest-dom": "latest",
-    "@testing-library/react": "latest",
-    "@types/bun": "latest",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@types/bun": "1.3.9",
     "concurrently": "^8.2.2",
     "prettier": "^3.6.2"
+  },
+  "overrides": {
+    "baseline-browser-mapping": "2.10.0"
   }
 }
