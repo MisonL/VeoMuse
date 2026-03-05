@@ -208,7 +208,10 @@ const profileFromRow = (row: DbRecord): ModelProfile => ({
   updatedAt: String(row.updated_at || nowIso())
 })
 
-const metricsFromRow = (row: DbRecord | null | undefined, modelId: string): ModelRuntimeMetrics => ({
+const metricsFromRow = (
+  row: DbRecord | null | undefined,
+  modelId: string
+): ModelRuntimeMetrics => ({
   modelId,
   windowMinutes: Number(row?.window_minutes ?? 1440),
   totalRequests: Number(row?.total_requests ?? 0),

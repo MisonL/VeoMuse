@@ -288,9 +288,12 @@ export class ChannelConfigService {
       LIMIT 1
     `
       )
-      .get(input.organizationId, input.providerId, scopeWorkspaceId, scopeWorkspaceId) as
-      | DbChannelConfigRow
-      | null
+      .get(
+        input.organizationId,
+        input.providerId,
+        scopeWorkspaceId,
+        scopeWorkspaceId
+      ) as DbChannelConfigRow | null
 
     const existingBaseUrl = String(existing?.base_url || '').trim()
     const nextBaseUrl =
@@ -389,9 +392,9 @@ export class ChannelConfigService {
       },
       input.traceId
     )
-    const row = db.prepare(`SELECT * FROM ai_channel_configs WHERE id = ?`).get(id) as
-      | DbChannelConfigRow
-      | null
+    const row = db
+      .prepare(`SELECT * FROM ai_channel_configs WHERE id = ?`)
+      .get(id) as DbChannelConfigRow | null
     return normalizeConfigRow(row)
   }
 
@@ -399,26 +402,28 @@ export class ChannelConfigService {
     this.assertProvider(providerId)
     const db = getLocalDb()
     const workspaceId = context.workspaceId?.trim() || null
-    const row = (workspaceId
-      ? db
-          .prepare(
-            `
+    const row = (
+      workspaceId
+        ? db
+            .prepare(
+              `
         SELECT * FROM ai_channel_configs
         WHERE organization_id = ? AND provider_id = ? AND (workspace_id = ? OR workspace_id IS NULL)
         ORDER BY workspace_id DESC, updated_at DESC
         LIMIT 1
       `
-          )
-          .get(context.organizationId, providerId, workspaceId)
-      : db
-          .prepare(
-            `
+            )
+            .get(context.organizationId, providerId, workspaceId)
+        : db
+            .prepare(
+              `
         SELECT * FROM ai_channel_configs
         WHERE organization_id = ? AND provider_id = ? AND workspace_id IS NULL
         LIMIT 1
       `
-          )
-          .get(context.organizationId, providerId)) as DbChannelConfigRow | null
+            )
+            .get(context.organizationId, providerId)
+    ) as DbChannelConfigRow | null
 
     if (!row) return null
     const secret = decryptSecret(String(row.secret_encrypted || ''))

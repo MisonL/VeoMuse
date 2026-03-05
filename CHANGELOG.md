@@ -7,7 +7,22 @@
 
 ### Added
 
-- 待补充
+- 新增 Docker 烟测脚本 `scripts/docker_smoke_check.ts`，支持 `up --wait`、健康探测、失败日志采集与自动清理。
+- 新增 CI 作业 `docker-smoke-main`（仅 `main` 分支 push 触发）用于容器化基础可用性回归。
+- 新增后端路由模块 `apps/backend/src/http/videoComposeRoute.ts`，承载 `/api/video/compose` 逻辑。
+
+### Changed
+
+- `apps/frontend` 的 `lint:eslint` 恢复为原生 `eslint . --ext .ts,.tsx`，不再依赖过滤脚本。
+- 依赖覆盖策略新增 `browserslist@4.28.1`，与 `baseline-browser-mapping@2.10.0` 一并固定，降低依赖漂移风险。
+- `ComparisonLab.tsx` 抽离通用解析与校验逻辑至 `comparison-lab/helpers.ts`，减少组件复杂度并提升可维护性。
+- `docs/DEPLOYMENT.md` 补充 Docker smoke 使用方式与 CI 执行策略说明。
+
+### Fixed
+
+- 修复前后端类型检查中因路由拆分产生的残留未使用导入问题。
+- 消除 `baseline-browser-mapping` 相关告警的依赖链根因（通过锁定上游 `browserslist` 版本）。
+- 清理废弃脚本 `scripts/run_eslint_filtered.ts`，避免死代码继续留存。
 
 ## [3.2.0] - 2026-03-05
 

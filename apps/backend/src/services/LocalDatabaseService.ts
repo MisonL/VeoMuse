@@ -85,7 +85,11 @@ const asRecord = (value: unknown): Record<string, unknown> => {
 }
 const resolveErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback
-const logNonBlockingDatabaseWarning = (scope: string, error: unknown, fallback = 'unknown error') => {
+const logNonBlockingDatabaseWarning = (
+  scope: string,
+  error: unknown,
+  fallback = 'unknown error'
+) => {
   console.warn(`[LocalDatabaseService] ${scope}: ${resolveErrorMessage(error, fallback)}`)
 }
 const RECOVERY_TABLES = [
@@ -293,7 +297,9 @@ const checkIntegrityOnDb = (
       messages.length ? messages : ['No integrity output']
     )
   } catch (error: unknown) {
-    return buildIntegrityReport(dbPath, mode, 'error', [resolveErrorMessage(error, 'Integrity check failed')])
+    return buildIntegrityReport(dbPath, mode, 'error', [
+      resolveErrorMessage(error, 'Integrity check failed')
+    ])
   }
 }
 
@@ -1863,7 +1869,11 @@ export class LocalDatabaseService {
         try {
           return normalizeRepairReport(JSON.parse(row.report_json))
         } catch (error: unknown) {
-          logNonBlockingDatabaseWarning('parse repair history row', error, 'invalid repair history row')
+          logNonBlockingDatabaseWarning(
+            'parse repair history row',
+            error,
+            'invalid repair history row'
+          )
           return null
         }
       })

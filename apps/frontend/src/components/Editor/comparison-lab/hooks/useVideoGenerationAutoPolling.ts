@@ -10,10 +10,7 @@ interface UseVideoGenerationAutoPollingParams {
   videoGenerationSelectedJobId: string
   isVideoGenerationBusy: boolean
   loadVideoGenerationJobs: (append?: boolean, options?: { silent?: boolean }) => Promise<void>
-  queryVideoGenerationJobDetail: (
-    jobId?: string,
-    options?: { silent?: boolean }
-  ) => Promise<void>
+  queryVideoGenerationJobDetail: (jobId?: string, options?: { silent?: boolean }) => Promise<void>
   setIsVideoGenerationAutoSyncTicking: (value: boolean) => void
   setVideoGenerationLastAutoSyncAt: (value: string) => void
 }
