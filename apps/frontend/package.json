@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "tsc -p tsconfig.app.json --noEmit",
-    "lint:eslint": "eslint . --ext .ts,.tsx",
+    "lint:eslint": "bun run ../../scripts/run_eslint_filtered.ts .",
     "preview": "vite preview"
   },
   "dependencies": {
