@@ -103,11 +103,19 @@ const readQueueFromStorage = (): PendingJourneyReport[] => {
     if (!Array.isArray(parsed)) return []
     return parsed
       .filter((item) => item && typeof item === 'object')
-      .map((item: any) => {
-        const payload = item.payload || {}
+      .map((item: unknown) => {
+        const itemRecord = item && typeof item === 'object' ? (item as Record<string, unknown>) : {}
+        const payload =
+          itemRecord.payload && typeof itemRecord.payload === 'object'
+            ? (itemRecord.payload as Record<string, unknown>)
+            : {}
+        const payloadMeta =
+          payload.meta && typeof payload.meta === 'object'
+            ? (payload.meta as Record<string, unknown>)
+            : {}
         if (!payload.sessionId || !payload.idempotencyKey) return null
         return {
-          id: String(item.id || createQueueId()),
+          id: String(itemRecord.id || createQueueId()),
           payload: {
             flowType: 'first_success_path' as const,
             source: 'frontend' as const,
@@ -119,18 +127,16 @@ const readQueueFromStorage = (): PendingJourneyReport[] => {
             sessionId: String(payload.sessionId),
             idempotencyKey: String(payload.idempotencyKey),
             meta: {
-              steps: Array.isArray(payload?.meta?.steps)
-                ? (payload.meta.steps as JourneyStep[])
-                : [],
-              reason: String(payload?.meta?.reason || ''),
-              failedStage: normalizeJourneyFailedStage(payload?.meta?.failedStage),
-              errorKind: normalizeJourneyErrorKind(payload?.meta?.errorKind),
-              httpStatus: normalizeHttpStatus(payload?.meta?.httpStatus)
+              steps: Array.isArray(payloadMeta.steps) ? (payloadMeta.steps as JourneyStep[]) : [],
+              reason: String(payloadMeta.reason || ''),
+              failedStage: normalizeJourneyFailedStage(payloadMeta.failedStage),
+              errorKind: normalizeJourneyErrorKind(payloadMeta.errorKind),
+              httpStatus: normalizeHttpStatus(payloadMeta.httpStatus)
             }
           },
-          attempt: Math.max(0, Number(item.attempt || 0)),
-          nextAttemptAt: Math.max(0, Number(item.nextAttemptAt || Date.now())),
-          createdAt: Math.max(0, Number(item.createdAt || Date.now()))
+          attempt: Math.max(0, Number(itemRecord.attempt || 0)),
+          nextAttemptAt: Math.max(0, Number(itemRecord.nextAttemptAt || Date.now())),
+          createdAt: Math.max(0, Number(itemRecord.createdAt || Date.now()))
         } as PendingJourneyReport
       })
       .filter(Boolean) as PendingJourneyReport[]

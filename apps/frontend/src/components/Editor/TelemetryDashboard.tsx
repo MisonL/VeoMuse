@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   adminGetJson,
   adminPostJson,
@@ -59,6 +59,33 @@ const REPAIR_PAGE_SIZE = 20
 const SLO_BREAKDOWN_LIMIT = 8
 const SLO_JOURNEY_FAILURE_LIMIT = 10
 
+interface DbHealthSummary {
+  status?: string
+  mode?: string
+  checkedAt?: string
+  messages?: string[]
+}
+
+interface DbRuntimeConfig {
+  autoRepairEnabled?: boolean
+  runtimeHealthcheckEnabled?: boolean
+  runtimeHealthcheckIntervalMs?: number
+  dbPath?: string
+}
+
+interface DbRepairRecord {
+  status?: string
+  reason?: string
+  timestamp?: string
+  salvage?: {
+    copiedRows?: number
+  }
+  actions?: unknown[]
+}
+
+const resolveErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback
+
 const TelemetryDashboard: React.FC = () => {
   useAdminMetricsPolling()
   const metrics = useAdminMetricsStore((state) => state.metrics)
@@ -70,9 +97,9 @@ const TelemetryDashboard: React.FC = () => {
   const [sloJourneyFailCount, setSloJourneyFailCount] = useState(0)
   const [sloError, setSloError] = useState('')
   const [dbError, setDbError] = useState<string>('')
-  const [dbHealth, setDbHealth] = useState<any>(null)
-  const [dbRuntime, setDbRuntime] = useState<any>(null)
-  const [dbRepairs, setDbRepairs] = useState<any[]>([])
+  const [dbHealth, setDbHealth] = useState<DbHealthSummary | null>(null)
+  const [dbRuntime, setDbRuntime] = useState<DbRuntimeConfig | null>(null)
+  const [dbRepairs, setDbRepairs] = useState<DbRepairRecord[]>([])
   const [repairRange, setRepairRange] = useState<RepairRange>('24h')
   const [repairStatusFilter, setRepairStatusFilter] = useState<RepairStatusFilter>('all')
   const [repairReasonInput, setRepairReasonInput] = useState('')
@@ -118,6 +145,7 @@ const TelemetryDashboard: React.FC = () => {
   const latestRepairQueryToken = useRef(0)
   const latestGovernanceRequestToken = useRef(0)
   const pollFailureStreak = useRef(0)
+  const dbRepairsRef = useRef<DbRepairRecord[]>([])
   const sloDecision = sloSummary ? resolveSloDecision(sloSummary) : null
   const metricsOverview = resolveMetricsOverview(metrics)
 
@@ -144,6 +172,10 @@ const TelemetryDashboard: React.FC = () => {
     }
     return projectId
   }
+
+  useEffect(() => {
+    dbRepairsRef.current = dbRepairs
+  }, [dbRepairs])
 
   useEffect(() => {
     let lastTime = performance.now()
@@ -205,25 +237,30 @@ const TelemetryDashboard: React.FC = () => {
 
   const fetchDbHealth = async (mode: 'quick' | 'full' = 'quick') => {
     try {
-      const healthPayload = await adminGetJson<any>(`/api/admin/db/health?mode=${mode}`)
+      const healthPayload = await adminGetJson<{ health?: DbHealthSummary }>(
+        `/api/admin/db/health?mode=${mode}`
+      )
       setDbHealth(healthPayload.health || null)
       setDbError('')
       return true
-    } catch (error: any) {
-      setDbError(error?.message || '拉取数据库健康状态失败')
+    } catch (error: unknown) {
+      setDbError(resolveErrorMessage(error, '拉取数据库健康状态失败'))
       return false
     }
   }
 
   const fetchDbRuntime = async () => {
     try {
-      const runtimePayload = await adminGetJson<any>('/api/admin/db/runtime')
+      const runtimePayload = await adminGetJson<{
+        runtime?: DbRuntimeConfig
+        health?: DbHealthSummary
+      }>('/api/admin/db/runtime')
       setDbRuntime(runtimePayload.runtime || null)
       if (runtimePayload.health) setDbHealth(runtimePayload.health)
       setDbError('')
       return true
-    } catch (error: any) {
-      setDbError(error?.message || '拉取数据库运行配置失败')
+    } catch (error: unknown) {
+      setDbError(resolveErrorMessage(error, '拉取数据库运行配置失败'))
       return false
     }
   }
@@ -238,9 +275,9 @@ const TelemetryDashboard: React.FC = () => {
       setProviderHealthRows(Array.isArray(payload.providers) ? payload.providers : [])
       setProviderHealthError('')
       return true
-    } catch (error: any) {
+    } catch (error: unknown) {
       setProviderHealthRows([])
-      setProviderHealthError(error?.message || '拉取 Provider 健康状态失败')
+      setProviderHealthError(resolveErrorMessage(error, '拉取 Provider 健康状态失败'))
       return false
     } finally {
       setIsProviderHealthLoading(false)
@@ -259,9 +296,9 @@ const TelemetryDashboard: React.FC = () => {
       }
       setSloSummary(normalized)
       return ''
-    } catch (error: any) {
+    } catch (error: unknown) {
       setSloSummary(null)
-      return error?.message || '拉取 SLO 摘要失败'
+      return resolveErrorMessage(error, '拉取 SLO 摘要失败')
     }
   }
 
@@ -273,9 +310,9 @@ const TelemetryDashboard: React.FC = () => {
       }>(`/api/admin/slo/breakdown?windowMinutes=${windowMinutes}&category=non_ai&limit=${limit}`)
       setSloBreakdown(payload.breakdown?.items || [])
       return ''
-    } catch (error: any) {
+    } catch (error: unknown) {
       setSloBreakdown([])
-      return error?.message || '拉取 SLO 分解失败'
+      return resolveErrorMessage(error, '拉取 SLO 分解失败')
     }
   }
 
@@ -292,63 +329,71 @@ const TelemetryDashboard: React.FC = () => {
       setSloJourneyFailures(Array.isArray(payload.items) ? payload.items : [])
       setSloJourneyFailCount(normalizeJourneyFailCount(payload.counts?.totalFailJourneys))
       return ''
-    } catch (error: any) {
+    } catch (error: unknown) {
       setSloJourneyFailures([])
       setSloJourneyFailCount(0)
-      return error?.message || '拉取失败旅程诊断失败'
+      return resolveErrorMessage(error, '拉取失败旅程诊断失败')
     }
   }
 
-  const fetchRepairHistory = async (append: boolean) => {
-    if (!getAdminToken().trim()) {
-      // 未配置管理员令牌时不主动触发 admin 请求，避免 401 噪音与控制台报错。
-      setDbError('')
-      setIsRepairLoading(false)
-      setDbRepairs([])
-      setRepairTotal(null)
-      setRepairHasMore(false)
-      return
-    }
-
-    const nextOffset = append ? dbRepairs.length : 0
-    const queryToken = ++latestRepairQueryToken.current
-    setIsRepairLoading(true)
-    try {
-      const query = buildRepairQueryParams({
-        offset: nextOffset,
-        range: repairRange,
-        status: repairStatusFilter,
-        reason: repairReasonFilter,
-        pageSize: REPAIR_PAGE_SIZE
-      })
-      const repairsPayload = await adminGetJson<any>(`/api/admin/db/repairs?${query.toString()}`)
-      if (queryToken !== latestRepairQueryToken.current) return
-
-      const page = normalizeRepairHistoryPage({
-        payload: repairsPayload,
-        prevRows: dbRepairs,
-        append,
-        pageSize: REPAIR_PAGE_SIZE
-      })
-
-      setDbRepairs(page.rows)
-      setRepairTotal(page.total)
-      setRepairHasMore(page.hasMore)
-      setDbError('')
-    } catch (error: any) {
-      if (queryToken !== latestRepairQueryToken.current) return
-      setDbError(error?.message || '拉取数据库修复历史失败')
-      if (!append) {
+  const fetchRepairHistory = useCallback(
+    async (append: boolean) => {
+      if (!getAdminToken().trim()) {
+        // 未配置管理员令牌时不主动触发 admin 请求，避免 401 噪音与控制台报错。
+        setDbError('')
+        setIsRepairLoading(false)
         setDbRepairs([])
+        dbRepairsRef.current = []
         setRepairTotal(null)
         setRepairHasMore(false)
+        return
       }
-    } finally {
-      if (queryToken === latestRepairQueryToken.current) {
-        setIsRepairLoading(false)
+
+      const nextOffset = append ? dbRepairsRef.current.length : 0
+      const queryToken = ++latestRepairQueryToken.current
+      setIsRepairLoading(true)
+      try {
+        const query = buildRepairQueryParams({
+          offset: nextOffset,
+          range: repairRange,
+          status: repairStatusFilter,
+          reason: repairReasonFilter,
+          pageSize: REPAIR_PAGE_SIZE
+        })
+        const repairsPayload = await adminGetJson<unknown>(
+          `/api/admin/db/repairs?${query.toString()}`
+        )
+        if (queryToken !== latestRepairQueryToken.current) return
+
+        const page = normalizeRepairHistoryPage<DbRepairRecord>({
+          payload: repairsPayload,
+          prevRows: dbRepairsRef.current,
+          append,
+          pageSize: REPAIR_PAGE_SIZE
+        })
+
+        setDbRepairs(page.rows)
+        dbRepairsRef.current = page.rows
+        setRepairTotal(page.total)
+        setRepairHasMore(page.hasMore)
+        setDbError('')
+      } catch (error: unknown) {
+        if (queryToken !== latestRepairQueryToken.current) return
+        setDbError(resolveErrorMessage(error, '拉取数据库修复历史失败'))
+        if (!append) {
+          setDbRepairs([])
+          dbRepairsRef.current = []
+          setRepairTotal(null)
+          setRepairHasMore(false)
+        }
+      } finally {
+        if (queryToken === latestRepairQueryToken.current) {
+          setIsRepairLoading(false)
+        }
       }
-    }
-  }
+    },
+    [repairRange, repairReasonFilter, repairStatusFilter]
+  )
 
   useEffect(() => {
     let disposed = false
@@ -410,7 +455,7 @@ const TelemetryDashboard: React.FC = () => {
   useEffect(() => {
     if (!getAdminToken().trim()) return
     void fetchRepairHistory(false)
-  }, [repairRange, repairStatusFilter, repairReasonFilter])
+  }, [fetchRepairHistory])
 
   useEffect(() => {
     setGovernanceCommentCursor('')
@@ -450,8 +495,8 @@ const TelemetryDashboard: React.FC = () => {
       await fetchDbHealth('full')
       await fetchDbRuntime()
       await fetchRepairHistory(false)
-    } catch (error: any) {
-      setDbError(error?.message || '数据库修复失败')
+    } catch (error: unknown) {
+      setDbError(resolveErrorMessage(error, '数据库修复失败'))
     } finally {
       setIsDbBusy(false)
     }
@@ -498,9 +543,9 @@ const TelemetryDashboard: React.FC = () => {
       setGovernanceCommentCursor(nextCursor)
       setGovernanceCommentHasMore(Boolean(nextCursor) && payload.page.hasMore)
       setGovernanceSelectedCommentId(resolveSelectedCommentId(governanceSelectedCommentId, merged))
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isStaleRequest()) return
-      setGovernanceError(error?.message || '加载项目评论失败')
+      setGovernanceError(resolveErrorMessage(error, '加载项目评论失败'))
     } finally {
       if (!isStaleRequest()) {
         setGovernanceBusy(false)
@@ -534,9 +579,9 @@ const TelemetryDashboard: React.FC = () => {
       }
       setGovernanceCommentContent('')
       setGovernanceCommentMentions('')
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isStaleRequest()) return
-      setGovernanceError(error?.message || '创建项目评论失败')
+      setGovernanceError(resolveErrorMessage(error, '创建项目评论失败'))
     } finally {
       if (!isStaleRequest()) {
         setGovernanceBusy(false)
@@ -565,9 +610,9 @@ const TelemetryDashboard: React.FC = () => {
           prev.map((item) => (item.id === comment.id ? comment : item))
         )
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isStaleRequest()) return
-      setGovernanceError(error?.message || '标记评论失败')
+      setGovernanceError(resolveErrorMessage(error, '标记评论失败'))
     } finally {
       if (!isStaleRequest()) {
         setGovernanceBusy(false)
@@ -589,9 +634,9 @@ const TelemetryDashboard: React.FC = () => {
       const rows = await listProjectGovernanceReviews(projectId, { limit })
       if (isStaleRequest()) return
       setGovernanceReviews(rows)
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isStaleRequest()) return
-      setGovernanceError(error?.message || '加载项目评审失败')
+      setGovernanceError(resolveErrorMessage(error, '加载项目评审失败'))
     } finally {
       if (!isStaleRequest()) {
         setGovernanceBusy(false)
@@ -629,9 +674,9 @@ const TelemetryDashboard: React.FC = () => {
       }
       setGovernanceReviewSummary('')
       setGovernanceReviewScore('')
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isStaleRequest()) return
-      setGovernanceError(error?.message || '创建项目评审失败')
+      setGovernanceError(resolveErrorMessage(error, '创建项目评审失败'))
     } finally {
       if (!isStaleRequest()) {
         setGovernanceBusy(false)
@@ -658,9 +703,9 @@ const TelemetryDashboard: React.FC = () => {
       ) {
         setGovernanceSelectedTemplateId(rows[0]?.id || '')
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isStaleRequest()) return
-      setGovernanceError(error?.message || '加载项目模板失败')
+      setGovernanceError(resolveErrorMessage(error, '加载项目模板失败'))
     } finally {
       if (!isStaleRequest()) {
         setGovernanceBusy(false)
@@ -678,8 +723,8 @@ const TelemetryDashboard: React.FC = () => {
     let options: Record<string, unknown> = {}
     try {
       options = parseJsonObject(governanceTemplateOptions, '模板应用参数')
-    } catch (error: any) {
-      setGovernanceError(error?.message || '模板应用参数解析失败')
+    } catch (error: unknown) {
+      setGovernanceError(resolveErrorMessage(error, '模板应用参数解析失败'))
       return
     }
     const requestToken = ++latestGovernanceRequestToken.current
@@ -695,9 +740,9 @@ const TelemetryDashboard: React.FC = () => {
       })
       if (isStaleRequest()) return
       setGovernanceTemplateResult(result || null)
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isStaleRequest()) return
-      setGovernanceError(error?.message || '应用项目模板失败')
+      setGovernanceError(resolveErrorMessage(error, '应用项目模板失败'))
     } finally {
       if (!isStaleRequest()) {
         setGovernanceBusy(false)
@@ -711,8 +756,8 @@ const TelemetryDashboard: React.FC = () => {
     let rows: unknown[] = []
     try {
       rows = parseJsonArray(governanceBatchOperations, '批量更新 operations')
-    } catch (error: any) {
-      setGovernanceError(error?.message || '批量更新参数解析失败')
+    } catch (error: unknown) {
+      setGovernanceError(resolveErrorMessage(error, '批量更新参数解析失败'))
       return
     }
     const operations = normalizeClipBatchOperations(rows)
@@ -730,9 +775,9 @@ const TelemetryDashboard: React.FC = () => {
       const result = await batchUpdateProjectGovernanceClips(projectId, operations)
       if (isStaleRequest()) return
       setGovernanceBatchResult(result || null)
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (isStaleRequest()) return
-      setGovernanceError(error?.message || '片段批量更新失败')
+      setGovernanceError(resolveErrorMessage(error, '片段批量更新失败'))
     } finally {
       if (!isStaleRequest()) {
         setGovernanceBusy(false)
@@ -1251,7 +1296,12 @@ const TelemetryDashboard: React.FC = () => {
               状态：<b>{dbHealth.status}</b>
             </div>
             <div>检查模式：{dbHealth.mode}</div>
-            <div>时间：{new Date(dbHealth.checkedAt).toLocaleString()}</div>
+            <div>
+              时间：
+              {typeof dbHealth.checkedAt === 'string' && dbHealth.checkedAt
+                ? new Date(dbHealth.checkedAt).toLocaleString()
+                : '-'}
+            </div>
             <div className="db-health-msg">
               {(dbHealth.messages || []).slice(0, 2).join(' | ') || '无'}
             </div>

@@ -3,6 +3,14 @@ import { applyStyleDataUpdate, applyVfxDataUpdate } from '../../utils/clipOperat
 
 export type AlchemyActionType = 'repair' | 'style' | 'lip' | 'enhance' | 'audio' | 'tts' | 'vfx'
 
+const asRecord = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
+const asNonEmptyString = (value: unknown) =>
+  typeof value === 'string' && value.trim() ? value : null
+
 export const resolveSelectedClipContext = (tracks: Track[], selectedClipId: string | null) => {
   if (!selectedClipId) {
     return {
@@ -25,14 +33,18 @@ export const resolveSelectedClipContext = (tracks: Track[], selectedClipId: stri
   }
 }
 
-export const extractInspectorErrorMessage = (payload: any, fallback: string) => {
-  if (!payload || typeof payload !== 'object') return fallback
-  if (typeof payload.error === 'string' && payload.error.trim()) return payload.error
-  if (typeof payload.message === 'string' && payload.message.trim()) return payload.message
-  if (typeof payload.reason === 'string' && payload.reason.trim()) return payload.reason
-  if (typeof payload.repair?.error === 'string' && payload.repair.error.trim()) {
-    return payload.repair.error
-  }
+export const extractInspectorErrorMessage = (payload: unknown, fallback: string) => {
+  const row = asRecord(payload)
+  if (!row) return fallback
+  const directError = asNonEmptyString(row.error)
+  if (directError) return directError
+  const directMessage = asNonEmptyString(row.message)
+  if (directMessage) return directMessage
+  const directReason = asNonEmptyString(row.reason)
+  if (directReason) return directReason
+  const repair = asRecord(row.repair)
+  const repairError = asNonEmptyString(repair?.error)
+  if (repairError) return repairError
   return fallback
 }
 
@@ -118,7 +130,7 @@ export const buildAlchemyRequest = (
 
 export const resolveAlchemyOutcome = (
   type: AlchemyActionType,
-  payload: any,
+  payload: unknown,
   clipData: Clip['data'],
   options: {
     stylePreset: 'cinematic' | 'van_gogh' | 'cyberpunk'
@@ -127,16 +139,20 @@ export const resolveAlchemyOutcome = (
     vfxIntensity: number
   }
 ) => {
-  if (payload?.status === 'not_implemented') {
+  const payloadRecord = asRecord(payload)
+  const status = asNonEmptyString(payloadRecord?.status)
+  const message = asNonEmptyString(payloadRecord?.message)
+  const operationId = asNonEmptyString(payloadRecord?.operationId) || ''
+  if (status === 'not_implemented') {
     return {
       toastLevel: 'warning' as const,
-      toastMessage: payload.message || '该能力未配置 provider'
+      toastMessage: message || '该能力未配置 provider'
     }
   }
-  if (payload?.success === false) {
+  if (payloadRecord?.success === false) {
     return {
       toastLevel: 'error' as const,
-      toastMessage: payload.message || '该能力执行失败'
+      toastMessage: message || '该能力执行失败'
     }
   }
 
@@ -145,14 +161,14 @@ export const resolveAlchemyOutcome = (
     dataUpdate = applyStyleDataUpdate(clipData, {
       stylePreset: options.stylePreset,
       styleModel: options.styleModel,
-      operationId: payload?.operationId || ''
+      operationId
     })
   }
   if (type === 'vfx') {
     dataUpdate = applyVfxDataUpdate(clipData, {
       vfxType: options.vfxType,
       vfxIntensity: options.vfxIntensity,
-      operationId: payload?.operationId || ''
+      operationId
     })
   }
   return {

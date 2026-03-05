@@ -98,11 +98,18 @@ export const findParentTrackByClipId = (tracks: Track[], selectedClipId: string)
 export const buildMotionSyncPatch = (
   existingData: Record<string, unknown> | undefined,
   motionActorId: string,
-  latestMotionData: any,
+  latestMotionData: unknown,
   nowMs: number
-) => ({
-  ...(existingData || {}),
-  actorId: motionActorId,
-  motionSyncedAt: nowMs,
-  motionPoseCount: latestMotionData?.pose?.length || 0
-})
+) => {
+  const pose =
+    latestMotionData && typeof latestMotionData === 'object'
+      ? (latestMotionData as { pose?: unknown }).pose
+      : undefined
+  const motionPoseCount = Array.isArray(pose) ? pose.length : 0
+  return {
+    ...(existingData || {}),
+    actorId: motionActorId,
+    motionSyncedAt: nowMs,
+    motionPoseCount
+  }
+}

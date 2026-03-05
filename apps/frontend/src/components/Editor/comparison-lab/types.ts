@@ -17,6 +17,7 @@ import type {
   OrganizationQuota,
   OrganizationRole,
   OrganizationUsage,
+  MarketplaceModel,
   PromptWorkflow,
   PromptWorkflowRun,
   ReliabilityPolicy,
@@ -336,6 +337,20 @@ const toHeaderRecord = (headers?: HeadersInit): Record<string, string> => {
   return { ...headers }
 }
 
+const asRecord = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  return value as Record<string, unknown>
+}
+
+const resolveErrorMessage = (payload: unknown, fallback: string) => {
+  const record = asRecord(payload)
+  const rawError = record?.error
+  if (typeof rawError === 'string' && rawError.trim()) {
+    return rawError
+  }
+  return fallback
+}
+
 const requestProjectGovernance = async <T>(
   projectId: string,
   path: string,
@@ -360,14 +375,15 @@ const requestProjectGovernance = async <T>(
       headers: mergedHeaders
     }
   )
-  let payload: any = null
+  let payload: unknown = null
   try {
     payload = await response.json()
   } catch {
     payload = null
   }
-  if (!response.ok || payload?.success === false) {
-    throw new Error(payload?.error || `HTTP ${response.status}`)
+  const payloadRecord = asRecord(payload)
+  if (!response.ok || payloadRecord?.success === false) {
+    throw new Error(resolveErrorMessage(payload, `HTTP ${response.status}`))
   }
   return payload as T
 }
@@ -521,6 +537,7 @@ export type {
   CollabEvent,
   CollabPresence,
   CreativeRun,
+  MarketplaceModel,
   Organization,
   OrganizationMember,
   OrganizationQuota,

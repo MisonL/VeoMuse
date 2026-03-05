@@ -18,6 +18,9 @@ import {
 import TelemetryDashboard from './TelemetryDashboard'
 import './PropertyInspector.css'
 
+const resolveErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback
+
 const PropertyInspector: React.FC = () => {
   const { tracks, selectedClipId, updateClip, setTracks } = useEditorStore(
     useShallow((state) => ({
@@ -61,7 +64,7 @@ const PropertyInspector: React.FC = () => {
     })
   }, [fetchActors])
 
-  const callAuthJson = async <T = any,>(path: string, body: Record<string, unknown>) => {
+  const callAuthJson = async <T = unknown,>(path: string, body: Record<string, unknown>) => {
     if (!getAccessToken().trim()) {
       throw new Error('请先登录后再使用 AI 功能')
     }
@@ -72,15 +75,13 @@ const PropertyInspector: React.FC = () => {
       body: JSON.stringify(body ?? {})
     })
 
-    const payload = (await response.json().catch(() => null)) as any
+    const payload = (await response.json().catch(() => null)) as unknown
+    const payloadRecord =
+      payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null
     if (!response.ok) {
       throw new Error(extractInspectorErrorMessage(payload, `请求失败 (${response.status})`))
     }
-    if (
-      payload &&
-      typeof payload === 'object' &&
-      (payload.success === false || payload.status === 'error')
-    ) {
+    if (payloadRecord && (payloadRecord.success === false || payloadRecord.status === 'error')) {
       throw new Error(extractInspectorErrorMessage(payload, '请求失败'))
     }
     return payload as T
@@ -92,7 +93,7 @@ const PropertyInspector: React.FC = () => {
     }
   }
 
-  const handleDataUpdate = (dataUpdates: any) => {
+  const handleDataUpdate = (dataUpdates: Record<string, unknown>) => {
     if (selectedClip) {
       handleUpdate({ data: { ...((selectedClip as Clip).data || {}), ...dataUpdates } })
     }
@@ -141,8 +142,8 @@ const PropertyInspector: React.FC = () => {
       cloneSelectedClip(cloned)
 
       showToast(`已翻译并克隆为 ${translation.targetLang}`, 'success')
-    } catch (e: any) {
-      showToast(e.message || '翻译失败', 'error')
+    } catch (error: unknown) {
+      showToast(resolveErrorMessage(error, '翻译失败'), 'error')
     } finally {
       setIsProcessing(false)
     }
@@ -172,8 +173,8 @@ const PropertyInspector: React.FC = () => {
         handleDataUpdate(outcome.dataUpdate)
       }
       showToast(outcome.toastMessage, outcome.toastLevel)
-    } catch (e: any) {
-      showToast(e.message, 'error')
+    } catch (error: unknown) {
+      showToast(resolveErrorMessage(error, '炼金执行失败'), 'error')
     } finally {
       setIsProcessing(false)
     }
@@ -396,15 +397,19 @@ const PropertyInspector: React.FC = () => {
                   onClick={async () => {
                     setIsProcessing(true)
                     try {
-                      const data = await callAuthJson('/api/ai/spatial/render', {
+                      const data = await callAuthJson<{
+                        status?: string
+                        message?: string
+                        success?: boolean
+                      }>('/api/ai/spatial/render', {
                         clipId: current.id
                       })
                       if (data?.status === 'not_implemented')
                         showToast(data.message || '3D 重构服务未配置', 'warning')
                       else if (data?.success) showToast('✨ 3D 重构完成', 'success')
                       else showToast('3D 重构执行失败', 'error')
-                    } catch (e: any) {
-                      showToast(e.message || '3D 重构失败', 'error')
+                    } catch (error: unknown) {
+                      showToast(resolveErrorMessage(error, '3D 重构失败'), 'error')
                     } finally {
                       setIsProcessing(false)
                     }

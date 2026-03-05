@@ -9,12 +9,26 @@ import type {
 } from '../types'
 import { POLICY_BUDGET_GUARD_LABELS } from '../constants'
 
+interface MarketplaceItem {
+  profile: {
+    id: string
+    name: string
+    provider: string
+    capabilities: string[]
+    costPerSecond: number
+  }
+  metrics: {
+    successRate?: number
+    p95LatencyMs?: number
+  }
+}
+
 interface MarketplaceModePanelProps {
   selectedPolicyId: string
   policies: RoutingPolicy[]
   selectedPolicy: RoutingPolicy | null
   availableModels: ModelOption[]
-  marketplace: any[]
+  marketplace: MarketplaceItem[]
   isMarketplaceLoading: boolean
   marketplaceError: string
   policyCreateName: string
@@ -282,7 +296,7 @@ const MarketplaceModePanel: React.FC<MarketplaceModePanelProps> = ({
               暂无模型数据
             </div>
           ) : (
-            marketplace.map((item: any) => (
+            marketplace.map((item) => (
               <div key={item.profile.id} className="market-card">
                 <div className="market-head">
                   <strong>{item.profile.name}</strong>

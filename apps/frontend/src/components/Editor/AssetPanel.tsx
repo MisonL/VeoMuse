@@ -8,6 +8,7 @@ import { useToastStore } from '../../store/toastStore'
 import { buildAuthHeaders, getAccessToken, resolveApiBase } from '../../utils/eden'
 import { MotionSyncManager } from '../../utils/motionSync'
 import {
+  type AssetCategory,
   appendAssetToTracks,
   buildActorCreatePayload,
   buildMotionSyncPatch,
@@ -19,6 +20,29 @@ import {
   validateMotionSyncInput
 } from './assetPanel.logic'
 import './AssetPanel.css'
+
+interface LocalImportResponse {
+  success?: boolean
+  imported?: {
+    localPath?: string
+  }
+  error?: string
+}
+
+interface ActorCreateResponse {
+  success?: boolean
+  actor?: ActorProfile
+  error?: string
+}
+
+interface MotionSyncResponse {
+  success?: boolean
+  actorName?: string
+  error?: string
+}
+
+const resolveErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback
 
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
@@ -80,7 +104,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
     }))
   )
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeCategory, setActiveCategory] = useState<'all' | 'video' | 'audio'>('all')
+  const [activeCategory, setActiveCategory] = useState<AssetCategory>('all')
   const [actorName, setActorName] = useState('')
   const [actorRefImage, setActorRefImage] = useState('')
   const [motionActorId, setMotionActorId] = useState('')
@@ -90,17 +114,18 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
   const objectUrlsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
+    const objectUrls = objectUrlsRef.current
     return () => {
-      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
-      objectUrlsRef.current.clear()
+      objectUrls.forEach((url) => URL.revokeObjectURL(url))
+      objectUrls.clear()
     }
   }, [])
 
   const loadActors = useCallback(async () => {
     try {
       await fetchActors()
-    } catch (e: any) {
-      showToast(e.message || '加载演员库失败', 'error')
+    } catch (error: unknown) {
+      showToast(resolveErrorMessage(error, '加载演员库失败'), 'error')
     }
   }, [fetchActors, showToast])
 
@@ -132,14 +157,14 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               contentType: file.type || undefined
             })
           })
-          const payload = (await response.json().catch(() => null)) as any
+          const payload = (await response.json().catch(() => null)) as LocalImportResponse | null
           if (!response.ok) {
             throw new Error(payload?.error || `HTTP ${response.status}`)
           }
           if (payload?.success && payload.imported?.localPath) {
             exportSrc = payload.imported.localPath
           }
-        } catch (e: any) {
+        } catch {
           showToast(`${file.name} 未能完成后端导入，将仅用于本地预览`, 'warning')
         }
 
@@ -195,7 +220,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
           ...buildActorCreatePayload(actorName, actorRefImage)
         })
       })
-      const payload = (await response.json().catch(() => null)) as any
+      const payload = (await response.json().catch(() => null)) as ActorCreateResponse | null
       if (!response.ok || payload?.success === false) {
         throw new Error(payload?.error || `HTTP ${response.status}`)
       }
@@ -207,8 +232,8 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
         setActorRefImage('')
         showToast('演员已加入演员库', 'success')
       }
-    } catch (e: any) {
-      showToast(e.message || '创建演员失败', 'error')
+    } catch (error: unknown) {
+      showToast(resolveErrorMessage(error, '创建演员失败'), 'error')
     } finally {
       setIsActorCreating(false)
     }
@@ -246,7 +271,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
           motionData: latestMotionData
         })
       })
-      const payload = (await response.json().catch(() => null)) as any
+      const payload = (await response.json().catch(() => null)) as MotionSyncResponse | null
       if (!response.ok || payload?.success === false) {
         throw new Error(payload?.error || `HTTP ${response.status}`)
       }
@@ -263,14 +288,15 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
       }
 
       showToast(`动捕已同步到演员：${payload?.actorName || motionActorId}`, 'success')
-    } catch (e: any) {
-      showToast(e.message || '动捕同步失败', 'error')
+    } catch (error: unknown) {
+      showToast(resolveErrorMessage(error, '动捕同步失败'), 'error')
     } finally {
       setIsMotionSyncing(false)
     }
   }
 
   const filteredAssets = filterAssetsByQueryAndCategory(assets, searchQuery, activeCategory)
+  const assetCategories: AssetCategory[] = ['all', 'video', 'audio']
 
   return (
     <div className="pro-asset-panel">
@@ -312,11 +338,11 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
           </div>
 
           <div className="asset-categories">
-            {['all', 'video', 'audio'].map((cat) => (
+            {assetCategories.map((cat) => (
               <button
                 key={cat}
                 className={`cat-btn ${activeCategory === cat ? 'active' : ''}`}
-                onClick={() => setActiveCategory(cat as any)}
+                onClick={() => setActiveCategory(cat)}
               >
                 {cat === 'all' ? '全部' : cat === 'video' ? '视频' : '音频'}
               </button>

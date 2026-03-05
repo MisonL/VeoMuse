@@ -6,7 +6,12 @@ const BASE_INTERVAL_MS = 2000
 const MAX_INTERVAL_MS = 30000
 const HISTORY_SIZE = 24
 
-type AdminMetricsPayload = any
+interface AdminMetricsPayload {
+  system?: {
+    renderLoad?: number
+  }
+  [key: string]: unknown
+}
 
 interface AdminMetricsState {
   metrics: AdminMetricsPayload | null
@@ -76,9 +81,11 @@ const refreshAdminMetricsNow = async (
     }
     try {
       const data = await adminGetJson<AdminMetricsPayload>('/api/admin/metrics')
-      const renderLoad = Number.isFinite(data?.system?.renderLoad)
-        ? Math.round(data.system.renderLoad)
-        : 0
+      const renderLoadRaw = data?.system?.renderLoad
+      const renderLoad =
+        typeof renderLoadRaw === 'number' && Number.isFinite(renderLoadRaw)
+          ? Math.round(renderLoadRaw)
+          : 0
       set((state) => ({
         metrics: data,
         error: '',
@@ -87,9 +94,9 @@ const refreshAdminMetricsNow = async (
         renderLoadHistory: pushRenderLoad(state.renderLoadHistory, renderLoad)
       }))
       return true
-    } catch (error: any) {
+    } catch (error: unknown) {
       set((state) => ({
-        error: error?.message || '拉取监控数据失败',
+        error: error instanceof Error ? error.message : '拉取监控数据失败',
         failureStreak: Math.min(6, state.failureStreak + 1)
       }))
       return false

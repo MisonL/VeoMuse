@@ -24,8 +24,15 @@ interface VideoEditorProps {
 
 type EditorStateSnapshot = ReturnType<typeof useEditorStore.getState>
 type EditorTemporalStore = StoreApi<TemporalState<EditorStateSnapshot>>
-const editorTemporalStore = (useEditorStore as unknown as { temporal: EditorTemporalStore })
-  .temporal
+type EditorStoreWithTemporal = typeof useEditorStore & { temporal?: EditorTemporalStore }
+
+const resolveEditorTemporalStore = (): EditorTemporalStore => {
+  const store = useEditorStore as EditorStoreWithTemporal
+  if (store.temporal) return store.temporal
+  throw new Error('editor temporal store is unavailable')
+}
+
+const editorTemporalStore = resolveEditorTemporalStore()
 
 const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
   const {
@@ -62,7 +69,7 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
     }))
   )
   const [containerRef, { width }] = useMeasure<HTMLDivElement>()
-  const [isReady, setIsReady] = useState(false)
+  const isReady = width > 0
   const [snapLine, setSnapLine] = useState<{ visible: boolean; time: number }>({
     visible: false,
     time: 0
@@ -88,10 +95,6 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
   )
 
   useShortcuts(shortcutMap)
-
-  useEffect(() => {
-    if (width > 0) setIsReady(true)
-  }, [width])
 
   useEffect(() => {
     if (isPlaying) {

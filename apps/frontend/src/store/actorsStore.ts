@@ -19,6 +19,12 @@ interface ActorsState {
   prependActor: (actor: ActorProfile) => void
 }
 
+interface ActorsApiResponse {
+  success?: boolean
+  error?: string
+  actors?: ActorProfile[]
+}
+
 let inFlightFetch: Promise<ActorProfile[]> | null = null
 
 export const useActorsStore = create<ActorsState>((set, get) => ({
@@ -44,7 +50,7 @@ export const useActorsStore = create<ActorsState>((set, get) => ({
           method: 'GET',
           headers: buildAuthHeaders()
         })
-        const payload = (await response.json().catch(() => null)) as any
+        const payload = (await response.json().catch(() => null)) as ActorsApiResponse | null
         if (!response.ok || payload?.success === false) {
           throw new Error(payload?.error || `HTTP ${response.status}`)
         }
@@ -56,8 +62,8 @@ export const useActorsStore = create<ActorsState>((set, get) => ({
           lastLoadedAt: Date.now()
         })
         return rows
-      } catch (error: any) {
-        const message = error?.message || '加载演员库失败'
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : '加载演员库失败'
         set({ isLoading: false, error: message })
         throw new Error(message)
       } finally {

@@ -126,8 +126,10 @@ export const parseJsonObject = (raw: string, fieldName: string) => {
       throw new Error(`${fieldName} 必须是 JSON 对象`)
     }
     return parsed as Record<string, unknown>
-  } catch (error: any) {
-    throw new Error(error?.message || `${fieldName} JSON 解析失败`)
+  } catch (error: unknown) {
+    throw new Error(
+      error instanceof Error && error.message ? error.message : `${fieldName} JSON 解析失败`
+    )
   }
 }
 
@@ -140,8 +142,10 @@ export const parseJsonArray = (raw: string, fieldName: string) => {
       throw new Error(`${fieldName} 必须是 JSON 数组`)
     }
     return parsed
-  } catch (error: any) {
-    throw new Error(error?.message || `${fieldName} JSON 解析失败`)
+  } catch (error: unknown) {
+    throw new Error(
+      error instanceof Error && error.message ? error.message : `${fieldName} JSON 解析失败`
+    )
   }
 }
 
@@ -178,7 +182,7 @@ export const buildRepairQueryParams = (input: {
   return query
 }
 
-export const normalizeRepairHistoryPage = <TRow = any>(input: {
+export const normalizeRepairHistoryPage = <TRow = unknown>(input: {
   payload: unknown
   prevRows: TRow[]
   append: boolean

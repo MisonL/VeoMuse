@@ -11,8 +11,13 @@ const createSafeStorage = () =>
 
     return {
       getItem: () => null,
-      setItem: (_name, _value) => {},
-      removeItem: (_name) => {}
+      setItem: (name, value) => {
+        void name
+        void value
+      },
+      removeItem: (name) => {
+        void name
+      }
     }
   })
 

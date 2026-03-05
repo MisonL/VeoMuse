@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import type {
   V4AssetReuseRecord,
   CreativeRun,
@@ -19,53 +19,11 @@ import {
   resolveVideoGenerationStatusText,
   sortVideoGenerationJobsForWorkbench
 } from '../types'
-
-type VideoGenerationStatusBadgeModifier = 'active' | 'success' | 'failed' | 'warning' | 'neutral'
-
-type VideoGenerationPollingState = {
-  tone: 'active' | 'idle' | 'paused'
-  text: string
-}
-
-export const resolveVideoGenerationStatusBadgeModifier = (
-  status: VideoGenerationJobStatus
-): VideoGenerationStatusBadgeModifier => {
-  if (status === 'succeeded') return 'success'
-  if (status === 'failed') return 'failed'
-  if (status === 'cancel_requested') return 'warning'
-  if (status === 'canceled') return 'neutral'
-  return 'active'
-}
-
-export const resolveVideoGenerationPollingState = (params: {
-  pollingEnabled: boolean
-  ticking: boolean
-}): VideoGenerationPollingState => {
-  if (!params.pollingEnabled) {
-    return {
-      tone: 'paused',
-      text: '自动轮询已关闭'
-    }
-  }
-  if (params.ticking) {
-    return {
-      tone: 'active',
-      text: '自动轮询刷新中'
-    }
-  }
-  return {
-    tone: 'idle',
-    text: '自动轮询待机'
-  }
-}
-
-export const normalizeVideoGenerationDisplayText = (value: unknown, fallback = '-') => {
-  const normalized = String(value || '')
-    .replace(/\s+/g, ' ')
-    .trim()
-  if (!normalized) return fallback
-  return normalized
-}
+import {
+  normalizeVideoGenerationDisplayText,
+  resolveVideoGenerationPollingState,
+  resolveVideoGenerationStatusBadgeModifier
+} from './creativeModePanel.logic'
 
 interface CreativeModePanelProps {
   creativeScript: string
@@ -330,12 +288,8 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
   })
   const selectedVideoGenerationJobId = videoGenerationSelectedJobId.trim()
   const hasSelectedVideoGenerationJob = selectedVideoGenerationJobId.length > 0
-
-  useEffect(() => {
-    if (requiredVideoInputs.length > 0) {
-      setShowVideoGenerationAdvancedInputs(true)
-    }
-  }, [requiredVideoInputs.length])
+  const isVideoGenerationAdvancedInputsOpen =
+    showVideoGenerationAdvancedInputs || requiredVideoInputs.length > 0
 
   return (
     <div className="creative-shell" data-testid="area-creative-shell">
@@ -562,12 +516,12 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
         </div>
         <details
           className="video-generation-collapsible"
-          open={showVideoGenerationAdvancedInputs}
+          open={isVideoGenerationAdvancedInputsOpen}
           onToggle={(event) => setShowVideoGenerationAdvancedInputs(event.currentTarget.open)}
         >
           <summary>
             <span>高级输入（图像 / 视频 / 首末帧）</span>
-            <span>{showVideoGenerationAdvancedInputs ? '收起' : '展开'}</span>
+            <span>{isVideoGenerationAdvancedInputsOpen ? '收起' : '展开'}</span>
           </summary>
           <div className="video-generation-collapsible-body">
             <div className="lab-inline-fields">

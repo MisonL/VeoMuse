@@ -6,7 +6,7 @@ const ACCESS_TOKEN_STORAGE_KEY = 'veomuse-access-token'
 const REFRESH_TOKEN_STORAGE_KEY = 'veomuse-refresh-token'
 const ORGANIZATION_STORAGE_KEY = 'veomuse-organization-id'
 
-const parseJwtPayload = (token: string): Record<string, any> | null => {
+const parseJwtPayload = (token: string): Record<string, unknown> | null => {
   const parts = token.split('.')
   if (parts.length < 2) return null
   try {
@@ -128,37 +128,50 @@ export const buildAuthHeaders = (extraHeaders?: Record<string, string>) => {
   return headers
 }
 
-export const adminGetJson = async <T = any>(path: string) => {
+const getPayloadError = (payload: unknown) => {
+  if (!payload || typeof payload !== 'object') return ''
+  const candidate = payload as {
+    error?: unknown
+    repair?: { error?: unknown }
+  }
+  if (typeof candidate.error === 'string' && candidate.error.trim()) return candidate.error
+  if (typeof candidate.repair?.error === 'string' && candidate.repair.error.trim()) {
+    return candidate.repair.error
+  }
+  return ''
+}
+
+export const adminGetJson = async <T = unknown>(path: string) => {
   const response = await fetch(`${resolveApiBase()}${path}`, {
     method: 'GET',
     headers: buildAdminHeaders()
   })
-  let payload: any = null
+  let payload: unknown = null
   try {
     payload = await response.json()
   } catch {
     payload = null
   }
   if (!response.ok) {
-    throw new Error(payload?.error || `HTTP ${response.status}`)
+    throw new Error(getPayloadError(payload) || `HTTP ${response.status}`)
   }
   return payload as T
 }
 
-export const adminPostJson = async <T = any>(path: string, body: unknown) => {
+export const adminPostJson = async <T = unknown>(path: string, body: unknown) => {
   const response = await fetch(`${resolveApiBase()}${path}`, {
     method: 'POST',
     headers: buildAdminHeaders(undefined, { withJsonContentType: true }),
     body: JSON.stringify(body ?? {})
   })
-  let payload: any = null
+  let payload: unknown = null
   try {
     payload = await response.json()
   } catch {
     payload = null
   }
   if (!response.ok) {
-    throw new Error(payload?.error || payload?.repair?.error || `HTTP ${response.status}`)
+    throw new Error(getPayloadError(payload) || `HTTP ${response.status}`)
   }
   return payload as T
 }
@@ -166,10 +179,26 @@ export const adminPostJson = async <T = any>(path: string, body: unknown) => {
 /**
  * 辅助函数：从 Eden Treaty 错误对象中提取友好的错误消息
  */
-export const getErrorMessage = (error: any): string => {
+export const getErrorMessage = (error: unknown): string => {
   if (!error) return '未知错误'
-  if (error.value && typeof error.value === 'object' && 'error' in error.value) {
-    return error.value.error
+  if (error instanceof Error) {
+    return error.message || '服务器响应异常'
   }
-  return error.message || '服务器响应异常'
+  if (typeof error === 'object') {
+    const candidate = error as {
+      value?: { error?: unknown }
+      message?: unknown
+    }
+    if (
+      candidate.value &&
+      typeof candidate.value === 'object' &&
+      typeof candidate.value.error === 'string'
+    ) {
+      return candidate.value.error
+    }
+    if (typeof candidate.message === 'string' && candidate.message.trim()) {
+      return candidate.message
+    }
+  }
+  return '服务器响应异常'
 }

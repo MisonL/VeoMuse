@@ -41,14 +41,26 @@ export class SyncController {
     this.preloadedSet.clear()
   }
 
-  sync(time: number, isPlaying: boolean, tracks: any[]) {
+  sync(
+    time: number,
+    isPlaying: boolean,
+    tracks: Array<{
+      type: string
+      clips: Array<{
+        id: string
+        start: number
+        end: number
+        name?: string
+      }>
+    }>
+  ) {
     let processed = 0
     let skipped = 0
     let preloaded = 0
     let seekAdjusted = 0
 
     tracks.forEach((track) => {
-      track.clips.forEach((clip: any) => {
+      track.clips.forEach((clip) => {
         if (processed >= this.maxOpsPerSync) {
           skipped++
           return

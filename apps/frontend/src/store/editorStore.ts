@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { temporal } from 'zundo'
 import type { Clip, Track, Asset, Marker } from '@veomuse/shared'
+import type { MotionData } from '../utils/motionSync'
 
 export type { Clip, Track, Asset, Marker }
 
@@ -37,7 +38,7 @@ interface EditorState {
   selectedClipId: string | null
   zoomLevel: number
   isMotionCaptureActive: boolean
-  latestMotionData: any | null
+  latestMotionData: MotionData | null
   isSpatialPreview: boolean
   spatialCamera: { yaw: number; pitch: number; scale: number }
 
@@ -55,7 +56,7 @@ interface EditorState {
   removeClip: (trackId: string, clipId: string) => void
   splitClip: (trackId: string, clipId: string, at: number) => void
   setMotionCaptureActive: (active: boolean) => void
-  setLatestMotionData: (data: any | null) => void
+  setLatestMotionData: (data: MotionData | null) => void
   setSpatialPreview: (enabled: boolean) => void
   setSpatialCamera: (partial: Partial<{ yaw: number; pitch: number; scale: number }>) => void
 }

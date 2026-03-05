@@ -5,7 +5,7 @@ import './theme.css'
 import App from './App'
 
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  const runtime = window as unknown as {
+  const runtime = window as Window & {
     $RefreshSig$?: () => (type: unknown) => unknown
     $RefreshReg$?: (type: unknown, id: string) => void
   }
