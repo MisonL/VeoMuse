@@ -7,6 +7,18 @@ import type {
 } from '../ModelDriver'
 import { ChannelConfigService } from '../ChannelConfigService'
 
+interface SoraGenerateResponse {
+  operationName?: string
+  id?: string
+  message?: string
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
+}
+
 export class SoraDriver implements VideoModelDriver {
   id = 'sora-preview'
   name = 'OpenAI Sora (Preview)'
@@ -63,7 +75,7 @@ export class SoraDriver implements VideoModelDriver {
         }
       }
 
-      const data = (await response.json()) as any
+      const data = (await response.json()) as SoraGenerateResponse
       return {
         success: true,
         status: 'ok',
@@ -71,14 +83,14 @@ export class SoraDriver implements VideoModelDriver {
         message: data.message || 'Sora 高清渲染任务已提交',
         provider: this.id
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         status: 'error',
         operationName: '',
         message: 'Sora 网络请求失败',
         provider: this.id,
-        error: error.message
+        error: getErrorMessage(error, 'unknown network error')
       }
     }
   }

@@ -26,7 +26,6 @@ import { SpatialRenderService } from './services/SpatialRenderService'
 import { VfxService } from './services/VfxService'
 import { LipSyncService } from './services/LipSyncService'
 import { RelightingService } from './services/RelightingService'
-import { TelemetryService } from './services/TelemetryService'
 import { StyleTransferService } from './services/StyleTransferService'
 import { ActorConsistencyService } from './services/ActorConsistencyService'
 import { cleanupGeneratedFiles, startCleanupScheduler } from './services/CleanupSchedulerService'
@@ -38,7 +37,6 @@ import { CollaborationService } from './services/CollaborationService'
 import { ReliabilityService } from './services/ReliabilityService'
 import { CollaborationV4Service } from './services/CollaborationV4Service'
 import { CreativeWorkflowService } from './services/CreativeWorkflowService'
-import { ProviderHealthService } from './services/ProviderHealthService'
 import { VideoGenerationService } from './services/VideoGenerationService'
 import { LocalStorageProvider } from './services/storage/LocalStorageProvider'
 import { AuthService } from './services/AuthService'
@@ -55,6 +53,7 @@ import {
   handleRetryVideoGeneration,
   handleSyncVideoGeneration
 } from './http/videoGenerationHandlers'
+import { adminRuntimeRoutes } from './http/adminRuntimeRoutes'
 import {
   authorizeAdmin,
   authorizeOrganizationRole,
@@ -66,7 +65,6 @@ import {
   hasRenderableSources,
   isDevRuntime,
   isGeminiNotConfiguredError,
-  isSloAdminSeedEnabled,
   parseBooleanEnv,
   parseBoundedLimit,
   resolveRequestBytes,
@@ -115,6 +113,20 @@ const sanitizeImportFileName = (fileName: string) => {
   if (safe) return safe
   return `asset-${Date.now()}.bin`
 }
+
+const readErrorMessage = (error: unknown) => {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  if (!error || typeof error !== 'object') return ''
+  const candidate = error as { message?: unknown }
+  return typeof candidate.message === 'string' ? candidate.message : ''
+}
+
+const resolveErrorMessage = (error: unknown, fallback: string) => {
+  const message = readErrorMessage(error)
+  return message || fallback
+}
+
 const storageProvider = new LocalStorageProvider()
 
 export const createApp = () => {
@@ -250,9 +262,9 @@ export const createApp = () => {
             session,
             organizations: [organization]
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '注册失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '注册失败') }
         }
       },
       {
@@ -271,9 +283,9 @@ export const createApp = () => {
           const session = AuthService.createSession(user)
           const organizations = OrganizationService.listOrganizationsForUser(user.id)
           return { success: true, session, organizations }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 401
-          return { success: false, status: 'error', error: error?.message || '登录失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '登录失败') }
         }
       },
       {
@@ -290,9 +302,9 @@ export const createApp = () => {
           const session = AuthService.rotateSession(body.refreshToken)
           const organizations = OrganizationService.listOrganizationsForUser(session.user.id)
           return { success: true, session, organizations }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 401
-          return { success: false, status: 'error', error: error?.message || '刷新会话失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '刷新会话失败') }
         }
       },
       {
@@ -330,9 +342,9 @@ export const createApp = () => {
         try {
           const organization = OrganizationService.createOrganization(body.name, user.id)
           return { success: true, organization }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '创建组织失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '创建组织失败') }
         }
       },
       {
@@ -387,9 +399,9 @@ export const createApp = () => {
         try {
           const member = OrganizationService.addMemberByEmail(params.id, body.email, body.role)
           return { success: true, member }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '添加成员失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '添加成员失败') }
         }
       },
       {
@@ -433,12 +445,12 @@ export const createApp = () => {
             quota,
             usage: OrganizationGovernanceService.getUsage(params.id)
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || '组织配额更新失败'
+            error: resolveErrorMessage(error, '组织配额更新失败')
           }
         }
       },
@@ -563,9 +575,9 @@ export const createApp = () => {
             traceId: resolveRequestTraceId(request, 'trace_channel')
           })
           return { success: true, config }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '渠道配置保存失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '渠道配置保存失败') }
         }
       },
       {
@@ -621,9 +633,9 @@ export const createApp = () => {
             traceId: resolveRequestTraceId(request, 'trace_channel')
           })
           return { success: true, config }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '渠道配置保存失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '渠道配置保存失败') }
         }
       },
       {
@@ -636,275 +648,7 @@ export const createApp = () => {
         })
       }
     )
-    .get('/api/admin/metrics', ({ request, set }) => {
-      if (!authorizeAdmin(request, set)) {
-        return { success: false, status: 'error', error: 'Unauthorized' }
-      }
-      return TelemetryService.getInstance().getSummary()
-    })
-    .get('/api/admin/providers/health', async ({ request, set }) => {
-      if (!authorizeAdmin(request, set)) {
-        return { success: false, status: 'error', error: 'Unauthorized' }
-      }
-      const providers = await ProviderHealthService.inspect()
-      return {
-        success: true,
-        providers,
-        summary: {
-          total: providers.length,
-          configured: providers.filter((item) => item.configured).length,
-          ok: providers.filter((item) => item.status === 'ok').length,
-          degraded: providers.filter((item) => item.status === 'degraded').length,
-          notImplemented: providers.filter((item) => item.status === 'not_implemented').length
-        }
-      }
-    })
-    .get(
-      '/api/admin/providers/health/:providerId',
-      async ({ request, params, set }) => {
-        if (!authorizeAdmin(request, set)) {
-          return { success: false, status: 'error', error: 'Unauthorized' }
-        }
-        const providers = await ProviderHealthService.inspect(params.providerId)
-        if (!providers.length) {
-          set.status = 404
-          return { success: false, status: 'error', error: 'Provider not found' }
-        }
-        return {
-          success: true,
-          provider: providers[0]
-        }
-      },
-      {
-        params: t.Object({
-          providerId: t.String()
-        })
-      }
-    )
-    .get(
-      '/api/admin/slo/summary',
-      ({ request, query, set }) => {
-        if (!authorizeAdmin(request, set)) {
-          return { success: false, status: 'error', error: 'Unauthorized' }
-        }
-        const windowMinutes = Number.parseInt(query.windowMinutes || '1440', 10)
-        return {
-          success: true,
-          summary: SloService.getSloSummary(windowMinutes)
-        }
-      },
-      {
-        query: t.Object({
-          windowMinutes: t.Optional(t.String())
-        })
-      }
-    )
-    .get(
-      '/api/admin/slo/breakdown',
-      ({ request, query, set }) => {
-        if (!authorizeAdmin(request, set)) {
-          return { success: false, status: 'error', error: 'Unauthorized' }
-        }
-        const windowMinutes = Number.parseInt(query.windowMinutes || '1440', 10)
-        const category = query.category || 'non_ai'
-        const limit = Number.parseInt(query.limit || '80', 10)
-        return {
-          success: true,
-          breakdown: SloService.getSloBreakdown(windowMinutes, category, limit)
-        }
-      },
-      {
-        query: t.Object({
-          windowMinutes: t.Optional(t.String()),
-          category: t.Optional(
-            t.Union([t.Literal('ai'), t.Literal('non_ai'), t.Literal('system')])
-          ),
-          limit: t.Optional(t.String())
-        })
-      }
-    )
-    .get(
-      '/api/admin/slo/journey-failures',
-      ({ request, query, set }) => {
-        if (!authorizeAdmin(request, set)) {
-          return { success: false, status: 'error', error: 'Unauthorized' }
-        }
-        const windowMinutes = Number.parseInt(query.windowMinutes || '1440', 10)
-        const limit = Number.parseInt(query.limit || '10', 10)
-        const diagnostics = SloService.getJourneyFailureDiagnostics(windowMinutes, limit)
-        return {
-          success: true,
-          window: diagnostics.window,
-          counts: diagnostics.counts,
-          items: diagnostics.items,
-          updatedAt: diagnostics.updatedAt
-        }
-      },
-      {
-        query: t.Object({
-          windowMinutes: t.Optional(t.String()),
-          limit: t.Optional(t.String())
-        })
-      }
-    )
-    .post(
-      '/api/admin/slo/seed',
-      ({ request, body, set }) => {
-        if (!authorizeAdmin(request, set)) {
-          return { success: false, status: 'error', error: 'Unauthorized' }
-        }
-        if (!isSloAdminSeedEnabled()) {
-          set.status = 403
-          return { success: false, status: 'error', error: 'SLO seed endpoint disabled' }
-        }
-
-        const nonAiSamples = Math.floor(Number(body?.nonAiSamples ?? 20))
-        const journeySamples = Math.floor(Number(body?.journeySamples ?? 10))
-        const source = body?.source === 'manual' ? 'manual' : 'ci'
-
-        if (!Number.isFinite(nonAiSamples) || nonAiSamples < 1 || nonAiSamples > 500) {
-          set.status = 400
-          return {
-            success: false,
-            status: 'error',
-            error: 'nonAiSamples must be between 1 and 500'
-          }
-        }
-
-        if (!Number.isFinite(journeySamples) || journeySamples < 1 || journeySamples > 200) {
-          set.status = 400
-          return {
-            success: false,
-            status: 'error',
-            error: 'journeySamples must be between 1 and 200'
-          }
-        }
-
-        const seed = SloService.seedSyntheticSamples({
-          nonAiSamples,
-          journeySamples,
-          source
-        })
-
-        return {
-          success: true,
-          seed
-        }
-      },
-      {
-        body: t.Optional(
-          t.Object({
-            nonAiSamples: t.Optional(t.Number()),
-            journeySamples: t.Optional(t.Number()),
-            source: t.Optional(t.Union([t.Literal('ci'), t.Literal('manual')]))
-          })
-        )
-      }
-    )
-    .get(
-      '/api/admin/db/health',
-      ({ request, query, set }) => {
-        if (!authorizeAdmin(request, set)) {
-          return { success: false, status: 'error', error: 'Unauthorized' }
-        }
-        const mode = query.mode === 'full' ? 'full' : 'quick'
-        return {
-          success: true,
-          health: LocalDatabaseService.checkIntegrity(mode),
-          lastRepair: LocalDatabaseService.getLastRepairReport()
-        }
-      },
-      {
-        query: t.Object({
-          mode: t.Optional(t.Union([t.Literal('quick'), t.Literal('full')]))
-        })
-      }
-    )
-    .get('/api/admin/db/runtime', ({ request, set }) => {
-      if (!authorizeAdmin(request, set)) {
-        return { success: false, status: 'error', error: 'Unauthorized' }
-      }
-      return {
-        success: true,
-        runtime: LocalDatabaseService.getRuntimeConfig(),
-        health: LocalDatabaseService.checkIntegrity('quick'),
-        lastRepair: LocalDatabaseService.getLastRepairReport()
-      }
-    })
-    .post(
-      '/api/admin/db/repair',
-      ({ request, body, set }) => {
-        if (!authorizeAdmin(request, set)) {
-          return { success: false, status: 'error', error: 'Unauthorized' }
-        }
-        const repair = LocalDatabaseService.repair({
-          force: Boolean(body?.force),
-          reason: body?.reason || 'admin-manual',
-          checkMode: body?.checkMode
-        })
-        if (repair.status === 'repaired') {
-          ModelMarketplaceService.resetAfterDatabaseRecovery()
-        }
-        if (repair.status === 'failed') {
-          set.status = 500
-        }
-        return {
-          success: repair.status !== 'failed',
-          repair
-        }
-      },
-      {
-        body: t.Optional(
-          t.Object({
-            force: t.Optional(t.Boolean()),
-            reason: t.Optional(t.String()),
-            checkMode: t.Optional(t.Union([t.Literal('quick'), t.Literal('full')]))
-          })
-        )
-      }
-    )
-    .get(
-      '/api/admin/db/repairs',
-      ({ request, query, set }) => {
-        if (!authorizeAdmin(request, set)) {
-          return { success: false, status: 'error', error: 'Unauthorized' }
-        }
-        const limit = Number.parseInt(query.limit || '20', 10)
-        const offset = Number.parseInt(query.offset || '0', 10)
-        const from = query.from?.trim()
-        const to = query.to?.trim()
-        const status = query.status?.trim()
-        const reason = query.reason?.trim()
-        const history = LocalDatabaseService.getRepairHistory({
-          limit,
-          offset,
-          from,
-          to,
-          status,
-          reason
-        })
-        return {
-          success: true,
-          repairs: history.repairs,
-          page: {
-            total: history.total,
-            hasMore: history.hasMore,
-            limit: history.limit,
-            offset: history.offset
-          }
-        }
-      },
-      {
-        query: t.Object({
-          limit: t.Optional(t.String()),
-          offset: t.Optional(t.String()),
-          from: t.Optional(t.String()),
-          to: t.Optional(t.String()),
-          status: t.Optional(t.String()),
-          reason: t.Optional(t.String())
-        })
-      }
-    )
+    .use(adminRuntimeRoutes())
     .post(
       '/api/telemetry/journey',
       ({ body, request, set }) => {
@@ -1005,12 +749,12 @@ export const createApp = () => {
             success: true,
             policy: ModelMarketplaceService.createPolicy(organizationContext.organizationId, body)
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || 'Invalid routing policy payload'
+            error: resolveErrorMessage(error, 'Invalid routing policy payload')
           }
         }
       },
@@ -1052,12 +796,12 @@ export const createApp = () => {
             return { success: false, status: 'error', error: 'Routing policy not found' }
           }
           return { success: true, policy }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || 'Invalid routing policy payload'
+            error: resolveErrorMessage(error, 'Invalid routing policy payload')
           }
         }
       },
@@ -1171,12 +915,12 @@ export const createApp = () => {
               body.scenarios
             )
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || 'Invalid batch simulation payload'
+            error: resolveErrorMessage(error, 'Invalid batch simulation payload')
           }
         }
       },
@@ -1251,12 +995,12 @@ export const createApp = () => {
               body
             )
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || 'Invalid alert config payload'
+            error: resolveErrorMessage(error, 'Invalid alert config payload')
           }
         }
       },
@@ -1859,12 +1603,12 @@ export const createApp = () => {
             policy,
             evaluation: ReliabilityService.evaluateErrorBudget(policy.id)
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || '错误预算策略更新失败'
+            error: resolveErrorMessage(error, '错误预算策略更新失败')
           }
         }
       },
@@ -1904,9 +1648,9 @@ export const createApp = () => {
               completedAt: body.completedAt
             })
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '回滚演练创建失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '回滚演练创建失败') }
         }
       },
       {
@@ -2054,9 +1798,9 @@ export const createApp = () => {
               body
             )
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '评论线程创建失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '评论线程创建失败') }
         }
       },
       {
@@ -2090,8 +1834,8 @@ export const createApp = () => {
               body
             )
           }
-        } catch (error: any) {
-          const message = String(error?.message || '')
+        } catch (error: unknown) {
+          const message = resolveErrorMessage(error, '')
           if (message.includes('不存在')) {
             set.status = 404
           } else {
@@ -2151,8 +1895,8 @@ export const createApp = () => {
             success: true,
             permissions: CollaborationV4Service.listWorkspaceRolePermissions(params.workspaceId)
           }
-        } catch (error: any) {
-          const message = String(error?.message || '')
+        } catch (error: unknown) {
+          const message = resolveErrorMessage(error, '')
           if (message.includes('不存在')) set.status = 404
           return { success: false, status: 'error', error: message || '角色权限读取失败' }
         }
@@ -2182,9 +1926,9 @@ export const createApp = () => {
               }
             )
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '角色权限写入失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '角色权限写入失败') }
         }
       },
       {
@@ -2217,9 +1961,9 @@ export const createApp = () => {
               body
             )
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || 'Timeline merge 失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, 'Timeline merge 失败') }
         }
       },
       {
@@ -2270,9 +2014,9 @@ export const createApp = () => {
               createdBy: body.createdBy || organizationContext.user.id
             })
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '工作流创建失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '工作流创建失败') }
         }
       },
       {
@@ -2301,8 +2045,8 @@ export const createApp = () => {
             runs: result.runs,
             page: result.page
           }
-        } catch (error: any) {
-          const message = String(error?.message || '')
+        } catch (error: unknown) {
+          const message = resolveErrorMessage(error, '')
           if (message.includes('不存在')) {
             set.status = 404
           } else if (message.includes('无权')) {
@@ -2338,8 +2082,8 @@ export const createApp = () => {
               createdBy: body.createdBy || organizationContext.user.id
             })
           }
-        } catch (error: any) {
-          const message = String(error?.message || '')
+        } catch (error: unknown) {
+          const message = resolveErrorMessage(error, '')
           if (message.includes('不存在')) {
             set.status = 404
           } else {
@@ -2376,9 +2120,9 @@ export const createApp = () => {
               createdBy: body.createdBy || organizationContext.user.id
             })
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '批处理任务创建失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '批处理任务创建失败') }
         }
       },
       {
@@ -2417,9 +2161,9 @@ export const createApp = () => {
             jobs: pageResult.jobs,
             page: pageResult.page
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || '批处理任务查询失败' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, '批处理任务查询失败') }
         }
       },
       {
@@ -2473,12 +2217,12 @@ export const createApp = () => {
               context: body.context
             })
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || '资产复用记录创建失败'
+            error: resolveErrorMessage(error, '资产复用记录创建失败')
           }
         }
       },
@@ -2725,8 +2469,8 @@ export const createApp = () => {
             success: true,
             project
           }
-        } catch (error: any) {
-          if (error?.message === 'Workspace not found') {
+        } catch (error: unknown) {
+          if (resolveErrorMessage(error, '') === 'Workspace not found') {
             set.status = 404
             return { success: false, status: 'error', error: 'Workspace not found' }
           }
@@ -2734,7 +2478,7 @@ export const createApp = () => {
           return {
             success: false,
             status: 'error',
-            error: error?.message || 'Create project failed'
+            error: resolveErrorMessage(error, 'Create project failed')
           }
         }
       },
@@ -2890,12 +2634,12 @@ export const createApp = () => {
               mentions: body.mentions
             })
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || 'Invalid comment payload'
+            error: resolveErrorMessage(error, 'Invalid comment payload')
           }
         }
       },
@@ -2979,12 +2723,12 @@ export const createApp = () => {
             success: true,
             review: WorkspaceService.createProjectReview(params.id, authorized.actorName, body)
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || 'Invalid review payload'
+            error: resolveErrorMessage(error, 'Invalid review payload')
           }
         }
       },
@@ -3045,12 +2789,12 @@ export const createApp = () => {
             success: true,
             result
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || 'Template apply failed'
+            error: resolveErrorMessage(error, 'Template apply failed')
           }
         }
       },
@@ -3081,12 +2825,12 @@ export const createApp = () => {
               body.operations
             )
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
           return {
             success: false,
             status: 'error',
-            error: error?.message || 'Invalid clip batch update payload'
+            error: resolveErrorMessage(error, 'Invalid clip batch update payload')
           }
         }
       },
@@ -3172,9 +2916,9 @@ export const createApp = () => {
             },
             usage
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || 'local import failed' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, 'local import failed') }
         }
       },
       {
@@ -3296,9 +3040,9 @@ export const createApp = () => {
             },
             usage
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: error?.message || 'local upload failed' }
+          return { success: false, status: 'error', error: resolveErrorMessage(error, 'local upload failed') }
         }
       },
       {
@@ -3379,8 +3123,8 @@ export const createApp = () => {
           }
 
           return composed
-        } catch (error: any) {
-          const message = String(error?.message || '')
+        } catch (error: unknown) {
+          const message = resolveErrorMessage(error, '')
           if (message.includes('并发配额')) {
             const check = OrganizationGovernanceService.checkConcurrencyAllowed(
               runtimeContext.organizationId
@@ -3600,10 +3344,10 @@ if (import.meta.main) {
                 console.warn(`[video-job-sync] failed sample: ${sample}`)
               }
             })
-            .catch((error: any) => {
+            .catch((error: unknown) => {
               console.warn(
                 `[video-job-sync] unexpected error: ${String(
-                  error?.message || error || 'unknown sync error'
+                  resolveErrorMessage(error, 'unknown sync error')
                 )}`
               )
             })

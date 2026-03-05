@@ -7,6 +7,18 @@ import type {
 } from '../ModelDriver'
 import { ChannelConfigService } from '../ChannelConfigService'
 
+interface RunwayGenerateResponse {
+  operationName?: string
+  id?: string
+  message?: string
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
+}
+
 export class RunwayDriver implements VideoModelDriver {
   id = 'runway-gen3'
   name = 'Runway Gen-3 Alpha'
@@ -63,7 +75,7 @@ export class RunwayDriver implements VideoModelDriver {
         }
       }
 
-      const data = (await response.json()) as any
+      const data = (await response.json()) as RunwayGenerateResponse
       return {
         success: true,
         status: 'ok',
@@ -71,14 +83,14 @@ export class RunwayDriver implements VideoModelDriver {
         message: data.message || 'Runway 生成任务已在云端排队',
         provider: this.id
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         status: 'error',
         operationName: '',
         message: 'Runway 网络请求失败',
         provider: this.id,
-        error: error.message
+        error: getErrorMessage(error, 'unknown network error')
       }
     }
   }

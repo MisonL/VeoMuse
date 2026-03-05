@@ -17,6 +17,17 @@ export interface StyleTransferResult {
   error?: string
 }
 
+interface StyleTransferResponse {
+  operationId?: string
+  message?: string
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
+}
+
 export class StyleTransferService extends BaseAiService {
   protected serviceName = 'AI-Style-Transfer'
   private static instance = new StyleTransferService()
@@ -42,7 +53,7 @@ export class StyleTransferService extends BaseAiService {
     }
 
     try {
-      const { data } = await this.instance.request<any>(
+      const { data } = await this.instance.request<StyleTransferResponse>(
         `${apiUrl.replace(/\/$/, '')}/style-transfer`,
         {
           method: 'POST',
@@ -64,14 +75,14 @@ export class StyleTransferService extends BaseAiService {
         style: params.style,
         message: data.message || '风格迁移任务已提交'
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         status: 'error',
         operationId: '',
         style: params.style,
         message: 'Style Transfer 网络请求失败',
-        error: error.message
+        error: getErrorMessage(error, 'unknown network error')
       }
     }
   }

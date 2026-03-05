@@ -11,6 +11,22 @@ const toNumber = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+interface OpenAiCompatibleResponse {
+  id?: string
+  operationName?: string
+  choices?: Array<{
+    message?: {
+      content?: string
+    }
+  }>
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
+}
+
 export class OpenAiCompatibleDriver implements VideoModelDriver {
   id = 'openai-compatible'
   name = 'OpenAI 兼容（自定义）'
@@ -124,7 +140,7 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
         }
       }
 
-      const data = (await response.json()) as any
+      const data = (await response.json()) as OpenAiCompatibleResponse
       const content = data?.choices?.[0]?.message?.content
       const message =
         typeof content === 'string' && content.trim()
@@ -138,14 +154,14 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
         message,
         provider: this.id
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         status: 'error',
         operationName: '',
         message: 'OpenAI 兼容模型网络请求失败',
         provider: this.id,
-        error: error?.message || 'unknown network error'
+        error: getErrorMessage(error, 'unknown network error')
       }
     }
   }

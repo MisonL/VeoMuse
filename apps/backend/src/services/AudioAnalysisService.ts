@@ -11,6 +11,17 @@ export interface AudioBeats {
   beats: number[] // 强拍时间戳列表 (s)
 }
 
+interface AudioAnalysisResponse {
+  bpm?: number | string
+  beats?: number[]
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
+}
+
 export class AudioAnalysisService extends BaseAiService {
   protected serviceName = 'AI-Audio-Analyzer'
   private static instance = new AudioAnalysisService()
@@ -33,23 +44,26 @@ export class AudioAnalysisService extends BaseAiService {
     }
 
     try {
-      const { data } = await this.instance.request<any>(`${apiUrl.replace(/\/$/, '')}/analyze`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({ audioUrl })
-      })
+      const { data } = await this.instance.request<AudioAnalysisResponse>(
+        `${apiUrl.replace(/\/$/, '')}/analyze`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({ audioUrl })
+        }
+      )
 
       return {
         success: true,
         status: 'ok',
         bpm: Number(data.bpm || 0),
         beats: Array.isArray(data.beats) ? data.beats : []
-      } as AudioBeats
-    } catch (error: any) {
-      throw new Error(`音频分析失败: ${error.message}`)
+      }
+    } catch (error: unknown) {
+      throw new Error(`音频分析失败: ${getErrorMessage(error, 'unknown network error')}`)
     }
   }
 }

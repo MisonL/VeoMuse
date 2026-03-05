@@ -9,6 +9,22 @@ import type {
 import { ApiKeyService } from '../ApiKeyService'
 import { ChannelConfigService } from '../ChannelConfigService'
 
+interface GeminiErrorResponse {
+  error?: {
+    message?: string
+  }
+}
+
+interface GeminiGenerateResponse {
+  name?: string
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
+}
+
 export class GeminiDriver implements VideoModelDriver {
   id = 'veo-3.1'
   name = 'Google Gemini Veo 3.1'
@@ -108,20 +124,21 @@ export class GeminiDriver implements VideoModelDriver {
         })
 
         if (!response.ok) {
-          const errorData = (await response.json()) as any
+          const errorData = (await response.json()) as GeminiErrorResponse
           throw new Error(errorData?.error?.message || `Gemini API Error: ${response.status}`)
         }
 
-        const data = (await response.json()) as any
+        const data = (await response.json()) as GeminiGenerateResponse
         return {
           success: true,
           status: 'ok',
-          operationName: data.name,
+          operationName: data.name || '',
           message: 'Gemini 生成任务已提交',
           provider: this.id
         }
-      } catch (error: any) {
-        lastError = error
+      } catch (error: unknown) {
+        lastError =
+          error instanceof Error ? error : new Error(getErrorMessage(error, 'Gemini 请求失败'))
         continue
       }
     }

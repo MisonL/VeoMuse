@@ -3,6 +3,12 @@ import { BaseAiService } from './BaseAiService'
 import { ApiKeyService } from './ApiKeyService'
 import type { DirectorResponse } from '@veomuse/shared'
 
+type DirectorContent = {
+  storyTitle?: string
+  worldId?: string
+  scenes?: DirectorResponse['scenes']
+}
+
 export class AiDirectorService extends BaseAiService {
   protected serviceName = 'AI-Director'
   private static instance = new AiDirectorService()
@@ -63,7 +69,7 @@ export class AiDirectorService extends BaseAiService {
 
     const url = `${this.API_URL}/${this.MODEL}:generateContent?key=${key}`
     try {
-      const { data } = await this.instance.request<any>(url, {
+      const { data } = await this.instance.request<unknown>(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -72,7 +78,7 @@ export class AiDirectorService extends BaseAiService {
         })
       })
 
-      const content = this.instance.parseGeminiJson(data)
+      const content = this.instance.parseGeminiJson<DirectorContent>(data)
       const offline = this.buildOfflineStoryboard(script)
       const scenes =
         Array.isArray(content?.scenes) && content.scenes.length ? content.scenes : offline.scenes

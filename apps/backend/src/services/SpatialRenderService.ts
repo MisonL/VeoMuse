@@ -13,6 +13,18 @@ export interface SpatialResult {
   error?: string
 }
 
+interface SpatialReconstructResponse {
+  nerfDataUrl: string
+  meshUrl: string
+  totalVoxels?: number
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
+}
+
 export class SpatialRenderService extends BaseAiService {
   protected serviceName = 'AI-Spatial-Renderer'
   private static instance = new SpatialRenderService()
@@ -40,7 +52,7 @@ export class SpatialRenderService extends BaseAiService {
     }
 
     try {
-      const { data } = await this.instance.request<any>(
+      const { data } = await this.instance.request<SpatialReconstructResponse>(
         `${apiUrl.replace(/\/$/, '')}/reconstruct`,
         {
           method: 'POST',
@@ -58,8 +70,8 @@ export class SpatialRenderService extends BaseAiService {
         nerfDataUrl: data.nerfDataUrl,
         meshUrl: data.meshUrl,
         totalVoxels: data.totalVoxels || 0
-      } as SpatialResult
-    } catch (error: any) {
+      }
+    } catch (error: unknown) {
       return {
         success: false,
         status: 'error',
@@ -67,7 +79,7 @@ export class SpatialRenderService extends BaseAiService {
         nerfDataUrl: '',
         meshUrl: '',
         totalVoxels: 0,
-        error: error.message
+        error: getErrorMessage(error, 'unknown network error')
       }
     }
   }

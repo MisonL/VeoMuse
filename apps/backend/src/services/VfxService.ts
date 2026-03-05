@@ -9,6 +9,16 @@ export interface VfxParams {
   intensity?: number
 }
 
+interface VfxApplyResponse {
+  operationId?: string
+}
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
+}
+
 export class VfxService extends BaseAiService {
   protected serviceName = 'AI-Neural-VFX'
   private static instance = new VfxService()
@@ -37,27 +47,30 @@ export class VfxService extends BaseAiService {
     }
 
     try {
-      const { data } = await this.instance.request<any>(`${apiUrl.replace(/\/$/, '')}/apply`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`
-        },
-        body: JSON.stringify(params)
-      })
+      const { data } = await this.instance.request<VfxApplyResponse>(
+        `${apiUrl.replace(/\/$/, '')}/apply`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`
+          },
+          body: JSON.stringify(params)
+        }
+      )
 
       return {
         success: true,
         status: 'ok',
         operationId: data.operationId || `vfx_${params.vfxType}_${Date.now()}`
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
         status: 'error',
         operationId: '',
         message: 'VFX 应用失败',
-        error: error.message
+        error: getErrorMessage(error, 'unknown network error')
       }
     }
   }

@@ -8,6 +8,15 @@ export interface PerformanceMetrics {
   endpoint: string
 }
 
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
+}
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null
+
 export abstract class BaseAiService {
   protected abstract serviceName: string
 
@@ -40,7 +49,7 @@ export abstract class BaseAiService {
 
       console.log(`📊 [Metrics] ${this.serviceName}: ${durationMs}ms | ${metrics.endpoint}`)
       return { data, metrics }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 失败也推送遥测
       TelemetryService.getInstance().recordApiCall({
         service: this.serviceName,
@@ -52,17 +61,25 @@ export abstract class BaseAiService {
       if (error instanceof ProviderHttpError) {
         throw new Error(`[${this.serviceName}] ${error.code} (${error.traceId}): ${error.message}`)
       }
-      throw error || new Error(`[${this.serviceName}] 请求失败`)
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`[${this.serviceName}] ${getErrorMessage(error, '请求失败')}`)
     }
   }
 
-  protected parseGeminiJson(data: any): any {
+  protected parseGeminiJson<T>(data: unknown): T {
     try {
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+      const dataRecord = asRecord(data)
+      const candidates = dataRecord?.candidates
+      const firstCandidate = Array.isArray(candidates) ? asRecord(candidates[0]) : null
+      const content = asRecord(firstCandidate?.content)
+      const firstPart = Array.isArray(content?.parts) ? asRecord(content.parts[0]) : null
+      const text = typeof firstPart?.text === 'string' ? firstPart.text : undefined
       if (!text) throw new Error('AI 返回格式异常: 缺少 content.parts.text')
-      return JSON.parse(text)
-    } catch (e: any) {
-      throw new Error(`解析 AI 响应失败: ${e.message}`)
+      return JSON.parse(text) as T
+    } catch (error: unknown) {
+      throw new Error(`解析 AI 响应失败: ${getErrorMessage(error, 'unknown parse error')}`)
     }
   }
 }
