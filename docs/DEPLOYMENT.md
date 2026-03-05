@@ -93,6 +93,25 @@ docker compose -f config/docker/docker-compose.yml ps
 - `docker-compose.yml` 当前使用命名卷 `veomuse-data:/app/data` 持久化 SQLite 数据目录。
 - 若需改为宿主机 bind mount，可在 `docker-compose.yml` 将该卷改写为目录映射，并同步 `VEOMUSE_DB_PATH`。
 
+## Docker Smoke 检查
+
+本地可通过统一脚本执行 Docker 烟测（自动 `up --wait`、探测、失败诊断、清理）：
+
+```bash
+# 默认 smoke（包含 --build）
+bun run docker:smoke
+
+# 跳过镜像重建并放宽等待时长
+bun run docker:smoke -- --no-build --wait-timeout 240
+
+# 调试时保留容器
+bun run docker:smoke -- --keep-up
+```
+
+- 默认探测接口：`/api/health`、`/api/capabilities`（基础地址 `http://127.0.0.1:18081`）。
+- 失败时会自动输出 `docker compose ps` 与最近 `200` 行日志。
+- 默认执行 `docker compose down --volumes --remove-orphans` 回收环境，可用 `--keep-up` 跳过。
+
 ## 验证命令
 
 ```bash
@@ -245,6 +264,7 @@ CI 质量门禁策略（`.github/workflows/ci-quality-gate.yml`）：
 - `main`：`hard` 模式执行 SLO 门禁。
 - SLO 检查前会调用 `/api/admin/slo/seed` 预热 `20/10` 样本（仅 CI 开启 `SLO_ADMIN_SEED_ENABLED=true`）。
 - 产物统一上传：`playwright-report/`、`test-results/playwright/`、`artifacts/slo-report.json`、`artifacts/slo-seed.json`。
+- Docker smoke 由独立 job `docker-smoke-main` 执行，且仅在 `main push` 触发，避免拖慢 PR 流水线。
 
 真实渠道回归启用条件：
 
