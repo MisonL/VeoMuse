@@ -93,7 +93,9 @@ describe('App 布局与状态辅助函数', () => {
 
   it('中心区尺寸计算应按模式与布局返回结果', () => {
     expect(computeCenterPanelMinWidth(false, 'fit', 'edit')).toBe(340)
-    expect(computeCenterPanelMinWidth(true, 'fit', 'color')).toBe(340)
+    expect(computeCenterPanelMinWidth(true, 'fit', 'color')).toBe(378)
+    expect(computeCenterPanelMinWidth(true, 'fit', 'audio')).toBe(348)
+    expect(computeCenterPanelMinWidth(true, 'fit', 'edit')).toBe(360)
     expect(computeCenterPanelMinWidth(true, 'focus', 'audio')).toBe(376)
     expect(computeCenterPanelMinWidth(true, 'focus', 'edit')).toBe(396)
 
@@ -138,7 +140,7 @@ describe('App 布局与状态辅助函数', () => {
     expect(vars['--left-panel-w']).toBe('280px')
     expect(vars['--right-panel-w']).toBe('360px')
     expect(vars['--center-panel-fit-w']).toBe('779px')
-    expect(vars['--left-panel-flex']).toBe('1.42fr')
+    expect(vars['--left-panel-flex']).toBe('1.36fr')
     expect(vars['--timeline-h']).toBe('260px')
 
     expect(buildPreviewFrameStyle({ width: 0, height: 100 })).toBeUndefined()

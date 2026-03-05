@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import type {
   V4AssetReuseRecord,
   CreativeRun,
@@ -19,6 +19,53 @@ import {
   resolveVideoGenerationStatusText,
   sortVideoGenerationJobsForWorkbench
 } from '../types'
+
+type VideoGenerationStatusBadgeModifier = 'active' | 'success' | 'failed' | 'warning' | 'neutral'
+
+type VideoGenerationPollingState = {
+  tone: 'active' | 'idle' | 'paused'
+  text: string
+}
+
+export const resolveVideoGenerationStatusBadgeModifier = (
+  status: VideoGenerationJobStatus
+): VideoGenerationStatusBadgeModifier => {
+  if (status === 'succeeded') return 'success'
+  if (status === 'failed') return 'failed'
+  if (status === 'cancel_requested') return 'warning'
+  if (status === 'canceled') return 'neutral'
+  return 'active'
+}
+
+export const resolveVideoGenerationPollingState = (params: {
+  pollingEnabled: boolean
+  ticking: boolean
+}): VideoGenerationPollingState => {
+  if (!params.pollingEnabled) {
+    return {
+      tone: 'paused',
+      text: '自动轮询已关闭'
+    }
+  }
+  if (params.ticking) {
+    return {
+      tone: 'active',
+      text: '自动轮询刷新中'
+    }
+  }
+  return {
+    tone: 'idle',
+    text: '自动轮询待机'
+  }
+}
+
+export const normalizeVideoGenerationDisplayText = (value: unknown, fallback = '-') => {
+  const normalized = String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!normalized) return fallback
+  return normalized
+}
 
 interface CreativeModePanelProps {
   creativeScript: string
@@ -250,6 +297,8 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
   onQueryAssetReuseHistory
 }) => {
   const [showAllTerminalVideoJobs, setShowAllTerminalVideoJobs] = useState(false)
+  const [showVideoGenerationAdvancedInputs, setShowVideoGenerationAdvancedInputs] = useState(false)
+  const [showVideoGenerationInspector, setShowVideoGenerationInspector] = useState(false)
   const requiredVideoInputs = resolveVideoGenerationRequiredInputs(videoGenerationMode)
   const sortedVideoGenerationJobs = useMemo(
     () => sortVideoGenerationJobsForWorkbench(videoGenerationJobs),
@@ -275,9 +324,21 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
   const latestAutoSyncText = videoGenerationLastAutoSyncAt
     ? new Date(videoGenerationLastAutoSyncAt).toLocaleString()
     : '-'
+  const pollingState = resolveVideoGenerationPollingState({
+    pollingEnabled: videoGenerationPollingEnabled,
+    ticking: isVideoGenerationAutoSyncTicking
+  })
+  const selectedVideoGenerationJobId = videoGenerationSelectedJobId.trim()
+  const hasSelectedVideoGenerationJob = selectedVideoGenerationJobId.length > 0
+
+  useEffect(() => {
+    if (requiredVideoInputs.length > 0) {
+      setShowVideoGenerationAdvancedInputs(true)
+    }
+  }, [requiredVideoInputs.length])
 
   return (
-    <div className="creative-shell">
+    <div className="creative-shell" data-testid="area-creative-shell">
       <section className="creative-card">
         <h4>创意闭环引擎</h4>
         <label className="lab-field">
@@ -404,7 +465,28 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
       </section>
 
       <section className="creative-card video-generation-card">
-        <h4>统一视频生成工作台</h4>
+        <div className="video-generation-section-head">
+          <h4>统一视频生成工作台</h4>
+          <div className="video-generation-head-actions">
+            <button disabled={isVideoGenerationBusy} onClick={onRefreshVideoGenerationJobs}>
+              刷新列表
+            </button>
+            <button
+              disabled={isVideoGenerationBusy || !videoGenerationHasMore}
+              onClick={onLoadMoreVideoGenerationJobs}
+            >
+              加载更多
+            </button>
+            <button
+              className={`video-generation-polling-toggle ${
+                videoGenerationPollingEnabled ? 'active' : ''
+              }`}
+              onClick={() => onVideoGenerationPollingEnabledChange(!videoGenerationPollingEnabled)}
+            >
+              自动轮询：{videoGenerationPollingEnabled ? '开' : '关'}
+            </button>
+          </div>
+        </div>
         <div
           className={`video-generation-quick-check video-generation-quick-check--${geminiQuickCheck.status}`}
         >
@@ -478,139 +560,166 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
         <div className="video-generation-required">
           必填输入：{requiredVideoInputs.length > 0 ? requiredVideoInputs.join(' + ') : '无'}
         </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>图像输入</span>
-            <input
-              name="videoGenerationImageInput"
-              value={videoGenerationImageInput}
-              onChange={(event) => onVideoGenerationImageInputChange(event.target.value)}
-              placeholder="图生视频主图"
-            />
-          </label>
-          <label className="lab-field">
-            <span>参考图列表</span>
-            <textarea
-              name="videoGenerationReferenceImagesInput"
-              value={videoGenerationReferenceImagesInput}
-              onChange={(event) => onVideoGenerationReferenceImagesInputChange(event.target.value)}
-              placeholder="多张参考图，逗号或换行分隔"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>视频输入</span>
-            <input
-              name="videoGenerationVideoInput"
-              value={videoGenerationVideoInput}
-              onChange={(event) => onVideoGenerationVideoInputChange(event.target.value)}
-              placeholder="视频扩展模式输入"
-            />
-          </label>
-          <label className="lab-field">
-            <span>首帧输入</span>
-            <input
-              name="videoGenerationFirstFrameInput"
-              value={videoGenerationFirstFrameInput}
-              onChange={(event) => onVideoGenerationFirstFrameInputChange(event.target.value)}
-              placeholder="首末帧过渡首帧"
-            />
-          </label>
-          <label className="lab-field">
-            <span>末帧输入</span>
-            <input
-              name="videoGenerationLastFrameInput"
-              value={videoGenerationLastFrameInput}
-              onChange={(event) => onVideoGenerationLastFrameInputChange(event.target.value)}
-              placeholder="首末帧过渡末帧"
-            />
-          </label>
-        </div>
+        <details
+          className="video-generation-collapsible"
+          open={showVideoGenerationAdvancedInputs}
+          onToggle={(event) => setShowVideoGenerationAdvancedInputs(event.currentTarget.open)}
+        >
+          <summary>
+            <span>高级输入（图像 / 视频 / 首末帧）</span>
+            <span>{showVideoGenerationAdvancedInputs ? '收起' : '展开'}</span>
+          </summary>
+          <div className="video-generation-collapsible-body">
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>图像输入</span>
+                <input
+                  name="videoGenerationImageInput"
+                  value={videoGenerationImageInput}
+                  onChange={(event) => onVideoGenerationImageInputChange(event.target.value)}
+                  placeholder="图生视频主图"
+                />
+              </label>
+              <label className="lab-field">
+                <span>参考图列表</span>
+                <textarea
+                  name="videoGenerationReferenceImagesInput"
+                  value={videoGenerationReferenceImagesInput}
+                  onChange={(event) =>
+                    onVideoGenerationReferenceImagesInputChange(event.target.value)
+                  }
+                  placeholder="多张参考图，逗号或换行分隔"
+                />
+              </label>
+            </div>
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>视频输入</span>
+                <input
+                  name="videoGenerationVideoInput"
+                  value={videoGenerationVideoInput}
+                  onChange={(event) => onVideoGenerationVideoInputChange(event.target.value)}
+                  placeholder="视频扩展模式输入"
+                />
+              </label>
+              <label className="lab-field">
+                <span>首帧输入</span>
+                <input
+                  name="videoGenerationFirstFrameInput"
+                  value={videoGenerationFirstFrameInput}
+                  onChange={(event) => onVideoGenerationFirstFrameInputChange(event.target.value)}
+                  placeholder="首末帧过渡首帧"
+                />
+              </label>
+              <label className="lab-field">
+                <span>末帧输入</span>
+                <input
+                  name="videoGenerationLastFrameInput"
+                  value={videoGenerationLastFrameInput}
+                  onChange={(event) => onVideoGenerationLastFrameInputChange(event.target.value)}
+                  placeholder="首末帧过渡末帧"
+                />
+              </label>
+            </div>
+          </div>
+        </details>
         <div className="lab-inline-actions">
           <button disabled={isVideoGenerationBusy} onClick={onCreateVideoGenerationTask}>
             {isVideoGenerationBusy ? '处理中...' : '提交任务'}
           </button>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>列表数量</span>
-            <input
-              type="number"
-              min={1}
-              name="videoGenerationListLimit"
-              value={videoGenerationListLimit}
-              onChange={(event) => onVideoGenerationListLimitChange(event.target.value)}
-              placeholder="20"
-            />
-          </label>
-          <label className="lab-field">
-            <span>状态筛选</span>
-            <select
-              name="videoGenerationStatusFilter"
-              value={videoGenerationStatusFilter}
-              onChange={(event) =>
-                onVideoGenerationStatusFilterChange(
-                  event.target.value as 'all' | VideoGenerationJobStatus
-                )
-              }
-            >
-              <option value="all">all</option>
-              <option value="queued">queued</option>
-              <option value="submitted">submitted</option>
-              <option value="processing">processing</option>
-              <option value="succeeded">succeeded</option>
-              <option value="cancel_requested">cancel_requested</option>
-              <option value="canceled">canceled</option>
-              <option value="failed">failed</option>
-            </select>
-          </label>
-          <label className="lab-field">
-            <span>选中任务 ID</span>
-            <input
-              name="videoGenerationSelectedJobId"
-              value={videoGenerationSelectedJobId}
-              onChange={(event) => onVideoGenerationSelectedJobIdChange(event.target.value)}
-              placeholder="job_xxx"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-actions">
-          <button disabled={isVideoGenerationBusy} onClick={onRefreshVideoGenerationJobs}>
-            刷新列表
-          </button>
           <button
-            disabled={isVideoGenerationBusy || !videoGenerationHasMore}
-            onClick={onLoadMoreVideoGenerationJobs}
-          >
-            加载更多
-          </button>
-          <button
-            disabled={isVideoGenerationBusy || !videoGenerationSelectedJobId.trim()}
+            disabled={isVideoGenerationBusy || !hasSelectedVideoGenerationJob}
             onClick={onQueryVideoGenerationJobDetail}
           >
-            查询详情
-          </button>
-          <button
-            className={`video-generation-polling-toggle ${
-              videoGenerationPollingEnabled ? 'active' : ''
-            }`}
-            onClick={() => onVideoGenerationPollingEnabledChange(!videoGenerationPollingEnabled)}
-          >
-            自动轮询：{videoGenerationPollingEnabled ? '开' : '关'}
+            查询选中任务
           </button>
         </div>
-        <div className="video-generation-polling-hint">
-          后端自动同步终态已启用，前端自动轮询仅刷新展示。最近轮询：{latestAutoSyncText}
-          {isVideoGenerationAutoSyncTicking ? '（刷新中）' : ''}
+        <div className="video-generation-polling-hint" data-testid="video-generation-polling-hint">
+          <span className={`video-generation-polling-state ${pollingState.tone}`}>
+            {pollingState.text}
+          </span>
+          <span className="video-generation-polling-desc">
+            后端自动同步终态已启用，前端自动轮询仅刷新展示。
+          </span>
+          <span className="video-generation-polling-time">最近轮询：{latestAutoSyncText}</span>
         </div>
-        <div className="video-generation-pagination">
-          Cursor: {videoGenerationCursor || '-'} · hasMore:{' '}
-          {videoGenerationHasMore ? 'true' : 'false'}
-        </div>
+        <details
+          className="video-generation-collapsible"
+          open={showVideoGenerationInspector}
+          onToggle={(event) => setShowVideoGenerationInspector(event.currentTarget.open)}
+        >
+          <summary>
+            <span>查询与分页设置</span>
+            <span>{showVideoGenerationInspector ? '收起' : '展开'}</span>
+          </summary>
+          <div className="video-generation-collapsible-body">
+            <div className="lab-inline-fields">
+              <label className="lab-field">
+                <span>列表数量</span>
+                <input
+                  type="number"
+                  min={1}
+                  name="videoGenerationListLimit"
+                  value={videoGenerationListLimit}
+                  onChange={(event) => onVideoGenerationListLimitChange(event.target.value)}
+                  placeholder="20"
+                />
+              </label>
+              <label className="lab-field">
+                <span>状态筛选</span>
+                <select
+                  name="videoGenerationStatusFilter"
+                  value={videoGenerationStatusFilter}
+                  onChange={(event) =>
+                    onVideoGenerationStatusFilterChange(
+                      event.target.value as 'all' | VideoGenerationJobStatus
+                    )
+                  }
+                >
+                  <option value="all">all</option>
+                  <option value="queued">queued</option>
+                  <option value="submitted">submitted</option>
+                  <option value="processing">processing</option>
+                  <option value="succeeded">succeeded</option>
+                  <option value="cancel_requested">cancel_requested</option>
+                  <option value="canceled">canceled</option>
+                  <option value="failed">failed</option>
+                </select>
+              </label>
+              <label className="lab-field">
+                <span>选中任务 ID</span>
+                <input
+                  name="videoGenerationSelectedJobId"
+                  value={videoGenerationSelectedJobId}
+                  onChange={(event) => onVideoGenerationSelectedJobIdChange(event.target.value)}
+                  placeholder="job_xxx"
+                />
+              </label>
+            </div>
+            <div className="video-generation-pagination">
+              <span className="video-generation-pagination-label">Cursor</span>
+              <code className="video-generation-pagination-value">
+                {videoGenerationCursor || '-'}
+              </code>
+              <span className="video-generation-pagination-sep">·</span>
+              <span className="video-generation-pagination-label">hasMore</span>
+              <strong>{videoGenerationHasMore ? 'true' : 'false'}</strong>
+            </div>
+          </div>
+        </details>
         <div className="video-generation-list-head">
-          <span>活跃任务：{activeVideoGenerationJobs.length}</span>
-          <span>终态任务：{terminalVideoGenerationJobs.length}</span>
+          <span className="video-generation-count-chip active">
+            活跃任务：{activeVideoGenerationJobs.length}
+          </span>
+          <span className="video-generation-count-chip terminal">
+            终态任务：{terminalVideoGenerationJobs.length}
+          </span>
+          <span
+            className="video-generation-selected-chip"
+            title={selectedVideoGenerationJobId || '-'}
+          >
+            选中：{selectedVideoGenerationJobId || '-'}
+          </span>
           <button
             type="button"
             className="video-generation-terminal-toggle"
@@ -620,7 +729,7 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
             {showAllTerminalVideoJobs ? '折叠终态任务' : '展开终态任务'}
           </button>
         </div>
-        <div className="video-generation-job-list">
+        <div className="video-generation-job-list" data-testid="area-video-generation-job-list">
           {renderedVideoGenerationJobs.map((job) => {
             const requestPromptValue = job.request?.['prompt']
             const requestTextValue = job.request?.['text']
@@ -632,6 +741,11 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
                   : ''
             const isSelected = videoGenerationSelectedJobId === job.id
             const isCancelled = job.status === 'canceled' || job.status === 'cancel_requested'
+            const statusText = resolveVideoGenerationStatusText(job.status)
+            const statusBadgeModifier = resolveVideoGenerationStatusBadgeModifier(job.status)
+            const promptText = normalizeVideoGenerationDisplayText(requestPrompt)
+            const errorText = normalizeVideoGenerationDisplayText(job.errorMessage)
+            const outputText = normalizeVideoGenerationDisplayText(job.outputUrl)
             return (
               <div
                 key={job.id}
@@ -639,28 +753,49 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
                   isCancelled ? 'cancelled' : ''
                 }`}
               >
-                <button
-                  className="video-generation-job-select"
-                  onClick={() => onVideoGenerationSelectedJobIdChange(job.id)}
-                >
-                  <span>{job.id}</span>
-                  <span>
-                    {job.generationMode} · {job.modelId}
+                <div className="video-generation-job-head">
+                  <button
+                    className="video-generation-job-select"
+                    onClick={() => onVideoGenerationSelectedJobIdChange(job.id)}
+                  >
+                    <span>{job.id}</span>
+                    <span>
+                      {job.generationMode} · {job.modelId}
+                    </span>
+                  </button>
+                  <span className={`video-generation-status-badge ${statusBadgeModifier}`}>
+                    {statusText}
                   </span>
-                </button>
+                </div>
                 <div className="video-generation-job-meta">
-                  <span>状态：{resolveVideoGenerationStatusText(job.status)}</span>
                   <span>渠道：{job.providerStatus}</span>
                   <span>{new Date(job.updatedAt).toLocaleString()}</span>
                 </div>
-                <div className="video-generation-job-meta">
-                  <span>Prompt：{requestPrompt || '-'}</span>
-                  <span>错误：{job.errorMessage || '-'}</span>
+                <div className="video-generation-job-meta video-generation-job-meta-stack">
+                  <span className="video-generation-kv">
+                    <b>Prompt</b>
+                    <span className="video-generation-ellipsis" title={promptText}>
+                      {promptText}
+                    </span>
+                  </span>
+                  <span className="video-generation-kv">
+                    <b>错误</b>
+                    <span className="video-generation-ellipsis" title={errorText}>
+                      {errorText}
+                    </span>
+                  </span>
                 </div>
-                <div className="video-generation-job-meta">
-                  <span>输出：{job.outputUrl || '-'}</span>
+                <div className="video-generation-job-meta video-generation-job-meta-stack">
+                  <span className="video-generation-kv">
+                    <b>输出</b>
+                    <span className="video-generation-ellipsis" title={outputText}>
+                      {outputText}
+                    </span>
+                  </span>
                   <span>重试次数：{job.retryCount ?? 0}</span>
-                  <span>最近同步：{job.lastSyncedAt ? new Date(job.lastSyncedAt).toLocaleString() : '-'}</span>
+                  <span>
+                    最近同步：{job.lastSyncedAt ? new Date(job.lastSyncedAt).toLocaleString() : '-'}
+                  </span>
                 </div>
                 <div className="video-generation-job-actions">
                   <button

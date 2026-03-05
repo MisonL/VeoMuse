@@ -17,9 +17,9 @@ const createSafeStorage = () =>
   })
 
 export const LAYOUT_DEFAULTS = {
-  leftPanelPx: 400,
-  rightPanelPx: 340,
-  timelinePx: 286,
+  leftPanelPx: 368,
+  rightPanelPx: 316,
+  timelinePx: 278,
   centerMode: 'fit' as CenterPanelMode,
   topBarDensity: 'comfortable' as TopBarDensity,
   previewAspect: '16:9' as PreviewAspect

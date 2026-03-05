@@ -59,6 +59,9 @@ const CENTER_PANEL_FRAME_GUTTER = 10
 const CENTER_PANEL_EDIT_MAX_WIDTH = 700
 const CENTER_PANEL_AUDIO_MAX_WIDTH = 860
 const CENTER_PANEL_LAB_MAX_WIDTH = 940
+const CENTER_PANEL_FIT_EDIT_MIN_WIDTH = 360
+const CENTER_PANEL_FIT_AUDIO_MIN_WIDTH = 348
+const CENTER_PANEL_FIT_LAB_MIN_WIDTH = 378
 const HEADER_HEIGHT = 62
 const HORIZONTAL_HANDLE_SIZE = 10
 const VERTICAL_HANDLE_SIZE = 8
@@ -231,6 +234,11 @@ export const computeCenterPanelMinWidth = (
   activeMode: string
 ) => {
   if (!isDesktopLayout) return MAIN_PANEL_MIN_WIDTH
+  if (centerMode === 'fit') {
+    if (activeMode === 'color') return CENTER_PANEL_FIT_LAB_MIN_WIDTH
+    if (activeMode === 'audio') return CENTER_PANEL_FIT_AUDIO_MIN_WIDTH
+    return CENTER_PANEL_FIT_EDIT_MIN_WIDTH
+  }
   const boost = CENTER_MODE_WIDTH_BOOST[centerMode]
   if (activeMode === 'color') return 340 + boost
   if (activeMode === 'audio') return 320 + boost
@@ -284,8 +292,8 @@ export const buildShellLayoutVars = (params: {
     '--right-panel-w': `${params.rightPanelPx}px`,
     '--center-panel-min-w': `${params.centerPanelMinWidth}px`,
     '--center-panel-fit-w': `${Math.round(params.centerPanelFitWidth)}px`,
-    '--left-panel-flex': params.centerMode === 'focus' ? '1.42fr' : '2.05fr',
-    '--right-panel-flex': params.centerMode === 'focus' ? '1.28fr' : '1.86fr',
+    '--left-panel-flex': params.centerMode === 'focus' ? '1.36fr' : '1.68fr',
+    '--right-panel-flex': params.centerMode === 'focus' ? '1.24fr' : '1.58fr',
     '--timeline-h': `${params.timelinePx}px`
   }) as CSSProperties
 

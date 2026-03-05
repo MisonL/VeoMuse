@@ -1341,6 +1341,57 @@ body.resizing-y {
   }
 }
 
+@media (max-width: 1480px) {
+  .os-header {
+    gap: 10px;
+    padding: 0 12px;
+  }
+
+  .brand-title {
+    font-size: 20px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .header-actions-group {
+    gap: 4px;
+    padding: 2px;
+  }
+
+  .header-segment {
+    padding: 2px;
+  }
+
+  .header-segment-btn {
+    font-size: 10px;
+    padding: 5px 6px;
+  }
+
+  .header-select {
+    min-width: 108px;
+    padding: 7px 8px;
+    font-size: 10px;
+  }
+
+  .preview-aspect-select {
+    min-width: 92px;
+  }
+
+  .layout-reset-btn,
+  .channel-entry-btn,
+  .guide-toggle-btn {
+    padding: 7px 8px;
+    font-size: 10px;
+  }
+
+  .export-btn {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}
+
 @media (max-width: 980px) {
   body {
     overflow-x: hidden;
