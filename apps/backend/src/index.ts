@@ -5,7 +5,6 @@ import fs from 'fs/promises'
 import { ApiKeyService } from './services/ApiKeyService'
 import { PromptEnhanceService } from './services/PromptEnhanceService'
 import { AiClipService } from './services/AiClipService'
-import { CompositionService } from './services/CompositionService'
 import { TtsService } from './services/TtsService'
 import { MusicAdviceService } from './services/MusicAdviceService'
 import { VideoOrchestrator } from './services/VideoOrchestrator'
@@ -53,6 +52,7 @@ import {
   handleRetryVideoGeneration,
   handleSyncVideoGeneration
 } from './http/videoGenerationHandlers'
+import { videoComposeRoute } from './http/videoComposeRoute'
 import { adminRuntimeRoutes } from './http/adminRuntimeRoutes'
 import {
   authorizeAdmin,
@@ -62,7 +62,6 @@ import {
   buildGeminiNotConfiguredResponse,
   buildQuotaExceededResponse,
   getCapabilities,
-  hasRenderableSources,
   isDevRuntime,
   isGeminiNotConfiguredError,
   parseBooleanEnv,
@@ -304,7 +303,11 @@ export const createApp = () => {
           return { success: true, session, organizations }
         } catch (error: unknown) {
           set.status = 401
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '刷新会话失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '刷新会话失败')
+          }
         }
       },
       {
@@ -344,7 +347,11 @@ export const createApp = () => {
           return { success: true, organization }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '创建组织失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '创建组织失败')
+          }
         }
       },
       {
@@ -401,7 +408,11 @@ export const createApp = () => {
           return { success: true, member }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '添加成员失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '添加成员失败')
+          }
         }
       },
       {
@@ -577,7 +588,11 @@ export const createApp = () => {
           return { success: true, config }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '渠道配置保存失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '渠道配置保存失败')
+          }
         }
       },
       {
@@ -635,7 +650,11 @@ export const createApp = () => {
           return { success: true, config }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '渠道配置保存失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '渠道配置保存失败')
+          }
         }
       },
       {
@@ -1650,7 +1669,11 @@ export const createApp = () => {
           }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '回滚演练创建失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '回滚演练创建失败')
+          }
         }
       },
       {
@@ -1800,7 +1823,11 @@ export const createApp = () => {
           }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '评论线程创建失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '评论线程创建失败')
+          }
         }
       },
       {
@@ -1928,7 +1955,11 @@ export const createApp = () => {
           }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '角色权限写入失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '角色权限写入失败')
+          }
         }
       },
       {
@@ -1963,7 +1994,11 @@ export const createApp = () => {
           }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, 'Timeline merge 失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, 'Timeline merge 失败')
+          }
         }
       },
       {
@@ -2016,7 +2051,11 @@ export const createApp = () => {
           }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '工作流创建失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '工作流创建失败')
+          }
         }
       },
       {
@@ -2122,7 +2161,11 @@ export const createApp = () => {
           }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '批处理任务创建失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '批处理任务创建失败')
+          }
         }
       },
       {
@@ -2163,7 +2206,11 @@ export const createApp = () => {
           }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, '批处理任务查询失败') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, '批处理任务查询失败')
+          }
         }
       },
       {
@@ -2918,7 +2965,11 @@ export const createApp = () => {
           }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, 'local import failed') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, 'local import failed')
+          }
         }
       },
       {
@@ -3042,7 +3093,11 @@ export const createApp = () => {
           }
         } catch (error: unknown) {
           set.status = 400
-          return { success: false, status: 'error', error: resolveErrorMessage(error, 'local upload failed') }
+          return {
+            success: false,
+            status: 'error',
+            error: resolveErrorMessage(error, 'local upload failed')
+          }
         }
       },
       {
@@ -3052,109 +3107,7 @@ export const createApp = () => {
       }
     )
 
-    .post(
-      '/api/video/compose',
-      async ({ body, request, set }) => {
-        const runtimeContext = resolveRuntimeContext(request, set, body.workspaceId)
-        if (!runtimeContext) {
-          return { success: false, status: 'error', error: 'Forbidden' }
-        }
-        if (!hasRenderableSources(body.timelineData)) {
-          set.status = 400
-          return {
-            success: false,
-            status: 'error',
-            error: '请先导入并放置至少一个可渲染片段后再导出',
-            code: 'VALIDATION'
-          }
-        }
-        try {
-          let requestDenied: ReturnType<
-            typeof OrganizationGovernanceService.consumeRequestQuota
-          > | null = null
-          const composed = await OrganizationGovernanceService.withConcurrencyLimit(
-            runtimeContext.organizationId,
-            async () => {
-              const quotaConsumed = OrganizationGovernanceService.consumeRequestQuota(
-                runtimeContext.organizationId,
-                1
-              )
-              if (!quotaConsumed.allowed) {
-                requestDenied = quotaConsumed
-                return null
-              }
-              return await CompositionService.compose(body.timelineData)
-            }
-          )
-
-          if (requestDenied) {
-            set.status = 429
-            return buildQuotaExceededResponse('request', requestDenied)
-          }
-
-          if (composed?.success && composed?.outputPath) {
-            let outputBytes = 0
-            try {
-              const stat = await fs.stat(composed.outputPath)
-              outputBytes = Number(stat.size || 0)
-            } catch {
-              outputBytes = 0
-            }
-
-            if (outputBytes > 0) {
-              const storageCheck = OrganizationGovernanceService.checkStorageAllowed(
-                runtimeContext.organizationId,
-                outputBytes
-              )
-              if (!storageCheck.allowed) {
-                try {
-                  await fs.unlink(composed.outputPath)
-                } catch (cleanupError: unknown) {
-                  try {
-                    await Bun.sleep(80)
-                    await fs.unlink(composed.outputPath)
-                  } catch (retryError: unknown) {
-                    console.warn(
-                      `[video-compose] cleanup failed after storage quota denial: trace=${resolveRequestTraceId(
-                        request,
-                        'trace_compose_cleanup'
-                      )}, path=${composed.outputPath}, error=${resolveErrorMessage(
-                        cleanupError,
-                        'unlink failed'
-                      )}, retryError=${resolveErrorMessage(retryError, 'retry unlink failed')}`
-                    )
-                  }
-                }
-                set.status = 429
-                return buildQuotaExceededResponse('storage', storageCheck)
-              }
-              OrganizationGovernanceService.addStorageUsage(
-                runtimeContext.organizationId,
-                outputBytes
-              )
-            }
-          }
-
-          return composed
-        } catch (error: unknown) {
-          const message = resolveErrorMessage(error, '')
-          if (message.includes('并发配额')) {
-            const check = OrganizationGovernanceService.checkConcurrencyAllowed(
-              runtimeContext.organizationId
-            )
-            set.status = 429
-            return buildQuotaExceededResponse('concurrency', check)
-          }
-          throw error
-        }
-      },
-      {
-        body: t.Object({
-          timelineData: t.Any(),
-          workspaceId: t.Optional(t.String())
-        })
-      }
-    )
+    .use(videoComposeRoute)
 
     .ws('/ws/generation', {
       open(ws) {

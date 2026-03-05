@@ -4,6 +4,16 @@ import { useToastStore } from '../../store/toastStore'
 import { useJourneyTelemetryStore } from '../../store/journeyTelemetryStore'
 import { classifyRequestError } from '../../utils/requestError'
 import { resolveGeminiQuickCheck } from './comparison-lab/types'
+import {
+  buildChannelExtra,
+  buildIdempotencyKey,
+  normalizeVideoSourceInput,
+  parseJsonArrayInput as parseJsonArrayInputHelper,
+  parseJsonObjectInput as parseJsonObjectInputHelper,
+  parseMentionsInput,
+  parseVideoReferenceInputs,
+  validateChannelForm
+} from './comparison-lab/helpers'
 import type {
   AiChannelConfig,
   CollabEvent,
@@ -252,63 +262,17 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const geminiQuickCheck = useMemo(() => resolveGeminiQuickCheck(capabilities), [capabilities])
   const currentActorName = memberName.trim() || workspaceOwner.trim() || 'Owner'
   const effectiveOrganizationId = selectedOrganizationId.trim() || organizations[0]?.id || ''
-  const buildIdempotencyKey = useCallback((action: string) => {
-    const uuid =
-      typeof globalThis.crypto?.randomUUID === 'function'
-        ? globalThis.crypto.randomUUID()
-        : `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
-    return `${action}:${uuid}`
-  }, [])
 
   const parseJsonObjectInput = useCallback(
-    (raw: string, fieldName: string): Record<string, unknown> | null => {
-      const text = raw.trim()
-      if (!text) return {}
-      try {
-        const parsed = JSON.parse(text) as unknown
-        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-          showToast(`${fieldName} 必须是 JSON 对象`, 'warning')
-          return null
-        }
-        return parsed as Record<string, unknown>
-      } catch {
-        showToast(`${fieldName} 解析失败，请检查 JSON 格式`, 'warning')
-        return null
-      }
-    },
+    (raw: string, fieldName: string): Record<string, unknown> | null =>
+      parseJsonObjectInputHelper(raw, fieldName, (message) => showToast(message, 'warning')),
     [showToast]
   )
 
   const parseJsonArrayInput = useCallback(
-    (raw: string, fieldName: string): unknown[] | null => {
-      const text = raw.trim()
-      if (!text) return []
-      try {
-        const parsed = JSON.parse(text) as unknown
-        if (!Array.isArray(parsed)) {
-          showToast(`${fieldName} 必须是 JSON 数组`, 'warning')
-          return null
-        }
-        return parsed
-      } catch {
-        showToast(`${fieldName} 解析失败，请检查 JSON 格式`, 'warning')
-        return null
-      }
-    },
+    (raw: string, fieldName: string): unknown[] | null =>
+      parseJsonArrayInputHelper(raw, fieldName, (message) => showToast(message, 'warning')),
     [showToast]
-  )
-
-  const parseMentionsInput = useCallback(
-    (raw: string) =>
-      Array.from(
-        new Set(
-          raw
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean)
-        )
-      ),
-    []
   )
 
   const {
@@ -450,25 +414,6 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     parseJsonObjectInput,
     parseJsonArrayInput
   })
-
-  const parseVideoReferenceInputs = useCallback((raw: string) => {
-    return raw
-      .split(/[\n,]/g)
-      .map((item) => item.trim())
-      .filter(Boolean)
-  }, [])
-
-  const normalizeVideoSourceInput = useCallback(
-    (raw: string) => {
-      const value = raw.trim()
-      if (!value) return undefined
-      return {
-        sourceType: videoGenerationInputSourceType,
-        value
-      } as const
-    },
-    [videoGenerationInputSourceType]
-  )
 
   const buildV4AdminHeaders = useCallback(
     (customHeaders?: Record<string, string>) => {
@@ -878,34 +823,6 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     }
   }, [activeChannelScope, applyChannelForms, effectiveOrganizationId, showToast, workspaceId])
 
-  const buildChannelExtra = (providerId: string, form: ChannelFormState) => {
-    if (providerId !== 'openai-compatible') return {}
-    const model = form.model.trim()
-    const path = form.path.trim()
-    const temperatureRaw = form.temperature.trim()
-    const extra: Record<string, unknown> = {}
-    if (model) extra.model = model
-    if (path) extra.path = path
-    if (temperatureRaw) extra.temperature = Number(temperatureRaw)
-    return extra
-  }
-
-  const validateChannelForm = (providerId: string, form: ChannelFormState) => {
-    if (providerId !== 'openai-compatible' || !form.enabled) return true
-    if (!form.model.trim()) {
-      showToast('OpenAI 兼容渠道必须填写 model', 'warning')
-      return false
-    }
-    const temperatureRaw = form.temperature.trim()
-    if (!temperatureRaw) return true
-    const temperature = Number(temperatureRaw)
-    if (!Number.isFinite(temperature) || temperature < 0 || temperature > 2) {
-      showToast('temperature 需在 0 到 2 之间', 'warning')
-      return false
-    }
-    return true
-  }
-
   const saveChannelConfig = async (providerId: string) => {
     if (!effectiveOrganizationId) {
       showToast('请先选择组织', 'info')
@@ -913,7 +830,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     }
     const form = channelForms[providerId]
     if (!form) return
-    if (!validateChannelForm(providerId, form)) return
+    if (!validateChannelForm(providerId, form, (message) => showToast(message, 'warning'))) return
     const path =
       activeChannelScope === 'workspace' && workspaceId
         ? `/api/workspaces/${workspaceId}/channels/${providerId}`
@@ -948,7 +865,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const testChannelConfig = async (providerId: string) => {
     const form = channelForms[providerId]
     if (!form) return
-    if (!validateChannelForm(providerId, form)) return
+    if (!validateChannelForm(providerId, form, (message) => showToast(message, 'warning'))) return
     const extra = buildChannelExtra(providerId, form)
     try {
       const payload = await requestJson<{ success: boolean; message: string }>(
@@ -1303,12 +1220,24 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const createVideoGenerationTask = async () => {
     const prompt = videoGenerationPrompt.trim()
     const negativePrompt = videoGenerationNegativePrompt.trim()
-    const imageInput = normalizeVideoSourceInput(videoGenerationImageInput)
-    const videoInput = normalizeVideoSourceInput(videoGenerationVideoInput)
-    const firstFrameInput = normalizeVideoSourceInput(videoGenerationFirstFrameInput)
-    const lastFrameInput = normalizeVideoSourceInput(videoGenerationLastFrameInput)
+    const imageInput = normalizeVideoSourceInput(
+      videoGenerationImageInput,
+      videoGenerationInputSourceType
+    )
+    const videoInput = normalizeVideoSourceInput(
+      videoGenerationVideoInput,
+      videoGenerationInputSourceType
+    )
+    const firstFrameInput = normalizeVideoSourceInput(
+      videoGenerationFirstFrameInput,
+      videoGenerationInputSourceType
+    )
+    const lastFrameInput = normalizeVideoSourceInput(
+      videoGenerationLastFrameInput,
+      videoGenerationInputSourceType
+    )
     const referenceImagesRaw = parseVideoReferenceInputs(videoGenerationReferenceImagesInput).map(
-      (value) => normalizeVideoSourceInput(value)
+      (value) => normalizeVideoSourceInput(value, videoGenerationInputSourceType)
     )
     const referenceImages = referenceImagesRaw.filter(
       (item): item is NonNullable<typeof item> => item != null
