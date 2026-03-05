@@ -173,7 +173,7 @@ describe('发布门禁脚本策略', () => {
     expect(summary.runRealE2E).toBe(false)
     expect(summary.sloBootstrap.enabled).toBe(false)
     expect(summary.sloBootstrap.status).toBe('not-needed')
-    expect(summary.videoGenerateLoop.trackedStepName).toBe('E2E Regression (Mock)')
+    expect(summary.videoGenerateLoop.trackedStepName).toBe('E2E Regression')
     expect(summary.videoGenerateLoop.status).toBe('not-run')
     expect(summary.videoGenerateLoop.attempts).toBe(0)
     expect(summary.videoGenerateLoop.detail).toBe('not-run')

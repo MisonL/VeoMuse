@@ -24,7 +24,7 @@ describe('手动 workflows 存在性与关键字段守卫', () => {
     expect(workflow).toContain('if [ "${E2E_REAL_CHANNELS}" != "true" ]; then')
     expect(workflow).toContain('if [ -z "${GEMINI_API_KEYS}" ]; then')
     expect(workflow).toContain('if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then')
-    expect(workflow).toContain('Scheduled run skipped: ${reason}')
+    expect(workflow).toContain('Scheduled run blocked: ${reason}')
     expect(workflow).toContain('Manual run blocked: ${reason}')
     expect(workflow).toContain("if: ${{ steps.guard.outputs.enabled == 'true' }}")
     expect(workflow).toContain("if: ${{ !cancelled() && steps.guard.outputs.enabled == 'true' }}")

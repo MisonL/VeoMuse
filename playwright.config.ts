@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test'
 
 const FRONTEND_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:42873'
 const BACKEND_URL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:33117'
+const REUSE_EXISTING_SERVER =
+  process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'true' || !process.env.CI
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -48,7 +50,7 @@ export default defineConfig({
       command: 'bun run --cwd apps/backend dev',
       url: `${BACKEND_URL}/api/health`,
       name: 'backend',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: REUSE_EXISTING_SERVER,
       timeout: 120_000,
       stdout: 'pipe',
       stderr: 'pipe'
@@ -58,7 +60,7 @@ export default defineConfig({
         'env -u NO_COLOR PLAYWRIGHT_TEST=true bun run --cwd apps/frontend dev --host 127.0.0.1 --port 42873',
       url: FRONTEND_URL,
       name: 'frontend',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: REUSE_EXISTING_SERVER,
       timeout: 120_000,
       stdout: 'pipe',
       stderr: 'pipe'

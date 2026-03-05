@@ -13,9 +13,11 @@ describe('CI 统一入口守卫', () => {
     expect(workflow).toContain('bunx playwright install --with-deps chromium')
   })
 
-  it('应使用独立 SLO 端口避免与 Playwright 后端 webServer 端口冲突', () => {
+  it('应对齐 SLO seed 与 Playwright 后端地址并启用复用', () => {
     expect(workflow).toContain('SLO_GATE_API_BASE: http://127.0.0.1:33118')
     expect(workflow).toContain('PORT=33118 bun run --cwd apps/backend dev')
+    expect(workflow).toContain('PLAYWRIGHT_API_BASE_URL: http://127.0.0.1:33118')
+    expect(workflow).toContain("PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true'")
   })
 
   it('应上传完整质量门禁工件，并在缺失时报错', () => {

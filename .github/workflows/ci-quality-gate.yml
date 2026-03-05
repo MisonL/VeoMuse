@@ -32,6 +32,8 @@ jobs:
           SLO_GATE_MIN_NON_AI_SAMPLES: '20'
           SLO_GATE_MIN_JOURNEY_SAMPLES: '10'
           SLO_ADMIN_SEED_ENABLED: 'true'
+          PLAYWRIGHT_API_BASE_URL: http://127.0.0.1:33118
+          PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true'
           ADMIN_TOKEN: ci-admin-token
         run: |
           mkdir -p artifacts

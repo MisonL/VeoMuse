@@ -52,8 +52,8 @@ jobs:
           fi
 
           if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
-            echo "Scheduled run skipped: ${reason}"
-            exit 0
+            echo "Scheduled run blocked: ${reason}"
+            exit 1
           fi
 
           echo "Manual run blocked: ${reason}"

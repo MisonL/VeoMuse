@@ -130,7 +130,7 @@ const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '0.0.0.0', '::1'])
 const QUALITY_SUMMARY_RELATIVE_PATH = path.join('artifacts', 'quality-summary.json')
 const QUALITY_TAG_VIDEO_GENERATE_LOOP = 'video_generate_loop'
 const QUALITY_TAG_REAL_E2E = 'real_e2e'
-const VIDEO_GENERATE_LOOP_DEFAULT_STEP_NAME = 'E2E Regression (Mock)'
+const VIDEO_GENERATE_LOOP_DEFAULT_STEP_NAME = 'E2E Regression'
 const REAL_E2E_STEP_NAME = 'E2E Regression (Real)'
 const REAL_E2E_PRECHECK_STEP_NAME = 'E2E Regression (Real) Precheck'
 const REAL_E2E_PRECHECK_COMMAND = 'validate real-e2e required env'
@@ -392,7 +392,7 @@ const buildRecommendations = (summary: QualitySummary, status: ReleaseGateStatus
   if (summary.videoGenerateLoop.status === 'failed') {
     uniquePush(
       recommendations,
-      '视频生成闭环失败：先执行 `bun run e2e:regression:mock -- --workers=1` 定位“注册/组织/工作区/生成/导出”链路。'
+      '视频生成闭环失败：先执行 `bun run e2e:regression -- --workers=1` 定位“注册/组织/工作区/生成/导出”链路。'
     )
     if (summary.videoGenerateLoop.failureType === 'auth') {
       uniquePush(recommendations, '检测到鉴权类失败：优先核对真实渠道凭据与令牌作用域。')
@@ -750,8 +750,8 @@ const createSteps = (params: {
     },
     { name: 'E2E Smoke', command: 'bun run e2e:smoke -- --workers=1', retries: 1 },
     {
-      name: 'E2E Regression (Mock)',
-      command: 'bun run e2e:regression:mock -- --workers=1',
+      name: 'E2E Regression',
+      command: 'bun run e2e:regression -- --workers=1',
       retries: 1,
       qualityTags: [QUALITY_TAG_VIDEO_GENERATE_LOOP]
     },

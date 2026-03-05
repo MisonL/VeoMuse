@@ -58,7 +58,7 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(Array.isArray(summary.steps)).toBe(true)
     expect(summary.steps.length).toBe(6)
     expect(summary.sloBootstrap?.status).toBe('reused')
-    expect(summary.videoGenerateLoop?.trackedStepName).toBe('E2E Regression (Mock)')
+    expect(summary.videoGenerateLoop?.trackedStepName).toBe('E2E Regression')
     expect(summary.videoGenerateLoop?.status).toBe('passed')
     expect(summary.videoGenerateLoop?.attempts).toBe(1)
     expect(summary.realE2E?.trackedStepName).toBe('E2E Regression (Real)')
@@ -282,7 +282,7 @@ describe('发布门禁运行时路径（mock）', () => {
     const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
       if (Array.isArray(cmd)) {
         const shellCmd = String(cmd[2] || '')
-        if (shellCmd.includes('e2e:regression:mock')) {
+        if (shellCmd.includes('e2e:regression --')) {
           return createSubprocess(1)
         }
       }
@@ -298,21 +298,19 @@ describe('发布门禁运行时路径（mock）', () => {
 
     await expect(
       runReleaseGate([], { GITHUB_REF_NAME: 'feature/video-loop-fail' } as NodeJS.ProcessEnv)
-    ).rejects.toThrow('E2E Regression (Mock) failed with exit code 1')
+    ).rejects.toThrow('E2E Regression failed with exit code 1')
 
     const summary = await readSummary()
     expect(summary.status).toBe('failed')
-    expect(summary.videoGenerateLoop?.trackedStepName).toBe('E2E Regression (Mock)')
+    expect(summary.videoGenerateLoop?.trackedStepName).toBe('E2E Regression')
     expect(summary.videoGenerateLoop?.status).toBe('failed')
     expect(summary.videoGenerateLoop?.attempts).toBe(2)
     expect(summary.videoGenerateLoop?.failureType).toBe('unknown')
     expect(String(summary.videoGenerateLoop?.detail || '')).toContain(
-      'E2E Regression (Mock) failed with exit code 1'
+      'E2E Regression failed with exit code 1'
     )
     expect(
-      summary.steps.some(
-        (step: any) => step.name === 'E2E Regression (Mock)' && step.status === 'failed'
-      )
+      summary.steps.some((step: any) => step.name === 'E2E Regression' && step.status === 'failed')
     ).toBe(true)
     expect(summary.steps.some((step: any) => String(step.name).includes('SLO Check'))).toBe(false)
     expect(spawnSpy).toHaveBeenCalledTimes(6)
