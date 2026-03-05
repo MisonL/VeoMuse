@@ -13,76 +13,218 @@ import { getLocalDb } from './LocalDatabaseService'
 
 const now = () => new Date().toISOString()
 
-const toWorkspace = (row: any): Workspace => ({
-  id: row.id,
-  organizationId: row.organization_id || 'org_default',
-  name: row.name,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-})
+interface WorkspaceRow {
+  id: string
+  organization_id?: string | null
+  name: string
+  created_at: string
+  updated_at: string
+}
 
-const toMember = (row: any): WorkspaceMember => ({
-  id: row.id,
-  workspaceId: row.workspace_id,
-  userId: row.user_id || null,
-  name: row.name,
-  role: row.role,
-  createdAt: row.created_at
-})
+interface WorkspaceMemberRow {
+  id: string
+  workspace_id: string
+  user_id?: string | null
+  name: string
+  role: WorkspaceRole
+  created_at: string
+}
 
-const toProject = (row: any): Project => ({
-  id: row.id,
-  organizationId: row.organization_id || 'org_default',
-  workspaceId: row.workspace_id,
-  name: row.name,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-})
+interface ProjectRow {
+  id: string
+  organization_id?: string | null
+  workspace_id: string
+  name: string
+  created_at: string
+  updated_at: string
+}
 
-const toAudit = (row: any): AuditLog => ({
-  id: row.id,
-  organizationId: row.organization_id || null,
-  workspaceId: row.workspace_id || null,
-  projectId: row.project_id || null,
-  actorName: row.actor_name,
-  action: row.action,
-  detail: JSON.parse(row.detail_json || '{}'),
-  traceId: row.trace_id || null,
-  createdAt: row.created_at
-})
+interface AuditLogRow {
+  id: string
+  organization_id?: string | null
+  workspace_id?: string | null
+  project_id?: string | null
+  actor_name: string
+  action: string
+  detail_json?: string | null
+  trace_id?: string | null
+  created_at: string
+}
 
-const toInvite = (row: any): WorkspaceInvite => ({
-  id: row.id,
-  organizationId: row.organization_id || 'org_default',
-  workspaceId: row.workspace_id,
-  code: row.code,
-  role: row.role,
-  inviter: row.inviter,
-  status: row.status,
-  expiresAt: row.expires_at,
-  acceptedBy: row.accepted_by || null,
-  acceptedAt: row.accepted_at || null,
-  createdAt: row.created_at
-})
+interface WorkspaceInviteRow {
+  id: string
+  organization_id?: string | null
+  workspace_id: string
+  code: string
+  role: WorkspaceRole
+  inviter: string
+  status: WorkspaceInvite['status']
+  expires_at: string
+  accepted_by?: string | null
+  accepted_at?: string | null
+  created_at: string
+}
 
-const toPresence = (row: any): CollabPresence => ({
-  organizationId: row.organization_id || 'org_default',
-  workspaceId: row.workspace_id,
-  sessionId: row.session_id,
-  memberName: row.member_name,
-  role: row.role,
-  status: row.status,
-  lastSeenAt: row.last_seen_at
-})
+interface CollabPresenceRow {
+  organization_id?: string | null
+  workspace_id: string
+  session_id: string
+  member_name: string
+  role: WorkspaceRole
+  status: CollabPresence['status']
+  last_seen_at: string
+}
 
-const toSnapshot = (row: any): ProjectSnapshot => ({
-  id: row.id,
-  organizationId: row.organization_id || 'org_default',
-  projectId: row.project_id,
-  actorName: row.actor_name,
-  content: JSON.parse(row.content_json || '{}'),
-  createdAt: row.created_at
-})
+interface ProjectSnapshotRow {
+  id: string
+  organization_id?: string | null
+  project_id: string
+  actor_name: string
+  content_json?: string | null
+  created_at: string
+}
+
+interface ProjectCommentRow {
+  id: string
+  organization_id?: string | null
+  project_id: string
+  actor_name: string
+  anchor?: string | null
+  content: string
+  mentions_json?: string | null
+  status?: string
+  resolved_by?: string | null
+  resolved_at?: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface ProjectReviewRow {
+  id: string
+  organization_id?: string | null
+  project_id: string
+  actor_name: string
+  decision?: string
+  summary: string
+  score?: number | string | null
+  created_at: string
+}
+
+interface ProjectTemplateRow {
+  id: string
+  organization_id?: string | null
+  project_id: string
+  name: string
+  description?: string | null
+  template_json?: string | null
+  created_by?: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface CollabEventRow {
+  id: string
+  organization_id?: string | null
+  workspace_id: string
+  project_id?: string | null
+  actor_name: string
+  session_id?: string | null
+  event_type: CollabEvent['eventType']
+  payload_json?: string | null
+  created_at: string
+}
+
+const toWorkspace = (row: unknown): Workspace => {
+  const value = row as WorkspaceRow
+  return {
+    id: value.id,
+    organizationId: value.organization_id || 'org_default',
+    name: value.name,
+    createdAt: value.created_at,
+    updatedAt: value.updated_at
+  }
+}
+
+const toMember = (row: unknown): WorkspaceMember => {
+  const value = row as WorkspaceMemberRow
+  return {
+    id: value.id,
+    workspaceId: value.workspace_id,
+    userId: value.user_id || null,
+    name: value.name,
+    role: value.role,
+    createdAt: value.created_at
+  }
+}
+
+const toProject = (row: unknown): Project => {
+  const value = row as ProjectRow
+  return {
+    id: value.id,
+    organizationId: value.organization_id || 'org_default',
+    workspaceId: value.workspace_id,
+    name: value.name,
+    createdAt: value.created_at,
+    updatedAt: value.updated_at
+  }
+}
+
+const toAudit = (row: unknown): AuditLog => {
+  const value = row as AuditLogRow
+  return {
+    id: value.id,
+    organizationId: value.organization_id || null,
+    workspaceId: value.workspace_id || null,
+    projectId: value.project_id || null,
+    actorName: value.actor_name,
+    action: value.action,
+    detail: JSON.parse(value.detail_json || '{}'),
+    traceId: value.trace_id || null,
+    createdAt: value.created_at
+  }
+}
+
+const toInvite = (row: unknown): WorkspaceInvite => {
+  const value = row as WorkspaceInviteRow
+  return {
+    id: value.id,
+    organizationId: value.organization_id || 'org_default',
+    workspaceId: value.workspace_id,
+    code: value.code,
+    role: value.role,
+    inviter: value.inviter,
+    status: value.status,
+    expiresAt: value.expires_at,
+    acceptedBy: value.accepted_by || null,
+    acceptedAt: value.accepted_at || null,
+    createdAt: value.created_at
+  }
+}
+
+const toPresence = (row: unknown): CollabPresence => {
+  const value = row as CollabPresenceRow
+  return {
+    organizationId: value.organization_id || 'org_default',
+    workspaceId: value.workspace_id,
+    sessionId: value.session_id,
+    memberName: value.member_name,
+    role: value.role,
+    status: value.status,
+    lastSeenAt: value.last_seen_at
+  }
+}
+
+const toSnapshot = (row: unknown): ProjectSnapshot => {
+  const value = row as ProjectSnapshotRow
+  return {
+    id: value.id,
+    organizationId: value.organization_id || 'org_default',
+    projectId: value.project_id,
+    actorName: value.actor_name,
+    content: JSON.parse(value.content_json || '{}'),
+    createdAt: value.created_at
+  }
+}
 
 const parseStringArray = (value: string | null | undefined): string[] => {
   try {
@@ -154,20 +296,23 @@ interface ProjectComment {
   updatedAt: string
 }
 
-const toProjectComment = (row: any): ProjectComment => ({
-  id: row.id,
-  organizationId: row.organization_id || 'org_default',
-  projectId: row.project_id,
-  actorName: row.actor_name,
-  anchor: row.anchor || null,
-  content: row.content,
-  mentions: parseStringArray(row.mentions_json),
-  status: row.status === 'resolved' ? 'resolved' : 'open',
-  resolvedBy: row.resolved_by || null,
-  resolvedAt: row.resolved_at || null,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-})
+const toProjectComment = (row: unknown): ProjectComment => {
+  const value = row as ProjectCommentRow
+  return {
+    id: value.id,
+    organizationId: value.organization_id || 'org_default',
+    projectId: value.project_id,
+    actorName: value.actor_name,
+    anchor: value.anchor || null,
+    content: value.content,
+    mentions: parseStringArray(value.mentions_json),
+    status: value.status === 'resolved' ? 'resolved' : 'open',
+    resolvedBy: value.resolved_by || null,
+    resolvedAt: value.resolved_at || null,
+    createdAt: value.created_at,
+    updatedAt: value.updated_at
+  }
+}
 
 interface ProjectReview {
   id: string
@@ -180,16 +325,19 @@ interface ProjectReview {
   createdAt: string
 }
 
-const toProjectReview = (row: any): ProjectReview => ({
-  id: row.id,
-  organizationId: row.organization_id || 'org_default',
-  projectId: row.project_id,
-  actorName: row.actor_name,
-  decision: row.decision === 'changes_requested' ? 'changes_requested' : 'approved',
-  summary: row.summary,
-  score: row.score === null || row.score === undefined ? null : Number(row.score),
-  createdAt: row.created_at
-})
+const toProjectReview = (row: unknown): ProjectReview => {
+  const value = row as ProjectReviewRow
+  return {
+    id: value.id,
+    organizationId: value.organization_id || 'org_default',
+    projectId: value.project_id,
+    actorName: value.actor_name,
+    decision: value.decision === 'changes_requested' ? 'changes_requested' : 'approved',
+    summary: value.summary,
+    score: value.score === null || value.score === undefined ? null : Number(value.score),
+    createdAt: value.created_at
+  }
+}
 
 interface ProjectTemplate {
   id: string
@@ -203,17 +351,20 @@ interface ProjectTemplate {
   updatedAt: string
 }
 
-const toProjectTemplate = (row: any): ProjectTemplate => ({
-  id: row.id,
-  organizationId: row.organization_id || 'org_default',
-  projectId: row.project_id,
-  name: row.name,
-  description: row.description || '',
-  template: parseRecord(row.template_json),
-  createdBy: row.created_by || 'system',
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-})
+const toProjectTemplate = (row: unknown): ProjectTemplate => {
+  const value = row as ProjectTemplateRow
+  return {
+    id: value.id,
+    organizationId: value.organization_id || 'org_default',
+    projectId: value.project_id,
+    name: value.name,
+    description: value.description || '',
+    template: parseRecord(value.template_json),
+    createdBy: value.created_by || 'system',
+    createdAt: value.created_at,
+    updatedAt: value.updated_at
+  }
+}
 
 interface ProjectTemplateApplyReceipt {
   projectId: string
@@ -246,17 +397,20 @@ interface ProjectClipBatchUpdateReceipt {
   processedAt: string
 }
 
-const toCollabEvent = (row: any): CollabEvent => ({
-  id: row.id,
-  organizationId: row.organization_id || 'org_default',
-  workspaceId: row.workspace_id,
-  projectId: row.project_id || null,
-  actorName: row.actor_name,
-  sessionId: row.session_id || null,
-  eventType: row.event_type,
-  payload: JSON.parse(row.payload_json || '{}'),
-  createdAt: row.created_at
-})
+const toCollabEvent = (row: unknown): CollabEvent => {
+  const value = row as CollabEventRow
+  return {
+    id: value.id,
+    organizationId: value.organization_id || 'org_default',
+    workspaceId: value.workspace_id,
+    projectId: value.project_id || null,
+    actorName: value.actor_name,
+    sessionId: value.session_id || null,
+    eventType: value.event_type,
+    payload: JSON.parse(value.payload_json || '{}'),
+    createdAt: value.created_at
+  }
+}
 
 const generateInviteCode = () => {
   const source = crypto.randomUUID().replace(/-/g, '')
@@ -705,7 +859,7 @@ export class WorkspaceService {
         SELECT * FROM workspace_invites WHERE code = ? LIMIT 1
       `
         )
-        .get(normalizedCode) as any
+        .get(normalizedCode) as WorkspaceInviteRow | null
       if (!row) return null
       if (row.status !== 'pending') return null
 
@@ -987,7 +1141,7 @@ export class WorkspaceService {
     const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(100, Math.floor(limit)) : 20
     const queryLimit = safeLimit + 1
     const decodedCursor = decodeStableCursor(cursor)
-    const rows: any[] =
+    const rows: ProjectCommentRow[] =
       decodedCursor && decodedCursor.id
         ? (getLocalDb()
             .prepare(
@@ -1007,7 +1161,7 @@ export class WorkspaceService {
               decodedCursor.createdAt,
               decodedCursor.createdAt,
               decodedCursor.id
-            ) as any[])
+            ) as ProjectCommentRow[])
         : decodedCursor
           ? (getLocalDb()
               .prepare(
@@ -1018,7 +1172,7 @@ export class WorkspaceService {
           LIMIT ${queryLimit}
         `
               )
-              .all(projectId, decodedCursor.createdAt) as any[])
+              .all(projectId, decodedCursor.createdAt) as ProjectCommentRow[])
           : (getLocalDb()
               .prepare(
                 `
@@ -1028,7 +1182,7 @@ export class WorkspaceService {
           LIMIT ${queryLimit}
         `
               )
-              .all(projectId) as any[])
+              .all(projectId) as ProjectCommentRow[])
     const hasMore = rows.length > safeLimit
     const pageRows = hasMore ? rows.slice(0, safeLimit) : rows
     const comments = pageRows.map(toProjectComment)

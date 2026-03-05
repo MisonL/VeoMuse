@@ -78,7 +78,7 @@ export class ModelRouter extends BaseAiService {
       const key = ApiKeyService.getNextKey()
       const url = `${this.API_URL}/${this.MODEL}:generateContent?key=${key}`
 
-      const { data } = await this.instance.request<any>(url, {
+      const { data } = await this.instance.request<unknown>(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -101,8 +101,11 @@ veo-3.1, kling-v1, sora-preview, luma-dream, runway-gen3, pika-1.5
         })
       })
 
-      const content = JSON.parse(data.candidates[0].content.parts[0].text) as ModelRecommendation
-      if (!this.SUPPORTED_MODELS.includes(content.recommendedModelId as any)) {
+      const content = this.instance.parseGeminiJson<ModelRecommendation>(data)
+      const isSupportedModel = this.SUPPORTED_MODELS.some(
+        (modelId) => modelId === content.recommendedModelId
+      )
+      if (!isSupportedModel) {
         return {
           ...this.fallbackRecommend(prompt),
           reason: `AI 返回了未知模型 ID，已降级到本地路由。原始原因：${content.reason || 'N/A'}`

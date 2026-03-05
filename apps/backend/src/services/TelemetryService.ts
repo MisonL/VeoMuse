@@ -28,12 +28,13 @@ export class TelemetryService {
   }
 
   getSummary() {
-    const apiStats: any = {}
+    const apiStats: Record<string, { count: number; totalMs: number; success: number }> = {}
     this.apiMetrics.forEach((m) => {
-      if (!apiStats[m.service]) apiStats[m.service] = { count: 0, totalMs: 0, success: 0 }
-      apiStats[m.service].count++
-      apiStats[m.service].totalMs += m.durationMs
-      if (m.success) apiStats[m.service].success++
+      const stats = apiStats[m.service] || { count: 0, totalMs: 0, success: 0 }
+      stats.count += 1
+      stats.totalMs += m.durationMs
+      if (m.success) stats.success += 1
+      apiStats[m.service] = stats
     })
 
     const cpuCount = Math.max(1, os.cpus().length)

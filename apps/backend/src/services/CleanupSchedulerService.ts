@@ -35,6 +35,12 @@ const defaultLogger: CleanupLogger = {
   error: (message) => console.error(message)
 }
 
+const resolveErrorMessage = (error: unknown, fallback = 'Unknown error') => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
+}
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const tryRemoveWithRetry = async (
@@ -48,10 +54,10 @@ const tryRemoveWithRetry = async (
     try {
       await removeFile(target)
       return { ok: true, retriesUsed: attempts }
-    } catch (error: any) {
+    } catch (error: unknown) {
       attempts += 1
       if (attempts > retries) {
-        logger.error(`[Cleanup] 删除失败: ${target} | ${error?.message || 'Unknown error'}`)
+        logger.error(`[Cleanup] 删除失败: ${target} | ${resolveErrorMessage(error)}`)
         return { ok: false, retriesUsed: retries }
       }
       logger.warn(`[Cleanup] 删除重试 ${attempts}/${retries}: ${path.basename(target)}`)
@@ -99,12 +105,13 @@ export const cleanupGeneratedFiles = async (
         failed += 1
       }
     }
-  } catch (error: any) {
-    if (error?.code === 'ENOENT') {
+  } catch (error: unknown) {
+    const code = error && typeof error === 'object' ? (error as { code?: unknown }).code : undefined
+    if (code === 'ENOENT') {
       logger.warn(`[Cleanup] 目录不存在，跳过: ${directory}`)
     } else {
       failed += 1
-      logger.error(`[Cleanup] 任务异常: ${error?.message || 'Unknown error'}`)
+      logger.error(`[Cleanup] 任务异常: ${resolveErrorMessage(error)}`)
     }
   }
 

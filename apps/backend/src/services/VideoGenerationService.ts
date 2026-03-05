@@ -18,6 +18,11 @@ const now = () => new Date().toISOString()
 
 const OBJECT_KEY_SEGMENT = /^[a-zA-Z0-9._-]+$/
 const DEFAULT_MODEL_ID = 'veo-3.1'
+type DbRow = Record<string, unknown>
+const asRecord = (value: unknown): DbRow => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return value as DbRow
+}
 
 type DriverOptions = NonNullable<GenerateParams['options']>
 
@@ -70,8 +75,8 @@ const decodeStableCursor = (cursor: string | null | undefined): StableCursorPayl
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
-const parseRecord = (value: string | null | undefined): Record<string, unknown> => {
-  if (!value) return {}
+const parseRecord = (value: unknown): Record<string, unknown> => {
+  if (typeof value !== 'string' || !value) return {}
   try {
     const parsed = JSON.parse(value)
     return isPlainObject(parsed) ? parsed : {}
@@ -84,6 +89,12 @@ const toNullableString = (value: unknown) => {
   const normalized = String(value || '').trim()
   return normalized ? normalized : null
 }
+
+const resolveErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback
+
+const toRetryInputs = (value: unknown): VideoGenerationCreateInput['inputs'] =>
+  isPlainObject(value) ? (value as VideoGenerationCreateInput['inputs']) : undefined
 
 const normalizeObjectKey = (value: string) => {
   const segments = String(value || '')
@@ -286,7 +297,8 @@ const calculateDurationMs = (
   return Math.max(0, Math.round(finishedValue - startedValue))
 }
 
-const toVideoGenerationJob = (row: any): VideoGenerationJob => {
+const toVideoGenerationJob = (input: unknown): VideoGenerationJob => {
+  const row = asRecord(input)
   const status = normalizeJobStatus(row.status)
   const startedAt = toNullableString(row.started_at) || null
   const finishedAt = toNullableString(row.finished_at) || null
@@ -729,7 +741,7 @@ export class VideoGenerationService {
       prompt: toNullableString(storedRequest.prompt) || toNullableString(storedRequest.text) || '',
       negativePrompt: toNullableString(storedRequest.negativePrompt) || undefined,
       options: isPlainObject(storedRequest.options) ? storedRequest.options : {},
-      inputs: isPlainObject(storedRequest.inputs) ? (storedRequest.inputs as any) : undefined
+      inputs: toRetryInputs(storedRequest.inputs)
     }
     const driverParams = this.toDriverParams(retryInput)
     const providerResult = await VideoOrchestrator.generate(
@@ -972,7 +984,7 @@ export class VideoGenerationService {
       LIMIT ${queryLimit}
     `
       )
-      .all(...params) as any[]
+      .all(...params) as DbRow[]
 
     const hasMore = rows.length > safeLimit
     const slicedRows = hasMore ? rows.slice(0, safeLimit) : rows
@@ -1034,7 +1046,7 @@ export class VideoGenerationService {
       LIMIT ?
     `
       )
-      .all(...params) as any[]
+      .all(...params) as DbRow[]
 
     const result: VideoGenerationSyncBatchResult = {
       scannedCount: rows.length,
@@ -1058,11 +1070,11 @@ export class VideoGenerationService {
         })
         result.syncedCount += 1
         result.syncedJobIds.push(synced.job.id)
-      } catch (error: any) {
+      } catch (error: unknown) {
         result.failedCount += 1
         result.failedJobs.push({
           jobId: job.id,
-          error: String(error?.message || 'unknown sync error')
+          error: resolveErrorMessage(error, 'unknown sync error')
         })
       }
     }

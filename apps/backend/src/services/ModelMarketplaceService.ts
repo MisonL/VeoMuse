@@ -184,36 +184,38 @@ const DEFAULT_PROFILES: ModelProfile[] = [
   }
 ]
 
-const profileFromRow = (row: any): ModelProfile => ({
-  id: row.id,
-  name: row.name,
-  provider: row.provider,
+type DbRecord = Record<string, unknown>
+
+const profileFromRow = (row: DbRecord): ModelProfile => ({
+  id: String(row.id || ''),
+  name: String(row.name || ''),
+  provider: String(row.provider || ''),
   capabilities: (() => {
     try {
-      const value = JSON.parse(row.capabilities_json || '[]')
+      const value = JSON.parse(String(row.capabilities_json || '[]'))
       return Array.isArray(value) ? value.map(String) : []
     } catch {
       return []
     }
   })(),
-  costPerSecond: row.cost_per_second,
-  maxDurationSec: row.max_duration_sec,
+  costPerSecond: Number(row.cost_per_second || 0),
+  maxDurationSec: Number(row.max_duration_sec || 0),
   supports4k: Boolean(row.supports_4k),
   supportsAudio: Boolean(row.supports_audio),
   supportsStylization: Boolean(row.supports_stylization),
-  region: row.region,
+  region: String(row.region || 'global'),
   enabled: Boolean(row.enabled),
-  updatedAt: row.updated_at
+  updatedAt: String(row.updated_at || nowIso())
 })
 
-const metricsFromRow = (row: any, modelId: string): ModelRuntimeMetrics => ({
+const metricsFromRow = (row: DbRecord | null | undefined, modelId: string): ModelRuntimeMetrics => ({
   modelId,
-  windowMinutes: row?.window_minutes ?? 1440,
-  totalRequests: row?.total_requests ?? 0,
-  successRate: row?.success_rate ?? 1,
-  p95LatencyMs: row?.p95_latency_ms ?? 0,
-  avgCostUsd: row?.avg_cost_usd ?? 0,
-  updatedAt: row?.updated_at ?? nowIso()
+  windowMinutes: Number(row?.window_minutes ?? 1440),
+  totalRequests: Number(row?.total_requests ?? 0),
+  successRate: Number(row?.success_rate ?? 1),
+  p95LatencyMs: Number(row?.p95_latency_ms ?? 0),
+  avgCostUsd: Number(row?.avg_cost_usd ?? 0),
+  updatedAt: String(row?.updated_at ?? nowIso())
 })
 
 const normalizeWeights = (
@@ -237,53 +239,58 @@ const normalizeWeights = (
   }
 }
 
-const policyFromRow = (row: any): RoutingPolicy => {
+const policyFromRow = (row: DbRecord): RoutingPolicy => {
   const priority: ModelRoutingPriority =
-    row.priority === 'speed' || row.priority === 'cost' ? row.priority : 'quality'
+    row.priority === 'speed' || row.priority === 'cost'
+      ? (row.priority as ModelRoutingPriority)
+      : 'quality'
   const rawWeights = (() => {
     try {
-      return JSON.parse(row.weights_json || '{}')
+      return JSON.parse(String(row.weights_json || '{}'))
     } catch {
       return {}
     }
   })()
   const allowed = (() => {
     try {
-      const value = JSON.parse(row.allowed_models_json || '[]')
+      const value = JSON.parse(String(row.allowed_models_json || '[]'))
       return Array.isArray(value) ? value.map(String) : []
     } catch {
       return []
     }
   })()
   return {
-    id: row.id,
-    name: row.name,
-    description: row.description,
+    id: String(row.id || ''),
+    name: String(row.name || ''),
+    description: String(row.description || ''),
     priority,
     maxBudgetUsd: Number(row.max_budget_usd || 0),
     enabled: Boolean(row.enabled ?? 1),
     allowedModels: allowed,
     weights: normalizeWeights(priority, rawWeights),
     fallbackPolicyId: row.fallback_policy_id ? String(row.fallback_policy_id) : null,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at
+    createdAt: String(row.created_at || nowIso()),
+    updatedAt: String(row.updated_at || nowIso())
   }
 }
 
-const executionFromRow = (row: any): RoutingExecution => ({
-  id: row.id,
-  policyId: row.policy_id,
-  prompt: row.prompt,
-  priority: row.priority,
-  recommendedModelId: row.recommended_model_id,
+const executionFromRow = (row: DbRecord): RoutingExecution => ({
+  id: String(row.id || ''),
+  policyId: String(row.policy_id || ''),
+  prompt: String(row.prompt || ''),
+  priority:
+    row.priority === 'speed' || row.priority === 'cost'
+      ? (row.priority as ModelRoutingPriority)
+      : 'quality',
+  recommendedModelId: String(row.recommended_model_id || ''),
   estimatedCostUsd: Number(row.estimated_cost_usd || 0),
   estimatedLatencyMs: Number(row.estimated_latency_ms || 0),
   confidence: Number(row.confidence || 0),
-  reason: row.reason,
+  reason: String(row.reason || ''),
   fallbackUsed: Boolean(row.fallback_used),
   candidates: (() => {
     try {
-      const value = JSON.parse(row.candidates_json || '[]')
+      const value = JSON.parse(String(row.candidates_json || '[]'))
       return Array.isArray(value) ? value : []
     } catch {
       return []
@@ -291,13 +298,13 @@ const executionFromRow = (row: any): RoutingExecution => ({
   })(),
   scoreBreakdown: (() => {
     try {
-      const value = JSON.parse(row.score_breakdown_json || '[]')
+      const value = JSON.parse(String(row.score_breakdown_json || '[]'))
       return Array.isArray(value) ? value : []
     } catch {
       return []
     }
   })(),
-  createdAt: row.created_at
+  createdAt: String(row.created_at || nowIso())
 })
 
 const calcP95 = (samples: number[]) => {
@@ -364,13 +371,13 @@ const normalizeAlertChannels = (channels: unknown) => {
 }
 
 const alertConfigFromRow = (
-  row: any,
+  row: DbRecord | null | undefined,
   organizationId: string,
   policyId: string
 ): PolicyAlertConfig => {
   const channels = (() => {
     try {
-      const parsed = JSON.parse(row?.channels_json || '[]')
+      const parsed = JSON.parse(String(row?.channels_json || '[]'))
       return normalizeAlertChannels(parsed)
     } catch {
       return [...DEFAULT_POLICY_ALERT_CHANNELS]
@@ -397,21 +404,22 @@ const alertConfigFromRow = (
   }
 }
 
-const alertEventFromRow = (row: any): PolicyAlertEvent => {
-  const status = row?.status === 'critical' || row?.status === 'degraded' ? row.status : 'warning'
+const alertEventFromRow = (row: DbRecord): PolicyAlertEvent => {
+  const status: PolicyAlertEvent['status'] =
+    row.status === 'critical' ? 'critical' : row.status === 'degraded' ? 'degraded' : 'warning'
   return {
-    id: row.id,
-    policyId: row.policy_id,
-    organizationId: row.organization_id || 'org_default',
+    id: String(row.id || ''),
+    policyId: String(row.policy_id || ''),
+    organizationId: String(row.organization_id || 'org_default'),
     status,
-    message: row.message,
-    prompt: row.prompt,
-    recommendedModelId: row.recommended_model_id,
+    message: String(row.message || ''),
+    prompt: String(row.prompt || ''),
+    recommendedModelId: String(row.recommended_model_id || ''),
     estimatedCostUsd: Number(row.estimated_cost_usd || 0),
     budgetUsd: Number(row.budget_usd || 0),
     meta: (() => {
       try {
-        const parsed = JSON.parse(row.meta_json || '{}')
+        const parsed = JSON.parse(String(row.meta_json || '{}'))
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
           return parsed as Record<string, unknown>
         }
@@ -420,7 +428,7 @@ const alertEventFromRow = (row: any): PolicyAlertEvent => {
       }
       return {}
     })(),
-    createdAt: row.created_at
+    createdAt: String(row.created_at || nowIso())
   }
 }
 
@@ -595,13 +603,17 @@ export class ModelMarketplaceService {
 
   static getAllProfiles(): ModelProfile[] {
     this.ensureInitialized()
-    const rows = getLocalDb().prepare(`SELECT * FROM model_profiles ORDER BY id ASC`).all()
+    const rows = getLocalDb()
+      .prepare(`SELECT * FROM model_profiles ORDER BY id ASC`)
+      .all() as DbRecord[]
     return rows.map(profileFromRow)
   }
 
   static getProfile(modelId: string): ModelProfile | null {
     this.ensureInitialized()
-    const row = getLocalDb().prepare(`SELECT * FROM model_profiles WHERE id = ?`).get(modelId)
+    const row = getLocalDb()
+      .prepare(`SELECT * FROM model_profiles WHERE id = ?`)
+      .get(modelId) as DbRecord | null
     return row ? profileFromRow(row) : null
   }
 
@@ -611,7 +623,7 @@ export class ModelMarketplaceService {
     const getMetric = getLocalDb().prepare(`SELECT * FROM model_runtime_metrics WHERE model_id = ?`)
     return profiles.map((profile) => ({
       profile,
-      metrics: metricsFromRow(getMetric.get(profile.id), profile.id)
+      metrics: metricsFromRow(getMetric.get(profile.id) as DbRecord | null, profile.id)
     }))
   }
 
@@ -625,7 +637,7 @@ export class ModelMarketplaceService {
         ORDER BY updated_at DESC, created_at DESC
       `
       )
-      .all(organizationId)
+      .all(organizationId) as DbRecord[]
     return rows.map(policyFromRow)
   }
 
@@ -633,7 +645,7 @@ export class ModelMarketplaceService {
     this.ensureInitialized()
     const row = getLocalDb()
       .prepare(`SELECT * FROM routing_policies WHERE id = ? AND organization_id = ?`)
-      .get(policyId, organizationId)
+      .get(policyId, organizationId) as DbRecord | null
     return row ? policyFromRow(row) : null
   }
 
@@ -782,7 +794,7 @@ export class ModelMarketplaceService {
         OFFSET ${safeOffset}
       `
       )
-      .all(policyId, organizationId)
+      .all(policyId, organizationId) as DbRecord[]
 
     return {
       executions: rows.map(executionFromRow),
@@ -827,7 +839,7 @@ export class ModelMarketplaceService {
         LIMIT 1
       `
       )
-      .get(policyId, organizationId)
+      .get(policyId, organizationId) as DbRecord | null
     if (!row) return this.buildDefaultPolicyAlertConfig(organizationId, policyId)
     return alertConfigFromRow(row, organizationId, policyId)
   }
@@ -907,7 +919,7 @@ export class ModelMarketplaceService {
         LIMIT ${safeLimit}
       `
       )
-      .all(policyId, organizationId)
+      .all(policyId, organizationId) as DbRecord[]
     return rows.map(alertEventFromRow)
   }
 

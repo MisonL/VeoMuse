@@ -40,6 +40,21 @@ export interface ChannelResolvedConfig {
   scope: ChannelScope
 }
 
+type DbChannelConfigRow = {
+  id?: unknown
+  organization_id?: unknown
+  workspace_id?: unknown
+  provider_id?: unknown
+  base_url?: unknown
+  enabled?: unknown
+  extra_json?: unknown
+  created_by?: unknown
+  updated_by?: unknown
+  created_at?: unknown
+  updated_at?: unknown
+  secret_encrypted?: unknown
+}
+
 const now = () => new Date().toISOString()
 
 const PROVIDERS: ChannelProvider[] = [
@@ -112,30 +127,37 @@ const maskSecret = (value: string) => {
   return `${raw.slice(0, 3)}***${raw.slice(-3)}`
 }
 
-const normalizeConfigRow = (row: any): ChannelConfigRow => {
-  const secret = decryptSecret(String(row.secret_encrypted || ''))
+const normalizeConfigRow = (row?: DbChannelConfigRow | null): ChannelConfigRow => {
+  const source = row || {}
+  const secret = decryptSecret(String(source.secret_encrypted || ''))
   const extra = (() => {
     try {
-      return JSON.parse(row.extra_json || '{}')
+      return JSON.parse(String(source.extra_json || '{}'))
     } catch {
       return {}
     }
   })()
   return {
-    id: row.id,
-    organizationId: row.organization_id,
-    workspaceId: row.workspace_id || null,
-    providerId: row.provider_id,
-    baseUrl: row.base_url || '',
-    enabled: Number(row.enabled || 0) === 1,
+    id: String(source.id || ''),
+    organizationId: String(source.organization_id || ''),
+    workspaceId: source.workspace_id ? String(source.workspace_id) : null,
+    providerId: String(source.provider_id || ''),
+    baseUrl: String(source.base_url || ''),
+    enabled: Number(source.enabled || 0) === 1,
     extra,
-    createdBy: row.created_by || '',
-    updatedBy: row.updated_by || '',
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdBy: String(source.created_by || ''),
+    updatedBy: String(source.updated_by || ''),
+    createdAt: String(source.created_at || ''),
+    updatedAt: String(source.updated_at || ''),
     hasSecret: Boolean(secret),
     secretMasked: maskSecret(secret)
   }
+}
+
+const resolveErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return fallback
 }
 
 export class ChannelConfigService {
@@ -225,9 +247,10 @@ export class ChannelConfigService {
       `
           )
           .all(organizationId)
+    const normalizedRows = rows as DbChannelConfigRow[]
 
     const map = new Map<string, ChannelConfigRow>()
-    for (const row of rows) {
+    for (const row of normalizedRows) {
       const normalized = normalizeConfigRow(row)
       const key = normalized.providerId
       if (!map.has(key)) {
@@ -265,7 +288,9 @@ export class ChannelConfigService {
       LIMIT 1
     `
       )
-      .get(input.organizationId, input.providerId, scopeWorkspaceId, scopeWorkspaceId) as any
+      .get(input.organizationId, input.providerId, scopeWorkspaceId, scopeWorkspaceId) as
+      | DbChannelConfigRow
+      | null
 
     const existingBaseUrl = String(existing?.base_url || '').trim()
     const nextBaseUrl =
@@ -292,6 +317,7 @@ export class ChannelConfigService {
       : keepEncrypted
 
     if (existing) {
+      const existingId = String(existing.id || '')
       db.prepare(
         `
         UPDATE ai_channel_configs
@@ -305,7 +331,7 @@ export class ChannelConfigService {
         nextEnabledFlag,
         input.actorUserId,
         nowTs,
-        existing.id
+        existingId
       )
       this.writeAudit(
         input.organizationId,
@@ -321,7 +347,9 @@ export class ChannelConfigService {
         },
         input.traceId
       )
-      const row = db.prepare(`SELECT * FROM ai_channel_configs WHERE id = ?`).get(existing.id)
+      const row = db
+        .prepare(`SELECT * FROM ai_channel_configs WHERE id = ?`)
+        .get(existingId) as DbChannelConfigRow | null
       return normalizeConfigRow(row)
     }
 
@@ -361,7 +389,9 @@ export class ChannelConfigService {
       },
       input.traceId
     )
-    const row = db.prepare(`SELECT * FROM ai_channel_configs WHERE id = ?`).get(id)
+    const row = db.prepare(`SELECT * FROM ai_channel_configs WHERE id = ?`).get(id) as
+      | DbChannelConfigRow
+      | null
     return normalizeConfigRow(row)
   }
 
@@ -369,7 +399,7 @@ export class ChannelConfigService {
     this.assertProvider(providerId)
     const db = getLocalDb()
     const workspaceId = context.workspaceId?.trim() || null
-    const row = workspaceId
+    const row = (workspaceId
       ? db
           .prepare(
             `
@@ -388,24 +418,24 @@ export class ChannelConfigService {
         LIMIT 1
       `
           )
-          .get(context.organizationId, providerId)
+          .get(context.organizationId, providerId)) as DbChannelConfigRow | null
 
     if (!row) return null
-    const secret = decryptSecret(String((row as any).secret_encrypted || ''))
-    if (!secret || Number((row as any).enabled || 0) !== 1) return null
+    const secret = decryptSecret(String(row.secret_encrypted || ''))
+    if (!secret || Number(row.enabled || 0) !== 1) return null
     return {
       providerId,
-      baseUrl: String((row as any).base_url || ''),
+      baseUrl: String(row.base_url || ''),
       apiKey: secret,
       extra: (() => {
         try {
-          return JSON.parse(String((row as any).extra_json || '{}'))
+          return JSON.parse(String(row.extra_json || '{}'))
         } catch {
           return {}
         }
       })(),
       enabled: true,
-      scope: (row as any).workspace_id ? 'workspace' : 'organization'
+      scope: row.workspace_id ? 'workspace' : 'organization'
     }
   }
 
@@ -479,10 +509,10 @@ export class ChannelConfigService {
     }
     try {
       this.normalizeExtra(input.providerId, extra)
-    } catch (error: any) {
+    } catch (error: unknown) {
       return {
         success: false,
-        message: error?.message || 'extra 参数校验失败'
+        message: resolveErrorMessage(error, 'extra 参数校验失败')
       }
     }
     return {

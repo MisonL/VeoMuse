@@ -23,6 +23,21 @@ interface AccessTokenPayload {
   exp: number
 }
 
+interface AuthUserRow {
+  id: string
+  email: string
+  status?: string
+  created_at: string
+  updated_at: string
+  password_hash: string
+}
+
+interface RefreshTokenRow {
+  id: string
+  user_id: string
+  expires_at: string
+}
+
 const ACCESS_EXPIRES_SECONDS = 15 * 60
 const REFRESH_EXPIRES_SECONDS = 7 * 24 * 60 * 60
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -83,13 +98,16 @@ const verifyJwt = (token: string): AccessTokenPayload | null => {
 
 const hashRefreshToken = (token: string) => createHash('sha256').update(token).digest('hex')
 
-const normalizeUser = (row: any): AuthUser => ({
-  id: row.id,
-  email: row.email,
-  status: row.status === 'disabled' ? 'disabled' : 'active',
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-})
+const normalizeUser = (row: unknown): AuthUser => {
+  const value = row as AuthUserRow
+  return {
+    id: value.id,
+    email: value.email,
+    status: value.status === 'disabled' ? 'disabled' : 'active',
+    createdAt: value.created_at,
+    updatedAt: value.updated_at
+  }
+}
 
 export class AuthService {
   static normalizeEmail(email: string) {
@@ -131,7 +149,7 @@ export class AuthService {
     const db = getLocalDb()
     const row = db
       .prepare(`SELECT * FROM users WHERE email = ? LIMIT 1`)
-      .get(normalizedEmail) as any
+      .get(normalizedEmail) as AuthUserRow | null
     if (!row) throw new Error('账号或密码错误')
     if (row.status !== 'active') throw new Error('账号已停用')
     const ok = await Bun.password.verify(password, row.password_hash)
@@ -178,7 +196,7 @@ export class AuthService {
     if (!payload) return null
     const row = getLocalDb()
       .prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`)
-      .get(payload.sub) as any
+      .get(payload.sub) as AuthUserRow | null
     if (!row || row.status !== 'active') return null
     return normalizeUser(row)
   }
@@ -196,13 +214,15 @@ export class AuthService {
         LIMIT 1
       `
         )
-        .get(tokenHash) as any
+        .get(tokenHash) as RefreshTokenRow | null
       if (!row) throw new Error('刷新令牌无效')
       if (new Date(row.expires_at).getTime() <= Date.now()) {
         db.prepare(`UPDATE auth_refresh_tokens SET revoked_at = ? WHERE id = ?`).run(now, row.id)
         throw new Error('刷新令牌已过期')
       }
-      const userRow = db.prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`).get(row.user_id) as any
+      const userRow = db
+        .prepare(`SELECT * FROM users WHERE id = ? LIMIT 1`)
+        .get(row.user_id) as AuthUserRow | null
       if (!userRow || userRow.status !== 'active') {
         db.prepare(`UPDATE auth_refresh_tokens SET revoked_at = ? WHERE id = ?`).run(now, row.id)
         throw new Error('用户不可用')

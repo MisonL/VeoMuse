@@ -16,36 +16,74 @@ const parseJson = <T>(raw: unknown, fallback: T): T => {
   }
 }
 
-const sceneFromRow = (row: any): CreativeScene => ({
-  id: row.id,
-  runId: row.run_id,
-  order: row.order_idx,
-  title: row.title,
-  videoPrompt: row.video_prompt,
-  audioPrompt: row.audio_prompt,
-  voiceoverText: row.voiceover_text,
-  duration: row.duration,
-  status: row.status,
-  revision: row.revision || 1,
-  lastFeedback: row.last_feedback || '',
-  generationMeta: parseJson<Record<string, unknown>>(row.generation_meta_json, {}),
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-})
+interface StoryboardSceneRow {
+  id: string
+  run_id: string
+  order_idx: number
+  title: string
+  video_prompt: string
+  audio_prompt: string
+  voiceover_text: string
+  duration: number
+  status: string
+  revision?: number
+  last_feedback?: string
+  generation_meta_json?: unknown
+  created_at: string
+  updated_at: string
+}
 
-const runFromRow = (row: any, scenes: CreativeScene[]): CreativeRun => ({
-  id: row.id,
-  script: row.script,
-  style: row.style,
-  status: row.status,
-  version: row.version || 1,
-  parentRunId: row.parent_run_id || null,
-  qualityScore: Number(row.quality_score || 0),
-  notes: parseJson<Record<string, unknown>>(row.notes_json, {}),
-  scenes,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-})
+interface CreativeRunRow {
+  id: string
+  script: string
+  style: string
+  status: string
+  version?: number
+  parent_run_id?: string | null
+  quality_score?: number
+  notes_json?: unknown
+  created_at: string
+  updated_at: string
+}
+
+const sceneFromRow = (row: StoryboardSceneRow): CreativeScene => {
+  const status: CreativeScene['status'] =
+    row.status === 'draft' ? 'draft' : row.status === 'regenerated' ? 'regenerated' : 'generated'
+  return {
+    id: row.id,
+    runId: row.run_id,
+    order: row.order_idx,
+    title: row.title,
+    videoPrompt: row.video_prompt,
+    audioPrompt: row.audio_prompt,
+    voiceoverText: row.voiceover_text,
+    duration: row.duration,
+    status,
+    revision: row.revision || 1,
+    lastFeedback: row.last_feedback || '',
+    generationMeta: parseJson<Record<string, unknown>>(row.generation_meta_json, {}),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }
+}
+
+const runFromRow = (row: CreativeRunRow, scenes: CreativeScene[]): CreativeRun => {
+  const status: CreativeRun['status'] =
+    row.status === 'draft' ? 'draft' : row.status === 'completed' ? 'completed' : 'generated'
+  return {
+    id: row.id,
+    script: row.script,
+    style: row.style,
+    status,
+    version: row.version || 1,
+    parentRunId: row.parent_run_id || null,
+    qualityScore: Number(row.quality_score || 0),
+    notes: parseJson<Record<string, unknown>>(row.notes_json, {}),
+    scenes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }
+}
 
 const parseScenesFromScript = (script: string) => {
   const chunks = script
@@ -265,9 +303,9 @@ export class CreativePipelineService {
       SELECT * FROM creative_runs WHERE id = ? AND organization_id = ? LIMIT 1
     `
       )
-      .get(runId, orgId)
+      .get(runId, orgId) as CreativeRunRow | null
     if (!run) return null
-    const scenes = getLocalDb()
+    const sceneRows = getLocalDb()
       .prepare(
         `
         SELECT * FROM storyboard_scenes
@@ -275,8 +313,8 @@ export class CreativePipelineService {
         ORDER BY order_idx ASC
       `
       )
-      .all(runId, orgId)
-      .map(sceneFromRow)
+      .all(runId, orgId) as StoryboardSceneRow[]
+    const scenes = sceneRows.map(sceneFromRow)
     return runFromRow(run, scenes)
   }
 
@@ -321,8 +359,10 @@ export class CreativePipelineService {
         ORDER BY version ASC, created_at ASC
       `
       )
-      .all(rootId, orgId, orgId, orgId)
-    return rows.map((row: any) => this.getRun(row.id, orgId)).filter(Boolean) as CreativeRun[]
+      .all(rootId, orgId, orgId, orgId) as Array<{ id: string }>
+    return rows
+      .map((row) => this.getRun(String((row as { id?: unknown }).id || ''), orgId))
+      .filter((item): item is CreativeRun => Boolean(item))
   }
 
   static regenerateScene(
@@ -339,7 +379,7 @@ export class CreativePipelineService {
         WHERE id = ? AND run_id = ? AND organization_id = ?
       `
       )
-      .get(sceneId, runId, orgId) as any
+      .get(sceneId, runId, orgId) as StoryboardSceneRow | null
     if (!row) return null
 
     const updatedAt = toIso()
@@ -437,7 +477,7 @@ export class CreativePipelineService {
           WHERE id = ? AND run_id = ? AND organization_id = ?
         `
         )
-        .get(item.sceneId, nextRun.id, orgId) as any
+        .get(item.sceneId, nextRun.id, orgId) as StoryboardSceneRow | null
       if (!row) {
         const rows = getLocalDb()
           .prepare(
@@ -446,11 +486,12 @@ export class CreativePipelineService {
             WHERE run_id = ? AND organization_id = ?
           `
           )
-          .all(nextRun.id, orgId) as any[]
-        row = rows.find((candidate) => {
-          const meta = parseJson<Record<string, unknown>>(candidate.generation_meta_json, {})
-          return meta.sourceSceneId === item.sceneId
-        })
+          .all(nextRun.id, orgId) as StoryboardSceneRow[]
+        row =
+          rows.find((candidate) => {
+            const meta = parseJson<Record<string, unknown>>(candidate.generation_meta_json, {})
+            return meta.sourceSceneId === item.sceneId
+          }) || null
       }
       if (!row) return
       const meta = parseJson<Record<string, unknown>>(row.generation_meta_json, {})

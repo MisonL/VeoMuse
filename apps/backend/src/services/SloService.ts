@@ -78,6 +78,12 @@ const toSafeNumber = (value: unknown, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
+const resolveErrorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (typeof error === 'string' && error.trim()) return error
+  return ''
+}
+
 const parseMetaJson = (value: unknown) => {
   if (typeof value !== 'string' || !value.trim()) return {}
   try {
@@ -248,8 +254,8 @@ export class SloService {
           JSON.stringify(payload.meta),
           createdAt
         )
-    } catch (error: any) {
-      const message = String(error?.message || '')
+    } catch (error: unknown) {
+      const message = resolveErrorMessage(error)
       const maybeConstraintError = message.toLowerCase().includes('constraint')
       if (maybeConstraintError) {
         const duplicated = findExistingByIdempotency()

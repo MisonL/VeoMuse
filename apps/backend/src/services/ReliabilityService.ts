@@ -18,8 +18,8 @@ const toSafeNumber = (value: unknown, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-const parseRecord = (value: string | null | undefined): Record<string, unknown> => {
-  if (!value) return {}
+const parseRecord = (value: unknown): Record<string, unknown> => {
+  if (typeof value !== 'string' || !value) return {}
   try {
     const parsed = JSON.parse(value)
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
@@ -29,7 +29,9 @@ const parseRecord = (value: string | null | undefined): Record<string, unknown> 
   }
 }
 
-const toPolicy = (row: any): ReliabilityPolicy => ({
+type DbRecord = Record<string, unknown>
+
+const toPolicy = (row: DbRecord): ReliabilityPolicy => ({
   id: String(row.id),
   scope: String(row.scope || 'global'),
   targetSlo: clamp(toSafeNumber(row.target_slo, 0.99), 0.5, 0.99999),
@@ -43,7 +45,7 @@ const toPolicy = (row: any): ReliabilityPolicy => ({
   updatedAt: String(row.updated_at)
 })
 
-const toDrill = (row: any): RollbackDrill => ({
+const toDrill = (row: DbRecord): RollbackDrill => ({
   id: String(row.id),
   policyId: row.policy_id ? String(row.policy_id) : null,
   environment: String(row.environment || 'production'),
@@ -66,7 +68,7 @@ const toDrill = (row: any): RollbackDrill => ({
   updatedAt: String(row.updated_at)
 })
 
-const toAlert = (row: any): ReliabilityAlert => ({
+const toAlert = (row: DbRecord): ReliabilityAlert => ({
   id: String(row.id),
   policyId: row.policy_id ? String(row.policy_id) : null,
   level: row.level === 'critical' ? 'critical' : row.level === 'info' ? 'info' : 'warning',
@@ -142,11 +144,11 @@ export class ReliabilityService {
     const normalizedPolicyId = policyId.trim() || DEFAULT_POLICY_ID
     const row = getLocalDb()
       .prepare(`SELECT * FROM reliability_policies WHERE id = ? LIMIT 1`)
-      .get(normalizedPolicyId)
+      .get(normalizedPolicyId) as DbRecord | null
     if (row) return toPolicy(row)
     const fallback = getLocalDb()
       .prepare(`SELECT * FROM reliability_policies ORDER BY updated_at DESC LIMIT 1`)
-      .get()
+      .get() as DbRecord | null
     if (fallback) return toPolicy(fallback)
     throw new Error('错误预算策略不存在')
   }
@@ -156,7 +158,7 @@ export class ReliabilityService {
     const policyId = (input.policyId || DEFAULT_POLICY_ID).trim() || DEFAULT_POLICY_ID
     const existing = getLocalDb()
       .prepare(`SELECT * FROM reliability_policies WHERE id = ? LIMIT 1`)
-      .get(policyId)
+      .get(policyId) as DbRecord | null
     const existingPolicy = existing
       ? toPolicy(existing)
       : this.getErrorBudgetPolicy(DEFAULT_POLICY_ID)
@@ -358,7 +360,7 @@ export class ReliabilityService {
     if (!normalizedDrillId) return null
     const row = getLocalDb()
       .prepare(`SELECT * FROM rollback_drills WHERE id = ? LIMIT 1`)
-      .get(normalizedDrillId)
+      .get(normalizedDrillId) as DbRecord | null
     return row ? toDrill(row) : null
   }
 
@@ -395,7 +397,7 @@ export class ReliabilityService {
 
     const row = getLocalDb()
       .prepare(`SELECT * FROM reliability_alerts WHERE id = ? LIMIT 1`)
-      .get(alertId)
+      .get(alertId) as DbRecord | null
     if (!row) throw new Error('告警创建失败')
     return toAlert(row)
   }
@@ -453,7 +455,7 @@ export class ReliabilityService {
       LIMIT 1
     `
       )
-      .get(normalizedAlertId)
+      .get(normalizedAlertId) as DbRecord | null
     return updated ? toAlert(updated) : null
   }
 
@@ -478,7 +480,7 @@ export class ReliabilityService {
 
     const whereClause = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : ''
 
-    return getLocalDb()
+    const rows = getLocalDb()
       .prepare(
         `
       SELECT * FROM reliability_alerts
@@ -487,7 +489,7 @@ export class ReliabilityService {
       LIMIT ${safeLimit}
     `
       )
-      .all(...params)
-      .map(toAlert)
+      .all(...params) as DbRecord[]
+    return rows.map(toAlert)
   }
 }

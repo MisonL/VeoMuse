@@ -21,22 +21,45 @@ export interface OrganizationMember {
 
 const now = () => new Date().toISOString()
 
-const toOrganization = (row: any): Organization => ({
-  id: row.id,
-  name: row.name,
-  ownerUserId: row.owner_user_id,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-})
+interface OrganizationRow {
+  id: string
+  name: string
+  owner_user_id: string
+  created_at: string
+  updated_at: string
+}
 
-const toMember = (row: any): OrganizationMember => ({
-  id: row.id,
-  organizationId: row.organization_id,
-  userId: row.user_id,
-  role: row.role === 'owner' ? 'owner' : row.role === 'admin' ? 'admin' : 'member',
-  email: row.email,
-  createdAt: row.created_at
-})
+interface OrganizationMemberRow {
+  id: string
+  organization_id: string
+  user_id: string
+  role?: string
+  email: string
+  created_at: string
+}
+
+const toOrganization = (row: unknown): Organization => {
+  const value = row as OrganizationRow
+  return {
+    id: value.id,
+    name: value.name,
+    ownerUserId: value.owner_user_id,
+    createdAt: value.created_at,
+    updatedAt: value.updated_at
+  }
+}
+
+const toMember = (row: unknown): OrganizationMember => {
+  const value = row as OrganizationMemberRow
+  return {
+    id: value.id,
+    organizationId: value.organization_id,
+    userId: value.user_id,
+    role: value.role === 'owner' ? 'owner' : value.role === 'admin' ? 'admin' : 'member',
+    email: value.email,
+    createdAt: value.created_at
+  }
+}
 
 const ROLE_ORDER: Record<OrganizationRole, number> = {
   member: 1,

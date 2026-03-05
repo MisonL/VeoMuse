@@ -9,9 +9,14 @@ import type {
 import { getLocalDb } from './LocalDatabaseService'
 
 const now = () => new Date().toISOString()
+type DbRow = Record<string, unknown>
+const asRecord = (value: unknown): DbRow => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return value as DbRow
+}
 
-const parseRecord = (value: string | null | undefined): Record<string, unknown> => {
-  if (!value) return {}
+const parseRecord = (value: unknown): Record<string, unknown> => {
+  if (typeof value !== 'string' || !value) return {}
   try {
     const parsed = JSON.parse(value)
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
@@ -57,71 +62,89 @@ const decodeStableCursor = (cursor: string | null | undefined): StableCursorPayl
   }
 }
 
-const toPromptWorkflow = (row: any): PromptWorkflow => ({
-  id: String(row.id),
-  organizationId: String(row.organization_id || 'org_default'),
-  name: String(row.name || ''),
-  description: String(row.description || ''),
-  definition: parseRecord(row.definition_json),
-  createdBy: String(row.created_by || 'system'),
-  createdAt: String(row.created_at),
-  updatedAt: String(row.updated_at)
-})
+const toPromptWorkflow = (input: unknown): PromptWorkflow => {
+  const row = asRecord(input)
+  return {
+    id: String(row.id),
+    organizationId: String(row.organization_id || 'org_default'),
+    name: String(row.name || ''),
+    description: String(row.description || ''),
+    definition: parseRecord(row.definition_json),
+    createdBy: String(row.created_by || 'system'),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at)
+  }
+}
 
-const toPromptWorkflowRun = (row: any): PromptWorkflowRun => ({
-  id: String(row.id),
-  workflowId: String(row.workflow_id),
-  organizationId: String(row.organization_id || 'org_default'),
-  triggerType: String(row.trigger_type || 'manual'),
-  status: row.status === 'failed' ? 'failed' : row.status === 'completed' ? 'completed' : 'queued',
-  input: parseRecord(row.input_json),
-  output: parseRecord(row.output_json),
-  errorMessage: row.error_message ? String(row.error_message) : null,
-  startedAt: String(row.started_at),
-  completedAt: row.completed_at ? String(row.completed_at) : null,
-  createdBy: String(row.created_by || 'system'),
-  createdAt: String(row.created_at)
-})
+const toPromptWorkflowRun = (input: unknown): PromptWorkflowRun => {
+  const row = asRecord(input)
+  return {
+    id: String(row.id),
+    workflowId: String(row.workflow_id),
+    organizationId: String(row.organization_id || 'org_default'),
+    triggerType: String(row.trigger_type || 'manual'),
+    status:
+      row.status === 'failed' ? 'failed' : row.status === 'completed' ? 'completed' : 'queued',
+    input: parseRecord(row.input_json),
+    output: parseRecord(row.output_json),
+    errorMessage: row.error_message ? String(row.error_message) : null,
+    startedAt: String(row.started_at),
+    completedAt: row.completed_at ? String(row.completed_at) : null,
+    createdBy: String(row.created_by || 'system'),
+    createdAt: String(row.created_at)
+  }
+}
 
-const toBatchJob = (row: any, items: BatchJobItem[]): BatchJob => ({
-  id: String(row.id),
-  organizationId: String(row.organization_id || 'org_default'),
-  workflowRunId: row.workflow_run_id ? String(row.workflow_run_id) : null,
-  jobType: String(row.job_type || 'creative.batch'),
-  status: row.status === 'failed' ? 'failed' : row.status === 'completed' ? 'completed' : 'queued',
-  totalItems: Number(row.total_items || 0),
-  completedItems: Number(row.completed_items || 0),
-  failedItems: Number(row.failed_items || 0),
-  payload: parseRecord(row.payload_json),
-  createdBy: String(row.created_by || 'system'),
-  createdAt: String(row.created_at),
-  updatedAt: String(row.updated_at),
-  items
-})
+const toBatchJob = (input: unknown, items: BatchJobItem[]): BatchJob => {
+  const row = asRecord(input)
+  return {
+    id: String(row.id),
+    organizationId: String(row.organization_id || 'org_default'),
+    workflowRunId: row.workflow_run_id ? String(row.workflow_run_id) : null,
+    jobType: String(row.job_type || 'creative.batch'),
+    status:
+      row.status === 'failed' ? 'failed' : row.status === 'completed' ? 'completed' : 'queued',
+    totalItems: Number(row.total_items || 0),
+    completedItems: Number(row.completed_items || 0),
+    failedItems: Number(row.failed_items || 0),
+    payload: parseRecord(row.payload_json),
+    createdBy: String(row.created_by || 'system'),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    items
+  }
+}
 
-const toBatchJobItem = (row: any): BatchJobItem => ({
-  id: String(row.id),
-  jobId: String(row.job_id),
-  organizationId: String(row.organization_id || 'org_default'),
-  itemKey: String(row.item_key),
-  status: row.status === 'failed' ? 'failed' : row.status === 'completed' ? 'completed' : 'queued',
-  input: parseRecord(row.input_json),
-  output: parseRecord(row.output_json),
-  errorMessage: row.error_message ? String(row.error_message) : null,
-  createdAt: String(row.created_at),
-  updatedAt: String(row.updated_at)
-})
+const toBatchJobItem = (input: unknown): BatchJobItem => {
+  const row = asRecord(input)
+  return {
+    id: String(row.id),
+    jobId: String(row.job_id),
+    organizationId: String(row.organization_id || 'org_default'),
+    itemKey: String(row.item_key),
+    status:
+      row.status === 'failed' ? 'failed' : row.status === 'completed' ? 'completed' : 'queued',
+    input: parseRecord(row.input_json),
+    output: parseRecord(row.output_json),
+    errorMessage: row.error_message ? String(row.error_message) : null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at)
+  }
+}
 
-const toAssetReuseRecord = (row: any): AssetReuseRecord => ({
-  id: String(row.id),
-  organizationId: String(row.organization_id || 'org_default'),
-  assetId: String(row.asset_id),
-  sourceProjectId: row.source_project_id ? String(row.source_project_id) : null,
-  targetProjectId: row.target_project_id ? String(row.target_project_id) : null,
-  reusedBy: String(row.reused_by || 'system'),
-  context: parseRecord(row.context_json),
-  createdAt: String(row.created_at)
-})
+const toAssetReuseRecord = (input: unknown): AssetReuseRecord => {
+  const row = asRecord(input)
+  return {
+    id: String(row.id),
+    organizationId: String(row.organization_id || 'org_default'),
+    assetId: String(row.asset_id),
+    sourceProjectId: row.source_project_id ? String(row.source_project_id) : null,
+    targetProjectId: row.target_project_id ? String(row.target_project_id) : null,
+    reusedBy: String(row.reused_by || 'system'),
+    context: parseRecord(row.context_json),
+    createdAt: String(row.created_at)
+  }
+}
 
 const renderTemplate = (template: string, input: Record<string, unknown>) => {
   return template.replace(/{{\s*([a-zA-Z0-9_.-]+)\s*}}/g, (_full, key: string) => {
@@ -379,7 +402,7 @@ export class CreativeWorkflowService {
     const decodedCursor = decodeStableCursor(input.cursor)
     const queryLimit = safeLimit + 1
 
-    const rows: any[] =
+    const rows: DbRow[] =
       decodedCursor && decodedCursor.id !== null
         ? (getLocalDb()
             .prepare(
@@ -400,7 +423,7 @@ export class CreativeWorkflowService {
               decodedCursor.createdAt,
               decodedCursor.createdAt,
               decodedCursor.id
-            ) as any[])
+            ) as DbRow[])
         : decodedCursor
           ? (getLocalDb()
               .prepare(
@@ -411,7 +434,7 @@ export class CreativeWorkflowService {
           LIMIT ${queryLimit}
         `
               )
-              .all(workflowId, organizationId, decodedCursor.createdAt) as any[])
+              .all(workflowId, organizationId, decodedCursor.createdAt) as DbRow[])
           : (getLocalDb()
               .prepare(
                 `
@@ -421,15 +444,16 @@ export class CreativeWorkflowService {
           LIMIT ${queryLimit}
         `
               )
-              .all(workflowId, organizationId) as any[])
+              .all(workflowId, organizationId) as DbRow[])
 
     const hasMore = rows.length > safeLimit
     const pageRows = hasMore ? rows.slice(0, safeLimit) : rows
     const runs = pageRows.map(toPromptWorkflowRun)
+    const tailRow = asRecord(pageRows[pageRows.length - 1])
     const nextCursor = hasMore
       ? encodeStableCursor(
-          pageRows[pageRows.length - 1]?.created_at,
-          pageRows[pageRows.length - 1]?.id
+          tailRow.created_at ? String(tailRow.created_at) : null,
+          tailRow.id ? String(tailRow.id) : null
         )
       : null
 
@@ -586,7 +610,7 @@ export class CreativeWorkflowService {
       LIMIT ${queryLimit}
     `
       )
-      .all(...params) as any[]
+      .all(...params) as DbRow[]
 
     const hasMore = rows.length > safeLimit
     const pageRows = hasMore ? rows.slice(0, safeLimit) : rows
@@ -604,7 +628,7 @@ export class CreativeWorkflowService {
         ORDER BY created_at ASC
       `
         )
-        .all(...jobIds) as any[]
+        .all(...jobIds) as DbRow[]
 
       for (const itemRow of itemRows) {
         const item = toBatchJobItem(itemRow)
@@ -619,10 +643,11 @@ export class CreativeWorkflowService {
 
     const jobs = pageRows.map((row) => toBatchJob(row, itemsByJobId.get(String(row.id)) || []))
 
+    const tailRow = asRecord(pageRows[pageRows.length - 1])
     const nextCursor = hasMore
       ? encodeStableCursor(
-          pageRows[pageRows.length - 1]?.created_at,
-          pageRows[pageRows.length - 1]?.id
+          tailRow.created_at ? String(tailRow.created_at) : null,
+          tailRow.id ? String(tailRow.id) : null
         )
       : null
 

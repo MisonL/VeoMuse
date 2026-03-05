@@ -85,7 +85,9 @@ const parseJsonObject = (value: unknown) => {
 
 const activeRequestCounters = new Map<string, number>()
 
-const toQuota = (organizationId: string, row?: any): OrganizationQuota => ({
+type DbRecord = Record<string, unknown>
+
+const toQuota = (organizationId: string, row?: DbRecord): OrganizationQuota => ({
   organizationId,
   requestLimit: clampInt(row?.request_limit, 0),
   storageLimitBytes: clampInt(row?.storage_limit_bytes, 0),
@@ -94,7 +96,7 @@ const toQuota = (organizationId: string, row?: any): OrganizationQuota => ({
   updatedAt: String(row?.updated_at || nowIso())
 })
 
-const toUsage = (organizationId: string, row?: any): OrganizationUsage => ({
+const toUsage = (organizationId: string, row?: DbRecord): OrganizationUsage => ({
   organizationId,
   requestCount: clampInt(row?.request_count, 0),
   storageBytes: clampInt(row?.storage_bytes, 0),
@@ -119,7 +121,7 @@ export class OrganizationGovernanceService {
       LIMIT 1
     `
       )
-      .get(organizationId)
+      .get(organizationId) as DbRecord | undefined
     return toQuota(organizationId, row)
   }
 
@@ -182,7 +184,7 @@ export class OrganizationGovernanceService {
       LIMIT 1
     `
       )
-      .get(organizationId)
+      .get(organizationId) as DbRecord | undefined
     return toUsage(organizationId, row)
   }
 
@@ -384,7 +386,7 @@ export class OrganizationGovernanceService {
 
     if (scope === 'all' || scope === 'channel') {
       const clauses = ['organization_id = ?']
-      const params: any[] = [organizationId]
+      const params: string[] = [organizationId]
       if (from) {
         clauses.push('created_at >= ?')
         params.push(from)
@@ -413,7 +415,7 @@ export class OrganizationGovernanceService {
         LIMIT ${limit}
       `
         )
-        .all(...params) as any[]
+        .all(...params) as DbRecord[]
 
       for (const row of rows) {
         records.push({
@@ -433,7 +435,7 @@ export class OrganizationGovernanceService {
 
     if (scope === 'all' || scope === 'workspace') {
       const clauses = ['organization_id = ?']
-      const params: any[] = [organizationId]
+      const params: string[] = [organizationId]
       if (from) {
         clauses.push('created_at >= ?')
         params.push(from)
@@ -462,7 +464,7 @@ export class OrganizationGovernanceService {
         LIMIT ${limit}
       `
         )
-        .all(...params) as any[]
+        .all(...params) as DbRecord[]
 
       for (const row of rows) {
         records.push({

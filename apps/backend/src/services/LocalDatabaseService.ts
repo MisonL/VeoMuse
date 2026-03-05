@@ -79,6 +79,15 @@ const parsePositiveInt = (value: string | undefined, fallback = 0) => {
   const parsed = Number.parseInt(String(value || ''), 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
+const asRecord = (value: unknown): Record<string, unknown> => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return value as Record<string, unknown>
+}
+const resolveErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback
+const logNonBlockingDatabaseWarning = (scope: string, error: unknown, fallback = 'unknown error') => {
+  console.warn(`[LocalDatabaseService] ${scope}: ${resolveErrorMessage(error, fallback)}`)
+}
 const RECOVERY_TABLES = [
   'users',
   'organizations',
@@ -181,45 +190,58 @@ const emptySalvage = (): DbRepairReport['salvage'] => ({
 })
 
 const normalizeIntegrityReport = (
-  raw: any,
+  raw: unknown,
   fallbackDbPath: string,
   fallbackTimestamp: string,
   defaultStatus: DbIntegrityReport['status']
-): DbIntegrityReport => ({
-  dbPath: String(raw?.dbPath || fallbackDbPath),
-  mode: raw?.mode === 'full' ? 'full' : 'quick',
-  status:
-    raw?.status === 'corrupted' ? 'corrupted' : raw?.status === 'error' ? 'error' : defaultStatus,
-  messages: Array.isArray(raw?.messages) ? raw.messages.map(String) : [],
-  checkedAt: String(raw?.checkedAt || fallbackTimestamp)
-})
+): DbIntegrityReport => {
+  const rawRecord = asRecord(raw)
+  return {
+    dbPath: String(rawRecord.dbPath || fallbackDbPath),
+    mode: rawRecord.mode === 'full' ? 'full' : 'quick',
+    status:
+      rawRecord.status === 'corrupted'
+        ? 'corrupted'
+        : rawRecord.status === 'error'
+          ? 'error'
+          : defaultStatus,
+    messages: Array.isArray(rawRecord.messages) ? rawRecord.messages.map(String) : [],
+    checkedAt: String(rawRecord.checkedAt || fallbackTimestamp)
+  }
+}
 
-const normalizeRepairReport = (raw: any): DbRepairReport => {
+const normalizeRepairReport = (raw: unknown): DbRepairReport => {
+  const rawRecord = asRecord(raw)
+  const salvageRecord = asRecord(rawRecord.salvage)
   const salvage =
-    raw?.salvage && typeof raw.salvage === 'object'
+    rawRecord.salvage && typeof rawRecord.salvage === 'object'
       ? {
-          attempted: Boolean(raw.salvage.attempted),
-          copiedRows: Number(raw.salvage.copiedRows || 0),
-          tableDetails: Array.isArray(raw.salvage.tableDetails)
-            ? raw.salvage.tableDetails.map((item: any) => ({
-                table: String(item?.table || 'unknown'),
-                copiedRows: Number(item?.copiedRows || 0),
-                status:
-                  item?.status === 'failed'
+          attempted: Boolean(salvageRecord.attempted),
+          copiedRows: Number(salvageRecord.copiedRows || 0),
+          tableDetails: Array.isArray(salvageRecord.tableDetails)
+            ? salvageRecord.tableDetails.map((item) => {
+                const itemRecord = asRecord(item)
+                const status: DbRepairReport['salvage']['tableDetails'][number]['status'] =
+                  itemRecord.status === 'failed'
                     ? 'failed'
-                    : item?.status === 'skipped'
+                    : itemRecord.status === 'skipped'
                       ? 'skipped'
-                      : 'copied',
-                reason: item?.reason ? String(item.reason) : undefined
-              }))
+                      : 'copied'
+                return {
+                  table: String(itemRecord.table || 'unknown'),
+                  copiedRows: Number(itemRecord.copiedRows || 0),
+                  status,
+                  reason: itemRecord.reason ? String(itemRecord.reason) : undefined
+                }
+              })
             : []
         }
       : emptySalvage()
 
-  const fallbackDbPath = String(raw?.dbPath || '')
-  const fallbackTimestamp = String(raw?.timestamp || nowIso())
-  const before = raw?.before
-    ? normalizeIntegrityReport(raw.before, fallbackDbPath, fallbackTimestamp, 'ok')
+  const fallbackDbPath = String(rawRecord.dbPath || '')
+  const fallbackTimestamp = String(rawRecord.timestamp || nowIso())
+  const before = rawRecord.before
+    ? normalizeIntegrityReport(rawRecord.before, fallbackDbPath, fallbackTimestamp, 'ok')
     : normalizeIntegrityReport(
         {
           dbPath: fallbackDbPath,
@@ -233,25 +255,26 @@ const normalizeRepairReport = (raw: any): DbRepairReport => {
         'error'
       )
 
-  const after = raw?.after
-    ? normalizeIntegrityReport(raw.after, fallbackDbPath, fallbackTimestamp, 'ok')
+  const after = rawRecord.after
+    ? normalizeIntegrityReport(rawRecord.after, fallbackDbPath, fallbackTimestamp, 'ok')
     : undefined
 
   return {
-    dbPath: String(raw?.dbPath || ''),
-    status: raw?.status === 'failed' ? 'failed' : raw?.status === 'ok' ? 'ok' : 'repaired',
-    repaired: Boolean(raw?.repaired),
-    forced: Boolean(raw?.forced),
-    checkMode: raw?.checkMode === 'quick' ? 'quick' : 'full',
-    reason: String(raw?.reason || 'unknown'),
-    timestamp: String(raw?.timestamp || nowIso()),
-    actions: Array.isArray(raw?.actions) ? raw.actions.map(String) : [],
+    dbPath: String(rawRecord.dbPath || ''),
+    status:
+      rawRecord.status === 'failed' ? 'failed' : rawRecord.status === 'ok' ? 'ok' : 'repaired',
+    repaired: Boolean(rawRecord.repaired),
+    forced: Boolean(rawRecord.forced),
+    checkMode: rawRecord.checkMode === 'quick' ? 'quick' : 'full',
+    reason: String(rawRecord.reason || 'unknown'),
+    timestamp: String(rawRecord.timestamp || nowIso()),
+    actions: Array.isArray(rawRecord.actions) ? rawRecord.actions.map(String) : [],
     before,
     after,
-    backupPath: raw?.backupPath ? String(raw.backupPath) : undefined,
-    quarantinePath: raw?.quarantinePath ? String(raw.quarantinePath) : undefined,
+    backupPath: rawRecord.backupPath ? String(rawRecord.backupPath) : undefined,
+    quarantinePath: rawRecord.quarantinePath ? String(rawRecord.quarantinePath) : undefined,
     salvage,
-    error: raw?.error ? String(raw.error) : undefined
+    error: rawRecord.error ? String(rawRecord.error) : undefined
   }
 }
 
@@ -269,8 +292,8 @@ const checkIntegrityOnDb = (
       ok ? 'ok' : 'corrupted',
       messages.length ? messages : ['No integrity output']
     )
-  } catch (error: any) {
-    return buildIntegrityReport(dbPath, mode, 'error', [error?.message || 'Integrity check failed'])
+  } catch (error: unknown) {
+    return buildIntegrityReport(dbPath, mode, 'error', [resolveErrorMessage(error, 'Integrity check failed')])
   }
 }
 
@@ -1376,8 +1399,8 @@ const closeQuietly = (db: Database | null | undefined) => {
   if (!db) return
   try {
     db.close(false)
-  } catch {
-    // noop
+  } catch (error: unknown) {
+    logNonBlockingDatabaseWarning('close database', error, 'close failed')
   }
 }
 
@@ -1457,33 +1480,33 @@ const salvageFromBackup = (db: Database, backupPath: string | undefined) => {
           copiedRows: copied,
           status: 'copied'
         })
-      } catch (error: any) {
+      } catch (error: unknown) {
         summary.tableDetails.push({
           table,
           copiedRows: 0,
           status: 'failed',
-          reason: error?.message || 'copy-failed'
+          reason: resolveErrorMessage(error, 'copy-failed')
         })
       }
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     summary.tableDetails.push({
       table: '__attach__',
       copiedRows: 0,
       status: 'failed',
-      reason: error?.message || 'attach-failed'
+      reason: resolveErrorMessage(error, 'attach-failed')
     })
   } finally {
     try {
       db.exec('PRAGMA foreign_keys = ON;')
-    } catch {
-      // noop
+    } catch (error: unknown) {
+      logNonBlockingDatabaseWarning('restore foreign_keys pragma', error, 'pragma restore failed')
     }
     if (attached) {
       try {
         db.exec('DETACH DATABASE recover_source;')
-      } catch {
-        // noop
+      } catch (error: unknown) {
+        logNonBlockingDatabaseWarning('detach recovery source', error, 'detach failed')
       }
     }
   }
@@ -1513,9 +1536,9 @@ const repairDatabaseFile = (
   try {
     probeDb = createDbConnection(dbPath)
     before = checkIntegrityOnDb(probeDb, dbPath, checkMode)
-  } catch (error: any) {
+  } catch (error: unknown) {
     before = buildIntegrityReport(dbPath, checkMode, 'error', [
-      error?.message || 'Failed to open database'
+      resolveErrorMessage(error, 'Failed to open database')
     ])
   } finally {
     closeQuietly(probeDb)
@@ -1609,7 +1632,7 @@ const repairDatabaseFile = (
       quarantinePath,
       salvage
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     actions.push('rebuild:exception')
     return {
       dbPath,
@@ -1624,7 +1647,7 @@ const repairDatabaseFile = (
       backupPath,
       quarantinePath,
       salvage: emptySalvage(),
-      error: error?.message || 'Repair failed'
+      error: resolveErrorMessage(error, 'Repair failed')
     }
   } finally {
     closeQuietly(rebuildDb)
@@ -1673,9 +1696,10 @@ export class LocalDatabaseService {
         migrate(startupDb)
       }
       this.db = startupDb
-    } catch (error: any) {
+    } catch (error: unknown) {
       closeQuietly(startupDb)
-      if (autoRepairEnabled && isCorruptionMessage(error?.message || '')) {
+      const errorMessage = resolveErrorMessage(error, '')
+      if (autoRepairEnabled && isCorruptionMessage(errorMessage)) {
         this.lastRepairReport = repairDatabaseFile(this.dbPath, {
           force: true,
           reason: 'startup-corruption'
@@ -1838,7 +1862,8 @@ export class LocalDatabaseService {
       .map((row) => {
         try {
           return normalizeRepairReport(JSON.parse(row.report_json))
-        } catch {
+        } catch (error: unknown) {
+          logNonBlockingDatabaseWarning('parse repair history row', error, 'invalid repair history row')
           return null
         }
       })
@@ -1866,8 +1891,8 @@ export class LocalDatabaseService {
           report.timestamp,
           JSON.stringify(report)
         )
-    } catch {
-      // noop
+    } catch (error: unknown) {
+      logNonBlockingDatabaseWarning('persist repair history', error, 'persist failed')
     }
   }
 }

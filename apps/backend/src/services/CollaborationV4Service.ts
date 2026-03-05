@@ -10,9 +10,14 @@ import { getLocalDb } from './LocalDatabaseService'
 import { WorkspaceService } from './WorkspaceService'
 
 const now = () => new Date().toISOString()
+type DbRow = Record<string, unknown>
+const asRecord = (value: unknown): DbRow => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return value as DbRow
+}
 
-const parseStringArray = (value: string | null | undefined): string[] => {
-  if (!value) return []
+const parseStringArray = (value: unknown): string[] => {
+  if (typeof value !== 'string' || !value) return []
   try {
     const parsed = JSON.parse(value)
     if (!Array.isArray(parsed)) return []
@@ -22,8 +27,8 @@ const parseStringArray = (value: string | null | undefined): string[] => {
   }
 }
 
-const parseRecord = (value: string | null | undefined): Record<string, unknown> => {
-  if (!value) return {}
+const parseRecord = (value: unknown): Record<string, unknown> => {
+  if (typeof value !== 'string' || !value) return {}
   try {
     const parsed = JSON.parse(value)
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
@@ -33,8 +38,8 @@ const parseRecord = (value: string | null | undefined): Record<string, unknown> 
   }
 }
 
-const parseRecordArray = (value: string | null | undefined): Array<Record<string, unknown>> => {
-  if (!value) return []
+const parseRecordArray = (value: unknown): Array<Record<string, unknown>> => {
+  if (typeof value !== 'string' || !value) return []
   try {
     const parsed = JSON.parse(value)
     if (!Array.isArray(parsed)) return []
@@ -131,47 +136,56 @@ const resolveProjectMeta = (projectId: string) => {
   }
 }
 
-const toCommentThread = (row: any, replyCount: number): CommentThread => ({
-  id: String(row.id),
-  organizationId: String(row.organization_id || 'org_default'),
-  projectId: String(row.project_id),
-  actorName: String(row.actor_name),
-  anchor: row.anchor ? String(row.anchor) : null,
-  content: String(row.content || ''),
-  mentions: parseStringArray(row.mentions_json),
-  status: row.status === 'resolved' ? 'resolved' : 'open',
-  resolvedBy: row.resolved_by ? String(row.resolved_by) : null,
-  resolvedAt: row.resolved_at ? String(row.resolved_at) : null,
-  replyCount,
-  createdAt: String(row.created_at),
-  updatedAt: String(row.updated_at)
-})
+const toCommentThread = (input: unknown, replyCount: number): CommentThread => {
+  const row = asRecord(input)
+  return {
+    id: String(row.id),
+    organizationId: String(row.organization_id || 'org_default'),
+    projectId: String(row.project_id),
+    actorName: String(row.actor_name),
+    anchor: row.anchor ? String(row.anchor) : null,
+    content: String(row.content || ''),
+    mentions: parseStringArray(row.mentions_json),
+    status: row.status === 'resolved' ? 'resolved' : 'open',
+    resolvedBy: row.resolved_by ? String(row.resolved_by) : null,
+    resolvedAt: row.resolved_at ? String(row.resolved_at) : null,
+    replyCount,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at)
+  }
+}
 
-const toCommentReply = (row: any): CommentReply => ({
-  id: String(row.id),
-  organizationId: String(row.organization_id || 'org_default'),
-  projectId: String(row.project_id),
-  threadId: String(row.thread_id),
-  actorName: String(row.actor_name),
-  content: String(row.content || ''),
-  mentions: parseStringArray(row.mentions_json),
-  createdAt: String(row.created_at),
-  updatedAt: String(row.updated_at)
-})
+const toCommentReply = (input: unknown): CommentReply => {
+  const row = asRecord(input)
+  return {
+    id: String(row.id),
+    organizationId: String(row.organization_id || 'org_default'),
+    projectId: String(row.project_id),
+    threadId: String(row.thread_id),
+    actorName: String(row.actor_name),
+    content: String(row.content || ''),
+    mentions: parseStringArray(row.mentions_json),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at)
+  }
+}
 
-const toTimelineMergeRecord = (row: any): TimelineMergeRecord => ({
-  id: String(row.id),
-  organizationId: String(row.organization_id || 'org_default'),
-  workspaceId: row.workspace_id ? String(row.workspace_id) : null,
-  projectId: String(row.project_id),
-  actorName: String(row.actor_name),
-  sourceRevision: String(row.source_revision || ''),
-  targetRevision: String(row.target_revision || ''),
-  status: row.status === 'conflict' ? 'conflict' : 'merged',
-  conflicts: parseRecordArray(row.conflict_json),
-  result: parseRecord(row.result_json),
-  createdAt: String(row.created_at)
-})
+const toTimelineMergeRecord = (input: unknown): TimelineMergeRecord => {
+  const row = asRecord(input)
+  return {
+    id: String(row.id),
+    organizationId: String(row.organization_id || 'org_default'),
+    workspaceId: row.workspace_id ? String(row.workspace_id) : null,
+    projectId: String(row.project_id),
+    actorName: String(row.actor_name),
+    sourceRevision: String(row.source_revision || ''),
+    targetRevision: String(row.target_revision || ''),
+    status: row.status === 'conflict' ? 'conflict' : 'merged',
+    conflicts: parseRecordArray(row.conflict_json),
+    result: parseRecord(row.result_json),
+    createdAt: String(row.created_at)
+  }
+}
 
 const ROLE_ORDER: WorkspaceRole[] = ['owner', 'editor', 'viewer']
 
@@ -246,7 +260,7 @@ export class CollaborationV4Service {
     const decodedCursor = decodeStableCursor(cursor)
     const queryLimit = safeLimit + 1
 
-    const rows: any[] =
+    const rows: DbRow[] =
       decodedCursor && decodedCursor.id !== null
         ? (getLocalDb()
             .prepare(
@@ -266,7 +280,7 @@ export class CollaborationV4Service {
               decodedCursor.createdAt,
               decodedCursor.createdAt,
               decodedCursor.id
-            ) as any[])
+            ) as DbRow[])
         : decodedCursor
           ? (getLocalDb()
               .prepare(
@@ -277,7 +291,7 @@ export class CollaborationV4Service {
           LIMIT ${queryLimit}
         `
               )
-              .all(projectId, decodedCursor.createdAt) as any[])
+              .all(projectId, decodedCursor.createdAt) as DbRow[])
           : (getLocalDb()
               .prepare(
                 `
@@ -287,7 +301,7 @@ export class CollaborationV4Service {
           LIMIT ${queryLimit}
         `
               )
-              .all(projectId) as any[])
+              .all(projectId) as DbRow[])
 
     const hasMore = rows.length > safeLimit
     const pageRows = hasMore ? rows.slice(0, safeLimit) : rows
@@ -315,14 +329,15 @@ export class CollaborationV4Service {
       }
     }
 
-    const threads = pageRows.map((row: any) =>
+    const threads = pageRows.map((row) =>
       toCommentThread(row, replyCountByThreadId.get(String(row.id)) ?? 0)
     )
 
+    const tailRow = asRecord(pageRows[pageRows.length - 1])
     const nextCursor = hasMore
       ? encodeStableCursor(
-          pageRows[pageRows.length - 1]?.created_at,
-          pageRows[pageRows.length - 1]?.id
+          tailRow.created_at ? String(tailRow.created_at) : null,
+          tailRow.id ? String(tailRow.id) : null
         )
       : null
 
