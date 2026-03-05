@@ -3,7 +3,7 @@ import { useEditorStore } from '../../store/editorStore'
 import { useToastStore } from '../../store/toastStore'
 import { useJourneyTelemetryStore } from '../../store/journeyTelemetryStore'
 import { classifyRequestError } from '../../utils/requestError'
-import { isVideoGenerationActiveStatus, resolveGeminiQuickCheck } from './comparison-lab/types'
+import { resolveGeminiQuickCheck } from './comparison-lab/types'
 import type {
   AiChannelConfig,
   CollabEvent,
@@ -52,8 +52,10 @@ import {
 import { requestJson, requestJsonWithRetry, requestV4, wsBaseFromApi } from './comparison-lab/api'
 import { useMarketplacePolicy } from './comparison-lab/hooks/useMarketplacePolicy'
 import { useProjectGovernance } from './comparison-lab/hooks/useProjectGovernance'
+import { useSyncedPlayback } from './comparison-lab/hooks/useSyncedPlayback'
 import { useV4CommentThreads } from './comparison-lab/hooks/useV4CommentThreads'
 import { useV4CreativeOps } from './comparison-lab/hooks/useV4CreativeOps'
+import { useVideoGenerationAutoPolling } from './comparison-lab/hooks/useVideoGenerationAutoPolling'
 import LabToolbar from './comparison-lab/LabToolbar'
 import CompareModePanel from './comparison-lab/modes/CompareModePanel'
 import MarketplaceModePanel from './comparison-lab/modes/MarketplaceModePanel'
@@ -1008,41 +1010,13 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     setV4WorkflowRunsHasMore(false)
   }, [v4SelectedWorkflowId, setV4WorkflowRuns, setV4WorkflowRunsCursor, setV4WorkflowRunsHasMore])
 
-  useEffect(() => {
-    if (!syncPlayback) return
-    const left = leftVideoRef.current
-    const right = rightVideoRef.current
-    if (!left || !right) return
-
-    const onLeftPlay = () => right.play().catch(() => {})
-    const onLeftPause = () => right.pause()
-    const onLeftSeek = () => {
-      if (Math.abs(right.currentTime - left.currentTime) > 0.08)
-        right.currentTime = left.currentTime
-    }
-    const onRightPlay = () => left.play().catch(() => {})
-    const onRightPause = () => left.pause()
-    const onRightSeek = () => {
-      if (Math.abs(left.currentTime - right.currentTime) > 0.08)
-        left.currentTime = right.currentTime
-    }
-
-    left.addEventListener('play', onLeftPlay)
-    left.addEventListener('pause', onLeftPause)
-    left.addEventListener('seeked', onLeftSeek)
-    right.addEventListener('play', onRightPlay)
-    right.addEventListener('pause', onRightPause)
-    right.addEventListener('seeked', onRightSeek)
-
-    return () => {
-      left.removeEventListener('play', onLeftPlay)
-      left.removeEventListener('pause', onLeftPause)
-      left.removeEventListener('seeked', onLeftSeek)
-      right.removeEventListener('play', onRightPlay)
-      right.removeEventListener('pause', onRightPause)
-      right.removeEventListener('seeked', onRightSeek)
-    }
-  }, [syncPlayback, leftAssetId, rightAssetId])
+  useSyncedPlayback({
+    syncPlayback,
+    leftAssetId,
+    rightAssetId,
+    leftVideoRef,
+    rightVideoRef
+  })
 
   useEffect(() => {
     if (!leftAssetId && assets[0]) setLeftAssetId(assets[0].id)
@@ -1622,46 +1596,18 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     videoGenerationJobs.length
   ])
 
-  useEffect(() => {
-    if (labMode !== 'creative' || !authProfile || !videoGenerationPollingEnabled) return
-    const trackedJobs = videoGenerationJobs.filter((job) =>
-      isVideoGenerationActiveStatus(job.status)
-    )
-    const selectedJobId = String(videoGenerationSelectedJobId || '').trim()
-    if (trackedJobs.length === 0 && !selectedJobId) return
-
-    const tick = async () => {
-      if (isVideoGenerationBusy) return
-      setIsVideoGenerationAutoSyncTicking(true)
-      try {
-        await loadVideoGenerationJobs(false, { silent: true })
-        if (selectedJobId) {
-          await queryVideoGenerationJobDetail(selectedJobId, { silent: true })
-        }
-        setVideoGenerationLastAutoSyncAt(new Date().toISOString())
-      } finally {
-        setIsVideoGenerationAutoSyncTicking(false)
-      }
-    }
-
-    void tick()
-    const timer = window.setInterval(() => {
-      void tick()
-    }, 6_000)
-
-    return () => {
-      window.clearInterval(timer)
-    }
-  }, [
-    authProfile,
-    isVideoGenerationBusy,
+  useVideoGenerationAutoPolling({
     labMode,
+    authProfile,
+    videoGenerationPollingEnabled,
+    videoGenerationJobs,
+    videoGenerationSelectedJobId,
+    isVideoGenerationBusy,
     loadVideoGenerationJobs,
     queryVideoGenerationJobDetail,
-    videoGenerationJobs,
-    videoGenerationPollingEnabled,
-    videoGenerationSelectedJobId
-  ])
+    setIsVideoGenerationAutoSyncTicking,
+    setVideoGenerationLastAutoSyncAt
+  })
 
   const refreshV4Permissions = async () => {
     if (!workspaceId) {
