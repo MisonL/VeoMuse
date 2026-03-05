@@ -38,6 +38,7 @@
     "format:prettier": "prettier . --write --ignore-unknown",
     "format:check": "prettier . --check --ignore-unknown",
     "quality:full": "bun run format:check && bun run lint && bun run build && bun run test:coverage && bun run quality:coverage-targets && bun run quality:api-contract && bun run e2e:smoke -- --workers=1 --retries=0 && bun run release:gate",
+    "docker:smoke": "bun run scripts/docker_smoke_check.ts",
     "docker:up": "docker compose -f config/docker/docker-compose.yml up -d --build --wait --wait-timeout 180",
     "docker:down": "docker compose -f config/docker/docker-compose.yml down",
     "clean": "bun run scripts/clean_workspace.ts"
@@ -53,6 +54,7 @@
     "prettier": "^3.6.2"
   },
   "overrides": {
+    "browserslist": "4.28.1",
     "baseline-browser-mapping": "2.10.0"
   }
 }
