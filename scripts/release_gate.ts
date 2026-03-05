@@ -4,6 +4,7 @@ import path from 'path'
 interface GateStep {
   name: string
   command: string
+  commandArgs?: string[]
   env?: Record<string, string>
   retries?: number
   qualityTags?: string[]
@@ -710,6 +711,13 @@ const validateStepOutput = (step: GateStep, output: string): string | null => {
   return null
 }
 
+const resolveStepExecutionCommand = (step: GateStep) => {
+  if (Array.isArray(step.commandArgs) && step.commandArgs.length > 0) {
+    return step.commandArgs
+  }
+  throw new Error(`[release-gate] invalid step command args: ${step.name}`)
+}
+
 const streamToBuffer = async (
   stream: ReadableStream<Uint8Array> | null | undefined,
   sink: (text: string) => void
@@ -741,23 +749,43 @@ const createSteps = (params: {
   sloCheckRetries: number
 }) => {
   const steps: GateStep[] = [
-    { name: 'Secrets Scan', command: 'bun run security:scan' },
-    { name: 'Build', command: 'bun run build' },
+    {
+      name: 'Secrets Scan',
+      command: 'bun run security:scan',
+      commandArgs: ['bun', 'run', 'security:scan']
+    },
+    { name: 'Build', command: 'bun run build', commandArgs: ['bun', 'run', 'build'] },
     {
       name: 'Unit Tests',
       command: 'bun run test',
+      commandArgs: ['bun', 'run', 'test'],
       env: { NODE_ENV: 'test' }
     },
-    { name: 'E2E Smoke', command: 'bun run e2e:smoke -- --workers=1', retries: 1 },
+    {
+      name: 'E2E Smoke',
+      command: 'bun run e2e:smoke -- --workers=1',
+      commandArgs: ['bun', 'run', 'e2e:smoke', '--', '--workers=1'],
+      retries: 1
+    },
     {
       name: 'E2E Regression',
       command: 'bun run e2e:regression -- --workers=1',
+      commandArgs: ['bun', 'run', 'e2e:regression', '--', '--workers=1'],
       retries: 1,
       qualityTags: [QUALITY_TAG_VIDEO_GENERATE_LOOP]
     },
     {
       name: `SLO Check (${params.sloMode})`,
       command: buildSloGateCommand(params.sloMode, params.sloApiBase),
+      commandArgs: [
+        'bun',
+        'run',
+        'scripts/slo_gate.ts',
+        '--mode',
+        params.sloMode,
+        '--api-base',
+        params.sloApiBase
+      ],
       retries: params.sloCheckRetries
     }
   ]
@@ -766,6 +794,7 @@ const createSteps = (params: {
     steps.push({
       name: REAL_E2E_STEP_NAME,
       command: 'bun run e2e:regression:real -- --workers=1',
+      commandArgs: ['bun', 'run', 'e2e:regression:real', '--', '--workers=1'],
       env: { E2E_REAL_CHANNELS: 'true' },
       outputCheck: 'require_real_e2e_executed',
       qualityTags: [QUALITY_TAG_REAL_E2E]
@@ -788,7 +817,7 @@ const runStep = async (
     )
     const startedAtMs = Date.now()
     const shouldCaptureOutput = Boolean(step.outputCheck)
-    const proc = Bun.spawn(['zsh', '-lc', step.command], {
+    const proc = Bun.spawn(resolveStepExecutionCommand(step), {
       cwd: process.cwd(),
       env: {
         ...env,

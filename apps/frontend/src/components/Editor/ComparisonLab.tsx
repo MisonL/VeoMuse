@@ -194,6 +194,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
 
   const wsRef = useRef<WebSocket | null>(null)
   const heartbeatRef = useRef<number | null>(null)
+  const wsMessageParseWarningShownRef = useRef(false)
   const leftVideoRef = useRef<HTMLVideoElement | null>(null)
   const rightVideoRef = useRef<HTMLVideoElement | null>(null)
   const channelPanelTriggerRef = useRef<HTMLElement | null>(null)
@@ -620,8 +621,15 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
           refreshToken
         })
       })
-    } catch {
-      // noop
+    } catch (error: unknown) {
+      const e = error instanceof Error ? error : new Error(String(error))
+      showToast(`已本地退出，但服务端会话撤销失败：${e.message || 'unknown error'}`, 'warning')
+      window.setTimeout(() => {
+        void requestJson('/api/auth/logout', {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken })
+        }).catch(() => {})
+      }, 1_500)
     }
     clearAuthSession()
     setAuthProfile(null)
@@ -2282,8 +2290,17 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
           } as CollabEvent
           setCollabEvents((prev) => [eventRow, ...prev].slice(0, 100))
         }
-      } catch {
-        // noop
+      } catch (error: unknown) {
+        const e = error instanceof Error ? error : new Error(String(error))
+        void reportJourney(false, {
+          reason: `collab-ws-message-parse-failed:${e.message || 'parse-failed'}`,
+          failedStage: 'workspace',
+          errorKind: 'unknown'
+        })
+        if (!wsMessageParseWarningShownRef.current) {
+          wsMessageParseWarningShownRef.current = true
+          showToast('收到一条异常协作事件，已自动忽略并上报诊断', 'warning')
+        }
       }
     }
 

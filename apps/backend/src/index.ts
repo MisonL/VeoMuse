@@ -3109,8 +3109,21 @@ export const createApp = () => {
               if (!storageCheck.allowed) {
                 try {
                   await fs.unlink(composed.outputPath)
-                } catch {
-                  // noop
+                } catch (cleanupError: unknown) {
+                  try {
+                    await Bun.sleep(80)
+                    await fs.unlink(composed.outputPath)
+                  } catch (retryError: unknown) {
+                    console.warn(
+                      `[video-compose] cleanup failed after storage quota denial: trace=${resolveRequestTraceId(
+                        request,
+                        'trace_compose_cleanup'
+                      )}, path=${composed.outputPath}, error=${resolveErrorMessage(
+                        cleanupError,
+                        'unlink failed'
+                      )}, retryError=${resolveErrorMessage(retryError, 'retry unlink failed')}`
+                    )
+                  }
                 }
                 set.status = 429
                 return buildQuotaExceededResponse('storage', storageCheck)

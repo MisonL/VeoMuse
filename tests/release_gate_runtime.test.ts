@@ -29,6 +29,9 @@ const readSummary = async () => {
   return JSON.parse(raw) as any
 }
 
+const resolveSpawnCommandText = (cmd: unknown) =>
+  Array.isArray(cmd) ? cmd.map((item) => String(item || '')).join(' ') : ''
+
 describe('发布门禁运行时路径（mock）', () => {
   beforeEach(async () => {
     await fs.rm(QUALITY_SUMMARY_PATH, { force: true }).catch(() => {})
@@ -68,14 +71,12 @@ describe('发布门禁运行时路径（mock）', () => {
 
   it('with-real-e2e 场景下 real 用例全跳过应失败', async () => {
     const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
-      if (Array.isArray(cmd)) {
-        const shellCmd = String(cmd[2] || '')
-        if (shellCmd.includes('e2e:regression:real')) {
-          return createSubprocess(
-            0,
-            '\nRunning 1 test using 1 worker\n\n  - real test case\n\n  1 skipped\n'
-          )
-        }
+      const commandText = resolveSpawnCommandText(cmd)
+      if (commandText.includes('e2e:regression:real')) {
+        return createSubprocess(
+          0,
+          '\nRunning 1 test using 1 worker\n\n  - real test case\n\n  1 skipped\n'
+        )
       }
       return createSubprocess(0, '\n  1 passed\n')
     })
@@ -107,11 +108,9 @@ describe('发布门禁运行时路径（mock）', () => {
 
   it('with-real-e2e 场景下应基于 real 失败输出分类 failureType', async () => {
     const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
-      if (Array.isArray(cmd)) {
-        const shellCmd = String(cmd[2] || '')
-        if (shellCmd.includes('e2e:regression:real')) {
-          return createSubprocess(1, '', 'HTTP 401 unauthorized: invalid api key')
-        }
+      const commandText = resolveSpawnCommandText(cmd)
+      if (commandText.includes('e2e:regression:real')) {
+        return createSubprocess(1, '', 'HTTP 401 unauthorized: invalid api key')
       }
       return createSubprocess(0, '\n  1 passed\n')
     })
@@ -165,12 +164,10 @@ describe('发布门禁运行时路径（mock）', () => {
   it('SLO Check 默认应至少重试 1 次', async () => {
     let sloAttempts = 0
     const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
-      if (Array.isArray(cmd)) {
-        const shellCmd = String(cmd[2] || '')
-        if (shellCmd.includes('scripts/slo_gate.ts')) {
-          sloAttempts += 1
-          return createSubprocess(sloAttempts === 1 ? 1 : 0)
-        }
+      const commandText = resolveSpawnCommandText(cmd)
+      if (commandText.includes('scripts/slo_gate.ts')) {
+        sloAttempts += 1
+        return createSubprocess(sloAttempts === 1 ? 1 : 0)
       }
       return createSubprocess(0)
     })
@@ -199,12 +196,10 @@ describe('发布门禁运行时路径（mock）', () => {
   it('SLO Check 应支持通过 RELEASE_GATE_SLO_RETRIES 配置重试次数', async () => {
     let sloAttempts = 0
     const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
-      if (Array.isArray(cmd)) {
-        const shellCmd = String(cmd[2] || '')
-        if (shellCmd.includes('scripts/slo_gate.ts')) {
-          sloAttempts += 1
-          return createSubprocess(sloAttempts <= 2 ? 1 : 0)
-        }
+      const commandText = resolveSpawnCommandText(cmd)
+      if (commandText.includes('scripts/slo_gate.ts')) {
+        sloAttempts += 1
+        return createSubprocess(sloAttempts <= 2 ? 1 : 0)
       }
       return createSubprocess(0)
     })
@@ -280,11 +275,9 @@ describe('发布门禁运行时路径（mock）', () => {
 
   it('视频生成闭环步骤重试耗尽时应失败并阻断后续步骤', async () => {
     const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((cmd: any) => {
-      if (Array.isArray(cmd)) {
-        const shellCmd = String(cmd[2] || '')
-        if (shellCmd.includes('e2e:regression --')) {
-          return createSubprocess(1)
-        }
+      const commandText = resolveSpawnCommandText(cmd)
+      if (commandText.includes('e2e:regression --')) {
+        return createSubprocess(1)
       }
       return createSubprocess(0)
     })
