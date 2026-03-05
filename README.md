@@ -1,31 +1,37 @@
 # VeoMuse
 
-VeoMuse 是一个基于 Bun Monorepo 的 AI 视频创作与协作平台。项目提供从素材编辑、模型路由、协作评审到可观测与发布门禁的完整工程链路，适用于团队化视频生产场景。
+> 基于 Bun Monorepo 的 AI 视频创作与协作平台
 
-## 项目概览
+VeoMuse 面向团队化视频生产场景，覆盖素材编辑、模型路由、创意工作流、协作评审、质量门禁与发布流程。
 
-- 当前版本：`3.1.0`
-- 代码组织：`apps/* + packages/* + tests + docs`
-- 运行形态：本地开发（Bun）与容器化部署（Docker Compose）
+## 项目定位
 
-核心能力：
+- 工程目标：构建可落地的 AI 视频生产系统，而不是单点 Demo
+- 典型场景：文本/图片转视频、工作区协作评审、组织级治理与审计
+- 运行方式：本地开发（Bun）+ 容器部署（Docker Compose）
 
-- 多模型总线与策略治理（模型超市、策略模拟、预算告警与降级）
-- 创意工作流与批处理（workflow、runs、batch jobs、资产复用）
-- 协作平台（组织/工作区/权限、评论与评审、审计导出）
-- 可靠性治理（SLO、告警、ACK、回滚演练）
-- 编辑器与导出（时间轴、多面板、视频合成）
+## 核心能力
+
+| 模块       | 能力                                                                                                |
+| ---------- | --------------------------------------------------------------------------------------------------- |
+| 模型能力层 | 多模型总线、渠道配置、策略治理、预算与降级                                                          |
+| 创意生产层 | 四种生成模式（`text_to_video` / `image_to_video` / `first_last_frame_transition` / `video_extend`） |
+| 协作治理层 | 组织/工作区权限、评论与评审、审计导出                                                               |
+| 可靠性层   | SLO、回归门禁、发布质量汇总、实网预检                                                               |
+| 编辑体验层 | 时间轴编辑器、多面板工作台、任务闭环与状态追踪                                                      |
 
 详细清单见 [docs/CORE_FEATURES.md](docs/CORE_FEATURES.md)。
 
 ## 技术栈
 
-- Runtime: `Bun 1.3.9`
-- Frontend: `React 19 + Vite`
-- Backend: `Elysia`
-- E2E: `Playwright`
-- Data/Cache: `SQLite + Redis`
-- Compose/Deploy: `Docker Compose + Nginx`
+| 领域     | 选型                   |
+| -------- | ---------------------- |
+| Runtime  | Bun `1.3.9`            |
+| Frontend | React `19` + Vite      |
+| Backend  | Elysia                 |
+| Data     | SQLite + Redis         |
+| Testing  | Bun Test + Playwright  |
+| Deploy   | Docker Compose + Nginx |
 
 ## 仓库结构
 
@@ -36,18 +42,18 @@ VeoMuse 是一个基于 Bun Monorepo 的 AI 视频创作与协作平台。项目
 │  └─ frontend/         # 编辑器与实验室前端
 ├─ packages/
 │  └─ shared/           # 共享类型与公共定义
-├─ tests/               # 根级 API/脚本/对齐守卫回归测试
+├─ tests/               # API/脚本/对齐守卫回归测试
 ├─ scripts/             # 质量门禁、部署与运维脚本
 ├─ config/              # Docker/Nginx 等部署配置
 └─ docs/                # 部署、API、测试与需求文档
 ```
 
-## 本地开发
+## 快速开始
 
 ### 1. 环境要求
 
 - Bun `>= 1.3.9`
-- Node.js（仅用于部分生态工具）
+- Node.js（仅用于少量生态工具）
 - Docker（可选，用于容器化运行）
 
 ### 2. 安装依赖
@@ -56,29 +62,19 @@ VeoMuse 是一个基于 Bun Monorepo 的 AI 视频创作与协作平台。项目
 bun install
 ```
 
-### 3. 准备配置
+### 3. 初始化环境变量
 
 ```bash
 cp .env.example .env
 ```
 
-说明：
+生产环境请务必设置安全项：`JWT_SECRET`、`SECRET_ENCRYPTION_KEY`、`REDIS_PASSWORD`、`ADMIN_TOKEN`。
 
-- 开发场景可先使用最小配置启动。
-- 生产场景必须配置安全项（如 `JWT_SECRET`、`SECRET_ENCRYPTION_KEY`、`REDIS_PASSWORD`、`ADMIN_TOKEN`）。
-- 视频任务自动同步可通过环境变量调整（默认已开启）：
-  - `VIDEO_JOB_AUTO_SYNC_ENABLED=true`
-  - `VIDEO_JOB_AUTO_SYNC_INTERVAL_MS=20000`
-  - `VIDEO_JOB_AUTO_SYNC_BATCH_SIZE=8`
-  - `VIDEO_JOB_AUTO_SYNC_OLDER_THAN_MS=5000`
-
-### 4. 启动服务
+### 4. 启动本地开发
 
 ```bash
 bun run dev
 ```
-
-默认地址：
 
 - Frontend: `http://127.0.0.1:42873`
 - Backend: `http://127.0.0.1:33117`
@@ -90,40 +86,38 @@ docker compose -f config/docker/docker-compose.yml up -d --build --wait --wait-t
 docker compose -f config/docker/docker-compose.yml ps
 ```
 
-默认网关地址：
-
-- `http://127.0.0.1:18081`
+- 网关地址：`http://127.0.0.1:18081`
 - 健康检查：`http://127.0.0.1:18081/api/health`
 
 部署细节见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
 
 ## 常用命令
 
-| 目标          | 命令                           |
-| ------------- | ------------------------------ |
-| 启动本地开发  | `bun run dev`                  |
-| 构建          | `bun run build`                |
-| 代码检查      | `bun run lint`                 |
-| 格式化        | `bun run format`               |
-| 格式检查      | `bun run format:check`         |
-| 单元/集成测试 | `bun run test`                 |
-| 覆盖率门禁    | `bun run test:coverage`        |
-| API 契约守卫  | `bun run quality:api-contract` |
-| E2E 冒烟      | `bun run e2e:smoke`            |
-| 发布门禁      | `bun run release:gate`         |
-| 一键质量链路  | `bun run quality:full`         |
+### 开发与质量
 
-## 质量与发布基线
+| 目标           | 命令                           |
+| -------------- | ------------------------------ |
+| 本地开发       | `bun run dev`                  |
+| 构建           | `bun run build`                |
+| 类型检查/Lint  | `bun run lint`                 |
+| 代码格式化     | `bun run format:prettier`      |
+| 格式检查       | `bun run format:check`         |
+| 单元与集成测试 | `bun run test`                 |
+| 覆盖率门禁     | `bun run test:coverage`        |
+| API 契约守卫   | `bun run quality:api-contract` |
 
-- 发布门禁入口：`bun run release:gate`
-- 实网门禁入口：`bun run release:gate:real`
-- `release:gate:real` 现在包含两层保护：启动阶段预检必需实网凭据；执行后再校验 real 用例是否真正执行。若全部 `skipped` 会直接失败，避免“假绿灯”。
-- 默认检查链路：`security -> build -> unit -> e2e(smoke/mock) -> slo`
-- 质量汇总产物：`artifacts/quality-summary.json`
-- 质量汇总重点字段：`videoGenerateLoop`（mock 闭环状态）与 `realE2E`（实网回归状态 + 失败类型分类）
-- SLO 报告产物：`artifacts/slo-report.json`
+### E2E 与发布
 
-建议在发布前至少执行：
+| 目标             | 命令                            |
+| ---------------- | ------------------------------- |
+| E2E 冒烟         | `bun run e2e:smoke`             |
+| E2E 回归（全量） | `bun run e2e:regression`        |
+| 发布门禁         | `bun run release:gate`          |
+| 实网凭据预检     | `bun run release:real:precheck` |
+| 实网门禁         | `bun run release:gate:real`     |
+| 一键质量链路     | `bun run quality:full`          |
+
+## 发布流程建议
 
 ```bash
 bun run format:check
@@ -131,17 +125,33 @@ bun run lint
 bun run test
 bun run quality:api-contract
 bun run release:gate
+
+# 需要执行真实渠道回归时
+bun run release:real:precheck
+bun run release:gate:real
 ```
 
-## 文档索引
+说明：
+
+- `release:gate` 默认执行全量回归，不再仅限 mock。
+- 质量汇总输出：`artifacts/quality-summary.json`
+- SLO 报告输出：`artifacts/slo-report.json`
+
+## 当前状态与已知限制
+
+- 2026-03-05 审计中的 `P0/P1/S0` 阻塞项已修复并通过回归。
+- real E2E 依赖外部凭据（如 `GEMINI_API_KEYS`），未配置时会被预检阻断。
+
+## 文档导航
 
 - 部署说明：[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- 发布检查清单：[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
 - API 说明：[docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
 - 核心能力清单：[docs/CORE_FEATURES.md](docs/CORE_FEATURES.md)
 - 前端测试策略：[docs/FRONTEND_TEST_STRATEGY.md](docs/FRONTEND_TEST_STRATEGY.md)
 - 剩余任务与路线图：[docs/REMAINING_TASKS.md](docs/REMAINING_TASKS.md)
 - 需求文档：[docs/requirements/PROJECT_REQUIREMENTS.md](docs/requirements/PROJECT_REQUIREMENTS.md)
 
-## 许可
+## License
 
 本项目采用 [LICENSE](LICENSE) 中定义的许可协议。

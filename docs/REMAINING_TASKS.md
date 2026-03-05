@@ -2,15 +2,47 @@
 
 ## 结论
 
-- 需要开发的阻塞功能：`0`
-- 当前阶段：进入“稳定性增强 + 实网验证 + 体验打磨”迭代
+- 需要开发的阻塞功能：`0`（2026-03-05 审计阻塞项已完成修复并通过回归）
+- 当前阶段：进入“稳定性增强 + 实网验证 + 体验打磨”
+
+## 紧急阻塞修复完成情况（2026-03-05）
+
+1. `P0` 工作区渠道权限边界修复（已完成）
+
+- 结果：`/api/workspaces/:id/channels*` 已切换工作区成员鉴权（读 `viewer+`，写 `owner`）。
+- 验证：`tests/multi_tenant_channel_api.test.ts`。
+
+2. `P1` 评论分页游标稳定性修复（已完成）
+
+- 结果：评论与工作流运行列表均升级为 `(created_at,id)` 复合游标，兼容旧游标。
+- 验证：`tests/project_comments_reviews_api.test.ts`、`tests/v4_pagination_cursor_stability.test.ts`。
+
+3. `P1` 前端策略防重复提交（已完成）
+
+- 结果：策略创建/更新新增独立 in-flight 状态并禁用按钮，防止重复提交。
+- 验证：`tests/comparison_lab_request_dedup_guard.test.ts`。
+
+4. `P1` 渠道弹窗可访问性修复（已完成）
+
+- 结果：补齐 `Esc`、焦点陷阱、关闭后焦点归位与基础语义。
+- 验证：`tests/channel_access_panel_accessibility.dom.test.tsx`。
+
+5. `S0` CI 门禁实例一致性修复（已完成）
+
+- 结果：CI 中 SLO seed 与 Playwright 统一后端地址，并支持复用已启动服务。
+- 验证：`tests/ci_quality_gate_unified_entry.test.ts`。
+
+6. `S0` 默认回归覆盖面修复（已完成）
+
+- 结果：`release:gate` 默认执行全量 `e2e:regression`，并修复 real e2e schedule guard 假绿。
+- 验证：`tests/release_gate_script.test.ts`、`tests/release_gate_runtime.test.ts`、`tests/manual_workflows_presence.test.ts`。
 
 ## 进行中（非阻塞）
 
 1. 真实渠道回归测试（实网）
 
 - 目标：验证真实第三方模型通道在生产配置下的可用性与稳定性。
-- 建议命令：`bun run e2e:regression:real`、`bun run release:gate:real`
+- 建议命令：`bun run release:real:precheck`、`bun run e2e:regression:real`、`bun run release:gate:real`
 - 前置条件：配置真实凭据（例如 `GEMINI_API_KEYS`）
 
 2. 长稳与并发压测
@@ -68,6 +100,7 @@
 1. 先执行实网回归（`e2e:regression:real` + `release:gate:real`）并收敛问题。
 2. 执行 24h 压测并固化基线阈值。
 3. 最后收口 UI/UX 与文档，做一次全链路复验。
+4. 发布前按 `docs/RELEASE_CHECKLIST.md` 执行并归档产物。
 
 ## 已完成基线（摘要）
 
