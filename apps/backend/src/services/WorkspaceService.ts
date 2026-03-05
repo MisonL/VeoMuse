@@ -104,6 +104,41 @@ const parseRecord = (value: string | null | undefined): Record<string, unknown> 
   }
 }
 
+interface StableCursorPayload {
+  createdAt: string
+  id: string | null
+}
+
+const encodeStableCursor = (
+  createdAt: string | null | undefined,
+  id: string | null | undefined
+) => {
+  const normalizedCreatedAt = String(createdAt || '').trim()
+  if (!normalizedCreatedAt) return null
+  const normalizedId = String(id || '').trim()
+  if (!normalizedId) return normalizedCreatedAt
+  return `${normalizedCreatedAt}|${normalizedId}`
+}
+
+const decodeStableCursor = (cursor: string | null | undefined): StableCursorPayload | null => {
+  const normalized = String(cursor || '').trim()
+  if (!normalized) return null
+  const delimiterIndex = normalized.indexOf('|')
+  if (delimiterIndex < 0) {
+    return {
+      createdAt: normalized,
+      id: null
+    }
+  }
+  const createdAt = normalized.slice(0, delimiterIndex).trim()
+  const id = normalized.slice(delimiterIndex + 1).trim()
+  if (!createdAt) return null
+  return {
+    createdAt,
+    id: id || null
+  }
+}
+
 interface ProjectComment {
   id: string
   organizationId: string
@@ -934,32 +969,83 @@ export class WorkspaceService {
     cursor?: string,
     limit: number = 20
   ): ProjectComment[] {
+    return this.listProjectCommentsPage(projectId, cursor, limit).comments
+  }
+
+  static listProjectCommentsPage(
+    projectId: string,
+    cursor?: string,
+    limit: number = 20
+  ): {
+    comments: ProjectComment[]
+    page: {
+      limit: number
+      hasMore: boolean
+      nextCursor: string | null
+    }
+  } {
     const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(100, Math.floor(limit)) : 20
-    const normalizedCursor = (cursor || '').trim()
-    if (!normalizedCursor) {
-      return getLocalDb()
-        .prepare(
-          `
+    const queryLimit = safeLimit + 1
+    const decodedCursor = decodeStableCursor(cursor)
+    const rows: any[] =
+      decodedCursor && decodedCursor.id
+        ? (getLocalDb()
+            .prepare(
+              `
           SELECT * FROM project_comments
           WHERE project_id = ?
-          ORDER BY created_at DESC
-          LIMIT ${safeLimit}
+            AND (
+              created_at < ?
+              OR (created_at = ? AND id < ?)
+            )
+          ORDER BY created_at DESC, id DESC
+          LIMIT ${queryLimit}
         `
+            )
+            .all(
+              projectId,
+              decodedCursor.createdAt,
+              decodedCursor.createdAt,
+              decodedCursor.id
+            ) as any[])
+        : decodedCursor
+          ? (getLocalDb()
+              .prepare(
+                `
+          SELECT * FROM project_comments
+          WHERE project_id = ? AND created_at < ?
+          ORDER BY created_at DESC, id DESC
+          LIMIT ${queryLimit}
+        `
+              )
+              .all(projectId, decodedCursor.createdAt) as any[])
+          : (getLocalDb()
+              .prepare(
+                `
+          SELECT * FROM project_comments
+          WHERE project_id = ?
+          ORDER BY created_at DESC, id DESC
+          LIMIT ${queryLimit}
+        `
+              )
+              .all(projectId) as any[])
+    const hasMore = rows.length > safeLimit
+    const pageRows = hasMore ? rows.slice(0, safeLimit) : rows
+    const comments = pageRows.map(toProjectComment)
+    const nextCursor = hasMore
+      ? encodeStableCursor(
+          pageRows[pageRows.length - 1]?.created_at,
+          pageRows[pageRows.length - 1]?.id
         )
-        .all(projectId)
-        .map(toProjectComment)
+      : null
+    return {
+      comments,
+      page: {
+        limit: safeLimit,
+        hasMore,
+        nextCursor: nextCursor || null
+      }
     }
-    return getLocalDb()
-      .prepare(
-        `
-        SELECT * FROM project_comments
-        WHERE project_id = ? AND created_at < ?
-        ORDER BY created_at DESC
-        LIMIT ${safeLimit}
-      `
-      )
-      .all(projectId, normalizedCursor)
-      .map(toProjectComment)
   }
 
   static createProjectComment(

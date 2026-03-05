@@ -406,7 +406,7 @@ export class OrganizationGovernanceService {
           provider_id,
           detail_json,
           created_at,
-          NULL AS trace_id
+          trace_id
         FROM ai_channel_audits
         WHERE ${clauses.join(' AND ')}
         ORDER BY created_at DESC
@@ -424,7 +424,7 @@ export class OrganizationGovernanceService {
           actor: String(row.actor || ''),
           action: String(row.action || ''),
           providerId: row.provider_id ? String(row.provider_id) : null,
-          traceId: null,
+          traceId: row.trace_id ? String(row.trace_id) : null,
           createdAt: String(row.created_at || ''),
           detail: parseJsonObject(row.detail_json)
         })

@@ -189,6 +189,12 @@ const requireAuthenticatedUser = (request: Request, set: { status?: number | str
   return user
 }
 
+const resolveRequestTraceId = (request: Request, prefix = 'trace') => {
+  const fromHeader = String(request.headers.get('x-request-id') || '').trim()
+  if (fromHeader) return fromHeader
+  return `${prefix}_${crypto.randomUUID()}`
+}
+
 const ORGANIZATION_ROLE_ORDER: Record<OrganizationRole, number> = {
   member: 1,
   admin: 2,
@@ -938,7 +944,8 @@ export const createApp = () => {
             apiKey: body.apiKey,
             enabled: body.enabled,
             extra: body.extra,
-            actorUserId: authorized.user.id
+            actorUserId: authorized.user.id,
+            traceId: resolveRequestTraceId(request, 'trace_channel')
           })
           return { success: true, config }
         } catch (error: any) {
@@ -964,12 +971,7 @@ export const createApp = () => {
           set.status = 404
           return { success: false, status: 'error', error: 'Workspace not found' }
         }
-        const authorized = authorizeOrganizationRole(
-          workspace.organizationId,
-          request,
-          set,
-          'member'
-        )
+        const authorized = authorizeWorkspaceRole(workspace.id, request, set, 'viewer')
         if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
         return {
           success: true,
@@ -989,12 +991,7 @@ export const createApp = () => {
           set.status = 404
           return { success: false, status: 'error', error: 'Workspace not found' }
         }
-        const authorized = authorizeOrganizationRole(
-          workspace.organizationId,
-          request,
-          set,
-          'admin'
-        )
+        const authorized = authorizeWorkspaceRole(workspace.id, request, set, 'owner')
         if (!authorized) return { success: false, status: 'error', error: 'Forbidden' }
         try {
           const config = ChannelConfigService.upsertConfig({
@@ -1005,7 +1002,8 @@ export const createApp = () => {
             apiKey: body.apiKey,
             enabled: body.enabled,
             extra: body.extra,
-            actorUserId: authorized.user.id
+            actorUserId: authorized.user.id,
+            traceId: resolveRequestTraceId(request, 'trace_channel')
           })
           return { success: true, config }
         } catch (error: any) {
@@ -3606,13 +3604,15 @@ export const createApp = () => {
           }
           return { success: false, status: 'error', error: 'Forbidden: viewer membership required' }
         }
+        const page = WorkspaceService.listProjectCommentsPage(
+          params.id,
+          query.cursor,
+          Number.parseInt(query.limit || '20', 10)
+        )
         return {
           success: true,
-          comments: WorkspaceService.listProjectComments(
-            params.id,
-            query.cursor,
-            Number.parseInt(query.limit || '20', 10)
-          )
+          comments: page.comments,
+          page: page.page
         }
       },
       {

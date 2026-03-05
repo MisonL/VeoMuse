@@ -251,6 +251,7 @@ export class ChannelConfigService {
     enabled?: boolean
     extra?: Record<string, unknown>
     actorUserId: string
+    traceId?: string
   }): ChannelConfigRow {
     this.assertProvider(input.providerId)
     const db = getLocalDb()
@@ -317,7 +318,8 @@ export class ChannelConfigService {
           enabled: Boolean(nextEnabledFlag),
           hasSecret: Boolean(nextSecretEncrypted),
           hasBaseUrl: Boolean(nextBaseUrl)
-        }
+        },
+        input.traceId
       )
       const row = db.prepare(`SELECT * FROM ai_channel_configs WHERE id = ?`).get(existing.id)
       return normalizeConfigRow(row)
@@ -356,7 +358,8 @@ export class ChannelConfigService {
         enabled: Boolean(nextEnabledFlag),
         hasSecret: Boolean(nextSecretEncrypted),
         hasBaseUrl: Boolean(nextBaseUrl)
-      }
+      },
+      input.traceId
     )
     const row = db.prepare(`SELECT * FROM ai_channel_configs WHERE id = ?`).get(id)
     return normalizeConfigRow(row)
@@ -496,14 +499,16 @@ export class ChannelConfigService {
     actorUserId: string,
     action: string,
     providerId: string,
-    detail: Record<string, unknown>
+    detail: Record<string, unknown>,
+    traceId?: string
   ) {
+    const normalizedTraceId = String(traceId || '').trim() || null
     getLocalDb()
       .prepare(
         `
       INSERT INTO ai_channel_audits (
-        id, organization_id, workspace_id, actor_user_id, action, provider_id, detail_json, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        id, organization_id, workspace_id, actor_user_id, action, provider_id, detail_json, trace_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
       )
       .run(
@@ -514,6 +519,7 @@ export class ChannelConfigService {
         action,
         providerId,
         JSON.stringify(detail || {}),
+        normalizedTraceId,
         now()
       )
   }

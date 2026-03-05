@@ -81,8 +81,22 @@ describe('多租户渠道与权限回归', () => {
       expect(registerB.response.status).toBe(200)
       expect(registerB.data.success).toBe(true)
 
+      const registerOrgMember = await callApi('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: `tenant-org-member-${stamp}@example.com`,
+          password,
+          organizationName: `组织Member-${stamp}`
+        })
+      })
+      expect(registerOrgMember.response.status).toBe(200)
+      expect(registerOrgMember.data.success).toBe(true)
+      const orgMemberEmail = `tenant-org-member-${stamp}@example.com`
+
       const tokenA = registerA.data.session.accessToken as string
       const tokenB = registerB.data.session.accessToken as string
+      const tokenOrgMember = registerOrgMember.data.session.accessToken as string
       const orgA = registerA.data.organizations[0]?.id as string
       const orgB = registerB.data.organizations[0]?.id as string
 
@@ -134,6 +148,21 @@ describe('多租户渠道与权限回归', () => {
       expect(createWorkspace.response.status).toBe(200)
       expect(createWorkspace.data.success).toBe(true)
       const workspaceId = createWorkspace.data.workspace.id as string
+
+      const addOrgMemberResp = await callApi(`/api/organizations/${orgA}/members`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${tokenA}`,
+          'Content-Type': 'application/json',
+          'x-organization-id': orgA
+        },
+        body: JSON.stringify({
+          email: orgMemberEmail,
+          role: 'member'
+        })
+      })
+      expect(addOrgMemberResp.response.status).toBe(200)
+      expect(addOrgMemberResp.data.success).toBe(true)
 
       const saveWorkspaceOverride = await callApi(
         `/api/workspaces/${workspaceId}/channels/veo-3.1`,
@@ -187,6 +216,41 @@ describe('多租户渠道与权限回归', () => {
         }
       })
       expect(forbiddenCrossTenant.response.status).toBe(403)
+
+      const orgMemberListOrgChannels = await callApi(`/api/organizations/${orgA}/channels`, {
+        headers: {
+          Authorization: `Bearer ${tokenOrgMember}`,
+          'x-organization-id': orgA
+        }
+      })
+      expect(orgMemberListOrgChannels.response.status).toBe(200)
+
+      const orgMemberListWorkspaceChannels = await callApi(
+        `/api/workspaces/${workspaceId}/channels`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenOrgMember}`,
+            'x-organization-id': orgA
+          }
+        }
+      )
+      expect(orgMemberListWorkspaceChannels.response.status).toBe(403)
+
+      const orgMemberWriteWorkspaceChannels = await callApi(
+        `/api/workspaces/${workspaceId}/channels/veo-3.1`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${tokenOrgMember}`,
+            'Content-Type': 'application/json',
+            'x-organization-id': orgA
+          },
+          body: JSON.stringify({
+            enabled: false
+          })
+        }
+      )
+      expect(orgMemberWriteWorkspaceChannels.response.status).toBe(403)
 
       const generateWithOrgConfig = await callApi('/api/video/generate', {
         method: 'POST',

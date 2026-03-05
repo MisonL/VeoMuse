@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { app } from '../apps/backend/src/index'
+import { getLocalDb } from '../apps/backend/src/services/LocalDatabaseService'
 import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 type TestSession = Awaited<ReturnType<typeof createTestSession>>
@@ -114,8 +115,6 @@ describe('项目评论与评审 API（接口期望草稿）', () => {
     const firstCommentId = String(createFirstData.comment?.id || '')
     expect(firstCommentId.startsWith('pc_')).toBe(true)
 
-    await new Promise((resolve) => setTimeout(resolve, 12))
-
     const createSecondResp = await app.handle(
       new Request(`http://localhost/api/projects/${projectId}/comments`, {
         method: 'POST',
@@ -132,6 +131,12 @@ describe('项目评论与评审 API（接口期望草稿）', () => {
     const createSecondData = (await createSecondResp.json()) as any
     expect(createSecondResp.status).toBe(200)
     expect(createSecondData.success).toBe(true)
+    const secondCommentId = String(createSecondData.comment?.id || '')
+
+    const sameTimestamp = new Date().toISOString()
+    getLocalDb()
+      .prepare(`UPDATE project_comments SET created_at = ?, updated_at = ? WHERE id IN (?, ?)`)
+      .run(sameTimestamp, sameTimestamp, firstCommentId, secondCommentId)
 
     const listFirstPageResp = await app.handle(
       new Request(`http://localhost/api/projects/${projectId}/comments?limit=1`, {
@@ -143,11 +148,13 @@ describe('项目评论与评审 API（接口期望草稿）', () => {
     expect(listFirstPageData.success).toBe(true)
     expect(Array.isArray(listFirstPageData.comments)).toBe(true)
     expect(listFirstPageData.comments.length).toBe(1)
+    expect(Boolean(listFirstPageData.page?.hasMore)).toBe(true)
 
     const firstPageCommentId = String(listFirstPageData.comments[0]?.id || '')
-    const cursor = String(listFirstPageData.comments[0]?.createdAt || '')
+    const cursor = String(listFirstPageData.page?.nextCursor || '')
     expect(firstPageCommentId.length).toBeGreaterThan(0)
     expect(cursor.length).toBeGreaterThan(0)
+    expect(cursor.includes('|')).toBe(true)
 
     const listSecondPageResp = await app.handle(
       new Request(

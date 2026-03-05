@@ -286,6 +286,11 @@ describe('组织治理与配额 API', () => {
     ).toBe(true)
     expect(exportJsonData.records.some((item: any) => item.source === 'channel')).toBe(true)
     expect(exportJsonData.records.some((item: any) => item.source === 'workspace')).toBe(true)
+    const channelRecords = exportJsonData.records.filter((item: any) => item.source === 'channel')
+    expect(channelRecords.length).toBeGreaterThan(0)
+    expect(channelRecords.some((item: any) => String(item.traceId || '').trim().length > 0)).toBe(
+      true
+    )
 
     const exportCsvResp = await app.handle(
       new Request(

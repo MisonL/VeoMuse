@@ -388,10 +388,12 @@ const migrate = (db: Database) => {
       action TEXT NOT NULL,
       provider_id TEXT NOT NULL,
       detail_json TEXT NOT NULL DEFAULT '{}',
+      trace_id TEXT,
       created_at TEXT NOT NULL,
       FOREIGN KEY(organization_id) REFERENCES organizations(id) ON DELETE CASCADE
     );
   `)
+  ensureColumn(db, 'ai_channel_audits', 'trace_id', 'TEXT')
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS model_profiles (

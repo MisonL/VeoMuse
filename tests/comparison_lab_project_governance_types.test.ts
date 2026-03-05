@@ -43,7 +43,19 @@ describe('comparison-lab/types 项目治理函数', () => {
       { id: 'pc_1', createdAt: '2026-03-01T10:00:00.000Z' },
       { id: 'pc_2', createdAt: '2026-03-02T10:00:00.000Z' }
     ]
-    globalThis.fetch = mock(() => Promise.resolve(jsonResponse({ success: true, comments }))) as any
+    globalThis.fetch = mock(() =>
+      Promise.resolve(
+        jsonResponse({
+          success: true,
+          comments,
+          page: {
+            limit: 2,
+            hasMore: true,
+            nextCursor: '2026-03-02T10:00:00.000Z|pc_2'
+          }
+        })
+      )
+    ) as any
 
     const result = await listProjectGovernanceComments(' prj_demo ', {
       limit: '2',
@@ -54,7 +66,7 @@ describe('comparison-lab/types 项目治理函数', () => {
     expect(result.page).toEqual({
       limit: 2,
       hasMore: true,
-      nextCursor: '2026-03-02T10:00:00.000Z'
+      nextCursor: '2026-03-02T10:00:00.000Z|pc_2'
     })
 
     const [url] = getFirstFetchCall()
