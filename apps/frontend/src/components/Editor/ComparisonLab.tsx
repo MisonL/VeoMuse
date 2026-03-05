@@ -102,9 +102,13 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const [rightModel, setRightModel] = useState('kling-v1')
   const [availableModels, setAvailableModels] = useState<Array<{ id: string; name: string }>>([])
   const [marketplace, setMarketplace] = useState<Array<any>>([])
+  const [isMarketplaceLoading, setIsMarketplaceLoading] = useState(false)
+  const [marketplaceError, setMarketplaceError] = useState('')
 
   const [policies, setPolicies] = useState<RoutingPolicy[]>([])
   const [isPolicyLoading, setIsPolicyLoading] = useState(false)
+  const [isPolicyCreating, setIsPolicyCreating] = useState(false)
+  const [isPolicyUpdating, setIsPolicyUpdating] = useState(false)
   const [isPolicySimulating, setIsPolicySimulating] = useState(false)
   const [selectedPolicyId, setSelectedPolicyId] = useState('')
   const [policyCreateName, setPolicyCreateName] = useState('默认创作策略')
@@ -302,6 +306,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   const rightVideoRef = useRef<HTMLVideoElement | null>(null)
   const policyExecRequestSeqRef = useRef(0)
   const policySimulateSeqRef = useRef(0)
+  const channelPanelTriggerRef = useRef<HTMLElement | null>(null)
 
   const assets = useMemo(() => allAssets.filter((asset) => asset.type === 'video'), [allAssets])
 
@@ -1019,12 +1024,16 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   }, [activeChannelScope, showToast, workspaceId])
 
   const openChannelPanel = useCallback(() => {
+    const activeElement = document.activeElement
+    channelPanelTriggerRef.current = activeElement instanceof HTMLElement ? activeElement : null
     setShowChannelPanel(true)
   }, [])
 
   useEffect(() => {
     const handleOpenChannelPanel = () => {
       setLabMode('marketplace')
+      const activeElement = document.activeElement
+      channelPanelTriggerRef.current = activeElement instanceof HTMLElement ? activeElement : null
       setShowChannelPanel(true)
     }
 
@@ -1054,6 +1063,8 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   ])
 
   const refreshMarketplace = async (notify: boolean) => {
+    setIsMarketplaceLoading(true)
+    setMarketplaceError('')
     try {
       const payload = await requestJson<{ success: boolean; models: any[] }>(
         '/api/models/marketplace'
@@ -1065,7 +1076,11 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       }
       if (notify) showToast('模型超市数据已刷新', 'success')
     } catch (error: any) {
+      setMarketplace([])
+      setMarketplaceError(error.message || '加载模型超市失败')
       showToast(error.message || '加载模型超市失败', 'error')
+    } finally {
+      setIsMarketplaceLoading(false)
     }
   }
 
@@ -1186,6 +1201,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
   }
 
   const createPolicy = async () => {
+    if (isPolicyCreating) return
     if (!policyCreateName.trim()) {
       showToast('请输入策略名称', 'info')
       return
@@ -1195,6 +1211,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       return
     }
 
+    setIsPolicyCreating(true)
     try {
       const payload = await requestJson<{ success: boolean; policy: RoutingPolicy }>(
         '/api/models/policies',
@@ -1216,11 +1233,14 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       setSelectedPolicyId(payload.policy.id)
     } catch (error: any) {
       showToast(error.message || '创建策略失败', 'error')
+    } finally {
+      setIsPolicyCreating(false)
     }
   }
 
   const updateSelectedPolicy = async () => {
-    if (!selectedPolicy) return
+    if (!selectedPolicy || isPolicyUpdating) return
+    setIsPolicyUpdating(true)
     try {
       const payload = await requestJson<{ success: boolean; policy: RoutingPolicy }>(
         `/api/models/policies/${selectedPolicy.id}`,
@@ -1239,6 +1259,8 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       showToast(`策略状态已更新：${payload.policy.enabled ? '启用' : '停用'}`, 'success')
     } catch (error: any) {
       showToast(error.message || '更新策略失败', 'error')
+    } finally {
+      setIsPolicyUpdating(false)
     }
   }
 
@@ -1737,7 +1759,9 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
 
   useEffect(() => {
     if (labMode !== 'creative' || !authProfile || !videoGenerationPollingEnabled) return
-    const trackedJobs = videoGenerationJobs.filter((job) => isVideoGenerationActiveStatus(job.status))
+    const trackedJobs = videoGenerationJobs.filter((job) =>
+      isVideoGenerationActiveStatus(job.status)
+    )
     const selectedJobId = String(videoGenerationSelectedJobId || '').trim()
     if (trackedJobs.length === 0 && !selectedJobId) return
 
@@ -3287,337 +3311,352 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
       />
 
       {labMode === 'compare' ? (
-        <CompareModePanel
-          availableModels={availableModels}
-          assets={assets}
-          leftModel={leftModel}
-          rightModel={rightModel}
-          leftAssetId={leftAssetId}
-          rightAssetId={rightAssetId}
-          leftAsset={leftAsset}
-          rightAsset={rightAsset}
-          leftVideoRef={leftVideoRef}
-          rightVideoRef={rightVideoRef}
-          onLeftModelChange={setLeftModel}
-          onRightModelChange={setRightModel}
-          onLeftAssetChange={setLeftAssetId}
-          onRightAssetChange={setRightAssetId}
-          onRequestRecommendation={requestRecommendation}
-          onOpenAssets={onOpenAssets}
-        />
+        <section id="lab-panel-compare" role="tabpanel" aria-labelledby="lab-tab-compare">
+          <CompareModePanel
+            availableModels={availableModels}
+            assets={assets}
+            leftModel={leftModel}
+            rightModel={rightModel}
+            leftAssetId={leftAssetId}
+            rightAssetId={rightAssetId}
+            leftAsset={leftAsset}
+            rightAsset={rightAsset}
+            leftVideoRef={leftVideoRef}
+            rightVideoRef={rightVideoRef}
+            onLeftModelChange={setLeftModel}
+            onRightModelChange={setRightModel}
+            onLeftAssetChange={setLeftAssetId}
+            onRightAssetChange={setRightAssetId}
+            onRequestRecommendation={requestRecommendation}
+            onOpenAssets={onOpenAssets}
+          />
+        </section>
       ) : null}
 
       {labMode === 'marketplace' ? (
-        <MarketplaceModePanel
-          selectedPolicyId={selectedPolicyId}
-          policies={policies}
-          selectedPolicy={selectedPolicy}
-          availableModels={availableModels}
-          marketplace={marketplace}
-          policyCreateName={policyCreateName}
-          policyCreatePriority={policyCreatePriority}
-          policyCreateBudget={policyCreateBudget}
-          policyAllowedModels={policyAllowedModels}
-          policyWeights={policyWeights}
-          policyPrompt={policyPrompt}
-          policyBudget={policyBudget}
-          policyPriority={policyPriority}
-          policyDecision={policyDecision}
-          policyExecutions={policyExecutions}
-          policyExecHasMore={policyExecHasMore}
-          isPolicyLoading={isPolicyLoading}
-          isPolicySimulating={isPolicySimulating}
-          policyExecLoading={policyExecLoading}
-          onSelectedPolicyChange={setSelectedPolicyId}
-          onPolicyCreateNameChange={setPolicyCreateName}
-          onPolicyCreatePriorityChange={setPolicyCreatePriority}
-          onPolicyCreateBudgetChange={setPolicyCreateBudget}
-          onPolicyWeightChange={(key, value) =>
-            setPolicyWeights((prev) => ({ ...prev, [key]: value }))
-          }
-          onToggleAllowedModel={toggleAllowedModel}
-          onCreatePolicy={() => void createPolicy()}
-          onLoadPolicies={(notify) => void loadPolicies(notify)}
-          onUpdateSelectedPolicy={() => void updateSelectedPolicy()}
-          onPolicyPromptChange={setPolicyPrompt}
-          onPolicyBudgetChange={setPolicyBudget}
-          onPolicyPriorityChange={setPolicyPriority}
-          onSimulatePolicy={() => void simulatePolicy()}
-          onLoadPolicyExecutions={(reset) => void loadPolicyExecutions(reset)}
-        />
+        <section id="lab-panel-marketplace" role="tabpanel" aria-labelledby="lab-tab-marketplace">
+          <MarketplaceModePanel
+            selectedPolicyId={selectedPolicyId}
+            policies={policies}
+            selectedPolicy={selectedPolicy}
+            availableModels={availableModels}
+            marketplace={marketplace}
+            isMarketplaceLoading={isMarketplaceLoading}
+            marketplaceError={marketplaceError}
+            policyCreateName={policyCreateName}
+            policyCreatePriority={policyCreatePriority}
+            policyCreateBudget={policyCreateBudget}
+            policyAllowedModels={policyAllowedModels}
+            policyWeights={policyWeights}
+            policyPrompt={policyPrompt}
+            policyBudget={policyBudget}
+            policyPriority={policyPriority}
+            policyDecision={policyDecision}
+            policyExecutions={policyExecutions}
+            policyExecHasMore={policyExecHasMore}
+            isPolicyLoading={isPolicyLoading}
+            isPolicyCreating={isPolicyCreating}
+            isPolicyUpdating={isPolicyUpdating}
+            isPolicySimulating={isPolicySimulating}
+            policyExecLoading={policyExecLoading}
+            onSelectedPolicyChange={setSelectedPolicyId}
+            onPolicyCreateNameChange={setPolicyCreateName}
+            onPolicyCreatePriorityChange={setPolicyCreatePriority}
+            onPolicyCreateBudgetChange={setPolicyCreateBudget}
+            onPolicyWeightChange={(key, value) =>
+              setPolicyWeights((prev) => ({ ...prev, [key]: value }))
+            }
+            onToggleAllowedModel={toggleAllowedModel}
+            onCreatePolicy={() => void createPolicy()}
+            onLoadPolicies={(notify) => void loadPolicies(notify)}
+            onUpdateSelectedPolicy={() => void updateSelectedPolicy()}
+            onRefreshMarketplace={() => void refreshMarketplace(true)}
+            onPolicyPromptChange={setPolicyPrompt}
+            onPolicyBudgetChange={setPolicyBudget}
+            onPolicyPriorityChange={setPolicyPriority}
+            onSimulatePolicy={() => void simulatePolicy()}
+            onLoadPolicyExecutions={(reset) => void loadPolicyExecutions(reset)}
+          />
+        </section>
       ) : null}
 
       {labMode === 'creative' ? (
-        <CreativeModePanel
-          creativeScript={creativeScript}
-          creativeStyle={creativeStyle}
-          commitScore={commitScore}
-          isCreativeBusy={isCreativeBusy}
-          creativeRun={creativeRun}
-          creativeRunFeedback={creativeRunFeedback}
-          sceneFeedbackMap={sceneFeedbackMap}
-          creativeVersions={creativeVersions}
-          geminiQuickCheck={geminiQuickCheck}
-          videoGenerationMode={videoGenerationMode}
-          videoGenerationModelId={videoGenerationModelId}
-          videoGenerationPrompt={videoGenerationPrompt}
-          videoGenerationNegativePrompt={videoGenerationNegativePrompt}
-          videoGenerationInputSourceType={videoGenerationInputSourceType}
-          videoGenerationImageInput={videoGenerationImageInput}
-          videoGenerationReferenceImagesInput={videoGenerationReferenceImagesInput}
-          videoGenerationVideoInput={videoGenerationVideoInput}
-          videoGenerationFirstFrameInput={videoGenerationFirstFrameInput}
-          videoGenerationLastFrameInput={videoGenerationLastFrameInput}
-          videoGenerationListLimit={videoGenerationListLimit}
-          videoGenerationStatusFilter={videoGenerationStatusFilter}
-          videoGenerationJobs={videoGenerationJobs}
-          videoGenerationCursor={videoGenerationCursor}
-          videoGenerationHasMore={videoGenerationHasMore}
-          videoGenerationSelectedJobId={videoGenerationSelectedJobId}
-          videoGenerationPollingEnabled={videoGenerationPollingEnabled}
-          videoGenerationLastAutoSyncAt={videoGenerationLastAutoSyncAt}
-          isVideoGenerationAutoSyncTicking={isVideoGenerationAutoSyncTicking}
-          isVideoGenerationBusy={isVideoGenerationBusy}
-          workflows={v4Workflows}
-          selectedWorkflowId={v4SelectedWorkflowId}
-          workflowName={v4WorkflowName}
-          workflowDescription={v4WorkflowDescription}
-          workflowRunPayload={v4WorkflowRunPayload}
-          workflowRunResult={v4WorkflowRunResult}
-          workflowRuns={v4WorkflowRuns}
-          workflowRunsLimit={v4WorkflowRunsLimit}
-          workflowRunsHasMore={v4WorkflowRunsHasMore}
-          batchJobType={v4BatchJobType}
-          batchJobPayload={v4BatchJobPayload}
-          batchJobId={v4BatchJobId}
-          batchJobStatus={v4BatchJobStatus}
-          assetReuseSourceId={v4AssetReuseSourceId}
-          assetReuseTargetId={v4AssetReuseTargetId}
-          assetReuseNote={v4AssetReuseNote}
-          assetReuseResult={v4AssetReuseResult}
-          assetReuseHistoryAssetId={v4AssetReuseHistoryAssetId}
-          assetReuseHistorySourceProjectId={v4AssetReuseHistorySourceProjectId}
-          assetReuseHistoryTargetProjectId={v4AssetReuseHistoryTargetProjectId}
-          assetReuseHistoryLimit={v4AssetReuseHistoryLimit}
-          assetReuseHistoryOffset={v4AssetReuseHistoryOffset}
-          assetReuseHistoryRecords={v4AssetReuseHistoryRecords}
-          isV4Busy={isV4CreativeBusy}
-          onCreativeScriptChange={setCreativeScript}
-          onCreativeStyleChange={setCreativeStyle}
-          onCommitScoreChange={setCommitScore}
-          onCreateCreativeRun={() => void createCreativeRun()}
-          onApplyCreativeFeedback={() => void applyCreativeFeedback()}
-          onCommitCreativeRun={() => void commitCreativeRun()}
-          onRefreshCreativeVersions={() => void refreshCreativeVersions()}
-          onRunGeminiQuickCheck={() => void loadCapabilities()}
-          onOpenChannelPanel={openChannelPanel}
-          onVideoGenerationModeChange={setVideoGenerationMode}
-          onVideoGenerationModelIdChange={setVideoGenerationModelId}
-          onVideoGenerationPromptChange={setVideoGenerationPrompt}
-          onVideoGenerationNegativePromptChange={setVideoGenerationNegativePrompt}
-          onVideoGenerationInputSourceTypeChange={setVideoGenerationInputSourceType}
-          onVideoGenerationImageInputChange={setVideoGenerationImageInput}
-          onVideoGenerationReferenceImagesInputChange={setVideoGenerationReferenceImagesInput}
-          onVideoGenerationVideoInputChange={setVideoGenerationVideoInput}
-          onVideoGenerationFirstFrameInputChange={setVideoGenerationFirstFrameInput}
-          onVideoGenerationLastFrameInputChange={setVideoGenerationLastFrameInput}
-          onVideoGenerationListLimitChange={setVideoGenerationListLimit}
-          onVideoGenerationStatusFilterChange={setVideoGenerationStatusFilter}
-          onVideoGenerationSelectedJobIdChange={setVideoGenerationSelectedJobId}
-          onVideoGenerationPollingEnabledChange={setVideoGenerationPollingEnabled}
-          onCreateVideoGenerationTask={() => void createVideoGenerationTask()}
-          onRefreshVideoGenerationJobs={() => void loadVideoGenerationJobs(false)}
-          onLoadMoreVideoGenerationJobs={() => void loadVideoGenerationJobs(true)}
-          onQueryVideoGenerationJobDetail={() => void queryVideoGenerationJobDetail()}
-          onSyncVideoGenerationJob={(jobId) => void syncVideoGenerationJob(jobId)}
-          onRetryVideoGenerationJob={(jobId) => void retryVideoGenerationJob(jobId)}
-          onCancelVideoGenerationJob={(jobId) => void cancelVideoGenerationJob(jobId)}
-          onRefreshVideoGenerationJobDetail={(jobId) => void refreshVideoGenerationJobDetail(jobId)}
-          onCreativeRunFeedbackChange={setCreativeRunFeedback}
-          onSceneFeedbackChange={(sceneId, value) =>
-            setSceneFeedbackMap((prev) => ({ ...prev, [sceneId]: value }))
-          }
-          onSwitchCreativeRunVersion={setCreativeRun}
-          onRefreshWorkflows={() => void refreshV4Workflows()}
-          onSelectedWorkflowIdChange={setV4SelectedWorkflowId}
-          onWorkflowNameChange={setV4WorkflowName}
-          onWorkflowDescriptionChange={setV4WorkflowDescription}
-          onWorkflowRunPayloadChange={setV4WorkflowRunPayload}
-          onCreateWorkflow={() => void createV4Workflow()}
-          onRunWorkflow={() => void runV4Workflow()}
-          onWorkflowRunsLimitChange={setV4WorkflowRunsLimit}
-          onQueryWorkflowRuns={() => void queryV4WorkflowRuns(false)}
-          onLoadMoreWorkflowRuns={() => void queryV4WorkflowRuns(true)}
-          onBatchJobTypeChange={setV4BatchJobType}
-          onBatchJobPayloadChange={setV4BatchJobPayload}
-          onBatchJobIdChange={setV4BatchJobId}
-          onCreateBatchJob={() => void createV4BatchJob()}
-          onQueryBatchJob={() => void queryV4BatchJob()}
-          onAssetReuseSourceIdChange={setV4AssetReuseSourceId}
-          onAssetReuseTargetIdChange={setV4AssetReuseTargetId}
-          onAssetReuseNoteChange={setV4AssetReuseNote}
-          onCallAssetReuse={() => void callV4AssetReuse()}
-          onAssetReuseHistoryAssetIdChange={setV4AssetReuseHistoryAssetId}
-          onAssetReuseHistorySourceProjectIdChange={setV4AssetReuseHistorySourceProjectId}
-          onAssetReuseHistoryTargetProjectIdChange={setV4AssetReuseHistoryTargetProjectId}
-          onAssetReuseHistoryLimitChange={setV4AssetReuseHistoryLimit}
-          onAssetReuseHistoryOffsetChange={setV4AssetReuseHistoryOffset}
-          onQueryAssetReuseHistory={() => void queryV4AssetReuseHistory()}
-        />
+        <section id="lab-panel-creative" role="tabpanel" aria-labelledby="lab-tab-creative">
+          <CreativeModePanel
+            creativeScript={creativeScript}
+            creativeStyle={creativeStyle}
+            commitScore={commitScore}
+            isCreativeBusy={isCreativeBusy}
+            creativeRun={creativeRun}
+            creativeRunFeedback={creativeRunFeedback}
+            sceneFeedbackMap={sceneFeedbackMap}
+            creativeVersions={creativeVersions}
+            geminiQuickCheck={geminiQuickCheck}
+            videoGenerationMode={videoGenerationMode}
+            videoGenerationModelId={videoGenerationModelId}
+            videoGenerationPrompt={videoGenerationPrompt}
+            videoGenerationNegativePrompt={videoGenerationNegativePrompt}
+            videoGenerationInputSourceType={videoGenerationInputSourceType}
+            videoGenerationImageInput={videoGenerationImageInput}
+            videoGenerationReferenceImagesInput={videoGenerationReferenceImagesInput}
+            videoGenerationVideoInput={videoGenerationVideoInput}
+            videoGenerationFirstFrameInput={videoGenerationFirstFrameInput}
+            videoGenerationLastFrameInput={videoGenerationLastFrameInput}
+            videoGenerationListLimit={videoGenerationListLimit}
+            videoGenerationStatusFilter={videoGenerationStatusFilter}
+            videoGenerationJobs={videoGenerationJobs}
+            videoGenerationCursor={videoGenerationCursor}
+            videoGenerationHasMore={videoGenerationHasMore}
+            videoGenerationSelectedJobId={videoGenerationSelectedJobId}
+            videoGenerationPollingEnabled={videoGenerationPollingEnabled}
+            videoGenerationLastAutoSyncAt={videoGenerationLastAutoSyncAt}
+            isVideoGenerationAutoSyncTicking={isVideoGenerationAutoSyncTicking}
+            isVideoGenerationBusy={isVideoGenerationBusy}
+            workflows={v4Workflows}
+            selectedWorkflowId={v4SelectedWorkflowId}
+            workflowName={v4WorkflowName}
+            workflowDescription={v4WorkflowDescription}
+            workflowRunPayload={v4WorkflowRunPayload}
+            workflowRunResult={v4WorkflowRunResult}
+            workflowRuns={v4WorkflowRuns}
+            workflowRunsLimit={v4WorkflowRunsLimit}
+            workflowRunsHasMore={v4WorkflowRunsHasMore}
+            batchJobType={v4BatchJobType}
+            batchJobPayload={v4BatchJobPayload}
+            batchJobId={v4BatchJobId}
+            batchJobStatus={v4BatchJobStatus}
+            assetReuseSourceId={v4AssetReuseSourceId}
+            assetReuseTargetId={v4AssetReuseTargetId}
+            assetReuseNote={v4AssetReuseNote}
+            assetReuseResult={v4AssetReuseResult}
+            assetReuseHistoryAssetId={v4AssetReuseHistoryAssetId}
+            assetReuseHistorySourceProjectId={v4AssetReuseHistorySourceProjectId}
+            assetReuseHistoryTargetProjectId={v4AssetReuseHistoryTargetProjectId}
+            assetReuseHistoryLimit={v4AssetReuseHistoryLimit}
+            assetReuseHistoryOffset={v4AssetReuseHistoryOffset}
+            assetReuseHistoryRecords={v4AssetReuseHistoryRecords}
+            isV4Busy={isV4CreativeBusy}
+            onCreativeScriptChange={setCreativeScript}
+            onCreativeStyleChange={setCreativeStyle}
+            onCommitScoreChange={setCommitScore}
+            onCreateCreativeRun={() => void createCreativeRun()}
+            onApplyCreativeFeedback={() => void applyCreativeFeedback()}
+            onCommitCreativeRun={() => void commitCreativeRun()}
+            onRefreshCreativeVersions={() => void refreshCreativeVersions()}
+            onRunGeminiQuickCheck={() => void loadCapabilities()}
+            onOpenChannelPanel={openChannelPanel}
+            onVideoGenerationModeChange={setVideoGenerationMode}
+            onVideoGenerationModelIdChange={setVideoGenerationModelId}
+            onVideoGenerationPromptChange={setVideoGenerationPrompt}
+            onVideoGenerationNegativePromptChange={setVideoGenerationNegativePrompt}
+            onVideoGenerationInputSourceTypeChange={setVideoGenerationInputSourceType}
+            onVideoGenerationImageInputChange={setVideoGenerationImageInput}
+            onVideoGenerationReferenceImagesInputChange={setVideoGenerationReferenceImagesInput}
+            onVideoGenerationVideoInputChange={setVideoGenerationVideoInput}
+            onVideoGenerationFirstFrameInputChange={setVideoGenerationFirstFrameInput}
+            onVideoGenerationLastFrameInputChange={setVideoGenerationLastFrameInput}
+            onVideoGenerationListLimitChange={setVideoGenerationListLimit}
+            onVideoGenerationStatusFilterChange={setVideoGenerationStatusFilter}
+            onVideoGenerationSelectedJobIdChange={setVideoGenerationSelectedJobId}
+            onVideoGenerationPollingEnabledChange={setVideoGenerationPollingEnabled}
+            onCreateVideoGenerationTask={() => void createVideoGenerationTask()}
+            onRefreshVideoGenerationJobs={() => void loadVideoGenerationJobs(false)}
+            onLoadMoreVideoGenerationJobs={() => void loadVideoGenerationJobs(true)}
+            onQueryVideoGenerationJobDetail={() => void queryVideoGenerationJobDetail()}
+            onSyncVideoGenerationJob={(jobId) => void syncVideoGenerationJob(jobId)}
+            onRetryVideoGenerationJob={(jobId) => void retryVideoGenerationJob(jobId)}
+            onCancelVideoGenerationJob={(jobId) => void cancelVideoGenerationJob(jobId)}
+            onRefreshVideoGenerationJobDetail={(jobId) =>
+              void refreshVideoGenerationJobDetail(jobId)
+            }
+            onCreativeRunFeedbackChange={setCreativeRunFeedback}
+            onSceneFeedbackChange={(sceneId, value) =>
+              setSceneFeedbackMap((prev) => ({ ...prev, [sceneId]: value }))
+            }
+            onSwitchCreativeRunVersion={setCreativeRun}
+            onRefreshWorkflows={() => void refreshV4Workflows()}
+            onSelectedWorkflowIdChange={setV4SelectedWorkflowId}
+            onWorkflowNameChange={setV4WorkflowName}
+            onWorkflowDescriptionChange={setV4WorkflowDescription}
+            onWorkflowRunPayloadChange={setV4WorkflowRunPayload}
+            onCreateWorkflow={() => void createV4Workflow()}
+            onRunWorkflow={() => void runV4Workflow()}
+            onWorkflowRunsLimitChange={setV4WorkflowRunsLimit}
+            onQueryWorkflowRuns={() => void queryV4WorkflowRuns(false)}
+            onLoadMoreWorkflowRuns={() => void queryV4WorkflowRuns(true)}
+            onBatchJobTypeChange={setV4BatchJobType}
+            onBatchJobPayloadChange={setV4BatchJobPayload}
+            onBatchJobIdChange={setV4BatchJobId}
+            onCreateBatchJob={() => void createV4BatchJob()}
+            onQueryBatchJob={() => void queryV4BatchJob()}
+            onAssetReuseSourceIdChange={setV4AssetReuseSourceId}
+            onAssetReuseTargetIdChange={setV4AssetReuseTargetId}
+            onAssetReuseNoteChange={setV4AssetReuseNote}
+            onCallAssetReuse={() => void callV4AssetReuse()}
+            onAssetReuseHistoryAssetIdChange={setV4AssetReuseHistoryAssetId}
+            onAssetReuseHistorySourceProjectIdChange={setV4AssetReuseHistorySourceProjectId}
+            onAssetReuseHistoryTargetProjectIdChange={setV4AssetReuseHistoryTargetProjectId}
+            onAssetReuseHistoryLimitChange={setV4AssetReuseHistoryLimit}
+            onAssetReuseHistoryOffsetChange={setV4AssetReuseHistoryOffset}
+            onQueryAssetReuseHistory={() => void queryV4AssetReuseHistory()}
+          />
+        </section>
       ) : null}
 
       {labMode === 'collab' ? (
-        <CollabModePanel
-          isAuthenticated={Boolean(authProfile)}
-          workspaceName={workspaceName}
-          workspaceOwner={workspaceOwner}
-          workspaceId={workspaceId}
-          projectId={projectId}
-          inviteRole={inviteRole}
-          memberName={memberName}
-          collabRole={collabRole}
-          inviteCode={inviteCode}
-          invites={invites}
-          isWsConnected={isWsConnected}
-          presence={presence}
-          collabEvents={collabEvents}
-          snapshots={snapshots}
-          uploadFileName={uploadFileName}
-          uploadToken={uploadToken}
-          commentThreads={v4CommentThreads}
-          commentThreadCursor={v4CommentThreadCursor}
-          commentThreadLimit={v4CommentThreadLimit}
-          commentThreadHasMore={v4CommentThreadHasMore}
-          commentAnchor={v4CommentAnchor}
-          commentContent={v4CommentContent}
-          commentMentions={v4CommentMentions}
-          selectedThreadId={v4SelectedThreadId}
-          commentReplyContent={v4CommentReplyContent}
-          commentReplyMentions={v4CommentReplyMentions}
-          projectComments={projectComments}
-          projectCommentCursor={projectCommentCursor}
-          projectCommentLimit={projectCommentLimit}
-          projectCommentHasMore={projectCommentHasMore}
-          projectCommentAnchor={projectCommentAnchor}
-          projectCommentContent={projectCommentContent}
-          projectCommentMentions={projectCommentMentions}
-          projectSelectedCommentId={projectSelectedCommentId}
-          projectReviews={projectReviews}
-          projectReviewLimit={projectReviewLimit}
-          projectReviewDecision={projectReviewDecision}
-          projectReviewSummary={projectReviewSummary}
-          projectReviewScore={projectReviewScore}
-          projectTemplates={projectTemplates}
-          projectSelectedTemplateId={projectSelectedTemplateId}
-          projectTemplateApplyOptions={projectTemplateApplyOptions}
-          projectTemplateApplyResult={projectTemplateApplyResult}
-          projectClipBatchOperations={projectClipBatchOperations}
-          projectClipBatchResult={projectClipBatchResult}
-          permissions={v4Permissions}
-          permissionSubjectId={v4PermissionSubjectId}
-          permissionRole={v4PermissionRole}
-          timelineMergeResult={v4TimelineMergeResult}
-          errorBudget={v4ErrorBudget}
-          errorBudgetScope={v4ErrorBudgetScope}
-          errorBudgetTargetSlo={v4ErrorBudgetTargetSlo}
-          errorBudgetWindowDays={v4ErrorBudgetWindowDays}
-          errorBudgetWarningThresholdRatio={v4ErrorBudgetWarningThresholdRatio}
-          errorBudgetAlertThresholdRatio={v4ErrorBudgetAlertThresholdRatio}
-          errorBudgetFreezeDeployOnBreach={v4ErrorBudgetFreezeDeployOnBreach}
-          adminToken={v4AdminToken}
-          reliabilityAlertLevel={v4ReliabilityAlertLevel}
-          reliabilityAlertStatus={v4ReliabilityAlertStatus}
-          reliabilityAlertLimit={v4ReliabilityAlertLimit}
-          reliabilityAlerts={v4ReliabilityAlerts}
-          rollbackPolicyId={v4RollbackPolicyId}
-          rollbackEnvironment={v4RollbackEnvironment}
-          rollbackTriggerType={v4RollbackTriggerType}
-          rollbackSummary={v4RollbackSummary}
-          rollbackPlan={v4RollbackPlan}
-          rollbackResult={v4RollbackResult}
-          rollbackDrillId={v4RollbackDrillId}
-          rollbackDrillResult={v4RollbackDrillResult}
-          isV4Busy={isV4CollabBusy}
-          isOpsBusy={isV4OpsBusy}
-          isProjectGovernanceBusy={isProjectGovernanceBusy}
-          onWorkspaceNameChange={setWorkspaceName}
-          onWorkspaceOwnerChange={setWorkspaceOwner}
-          onCreateWorkspace={() => void createWorkspace()}
-          onRefreshWorkspaceState={() => void refreshWorkspaceState()}
-          onInviteRoleChange={setInviteRole}
-          onMemberNameChange={setMemberName}
-          onCollabRoleChange={setCollabRole}
-          onInviteCodeChange={setInviteCode}
-          onCreateInvite={() => void createInvite()}
-          onAcceptInvite={() => void acceptInvite()}
-          onConnectWs={connectWs}
-          onDisconnectWs={disconnectWs}
-          onSendCollabEvent={sendCollabEvent}
-          onCreateSnapshot={() => void createSnapshot()}
-          onUploadFileNameChange={setUploadFileName}
-          onRequestUploadToken={() => void requestUploadToken()}
-          onRefreshCommentThreads={() => void refreshV4CommentThreads()}
-          onLoadMoreCommentThreads={() => void loadMoreV4CommentThreads()}
-          onCommentThreadLimitChange={setV4CommentThreadLimit}
-          onCommentAnchorChange={setV4CommentAnchor}
-          onCommentContentChange={setV4CommentContent}
-          onCommentMentionsChange={setV4CommentMentions}
-          onSelectedThreadIdChange={setV4SelectedThreadId}
-          onCommentReplyContentChange={setV4CommentReplyContent}
-          onCommentReplyMentionsChange={setV4CommentReplyMentions}
-          onCreateCommentThread={() => void createV4CommentThread()}
-          onReplyCommentThread={() => void replyV4CommentThread()}
-          onResolveCommentThread={() => void resolveV4CommentThread()}
-          onRefreshProjectComments={() => void loadProjectComments(false)}
-          onLoadMoreProjectComments={() => void loadProjectComments(true)}
-          onProjectCommentLimitChange={setProjectCommentLimit}
-          onProjectCommentAnchorChange={setProjectCommentAnchor}
-          onProjectCommentContentChange={setProjectCommentContent}
-          onProjectCommentMentionsChange={setProjectCommentMentions}
-          onProjectSelectedCommentIdChange={setProjectSelectedCommentId}
-          onCreateProjectComment={() => void createProjectCommentEntry()}
-          onResolveProjectComment={() => void resolveProjectCommentEntry()}
-          onRefreshProjectReviews={() => void loadProjectReviews()}
-          onProjectReviewLimitChange={setProjectReviewLimit}
-          onProjectReviewDecisionChange={setProjectReviewDecision}
-          onProjectReviewSummaryChange={setProjectReviewSummary}
-          onProjectReviewScoreChange={setProjectReviewScore}
-          onCreateProjectReview={() => void createProjectReviewEntry()}
-          onRefreshProjectTemplates={() => void loadProjectTemplates()}
-          onProjectSelectedTemplateIdChange={setProjectSelectedTemplateId}
-          onProjectTemplateApplyOptionsChange={setProjectTemplateApplyOptions}
-          onApplyProjectTemplate={() => void applyProjectTemplateEntry()}
-          onProjectClipBatchOperationsChange={setProjectClipBatchOperations}
-          onBatchUpdateProjectClips={() => void batchUpdateProjectClipsEntry()}
-          onRefreshPermissions={() => void refreshV4Permissions()}
-          onPermissionSubjectIdChange={setV4PermissionSubjectId}
-          onPermissionRoleChange={setV4PermissionRole}
-          onUpdatePermission={() => void updateV4Permission()}
-          onMergeTimeline={() => void mergeV4Timeline()}
-          onAdminTokenChange={setV4AdminToken}
-          onReliabilityAlertLevelChange={setV4ReliabilityAlertLevel}
-          onReliabilityAlertStatusChange={setV4ReliabilityAlertStatus}
-          onReliabilityAlertLimitChange={setV4ReliabilityAlertLimit}
-          onLoadReliabilityAlerts={() => void loadV4ReliabilityAlerts()}
-          onAcknowledgeReliabilityAlert={(alertId) => void acknowledgeV4ReliabilityAlert(alertId)}
-          onLoadErrorBudget={() => void loadV4ErrorBudget()}
-          onErrorBudgetScopeChange={setV4ErrorBudgetScope}
-          onErrorBudgetTargetSloChange={setV4ErrorBudgetTargetSlo}
-          onErrorBudgetWindowDaysChange={setV4ErrorBudgetWindowDays}
-          onErrorBudgetWarningThresholdRatioChange={setV4ErrorBudgetWarningThresholdRatio}
-          onErrorBudgetAlertThresholdRatioChange={setV4ErrorBudgetAlertThresholdRatio}
-          onErrorBudgetFreezeDeployOnBreachChange={setV4ErrorBudgetFreezeDeployOnBreach}
-          onRollbackPolicyIdChange={setV4RollbackPolicyId}
-          onRollbackEnvironmentChange={setV4RollbackEnvironment}
-          onRollbackTriggerTypeChange={setV4RollbackTriggerType}
-          onRollbackSummaryChange={setV4RollbackSummary}
-          onRollbackPlanChange={setV4RollbackPlan}
-          onRollbackResultChange={setV4RollbackResult}
-          onUpdateErrorBudget={() => void updateV4ErrorBudget()}
-          onTriggerRollbackDrill={() => void triggerV4RollbackDrill()}
-          onRollbackDrillIdChange={setV4RollbackDrillId}
-          onQueryRollbackDrill={() => void queryV4RollbackDrill()}
-        />
+        <section id="lab-panel-collab" role="tabpanel" aria-labelledby="lab-tab-collab">
+          <CollabModePanel
+            isAuthenticated={Boolean(authProfile)}
+            workspaceName={workspaceName}
+            workspaceOwner={workspaceOwner}
+            workspaceId={workspaceId}
+            projectId={projectId}
+            inviteRole={inviteRole}
+            memberName={memberName}
+            collabRole={collabRole}
+            inviteCode={inviteCode}
+            invites={invites}
+            isWsConnected={isWsConnected}
+            presence={presence}
+            collabEvents={collabEvents}
+            snapshots={snapshots}
+            uploadFileName={uploadFileName}
+            uploadToken={uploadToken}
+            commentThreads={v4CommentThreads}
+            commentThreadCursor={v4CommentThreadCursor}
+            commentThreadLimit={v4CommentThreadLimit}
+            commentThreadHasMore={v4CommentThreadHasMore}
+            commentAnchor={v4CommentAnchor}
+            commentContent={v4CommentContent}
+            commentMentions={v4CommentMentions}
+            selectedThreadId={v4SelectedThreadId}
+            commentReplyContent={v4CommentReplyContent}
+            commentReplyMentions={v4CommentReplyMentions}
+            projectComments={projectComments}
+            projectCommentCursor={projectCommentCursor}
+            projectCommentLimit={projectCommentLimit}
+            projectCommentHasMore={projectCommentHasMore}
+            projectCommentAnchor={projectCommentAnchor}
+            projectCommentContent={projectCommentContent}
+            projectCommentMentions={projectCommentMentions}
+            projectSelectedCommentId={projectSelectedCommentId}
+            projectReviews={projectReviews}
+            projectReviewLimit={projectReviewLimit}
+            projectReviewDecision={projectReviewDecision}
+            projectReviewSummary={projectReviewSummary}
+            projectReviewScore={projectReviewScore}
+            projectTemplates={projectTemplates}
+            projectSelectedTemplateId={projectSelectedTemplateId}
+            projectTemplateApplyOptions={projectTemplateApplyOptions}
+            projectTemplateApplyResult={projectTemplateApplyResult}
+            projectClipBatchOperations={projectClipBatchOperations}
+            projectClipBatchResult={projectClipBatchResult}
+            permissions={v4Permissions}
+            permissionSubjectId={v4PermissionSubjectId}
+            permissionRole={v4PermissionRole}
+            timelineMergeResult={v4TimelineMergeResult}
+            errorBudget={v4ErrorBudget}
+            errorBudgetScope={v4ErrorBudgetScope}
+            errorBudgetTargetSlo={v4ErrorBudgetTargetSlo}
+            errorBudgetWindowDays={v4ErrorBudgetWindowDays}
+            errorBudgetWarningThresholdRatio={v4ErrorBudgetWarningThresholdRatio}
+            errorBudgetAlertThresholdRatio={v4ErrorBudgetAlertThresholdRatio}
+            errorBudgetFreezeDeployOnBreach={v4ErrorBudgetFreezeDeployOnBreach}
+            adminToken={v4AdminToken}
+            reliabilityAlertLevel={v4ReliabilityAlertLevel}
+            reliabilityAlertStatus={v4ReliabilityAlertStatus}
+            reliabilityAlertLimit={v4ReliabilityAlertLimit}
+            reliabilityAlerts={v4ReliabilityAlerts}
+            rollbackPolicyId={v4RollbackPolicyId}
+            rollbackEnvironment={v4RollbackEnvironment}
+            rollbackTriggerType={v4RollbackTriggerType}
+            rollbackSummary={v4RollbackSummary}
+            rollbackPlan={v4RollbackPlan}
+            rollbackResult={v4RollbackResult}
+            rollbackDrillId={v4RollbackDrillId}
+            rollbackDrillResult={v4RollbackDrillResult}
+            isV4Busy={isV4CollabBusy}
+            isOpsBusy={isV4OpsBusy}
+            isProjectGovernanceBusy={isProjectGovernanceBusy}
+            onWorkspaceNameChange={setWorkspaceName}
+            onWorkspaceOwnerChange={setWorkspaceOwner}
+            onCreateWorkspace={() => void createWorkspace()}
+            onRefreshWorkspaceState={() => void refreshWorkspaceState()}
+            onInviteRoleChange={setInviteRole}
+            onMemberNameChange={setMemberName}
+            onCollabRoleChange={setCollabRole}
+            onInviteCodeChange={setInviteCode}
+            onCreateInvite={() => void createInvite()}
+            onAcceptInvite={() => void acceptInvite()}
+            onConnectWs={connectWs}
+            onDisconnectWs={disconnectWs}
+            onSendCollabEvent={sendCollabEvent}
+            onCreateSnapshot={() => void createSnapshot()}
+            onUploadFileNameChange={setUploadFileName}
+            onRequestUploadToken={() => void requestUploadToken()}
+            onRefreshCommentThreads={() => void refreshV4CommentThreads()}
+            onLoadMoreCommentThreads={() => void loadMoreV4CommentThreads()}
+            onCommentThreadLimitChange={setV4CommentThreadLimit}
+            onCommentAnchorChange={setV4CommentAnchor}
+            onCommentContentChange={setV4CommentContent}
+            onCommentMentionsChange={setV4CommentMentions}
+            onSelectedThreadIdChange={setV4SelectedThreadId}
+            onCommentReplyContentChange={setV4CommentReplyContent}
+            onCommentReplyMentionsChange={setV4CommentReplyMentions}
+            onCreateCommentThread={() => void createV4CommentThread()}
+            onReplyCommentThread={() => void replyV4CommentThread()}
+            onResolveCommentThread={() => void resolveV4CommentThread()}
+            onRefreshProjectComments={() => void loadProjectComments(false)}
+            onLoadMoreProjectComments={() => void loadProjectComments(true)}
+            onProjectCommentLimitChange={setProjectCommentLimit}
+            onProjectCommentAnchorChange={setProjectCommentAnchor}
+            onProjectCommentContentChange={setProjectCommentContent}
+            onProjectCommentMentionsChange={setProjectCommentMentions}
+            onProjectSelectedCommentIdChange={setProjectSelectedCommentId}
+            onCreateProjectComment={() => void createProjectCommentEntry()}
+            onResolveProjectComment={() => void resolveProjectCommentEntry()}
+            onRefreshProjectReviews={() => void loadProjectReviews()}
+            onProjectReviewLimitChange={setProjectReviewLimit}
+            onProjectReviewDecisionChange={setProjectReviewDecision}
+            onProjectReviewSummaryChange={setProjectReviewSummary}
+            onProjectReviewScoreChange={setProjectReviewScore}
+            onCreateProjectReview={() => void createProjectReviewEntry()}
+            onRefreshProjectTemplates={() => void loadProjectTemplates()}
+            onProjectSelectedTemplateIdChange={setProjectSelectedTemplateId}
+            onProjectTemplateApplyOptionsChange={setProjectTemplateApplyOptions}
+            onApplyProjectTemplate={() => void applyProjectTemplateEntry()}
+            onProjectClipBatchOperationsChange={setProjectClipBatchOperations}
+            onBatchUpdateProjectClips={() => void batchUpdateProjectClipsEntry()}
+            onRefreshPermissions={() => void refreshV4Permissions()}
+            onPermissionSubjectIdChange={setV4PermissionSubjectId}
+            onPermissionRoleChange={setV4PermissionRole}
+            onUpdatePermission={() => void updateV4Permission()}
+            onMergeTimeline={() => void mergeV4Timeline()}
+            onAdminTokenChange={setV4AdminToken}
+            onReliabilityAlertLevelChange={setV4ReliabilityAlertLevel}
+            onReliabilityAlertStatusChange={setV4ReliabilityAlertStatus}
+            onReliabilityAlertLimitChange={setV4ReliabilityAlertLimit}
+            onLoadReliabilityAlerts={() => void loadV4ReliabilityAlerts()}
+            onAcknowledgeReliabilityAlert={(alertId) => void acknowledgeV4ReliabilityAlert(alertId)}
+            onLoadErrorBudget={() => void loadV4ErrorBudget()}
+            onErrorBudgetScopeChange={setV4ErrorBudgetScope}
+            onErrorBudgetTargetSloChange={setV4ErrorBudgetTargetSlo}
+            onErrorBudgetWindowDaysChange={setV4ErrorBudgetWindowDays}
+            onErrorBudgetWarningThresholdRatioChange={setV4ErrorBudgetWarningThresholdRatio}
+            onErrorBudgetAlertThresholdRatioChange={setV4ErrorBudgetAlertThresholdRatio}
+            onErrorBudgetFreezeDeployOnBreachChange={setV4ErrorBudgetFreezeDeployOnBreach}
+            onRollbackPolicyIdChange={setV4RollbackPolicyId}
+            onRollbackEnvironmentChange={setV4RollbackEnvironment}
+            onRollbackTriggerTypeChange={setV4RollbackTriggerType}
+            onRollbackSummaryChange={setV4RollbackSummary}
+            onRollbackPlanChange={setV4RollbackPlan}
+            onRollbackResultChange={setV4RollbackResult}
+            onUpdateErrorBudget={() => void updateV4ErrorBudget()}
+            onTriggerRollbackDrill={() => void triggerV4RollbackDrill()}
+            onRollbackDrillIdChange={setV4RollbackDrillId}
+            onQueryRollbackDrill={() => void queryV4RollbackDrill()}
+          />
+        </section>
       ) : null}
 
       <ChannelAccessPanel
@@ -3644,7 +3683,12 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
         channelConfigs={channelConfigs}
         channelForms={channelForms}
         capabilities={capabilities}
-        onClose={() => setShowChannelPanel(false)}
+        onClose={() => {
+          setShowChannelPanel(false)
+          window.setTimeout(() => {
+            channelPanelTriggerRef.current?.focus()
+          }, 0)
+        }}
         onLoadCapabilities={() => void loadCapabilities()}
         onRefreshChannelConfigs={() => void refreshChannelConfigs()}
         onSubmitAuth={() => void submitAuth()}

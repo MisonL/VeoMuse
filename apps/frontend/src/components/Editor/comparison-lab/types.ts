@@ -395,14 +395,28 @@ export const listProjectGovernanceComments = async (
   const payload = await requestProjectGovernance<{
     success: boolean
     comments: ProjectGovernanceComment[]
+    page?: {
+      limit?: number
+      hasMore?: boolean
+      nextCursor?: string | null
+    }
   }>(projectId, `/comments?${query.toString()}`)
   const comments = Array.isArray(payload.comments) ? payload.comments : []
-  const nextCursor = comments.length > 0 ? comments[comments.length - 1]?.createdAt || null : null
+  const normalizedNextCursor =
+    typeof payload.page?.nextCursor === 'string'
+      ? payload.page.nextCursor.trim()
+      : payload.page?.nextCursor === null
+        ? ''
+        : ''
+  const fallbackCursor = comments.length > 0 ? comments[comments.length - 1]?.createdAt || '' : ''
+  const nextCursor = normalizedNextCursor || fallbackCursor || null
+  const normalizedHasMore =
+    typeof payload.page?.hasMore === 'boolean' ? payload.page.hasMore : comments.length >= limit
   return {
     comments,
     page: {
-      limit,
-      hasMore: comments.length >= limit,
+      limit: typeof payload.page?.limit === 'number' ? payload.page.limit : limit,
+      hasMore: normalizedHasMore,
       nextCursor
     }
   }

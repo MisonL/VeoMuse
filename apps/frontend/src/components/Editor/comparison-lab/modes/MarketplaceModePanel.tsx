@@ -15,6 +15,8 @@ interface MarketplaceModePanelProps {
   selectedPolicy: RoutingPolicy | null
   availableModels: ModelOption[]
   marketplace: any[]
+  isMarketplaceLoading: boolean
+  marketplaceError: string
   policyCreateName: string
   policyCreatePriority: PolicyPriority
   policyCreateBudget: number
@@ -27,6 +29,8 @@ interface MarketplaceModePanelProps {
   policyExecutions: RoutingExecution[]
   policyExecHasMore: boolean
   isPolicyLoading: boolean
+  isPolicyCreating: boolean
+  isPolicyUpdating: boolean
   isPolicySimulating: boolean
   policyExecLoading: boolean
   onSelectedPolicyChange: (value: string) => void
@@ -38,6 +42,7 @@ interface MarketplaceModePanelProps {
   onCreatePolicy: () => void
   onLoadPolicies: (notify: boolean) => void
   onUpdateSelectedPolicy: () => void
+  onRefreshMarketplace: () => void
   onPolicyPromptChange: (value: string) => void
   onPolicyBudgetChange: (value: number) => void
   onPolicyPriorityChange: (value: PolicyPriority) => void
@@ -51,6 +56,8 @@ const MarketplaceModePanel: React.FC<MarketplaceModePanelProps> = ({
   selectedPolicy,
   availableModels,
   marketplace,
+  isMarketplaceLoading,
+  marketplaceError,
   policyCreateName,
   policyCreatePriority,
   policyCreateBudget,
@@ -63,6 +70,8 @@ const MarketplaceModePanel: React.FC<MarketplaceModePanelProps> = ({
   policyExecutions,
   policyExecHasMore,
   isPolicyLoading,
+  isPolicyCreating,
+  isPolicyUpdating,
   isPolicySimulating,
   policyExecLoading,
   onSelectedPolicyChange,
@@ -74,6 +83,7 @@ const MarketplaceModePanel: React.FC<MarketplaceModePanelProps> = ({
   onCreatePolicy,
   onLoadPolicies,
   onUpdateSelectedPolicy,
+  onRefreshMarketplace,
   onPolicyPromptChange,
   onPolicyBudgetChange,
   onPolicyPriorityChange,
@@ -168,14 +178,17 @@ const MarketplaceModePanel: React.FC<MarketplaceModePanelProps> = ({
             ))}
           </div>
           <div className="lab-inline-actions">
-            <button disabled={isPolicyLoading} onClick={onCreatePolicy}>
-              创建策略
+            <button disabled={isPolicyLoading || isPolicyCreating} onClick={onCreatePolicy}>
+              {isPolicyCreating ? '创建中...' : '创建策略'}
             </button>
             <button disabled={isPolicyLoading} onClick={() => onLoadPolicies(true)}>
               {isPolicyLoading ? '刷新中...' : '刷新策略'}
             </button>
-            <button disabled={!selectedPolicy || isPolicyLoading} onClick={onUpdateSelectedPolicy}>
-              {selectedPolicy?.enabled ? '停用策略' : '启用策略'}
+            <button
+              disabled={!selectedPolicy || isPolicyLoading || isPolicyUpdating}
+              onClick={onUpdateSelectedPolicy}
+            >
+              {isPolicyUpdating ? '更新中...' : selectedPolicy?.enabled ? '停用策略' : '启用策略'}
             </button>
           </div>
         </div>
@@ -252,25 +265,42 @@ const MarketplaceModePanel: React.FC<MarketplaceModePanelProps> = ({
       </div>
 
       <div className="market-right-stack">
-        <div className="market-grid">
-          {marketplace.map((item: any) => (
-            <div key={item.profile.id} className="market-card">
-              <div className="market-head">
-                <strong>{item.profile.name}</strong>
-                <span>{item.profile.provider}</span>
-              </div>
-              <div className="market-tags">
-                {item.profile.capabilities.map((tag: string) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
-              <div className="market-metrics">
-                <div>成功率：{Math.round((item.metrics.successRate || 0) * 100)}%</div>
-                <div>P95：{item.metrics.p95LatencyMs}ms</div>
-                <div>均价：${item.profile.costPerSecond}/s</div>
-              </div>
+        <div className="market-grid" aria-live="polite">
+          {isMarketplaceLoading ? (
+            <div className="api-empty" role="status">
+              模型超市加载中...
             </div>
-          ))}
+          ) : marketplaceError ? (
+            <div className="api-empty" role="alert">
+              {marketplaceError}
+              <button type="button" className="execution-load-more" onClick={onRefreshMarketplace}>
+                重新加载
+              </button>
+            </div>
+          ) : marketplace.length === 0 ? (
+            <div className="api-empty" role="status">
+              暂无模型数据
+            </div>
+          ) : (
+            marketplace.map((item: any) => (
+              <div key={item.profile.id} className="market-card">
+                <div className="market-head">
+                  <strong>{item.profile.name}</strong>
+                  <span>{item.profile.provider}</span>
+                </div>
+                <div className="market-tags">
+                  {item.profile.capabilities.map((tag: string) => (
+                    <span key={tag}>{tag}</span>
+                  ))}
+                </div>
+                <div className="market-metrics">
+                  <div>成功率：{Math.round((item.metrics.successRate || 0) * 100)}%</div>
+                  <div>P95：{item.metrics.p95LatencyMs}ms</div>
+                  <div>均价：${item.profile.costPerSecond}/s</div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="execution-panel">

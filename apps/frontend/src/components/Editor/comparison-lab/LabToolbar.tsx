@@ -59,8 +59,13 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
         </div>
       </div>
       <div className="lab-actions">
-        <div className="lab-mode-switch">
+        <div className="lab-mode-switch" role="tablist" aria-label="实验室模式切换">
           <button
+            id="lab-tab-compare"
+            role="tab"
+            aria-controls="lab-panel-compare"
+            aria-selected={labMode === 'compare'}
+            tabIndex={labMode === 'compare' ? 0 : -1}
             className={`lab-mode-btn ${labMode === 'compare' ? 'active' : ''}`}
             onClick={() => onModeChange('compare')}
             data-testid="btn-lab-mode-compare"
@@ -68,6 +73,11 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
             对比
           </button>
           <button
+            id="lab-tab-marketplace"
+            role="tab"
+            aria-controls="lab-panel-marketplace"
+            aria-selected={labMode === 'marketplace'}
+            tabIndex={labMode === 'marketplace' ? 0 : -1}
             className={`lab-mode-btn ${labMode === 'marketplace' ? 'active' : ''}`}
             onClick={() => onModeChange('marketplace')}
             data-testid="btn-lab-mode-marketplace"
@@ -75,6 +85,11 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
             策略治理
           </button>
           <button
+            id="lab-tab-creative"
+            role="tab"
+            aria-controls="lab-panel-creative"
+            aria-selected={labMode === 'creative'}
+            tabIndex={labMode === 'creative' ? 0 : -1}
             className={`lab-mode-btn ${labMode === 'creative' ? 'active' : ''}`}
             onClick={() => onModeChange('creative')}
             data-testid="btn-lab-mode-creative"
@@ -82,6 +97,11 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
             创意闭环
           </button>
           <button
+            id="lab-tab-collab"
+            role="tab"
+            aria-controls="lab-panel-collab"
+            aria-selected={labMode === 'collab'}
+            tabIndex={labMode === 'collab' ? 0 : -1}
             className={`lab-mode-btn ${labMode === 'collab' ? 'active' : ''}`}
             onClick={() => onModeChange('collab')}
             data-testid="btn-lab-mode-collab"

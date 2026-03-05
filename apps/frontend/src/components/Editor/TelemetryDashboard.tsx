@@ -112,6 +112,7 @@ const TelemetryDashboard: React.FC = () => {
   const [providerHealthRows, setProviderHealthRows] = useState<ProviderHealthItem[]>([])
   const [providerHealthError, setProviderHealthError] = useState('')
   const [isProviderHealthLoading, setIsProviderHealthLoading] = useState(false)
+  const [fpsSummary, setFpsSummary] = useState('暂无 FPS 数据')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fpsHistory = useRef<number[]>([])
   const latestRepairQueryToken = useRef(0)
@@ -178,6 +179,16 @@ const TelemetryDashboard: React.FC = () => {
       if (now - lastTime >= 1000) {
         fpsHistory.current.push(frameCount)
         if (fpsHistory.current.length > 50) fpsHistory.current.shift()
+        if (fpsHistory.current.length > 0) {
+          const min = Math.min(...fpsHistory.current)
+          const max = Math.max(...fpsHistory.current)
+          const avg =
+            fpsHistory.current.reduce((total, value) => total + value, 0) /
+            fpsHistory.current.length
+          setFpsSummary(
+            `最近 ${fpsHistory.current.length} 秒 FPS：平均 ${avg.toFixed(1)}，最低 ${min}，最高 ${max}`
+          )
+        }
         frameCount = 0
         lastTime = now
         drawFps()
@@ -733,7 +744,16 @@ const TelemetryDashboard: React.FC = () => {
     <div className="telemetry-dashboard">
       <section className="metrics-section">
         <h3 className="telemetry-section-title">播放 FPS 稳定性</h3>
-        <canvas ref={canvasRef} width={260} height={60} className="fps-chart" />
+        <canvas
+          ref={canvasRef}
+          width={260}
+          height={60}
+          className="fps-chart"
+          aria-label="播放 FPS 趋势图"
+        />
+        <p className="sr-only" aria-live="polite">
+          {fpsSummary}
+        </p>
       </section>
 
       {metricsError ? (

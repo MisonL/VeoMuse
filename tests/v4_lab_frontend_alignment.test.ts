@@ -37,9 +37,15 @@ describe('V4 实验室前端闭环对齐', () => {
     expect(comparisonLabSources).toContain(
       '/api/video/generations/${encodeURIComponent(targetJobId)}'
     )
-    expect(comparisonLabSources).toContain('/api/video/generations/${encodeURIComponent(normalizedJobId)}/sync')
-    expect(comparisonLabSources).toContain('/api/video/generations/${encodeURIComponent(normalizedJobId)}/retry')
-    expect(comparisonLabSources).toContain('/api/video/generations/${encodeURIComponent(normalizedJobId)}/cancel')
+    expect(comparisonLabSources).toContain(
+      '/api/video/generations/${encodeURIComponent(normalizedJobId)}/sync'
+    )
+    expect(comparisonLabSources).toContain(
+      '/api/video/generations/${encodeURIComponent(normalizedJobId)}/retry'
+    )
+    expect(comparisonLabSources).toContain(
+      '/api/video/generations/${encodeURIComponent(normalizedJobId)}/cancel'
+    )
     expect(comparisonLabSources).toMatch(/\/admin\/reliability\/(alerts|error-budget|drills)/)
     expect(comparisonLabSources).toMatch(
       /\/admin\/reliability\/error-budget[\s\S]{0,300}method:\s*'PUT'/

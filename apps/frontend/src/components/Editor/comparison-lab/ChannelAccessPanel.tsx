@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { MODEL_CAPABILITY_ROWS, SERVICE_CAPABILITY_ROWS } from './constants'
 import type {
   AiChannelConfig,
@@ -112,11 +112,75 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
   onSaveChannelConfig,
   onTestChannelConfig
 }) => {
+  const dialogRef = useRef<HTMLElement | null>(null)
   const channelConfigMap = useMemo(() => {
     const map = new Map<string, AiChannelConfig>()
     for (const row of channelConfigs) map.set(row.providerId, row)
     return map
   }, [channelConfigs])
+
+  useEffect(() => {
+    if (!show) return
+    const dialog = dialogRef.current
+    if (!dialog) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const getFocusableElements = () =>
+      Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          [
+            'a[href]',
+            'button:not([disabled])',
+            'input:not([disabled])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])'
+          ].join(',')
+        )
+      ).filter((element) => !element.hasAttribute('aria-hidden'))
+
+    const focusables = getFocusableElements()
+    const initialFocus = focusables[0] || dialog
+    initialFocus.focus()
+
+    const handleKeydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const loopFocusables = getFocusableElements()
+      if (loopFocusables.length === 0) {
+        event.preventDefault()
+        dialog.focus()
+        return
+      }
+      const first = loopFocusables[0]
+      const last = loopFocusables[loopFocusables.length - 1]
+      const activeElement = document.activeElement as HTMLElement | null
+      if (event.shiftKey) {
+        if (!activeElement || activeElement === first || !dialog.contains(activeElement)) {
+          event.preventDefault()
+          last.focus()
+        }
+        return
+      }
+      if (!activeElement || activeElement === last || !dialog.contains(activeElement)) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    dialog.addEventListener('keydown', handleKeydown)
+
+    return () => {
+      dialog.removeEventListener('keydown', handleKeydown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [show, onClose])
 
   const renderChannelRows = (
     rows: Array<{ id: string; label: string; env: string }>,
@@ -231,7 +295,12 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
       aria-label="AI 渠道接入状态"
       data-testid="area-channel-panel-mask"
     >
-      <section className="channel-panel" data-testid="area-channel-panel">
+      <section
+        ref={dialogRef}
+        className="channel-panel"
+        data-testid="area-channel-panel"
+        tabIndex={-1}
+      >
         <header className="channel-panel-head">
           <div>
             <h3>AI 渠道接入中心</h3>

@@ -60,8 +60,9 @@ describe('ComparisonLab 请求去重守卫', () => {
     localStorage.setItem('veomuse-refresh-token', 'refresh-token')
     localStorage.setItem('veomuse-organization-id', 'org-1')
 
-    fetchMock = mock((input: string | URL) => {
+    fetchMock = mock((input: string | URL, init?: RequestInit) => {
       const url = String(input)
+      const method = String(init?.method || 'GET').toUpperCase()
 
       if (url.includes('/api/auth/me')) {
         return Promise.resolve(
@@ -73,7 +74,51 @@ describe('ComparisonLab 请求去重守卫', () => {
         )
       }
 
+      if (url.includes('/api/models/policies/') && url.includes('/executions')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            executions: [],
+            page: { hasMore: false, offset: 0, total: 0 }
+          })
+        )
+      }
+
       if (url.includes('/api/models/policies')) {
+        if (method === 'POST') {
+          return Promise.resolve(
+            jsonResponse({
+              success: true,
+              policy: {
+                id: `pl_${Date.now()}`,
+                name: '默认创作策略',
+                description: '',
+                enabled: true,
+                priority: 'quality',
+                maxBudgetUsd: 1.2,
+                allowedModels: ['veo-3.1'],
+                weights: { quality: 0.45, speed: 0.2, cost: 0.15, reliability: 0.2 }
+              }
+            })
+          )
+        }
+        if (method === 'PATCH') {
+          return Promise.resolve(
+            jsonResponse({
+              success: true,
+              policy: {
+                id: 'pl_existing',
+                name: 'existing',
+                description: '',
+                enabled: true,
+                priority: 'quality',
+                maxBudgetUsd: 1.2,
+                allowedModels: ['veo-3.1'],
+                weights: { quality: 0.45, speed: 0.2, cost: 0.15, reliability: 0.2 }
+              }
+            })
+          )
+        }
         return Promise.resolve(jsonResponse({ success: true, policies: [] }))
       }
 
@@ -164,6 +209,32 @@ describe('ComparisonLab 请求去重守卫', () => {
       expect(countCalls('/api/capabilities')).toBe(beforeCapabilities + 1)
       expect(countCalls('/api/organizations/org-1/channels')).toBe(beforeConfigs + 1)
       expect(countCalls('/api/organizations/org-1/quota')).toBe(beforeQuota + 1)
+    })
+  })
+
+  it('策略创建按钮重复点击时应仅提交一次 POST', async () => {
+    const view = render(React.createElement(ComparisonLab, { onOpenAssets: () => {} }))
+
+    await waitFor(() => {
+      expect(countCalls('/api/models/policies')).toBe(1)
+    })
+
+    fireEvent.click(view.getByTestId('btn-lab-mode-marketplace'))
+
+    await waitFor(() => {
+      expect(view.getByText('策略治理中心')).toBeInTheDocument()
+    })
+
+    const createButton = view.getByText('创建策略')
+    fireEvent.click(createButton)
+    fireEvent.click(createButton)
+
+    await waitFor(() => {
+      const postCalls = fetchMock.mock.calls.filter(([url, init]) => {
+        const method = String((init as RequestInit | undefined)?.method || 'GET').toUpperCase()
+        return String(url).includes('/api/models/policies') && method === 'POST'
+      })
+      expect(postCalls.length).toBe(1)
     })
   })
 })

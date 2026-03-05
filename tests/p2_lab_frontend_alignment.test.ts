@@ -28,6 +28,9 @@ describe('P2 实验室前端对齐验证', () => {
     expect(content).toContain('创意闭环')
     expect(content).toContain('协作平台')
     expect(content).toContain(`type LabMode = 'compare' | 'marketplace' | 'creative' | 'collab'`)
+    expect(content).toContain('role="tablist"')
+    expect(content).toContain('role="tab"')
+    expect(content).toContain('aria-selected={labMode ===')
   })
 
   it('应接入模型策略治理接口与执行记录分页', () => {

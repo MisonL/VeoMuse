@@ -147,7 +147,7 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
               <span>请选择右侧素材</span>
               {onOpenAssets ? (
                 <button type="button" className="empty-pane-cta" onClick={onOpenAssets}>
-                  去左侧导入素材
+                  去右侧导入素材
                 </button>
               ) : null}
             </div>
