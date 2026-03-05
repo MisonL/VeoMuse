@@ -116,6 +116,8 @@ const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '0.0.0.0', '::1'])
 const QUALITY_SUMMARY_RELATIVE_PATH = path.join('artifacts', 'quality-summary.json')
 const QUALITY_TAG_VIDEO_GENERATE_LOOP = 'video_generate_loop'
 const VIDEO_GENERATE_LOOP_DEFAULT_STEP_NAME = 'E2E Regression (Mock)'
+const REAL_E2E_PRECHECK_STEP_NAME = 'E2E Regression (Real) Precheck'
+const REAL_E2E_PRECHECK_COMMAND = 'validate real-e2e required env'
 const FAILURE_DOMAIN_RULES: Array<{
   domain: Exclude<FailureDomain, 'unknown'>
   patterns: RegExp[]
@@ -292,7 +294,14 @@ const buildRecommendations = (summary: QualitySummary, status: ReleaseGateStatus
   const failedDomains: FailureDomain[] = []
 
   for (const step of failedSteps) {
-    uniquePush(recommendations, `优先单独复现失败步骤「${step.name}」：\`${step.command}\`。`)
+    if (step.name === REAL_E2E_PRECHECK_STEP_NAME) {
+      uniquePush(
+        recommendations,
+        '请先配置真实回归凭据：`export GEMINI_API_KEYS=<your_keys>`，再执行 `bun run release:gate:real`。'
+      )
+    } else {
+      uniquePush(recommendations, `优先单独复现失败步骤「${step.name}」：\`${step.command}\`。`)
+    }
     const domain =
       step.failure?.domain ||
       resolveFailureDomain({
@@ -985,8 +994,8 @@ export const runReleaseGate = async (argv = process.argv.slice(2), env = process
             ...summary.steps,
             buildQualitySummaryStep({
               step: {
-                name: 'E2E Regression (Real) Precheck',
-                command: 'validate real-e2e required env'
+                name: REAL_E2E_PRECHECK_STEP_NAME,
+                command: REAL_E2E_PRECHECK_COMMAND
               },
               status: 'failed',
               startedAtMs: nowMs,

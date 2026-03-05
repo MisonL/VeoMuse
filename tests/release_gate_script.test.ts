@@ -387,6 +387,49 @@ Running 2 tests using 1 worker
     ).toBe(1)
   })
 
+  it('real 回归预检失败时应输出凭据修复建议', () => {
+    const base = createQualitySummary({
+      branch: 'feature/real-precheck',
+      ci: false,
+      sloMode: 'soft',
+      sloApiBase: 'http://127.0.0.1:33117',
+      runRealE2E: true,
+      sloBootstrapEnabled: true,
+      generatedAt: '2026-03-02T00:00:00.000Z'
+    })
+
+    const precheckFailure = buildQualitySummaryStep({
+      step: {
+        name: 'E2E Regression (Real) Precheck',
+        command: 'validate real-e2e required env'
+      },
+      status: 'failed',
+      startedAtMs: 2_000,
+      endedAtMs: 2_000,
+      attempts: [],
+      failureMessage: '缺少真实回归必需环境变量：GEMINI_API_KEYS。',
+      failureExitCode: null
+    })
+
+    const failed = finalizeQualitySummary(
+      {
+        ...base,
+        steps: [precheckFailure]
+      },
+      {
+        status: 'failed',
+        failureMessage: '缺少真实回归必需环境变量：GEMINI_API_KEYS。'
+      }
+    )
+
+    expect(
+      failed.recommendations.some((item) => item.includes('export GEMINI_API_KEYS=<your_keys>'))
+    ).toBe(true)
+    expect(
+      failed.recommendations.some((item) => item.includes('优先单独复现失败步骤「E2E Regression (Real) Precheck」'))
+    ).toBe(false)
+  })
+
   it('失败收敛时应输出 failed 状态与顶层失败信息', () => {
     const base = createQualitySummary({
       branch: 'feature/test',
