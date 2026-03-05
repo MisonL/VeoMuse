@@ -83,6 +83,9 @@
 - 多轨时间轴、播放器同步、布局自适应、导出编排。
 - 关键前端入口：`App.tsx`、`VideoEditor.tsx`、`ComparisonLab.tsx`、`TelemetryDashboard.tsx`。
 - 关键后端入口：`/api/video/compose`、`/api/storage/upload-token`。
+- 近期模块化收敛（2026-03）：
+  - 后端视频任务路由 handler 已从 `apps/backend/src/index.ts` 抽离到 `apps/backend/src/http/videoGenerationHandlers.ts`，保持 API 语义不变。
+  - 前端项目治理（评论/评审/模板/批量更新）状态与副作用已抽离到 `apps/frontend/src/components/Editor/comparison-lab/hooks/useProjectGovernance.ts`，`ComparisonLab` 仅保留容器编排职责。
 - 关键测试：
   - `tests/editor_store.test.ts`
   - `tests/player_sync.test.ts`

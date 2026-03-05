@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'fs'
 import path from 'path'
-import { getExportButtonLabel } from '../apps/frontend/src/App'
+import { getExportButtonLabel } from '../apps/frontend/src/utils/appHelpers'
 
 type ExportStatus = 'idle' | 'pending' | 'done' | 'error'
 

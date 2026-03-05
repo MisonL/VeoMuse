@@ -3,7 +3,7 @@ import {
   normalizeVideoGenerationDisplayText,
   resolveVideoGenerationPollingState,
   resolveVideoGenerationStatusBadgeModifier
-} from '../apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel'
+} from '../apps/frontend/src/components/Editor/comparison-lab/modes/creativeModePanel.logic'
 
 describe('创意模式面板任务展示逻辑', () => {
   it('应将任务状态映射为可视化徽标类型', () => {

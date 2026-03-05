@@ -7,6 +7,9 @@ const read = (relativePath: string) =>
 
 const comparisonLabFiles = [
   'apps/frontend/src/components/Editor/ComparisonLab.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useProjectGovernance.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useV4CommentThreads.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useV4CreativeOps.ts',
   'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
 ]

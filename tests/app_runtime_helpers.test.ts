@@ -4,7 +4,7 @@ import {
   formatTimecode,
   getExportButtonLabel,
   resolveExportStageByProgress
-} from '../apps/frontend/src/App'
+} from '../apps/frontend/src/utils/appHelpers'
 
 describe('App 导出与时间码辅助函数', () => {
   it('formatTimecode 应处理负值与小时级时间', () => {

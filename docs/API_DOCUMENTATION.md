@@ -931,4 +931,4 @@ curl -s "http://127.0.0.1:18081/api/v4/assets/reuse-history?assetId=${ASSET_ID}&
 
 ---
 
-**说明**：V3.1+ 所有 provider 能力默认“显式状态返回”，避免误判成功。
+**说明**：V3.2+ 所有 provider 能力默认“显式状态返回”，避免误判成功。

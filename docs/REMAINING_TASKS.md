@@ -5,6 +5,7 @@
 - 发布阻塞项：`0`（已全部修复并回归通过）
 - 当前阶段：稳定性增强与实网验证
 - 发布基线：`release:gate`、`quality:api-contract`、`test:coverage` 已通过
+- 当前环境实网凭据：未配置（`GEMINI_API_KEYS`、`OPENAI_API_KEY`、`KLING_API_KEY` 等均为空）
 
 ## 仍需推进（按优先级）
 
@@ -17,6 +18,12 @@
   - `bun run e2e:regression:real -- --workers=1`
   - `bun run release:gate:real`
 - 验收：real 用例非全 skipped，`quality-summary.json` 中 `realE2E.status=passed`。
+
+### 无实网凭据时的替代验证（当前默认）
+
+- 执行本地模拟闭环：`bun run test`、`bun run quality:api-contract`、`bun run release:gate`
+- 验收：全量测试通过，关键链路（视频生成生命周期/协作评论分页/工作区权限）回归通过。
+- 说明：替代验证只能证明本地契约与逻辑稳定，不代表第三方真实渠道可用。
 
 2. 24h 长稳压测（高优先级）
 
@@ -37,6 +44,7 @@
 - 策略创建/更新防重复提交与渠道弹窗可访问性修复
 - CI 门禁实例统一与默认全量回归修复
 - 发布门禁 real E2E 预检与假绿防护
+- ComparisonLab 模块化拆分（`useMarketplacePolicy`、`useProjectGovernance`、`useV4CommentThreads`、`useV4CreativeOps`）
 
 ## 说明
 

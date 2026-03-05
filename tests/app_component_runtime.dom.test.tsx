@@ -3,7 +3,8 @@ import { readFileSync } from 'fs'
 import path from 'path'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import App, {
+import App from '../apps/frontend/src/App'
+import {
   buildGuideCardStyle,
   buildGuideHighlightStyle,
   computeCenterPanelFitWidth,
@@ -11,7 +12,7 @@ import App, {
   getExportButtonLabel,
   resolveExportFeedbackSubtitle,
   resolveExportFeedbackTitle
-} from '../apps/frontend/src/App'
+} from '../apps/frontend/src/utils/appHelpers'
 
 describe('App 运行态关键分支（DOM/SSR）', () => {
   it('应输出模式切换与导出关键 DOM 结构', () => {

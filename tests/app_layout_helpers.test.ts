@@ -16,7 +16,7 @@ import {
   resolveExportFeedbackSubtitle,
   resolveExportFeedbackTitle,
   resolveExportQualityLabel
-} from '../apps/frontend/src/App'
+} from '../apps/frontend/src/utils/appHelpers'
 
 describe('App 布局与状态辅助函数', () => {
   it('hasRenderableClipsFromTracks 应识别可渲染轨道', () => {
