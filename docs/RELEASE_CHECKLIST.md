@@ -13,7 +13,7 @@ bun run release:gate
 
 通过标准：
 
-- `release:gate` 全绿（security/build/unit/e2e-smoke/e2e-regression-mock/slo）
+- `release:gate` 全绿（security/build/unit/e2e-smoke/e2e-regression/slo）
 - `artifacts/quality-summary.json` 中 `status=passed`
 - Docker 服务 `frontend/backend/redis` 为 `healthy`
 

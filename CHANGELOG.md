@@ -7,40 +7,29 @@
 
 ### Added
 
-- 新增发布门禁脚本与命令：
-  - `scripts/release_gate.ts`
-  - `bun run release:gate`
-  - `bun run release:gate:real`
-- 新增浏览器级主链路回归用例（注册 -> 组织 -> 工作区 -> 生成 -> 导出）：
-  - `tests/e2e/regression/auth-org-workspace-generate-export.mock.spec.ts`
-  - `tests/e2e/regression/auth-org-workspace-generate-export.real.spec.ts`
-- `package.json` 新增 E2E 分层命令：
-  - `e2e:regression:mock`
-  - `e2e:regression:real`
-- 新增 `tests/slo_gate_script.test.ts`，覆盖：
-  - SLO API 不可达时 `soft/hard` 差异行为
-  - 样本阈值不足门禁
-  - 报告 schema 字段完整性
+- 待补充
+
+## [3.2.0] - 2026-03-05
+
+### Added
+
+- 新增任务化视频生成闭环能力：`/api/video/generations` 及 `sync/retry/cancel` 生命周期接口。
+- 新增 real E2E 预检脚本：`scripts/real_e2e_precheck.ts`，用于发布门禁前快速校验实网凭据。
+- 新增 ComparisonLab 无障碍与请求防重相关测试覆盖（含键盘焦点循环与重复提交守卫）。
 
 ### Changed
 
-- 数据库修复 API 支持 `checkMode`（`quick`/`full`）并引入默认策略：
-  - `force=false` 默认 `quick`，降低非强制巡检耗时
-  - `force=true` 默认 `full`，提升强制修复前判断精度
-- 更新数据库修复相关文档与共享类型定义，增强前后端契约可读性。
-- `scripts/slo_gate.ts` 升级为模式化门禁：
-  - 新增 `--mode soft|hard`、`SLO_GATE_MODE`
-  - 新增样本阈值 `SLO_GATE_MIN_NON_AI_SAMPLES`、`SLO_GATE_MIN_JOURNEY_SAMPLES`
-  - 报告新增 `schemaVersion`、`sampleChecks`、`recommendations`
-- `scripts/release_gate.ts` 改为按分支自动选择 SLO 模式：
-  - 默认 `main=hard`，其他分支=`soft`
-  - 支持 `RELEASE_SLO_MODE` 手动覆盖
-- CI 质量门禁接入 Mock 回归与 SLO 门禁，并上传 `artifacts/slo-report.json`
-- `scripts/provider_chain_e2e.ts` 旅程埋点 meta 新增 `flowVersion`、`scenarioId`、`buildRef`
+- 发布门禁默认回归升级为全量 `e2e:regression`，不再仅限 mock 子集。
+- CI 中 SLO seed 与 Playwright 后端地址统一，并支持复用已启动服务，降低“假绿”风险。
+- 版本升级至 `v3.2.0`，同步更新核心文档标题与版本示例。
+- 精简任务/审计文档，仅保留当前有效执行项与发布检查清单。
 
 ### Fixed
 
-- 修复 `tests/sqlite_db_repair_api.test.ts` 中“非强制修复检查”超时问题（原因为默认全量完整性检查耗时过高）。
+- 修复工作区渠道接口权限边界：读写分别按 `viewer+` 与 `owner` 鉴权。
+- 修复评论与工作流运行分页在同时间戳下可能漏数据的问题（复合游标）。
+- 修复渠道审计 trace 链路缺失与导出 `traceId` 为空问题。
+- 修复策略创建/更新重复提交与渠道弹窗键盘可访问性问题。
 
 ## [3.1.0] - 2026-03-02
 
@@ -83,4 +72,4 @@
 
 ---
 
-> 发布标签：`v2.0.0`、`v3.0.0`、`v3.1.0`
+> 发布标签：`v2.0.0`、`v3.0.0`、`v3.1.0`、`v3.2.0`

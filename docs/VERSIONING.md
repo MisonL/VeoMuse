@@ -5,7 +5,7 @@
 VeoMuse 使用 **Semantic Versioning 2.0.0**：
 
 - `MAJOR.MINOR.PATCH`
-- 示例：`3.1.0`
+- 示例：`3.2.0`
 
 规则：
 
@@ -16,7 +16,7 @@ VeoMuse 使用 **Semantic Versioning 2.0.0**：
 ## 2. 分支与标签
 
 - 主发布分支：`main`
-- 正式版本标签：`v<MAJOR>.<MINOR>.<PATCH>`（例如 `v3.1.0`）
+- 正式版本标签：`v<MAJOR>.<MINOR>.<PATCH>`（例如 `v3.2.0`）
 - 标签要求：
   - 必须是 annotated tag
   - 必须对应已推送到 `origin/main` 的提交

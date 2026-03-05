@@ -1,4 +1,4 @@
-# VeoMuse 旗舰版 API 接口文档 (V3.1)
+# VeoMuse 旗舰版 API 接口文档 (V3.2)
 
 关联文档：
 
@@ -13,7 +13,7 @@
   - `not_implemented`: 当前环境未配置该 provider
   - `error`: 请求失败或 provider 返回异常
 
-## 鉴权约定（V3.1）
+## 鉴权约定（V3.2）
 
 - 用户鉴权统一使用 `Authorization: Bearer <accessToken>`（`/api/auth/register|login|refresh` 除外）。
 - 组织作用域接口支持请求头 `x-organization-id` 指定组织；不传时默认使用当前用户第一个组织。
