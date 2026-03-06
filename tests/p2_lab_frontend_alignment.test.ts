@@ -34,6 +34,7 @@ const labSourceFiles = [
   'apps/frontend/src/components/Editor/comparison-lab/modes/creative/VideoGenerationWorkbench.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/CollabModeContainer.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/CollabAdvancedSections.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/WorkspaceSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/InviteJoinSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/RealtimeChannelSection.tsx',
@@ -41,7 +42,8 @@ const labSourceFiles = [
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/ProjectGovernanceSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/OpsToolsSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/PermissionMergeSection.tsx',
-  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/StorageSnapshotsSection.tsx'
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/StorageSnapshotsSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/useCollabAdvancedSections.ts'
 ]
 
 const readLabSources = () =>

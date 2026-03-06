@@ -14,17 +14,18 @@ const comparisonLabFiles = [
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useCreativeModeController.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useCollabModeController.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useVideoGenerationManager.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/CreativeModeContainer.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/creative/CreativeInputSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/creative/CreativeRunDetailsSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/creative/CreativeVersionChainSection.tsx',
-  'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
-  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/CreativeModeContainer.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/creative/WorkflowSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/creative/BatchJobSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/creative/AssetReuseSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/creative/VideoGenerationWorkbench.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/CollabModeContainer.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/CollabAdvancedSections.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/WorkspaceSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/InviteJoinSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/RealtimeChannelSection.tsx',
@@ -32,7 +33,8 @@ const comparisonLabFiles = [
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/ProjectGovernanceSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/OpsToolsSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/PermissionMergeSection.tsx',
-  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/StorageSnapshotsSection.tsx'
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/StorageSnapshotsSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/useCollabAdvancedSections.ts'
 ]
 const governanceSharedFile = 'apps/frontend/src/components/Editor/comparison-lab/types.ts'
 const telemetryDashboardFiles = [
