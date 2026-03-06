@@ -183,6 +183,7 @@ function App() {
 
   const [activeMode, setActiveMode] = useState<AppMode>('edit')
   const [activeTool, setActiveTool] = useState<AppTool>('select')
+  const [channelPanelRequestNonce, setChannelPanelRequestNonce] = useState(0)
   const [activeSidebar, setActiveSidebar] = useState<'assets' | 'director' | 'actors' | 'motion'>(
     'assets'
   )
@@ -419,12 +420,11 @@ function App() {
   }, [])
 
   const openChannelAccess = useCallback(() => {
-    if (!IS_TEST_ENV) {
-      setActiveMode('color')
-    }
-    window.setTimeout(() => {
+    setActiveMode('color')
+    setChannelPanelRequestNonce((prev) => prev + 1)
+    if (IS_TEST_ENV) {
       window.dispatchEvent(new CustomEvent('veomuse:open-channel-panel'))
-    }, 0)
+    }
   }, [])
 
   const guideSteps = useMemo<GuideStep[]>(
@@ -1053,7 +1053,10 @@ function App() {
           }
           comparisonLab={
             <Suspense fallback={<LazyFallback label="实验室加载中..." />}>
-              <ComparisonLab onOpenAssets={openImportFromAnywhere} />
+              <ComparisonLab
+                onOpenAssets={openImportFromAnywhere}
+                channelPanelRequestNonce={channelPanelRequestNonce}
+              />
             </Suspense>
           }
           onToggleSpatialPreview={() => setSpatialPreview(!isSpatialPreview)}

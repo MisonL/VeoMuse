@@ -9,7 +9,10 @@ import CollabModeContainer from './comparison-lab/modes/collab/CollabModeContain
 import ChannelAccessPanel from './comparison-lab/ChannelAccessPanel'
 import './ComparisonLab.css'
 
-const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
+const ComparisonLab: React.FC<ComparisonLabProps> = ({
+  onOpenAssets,
+  channelPanelRequestNonce
+}) => {
   const {
     labMode,
     toolbarProps,
@@ -18,7 +21,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({ onOpenAssets }) => {
     creativeContainerProps,
     collabContainerProps,
     channelAccessPanelProps
-  } = useComparisonLabController({ onOpenAssets })
+  } = useComparisonLabController({ onOpenAssets, channelPanelRequestNonce })
 
   return (
     <div className="comparison-lab-pro" data-testid="area-comparison-lab">

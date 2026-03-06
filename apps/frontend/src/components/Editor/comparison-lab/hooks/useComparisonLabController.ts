@@ -11,16 +11,22 @@ import { useSyncedPlayback } from './useSyncedPlayback'
 
 interface UseComparisonLabControllerOptions {
   onOpenAssets?: ComparisonLabProps['onOpenAssets']
+  channelPanelRequestNonce?: number
 }
 
-export const useComparisonLabController = ({ onOpenAssets }: UseComparisonLabControllerOptions) => {
+export const useComparisonLabController = ({
+  onOpenAssets,
+  channelPanelRequestNonce
+}: UseComparisonLabControllerOptions) => {
   const allAssets = useEditorStore((state) => state.assets)
   const { showToast } = useToastStore()
   const markJourneyStep = useJourneyTelemetryStore((state) => state.markStep)
   const reportJourney = useJourneyTelemetryStore((state) => state.reportJourney)
   const resetJourney = useJourneyTelemetryStore((state) => state.resetJourney)
 
-  const [labMode, setLabMode] = useState<LabMode>('compare')
+  const [labMode, setLabMode] = useState<LabMode>(() =>
+    channelPanelRequestNonce && channelPanelRequestNonce > 0 ? 'marketplace' : 'compare'
+  )
   const [syncPlayback, setSyncPlayback] = useState(true)
   const [workspaceName, setWorkspaceName] = useState('VeoMuse 协作空间')
   const [workspaceOwner, setWorkspaceOwner] = useState('Owner')
@@ -31,9 +37,12 @@ export const useComparisonLabController = ({ onOpenAssets }: UseComparisonLabCon
   const [inviteRole, setInviteRole] = useState<WorkspaceRole>('editor')
   const [inviteCode, setInviteCode] = useState('')
   const [uploadFileName, setUploadFileName] = useState('demo.mp4')
-  const [showChannelPanel, setShowChannelPanel] = useState(false)
+  const [showChannelPanel, setShowChannelPanel] = useState(
+    () => Boolean(channelPanelRequestNonce && channelPanelRequestNonce > 0)
+  )
 
   const channelPanelTriggerRef = useRef<HTMLElement | null>(null)
+  const handledChannelPanelRequestRef = useRef(0)
 
   const openChannelPanel = useCallback(() => {
     const activeElement = document.activeElement
@@ -192,6 +201,25 @@ export const useComparisonLabController = ({ onOpenAssets }: UseComparisonLabCon
     leftVideoRef,
     rightVideoRef
   })
+
+  useEffect(() => {
+    const nextRequestNonce = channelPanelRequestNonce || 0
+    if (nextRequestNonce <= 0 || handledChannelPanelRequestRef.current === nextRequestNonce) {
+      return
+    }
+
+    handledChannelPanelRequestRef.current = nextRequestNonce
+    const timerId = window.setTimeout(() => {
+      const activeElement = document.activeElement
+      channelPanelTriggerRef.current = activeElement instanceof HTMLElement ? activeElement : null
+      setLabMode('marketplace')
+      setShowChannelPanel(true)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timerId)
+    }
+  }, [channelPanelRequestNonce])
 
   useEffect(() => {
     const handleOpenChannelPanel = () => {

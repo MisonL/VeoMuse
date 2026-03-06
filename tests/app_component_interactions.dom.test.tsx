@@ -132,6 +132,9 @@ describe('App DOM 运行态交互补测', () => {
     await waitFor(() => {
       expect(onOpenChannel).toHaveBeenCalledTimes(1)
     })
+    await waitFor(() => {
+      expect(view.getByTestId('area-channel-panel')).toBeInTheDocument()
+    })
 
     await click(view.getByRole('button', { name: '下一步' }))
     await click(view.getByRole('button', { name: '聚焦导入按钮' }))
