@@ -31,7 +31,7 @@
     "deploy:oneclick": "bash scripts/one-click-deploy.sh",
     "deploy:oneclick:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/one-click-deploy.ps1",
     "release:gate": "bun run scripts/release_gate.ts",
-    "release:real:precheck": "bun run scripts/real_e2e_precheck.ts",
+    "release:real:precheck": "E2E_REAL_CHANNELS=true bun run scripts/real_e2e_precheck.ts",
     "release:gate:real": "E2E_REAL_CHANNELS=true bun run scripts/release_gate.ts --with-real-e2e",
     "lint": "bun run --cwd packages/shared lint && bun run --cwd apps/backend lint && bun run --cwd apps/frontend lint && bun run --cwd apps/frontend lint:eslint",
     "format": "prettier . --write --ignore-unknown",

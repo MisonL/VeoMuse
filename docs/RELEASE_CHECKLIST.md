@@ -38,7 +38,7 @@ bun run release:gate:real
 - `release:gate:real` 全绿，且 real 用例非全部 skipped
 - `artifacts/quality-summary.json` 中 `realE2E.status=passed`
 - 如需扩展更多 provider 凭据校验，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加必需环境变量列表
-- 手工执行 `e2e:regression:real` 时需显式设置 `E2E_REAL_CHANNELS=true`
+- `bun run release:real:precheck` 已内置 `E2E_REAL_CHANNELS=true`；手工执行 `e2e:regression:real` 时仍需显式设置该环境变量
 
 ## 3. 发布产物复核
 

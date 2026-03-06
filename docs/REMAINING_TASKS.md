@@ -18,7 +18,7 @@
 
 2. 实网回归闭环（阻塞后置验收）
 
-- 前置条件：当前 real 用例默认依赖 `E2E_REAL_CHANNELS=true` 与 `GEMINI_API_KEYS`；`release:real:precheck` 默认检查这两项，如需扩展多 Provider 实网回归，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加对应渠道凭据预检。
+- 前置条件：当前 real 用例默认依赖 `E2E_REAL_CHANNELS=true` 与 `GEMINI_API_KEYS`；`release:real:precheck` 会内置该开关并默认检查这两项，如需扩展多 Provider 实网回归，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加对应渠道凭据预检。
 - 执行命令：
   - `bun run release:real:precheck`
   - `bun run e2e:regression:real -- --workers=1`

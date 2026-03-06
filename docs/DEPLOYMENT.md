@@ -295,7 +295,7 @@ CI 质量门禁策略（`.github/workflows/ci-quality-gate.yml`）：
 - `E2E_REAL_CHANNELS=true`
 - `GEMINI_API_KEYS` 已配置（用于真实导演生成链路）
 - 建议先执行 `bun run release:real:precheck`，确认必需凭据已就绪再进入 real 回归
-- 当前 `release:real:precheck` 默认检查 `E2E_REAL_CHANNELS=true` 与 real 用例所需的 Provider 凭据；直接手工运行 `e2e:regression:real` 时仍需显式设置 `E2E_REAL_CHANNELS=true`。
+- `bun run release:real:precheck` 会默认注入 `E2E_REAL_CHANNELS=true`，并检查 real 用例所需的 Provider 凭据；直接手工运行 `e2e:regression:real` 时仍需显式设置 `E2E_REAL_CHANNELS=true`。
 - 当前仓库的 `@real` 回归默认要求已配置 `E2E_REAL_CHANNELS=true` 与 `GEMINI_API_KEYS`；如后续 real 用例扩展到更多 provider，可通过 `E2E_REAL_REQUIRED_ENV_KEYS=OPENAI_API_KEY,OPENAI_BASE_URL` 这类环境变量追加预检键。
 - 门禁启动阶段会先做 real 回归凭据预检；缺少必需变量会快速失败并输出缺失项。
 - `release:gate:real` 会校验 real 用例执行结果；若 `passed/failed/flaky/timed out/interrupted` 全为 0（即全部 skipped），门禁判定失败。
