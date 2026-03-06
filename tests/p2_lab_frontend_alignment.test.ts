@@ -13,6 +13,7 @@ const labSourceFiles = [
   'apps/frontend/src/components/Editor/comparison-lab/LabToolbar.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/ChannelAccessPanel.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useCompareModeManager.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useComparisonLabController.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useCreativeModeController.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useCreativeRunManager.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useMarketplacePolicy.ts',

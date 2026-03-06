@@ -11,6 +11,7 @@ const comparisonLabFiles = [
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useV4CommentThreads.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useV4CreativeOps.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useV4OpsManager.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useComparisonLabController.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useCreativeModeController.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useCollabModeController.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useVideoGenerationManager.ts',
