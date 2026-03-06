@@ -28,7 +28,19 @@ export interface TargetCoverageGuardResult {
 export const TARGET_COVERAGE_RULES: TargetCoverageRule[] = [
   { file: 'apps/frontend/src/App.tsx', minLineRate: 0.7 },
   { file: 'apps/frontend/src/store/adminMetricsStore.ts', minLineRate: 0.6 },
-  { file: 'apps/frontend/src/store/journeyTelemetryStore.ts', minLineRate: 0.6 }
+  { file: 'apps/frontend/src/store/journeyTelemetryStore.ts', minLineRate: 0.6 },
+  {
+    file: 'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
+    minLineRate: 0.35
+  },
+  {
+    file: 'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx',
+    minLineRate: 0.35
+  },
+  {
+    file: 'apps/frontend/src/components/Editor/TelemetryDashboard.tsx',
+    minLineRate: 0.4
+  }
 ]
 
 const normalizePath = (value: string) => value.replace(/\\/g, '/')

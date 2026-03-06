@@ -2,8 +2,10 @@ import { describe, expect, it } from 'bun:test'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import AssetPanel from '../apps/frontend/src/components/Editor/AssetPanel'
+import CreativeModePanel from '../apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel'
 import PropertyInspector from '../apps/frontend/src/components/Editor/PropertyInspector'
 import TelemetryDashboard from '../apps/frontend/src/components/Editor/TelemetryDashboard'
+import { createCreativeModePanelProps } from './helpers/creativeModePanelProps'
 
 describe('编辑器聚合面板 SSR 覆盖补强', () => {
   it('AssetPanel 多模式应渲染关键区块（默认 store）', () => {
@@ -44,5 +46,28 @@ describe('编辑器聚合面板 SSR 覆盖补强', () => {
     expect(html).toContain('暂无 SLO 数据')
     expect(html).toContain('project-governance-card')
     expect(html).toContain('数据库自愈中心')
+  })
+
+  it('CreativeModePanel 默认应渲染创意、工作流与资产复用区块', () => {
+    const html = renderToString(
+      createElement(
+        CreativeModePanel,
+        createCreativeModePanelProps({
+          creativeRun: {
+            id: 'run_ssr_1',
+            status: 'draft',
+            version: 1,
+            parentRunId: null,
+            updatedAt: '2026-03-06T08:00:00.000Z',
+            scenes: []
+          } as any
+        })
+      )
+    )
+    expect(html).toContain('创意闭环引擎')
+    expect(html).toContain('统一视频生成工作台')
+    expect(html).toContain('v4 Workflow')
+    expect(html).toContain('v4 Asset Reuse')
+    expect(html).toContain('Gemini 快速自检')
   })
 })

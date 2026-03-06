@@ -12,14 +12,29 @@ const labSourceFiles = [
   'apps/frontend/src/components/Editor/comparison-lab/constants.ts',
   'apps/frontend/src/components/Editor/comparison-lab/LabToolbar.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/ChannelAccessPanel.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useCompareModeManager.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useCreativeModeController.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useCreativeRunManager.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useMarketplacePolicy.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useCollabModeController.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useProjectGovernance.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useV4CommentThreads.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useV4CreativeOps.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useWorkspaceCollaborationManager.ts',
   'apps/frontend/src/components/Editor/comparison-lab/modes/CompareModePanel.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/MarketplaceModePanel.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
-  'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/CreativeModeContainer.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/WorkflowSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/BatchJobSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/AssetReuseSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/VideoGenerationWorkbench.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/CollabModeContainer.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/ProjectGovernanceSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/OpsToolsSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/PermissionMergeSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/StorageSnapshotsSection.tsx'
 ]
 
 const readLabSources = () =>
@@ -53,6 +68,8 @@ describe('P2 实验室前端对齐验证', () => {
     expect(content).toContain('/commit')
     expect(content).toContain('routingDecision')
     expect(content).toContain('routingPolicyId')
+    expect(content).toContain('useCreativeModeController')
+    expect(content).toContain('CreativeModeContainer')
   })
 
   it('应接入协作平台 REST + WebSocket 闭环', () => {
@@ -68,6 +85,8 @@ describe('P2 实验室前端对齐验证', () => {
     )
     expect(content).toContain('setWorkspaceId(payload.workspace.id)')
     expect(content).toContain('setProjectId(payload.defaultProject.id)')
+    expect(content).toContain('useCollabModeController')
+    expect(content).toContain('CollabModeContainer')
   })
 
   it('协作与策略动作应具备加载态/防重入保护', () => {

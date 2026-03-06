@@ -10,6 +10,10 @@ describe('前端表单可访问性回归', () => {
       'apps/frontend/src/components/Editor/comparison-lab/modes/CompareModePanel.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/MarketplaceModePanel.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/creative/WorkflowSection.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/creative/BatchJobSection.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/creative/AssetReuseSection.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/creative/VideoGenerationWorkbench.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/ChannelAccessPanel.tsx'
     ]
@@ -40,10 +44,12 @@ describe('前端表单可访问性回归', () => {
   })
 
   it('TelemetryDashboard 数据库字段应具备 id/name 属性', () => {
-    const content = readFileSync(
-      path.resolve(process.cwd(), 'apps/frontend/src/components/Editor/TelemetryDashboard.tsx'),
-      'utf8'
-    )
+    const content = [
+      'apps/frontend/src/components/Editor/TelemetryDashboard.tsx',
+      'apps/frontend/src/components/Editor/telemetry-dashboard/DbOpsPanel.tsx'
+    ]
+      .map((file) => readFileSync(path.resolve(process.cwd(), file), 'utf8'))
+      .join('\n')
     expect(content).toContain('id="db-admin-token"')
     expect(content).toContain('name="dbAdminToken"')
     expect(content).toContain('name="dbRepairRange"')

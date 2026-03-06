@@ -10,11 +10,34 @@ const comparisonLabFiles = [
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useProjectGovernance.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useV4CommentThreads.ts',
   'apps/frontend/src/components/Editor/comparison-lab/hooks/useV4CreativeOps.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useV4OpsManager.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useCreativeModeController.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useCollabModeController.ts',
+  'apps/frontend/src/components/Editor/comparison-lab/hooks/useVideoGenerationManager.ts',
   'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
-  'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/CreativeModeContainer.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/WorkflowSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/BatchJobSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/AssetReuseSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/creative/VideoGenerationWorkbench.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/CollabModeContainer.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/ProjectGovernanceSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/OpsToolsSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/PermissionMergeSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/StorageSnapshotsSection.tsx'
 ]
 const governanceSharedFile = 'apps/frontend/src/components/Editor/comparison-lab/types.ts'
-const telemetryDashboardFile = 'apps/frontend/src/components/Editor/TelemetryDashboard.tsx'
+const telemetryDashboardFiles = [
+  'apps/frontend/src/components/Editor/TelemetryDashboard.tsx',
+  'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryDashboardPolling.ts',
+  'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryDbOpsController.ts',
+  'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryGovernanceController.ts',
+  'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryProviderHealthController.ts',
+  'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetrySloController.ts',
+  'apps/frontend/src/components/Editor/telemetry-dashboard/ProjectGovernancePanel.tsx',
+  'apps/frontend/src/components/Editor/telemetry-dashboard/DbOpsPanel.tsx'
+]
 
 const readJoined = (files: string[]) => files.map(read).join('\n')
 
@@ -23,12 +46,12 @@ describe('V4 实验室前端闭环对齐', () => {
     const repoSources = readJoined([
       ...comparisonLabFiles,
       governanceSharedFile,
-      telemetryDashboardFile,
+      ...telemetryDashboardFiles,
       'scripts/api_contract_guard.ts'
     ])
     const comparisonLabSources = readJoined(comparisonLabFiles)
     const governanceSharedSource = read(governanceSharedFile)
-    const telemetrySource = read(telemetryDashboardFile)
+    const telemetrySource = readJoined(telemetryDashboardFiles)
 
     expect(repoSources).toContain('/admin/reliability/alerts')
     expect(comparisonLabSources).toContain(
@@ -75,10 +98,11 @@ describe('V4 实验室前端闭环对齐', () => {
   })
 
   it('ComparisonLab 运维区域应存在 admin token 相关输入/状态文案', () => {
-    const collabPanel = read(
-      'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
-    )
-    const telemetryDashboard = read(telemetryDashboardFile)
+    const collabPanel = readJoined([
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/collab/OpsToolsSection.tsx'
+    ])
+    const telemetryDashboard = readJoined(telemetryDashboardFiles)
 
     expect(collabPanel).toContain('运维工具')
     expect(telemetryDashboard).toContain('输入管理员令牌（x-admin-token）')
@@ -87,7 +111,7 @@ describe('V4 实验室前端闭环对齐', () => {
   })
 
   it('面板中应包含告警列表、评论分页、回滚参数化与批处理条目展示入口文案', () => {
-    const comparisonLabSources = readJoined([...comparisonLabFiles, telemetryDashboardFile])
+    const comparisonLabSources = readJoined([...comparisonLabFiles, ...telemetryDashboardFiles])
 
     expect(comparisonLabSources).toMatch(/告警列表|ACK|错误预算|回滚演练|更新错误预算策略/)
     expect(comparisonLabSources).toMatch(/复用历史|Asset Reuse|目标项目|来源项目|偏移量/)
@@ -100,5 +124,7 @@ describe('V4 实验室前端闭环对齐', () => {
     expect(comparisonLabSources).toContain('项目治理卡片（第二入口）')
     expect(comparisonLabSources).toContain('onBatchUpdateProjectClips')
     expect(comparisonLabSources).toContain('handleGovernanceBatchUpdateClips')
+    expect(comparisonLabSources).toContain('useCollabModeController')
+    expect(comparisonLabSources).toContain('CollabModeContainer')
   })
 })

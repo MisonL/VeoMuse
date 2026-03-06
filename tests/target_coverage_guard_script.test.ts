@@ -43,11 +43,26 @@ describe('target_coverage_guard 脚本', () => {
     const app = path.resolve(process.cwd(), 'apps/frontend/src/App.tsx')
     const admin = path.resolve(process.cwd(), 'apps/frontend/src/store/adminMetricsStore.ts')
     const journey = path.resolve(process.cwd(), 'apps/frontend/src/store/journeyTelemetryStore.ts')
+    const creative = path.resolve(
+      process.cwd(),
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx'
+    )
+    const collab = path.resolve(
+      process.cwd(),
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
+    )
+    const telemetry = path.resolve(
+      process.cwd(),
+      'apps/frontend/src/components/Editor/TelemetryDashboard.tsx'
+    )
 
     const result = await runGuardWithLcov([
       makeRecord(app, 70, 100),
       makeRecord(admin, 60, 100),
-      makeRecord(journey, 30, 50)
+      makeRecord(journey, 30, 50),
+      makeRecord(creative, 35, 100),
+      makeRecord(collab, 35, 100),
+      makeRecord(telemetry, 40, 100)
     ])
 
     expect(result.exitCode).toBe(0)
@@ -59,11 +74,26 @@ describe('target_coverage_guard 脚本', () => {
     const app = path.resolve(process.cwd(), 'apps/frontend/src/App.tsx')
     const admin = path.resolve(process.cwd(), 'apps/frontend/src/store/adminMetricsStore.ts')
     const journey = path.resolve(process.cwd(), 'apps/frontend/src/store/journeyTelemetryStore.ts')
+    const creative = path.resolve(
+      process.cwd(),
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx'
+    )
+    const collab = path.resolve(
+      process.cwd(),
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
+    )
+    const telemetry = path.resolve(
+      process.cwd(),
+      'apps/frontend/src/components/Editor/TelemetryDashboard.tsx'
+    )
 
     const result = await runGuardWithLcov([
       makeRecord(app, 69, 100),
       makeRecord(admin, 60, 100),
-      makeRecord(journey, 60, 100)
+      makeRecord(journey, 60, 100),
+      makeRecord(creative, 35, 100),
+      makeRecord(collab, 35, 100),
+      makeRecord(telemetry, 40, 100)
     ])
 
     expect(result.exitCode).toBe(1)
@@ -74,8 +104,26 @@ describe('target_coverage_guard 脚本', () => {
   it('LCOV 缺失目标文件时应 exit 1', async () => {
     const app = path.resolve(process.cwd(), 'apps/frontend/src/App.tsx')
     const admin = path.resolve(process.cwd(), 'apps/frontend/src/store/adminMetricsStore.ts')
+    const creative = path.resolve(
+      process.cwd(),
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx'
+    )
+    const collab = path.resolve(
+      process.cwd(),
+      'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx'
+    )
+    const telemetry = path.resolve(
+      process.cwd(),
+      'apps/frontend/src/components/Editor/TelemetryDashboard.tsx'
+    )
 
-    const result = await runGuardWithLcov([makeRecord(app, 80, 100), makeRecord(admin, 80, 100)])
+    const result = await runGuardWithLcov([
+      makeRecord(app, 80, 100),
+      makeRecord(admin, 80, 100),
+      makeRecord(creative, 80, 100),
+      makeRecord(collab, 80, 100),
+      makeRecord(telemetry, 80, 100)
+    ])
 
     expect(result.exitCode).toBe(1)
     expect(result.stderr).toContain('缺失覆盖项: apps/frontend/src/store/journeyTelemetryStore.ts')
