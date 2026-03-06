@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React from 'react'
 import type {
   V4AssetReuseRecord,
   CreativeRun,
@@ -12,20 +12,12 @@ import type {
   VideoGenerationMode,
   VideoInputSourceType
 } from '../types'
-import {
-  VIDEO_GENERATION_MODES,
-  isVideoGenerationActiveStatus,
-  resolveVideoGenerationRequiredInputs,
-  resolveVideoGenerationStatusText,
-  sortVideoGenerationJobsForWorkbench
-} from '../types'
-import {
-  normalizeVideoGenerationDisplayText,
-  resolveVideoGenerationPollingState,
-  resolveVideoGenerationStatusBadgeModifier
-} from './creativeModePanel.logic'
+import BatchJobSection from './creative/BatchJobSection'
+import AssetReuseSection from './creative/AssetReuseSection'
+import VideoGenerationWorkbench from './creative/VideoGenerationWorkbench'
+import WorkflowSection from './creative/WorkflowSection'
 
-interface CreativeModePanelProps {
+export interface CreativeModePanelProps {
   creativeScript: string
   creativeStyle: string
   commitScore: number
@@ -254,43 +246,6 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
   onAssetReuseHistoryOffsetChange,
   onQueryAssetReuseHistory
 }) => {
-  const [showAllTerminalVideoJobs, setShowAllTerminalVideoJobs] = useState(false)
-  const [showVideoGenerationAdvancedInputs, setShowVideoGenerationAdvancedInputs] = useState(false)
-  const [showVideoGenerationInspector, setShowVideoGenerationInspector] = useState(false)
-  const requiredVideoInputs = resolveVideoGenerationRequiredInputs(videoGenerationMode)
-  const sortedVideoGenerationJobs = useMemo(
-    () => sortVideoGenerationJobsForWorkbench(videoGenerationJobs),
-    [videoGenerationJobs]
-  )
-  const activeVideoGenerationJobs = sortedVideoGenerationJobs.filter((job) =>
-    isVideoGenerationActiveStatus(job.status)
-  )
-  const terminalVideoGenerationJobs = sortedVideoGenerationJobs.filter(
-    (job) => !isVideoGenerationActiveStatus(job.status)
-  )
-  const visibleTerminalVideoGenerationJobs = showAllTerminalVideoJobs
-    ? terminalVideoGenerationJobs
-    : terminalVideoGenerationJobs.slice(0, 6)
-  const hiddenTerminalJobCount = Math.max(
-    0,
-    terminalVideoGenerationJobs.length - visibleTerminalVideoGenerationJobs.length
-  )
-  const renderedVideoGenerationJobs = [
-    ...activeVideoGenerationJobs,
-    ...visibleTerminalVideoGenerationJobs
-  ]
-  const latestAutoSyncText = videoGenerationLastAutoSyncAt
-    ? new Date(videoGenerationLastAutoSyncAt).toLocaleString()
-    : '-'
-  const pollingState = resolveVideoGenerationPollingState({
-    pollingEnabled: videoGenerationPollingEnabled,
-    ticking: isVideoGenerationAutoSyncTicking
-  })
-  const selectedVideoGenerationJobId = videoGenerationSelectedJobId.trim()
-  const hasSelectedVideoGenerationJob = selectedVideoGenerationJobId.length > 0
-  const isVideoGenerationAdvancedInputsOpen =
-    showVideoGenerationAdvancedInputs || requiredVideoInputs.length > 0
-
   return (
     <div className="creative-shell" data-testid="area-creative-shell">
       <section className="creative-card">
@@ -418,697 +373,113 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
         </div>
       </section>
 
-      <section className="creative-card video-generation-card">
-        <div className="video-generation-section-head">
-          <h4>统一视频生成工作台</h4>
-          <div className="video-generation-head-actions">
-            <button disabled={isVideoGenerationBusy} onClick={onRefreshVideoGenerationJobs}>
-              刷新列表
-            </button>
-            <button
-              disabled={isVideoGenerationBusy || !videoGenerationHasMore}
-              onClick={onLoadMoreVideoGenerationJobs}
-            >
-              加载更多
-            </button>
-            <button
-              className={`video-generation-polling-toggle ${
-                videoGenerationPollingEnabled ? 'active' : ''
-              }`}
-              onClick={() => onVideoGenerationPollingEnabledChange(!videoGenerationPollingEnabled)}
-            >
-              自动轮询：{videoGenerationPollingEnabled ? '开' : '关'}
-            </button>
-          </div>
-        </div>
-        <div
-          className={`video-generation-quick-check video-generation-quick-check--${geminiQuickCheck.status}`}
-        >
-          <div className="video-generation-quick-check-title">{geminiQuickCheck.title}</div>
-          <div className="video-generation-quick-check-desc">{geminiQuickCheck.description}</div>
-          <div className="lab-inline-actions">
-            <button disabled={isVideoGenerationBusy} onClick={onRunGeminiQuickCheck}>
-              Gemini 快速自检
-            </button>
-            <button onClick={onOpenChannelPanel}>打开渠道面板</button>
-          </div>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>生成模式</span>
-            <select
-              name="videoGenerationMode"
-              value={videoGenerationMode}
-              onChange={(event) =>
-                onVideoGenerationModeChange(event.target.value as VideoGenerationMode)
-              }
-            >
-              {VIDEO_GENERATION_MODES.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="lab-field">
-            <span>模型</span>
-            <input
-              name="videoGenerationModelId"
-              value={videoGenerationModelId}
-              onChange={(event) => onVideoGenerationModelIdChange(event.target.value)}
-              placeholder="veo-3.1"
-            />
-          </label>
-          <label className="lab-field">
-            <span>输入源类型</span>
-            <select
-              name="videoGenerationInputSourceType"
-              value={videoGenerationInputSourceType}
-              onChange={(event) =>
-                onVideoGenerationInputSourceTypeChange(event.target.value as VideoInputSourceType)
-              }
-            >
-              <option value="url">url</option>
-              <option value="objectKey">objectKey</option>
-            </select>
-          </label>
-        </div>
-        <label className="lab-field">
-          <span>Prompt</span>
-          <textarea
-            name="videoGenerationPrompt"
-            value={videoGenerationPrompt}
-            onChange={(event) => onVideoGenerationPromptChange(event.target.value)}
-            placeholder="描述目标视频内容、镜头语言与时长诉求"
-          />
-        </label>
-        <label className="lab-field">
-          <span>Negative Prompt</span>
-          <input
-            name="videoGenerationNegativePrompt"
-            value={videoGenerationNegativePrompt}
-            onChange={(event) => onVideoGenerationNegativePromptChange(event.target.value)}
-            placeholder="可选，例如：blur, overexposure"
-          />
-        </label>
-        <div className="video-generation-required">
-          必填输入：{requiredVideoInputs.length > 0 ? requiredVideoInputs.join(' + ') : '无'}
-        </div>
-        <details
-          className="video-generation-collapsible"
-          open={isVideoGenerationAdvancedInputsOpen}
-          onToggle={(event) => setShowVideoGenerationAdvancedInputs(event.currentTarget.open)}
-        >
-          <summary>
-            <span>高级输入（图像 / 视频 / 首末帧）</span>
-            <span>{isVideoGenerationAdvancedInputsOpen ? '收起' : '展开'}</span>
-          </summary>
-          <div className="video-generation-collapsible-body">
-            <div className="lab-inline-fields">
-              <label className="lab-field">
-                <span>图像输入</span>
-                <input
-                  name="videoGenerationImageInput"
-                  value={videoGenerationImageInput}
-                  onChange={(event) => onVideoGenerationImageInputChange(event.target.value)}
-                  placeholder="图生视频主图"
-                />
-              </label>
-              <label className="lab-field">
-                <span>参考图列表</span>
-                <textarea
-                  name="videoGenerationReferenceImagesInput"
-                  value={videoGenerationReferenceImagesInput}
-                  onChange={(event) =>
-                    onVideoGenerationReferenceImagesInputChange(event.target.value)
-                  }
-                  placeholder="多张参考图，逗号或换行分隔"
-                />
-              </label>
-            </div>
-            <div className="lab-inline-fields">
-              <label className="lab-field">
-                <span>视频输入</span>
-                <input
-                  name="videoGenerationVideoInput"
-                  value={videoGenerationVideoInput}
-                  onChange={(event) => onVideoGenerationVideoInputChange(event.target.value)}
-                  placeholder="视频扩展模式输入"
-                />
-              </label>
-              <label className="lab-field">
-                <span>首帧输入</span>
-                <input
-                  name="videoGenerationFirstFrameInput"
-                  value={videoGenerationFirstFrameInput}
-                  onChange={(event) => onVideoGenerationFirstFrameInputChange(event.target.value)}
-                  placeholder="首末帧过渡首帧"
-                />
-              </label>
-              <label className="lab-field">
-                <span>末帧输入</span>
-                <input
-                  name="videoGenerationLastFrameInput"
-                  value={videoGenerationLastFrameInput}
-                  onChange={(event) => onVideoGenerationLastFrameInputChange(event.target.value)}
-                  placeholder="首末帧过渡末帧"
-                />
-              </label>
-            </div>
-          </div>
-        </details>
-        <div className="lab-inline-actions">
-          <button disabled={isVideoGenerationBusy} onClick={onCreateVideoGenerationTask}>
-            {isVideoGenerationBusy ? '处理中...' : '提交任务'}
-          </button>
-          <button
-            disabled={isVideoGenerationBusy || !hasSelectedVideoGenerationJob}
-            onClick={onQueryVideoGenerationJobDetail}
-          >
-            查询选中任务
-          </button>
-        </div>
-        <div className="video-generation-polling-hint" data-testid="video-generation-polling-hint">
-          <span className={`video-generation-polling-state ${pollingState.tone}`}>
-            {pollingState.text}
-          </span>
-          <span className="video-generation-polling-desc">
-            后端自动同步终态已启用，前端自动轮询仅刷新展示。
-          </span>
-          <span className="video-generation-polling-time">最近轮询：{latestAutoSyncText}</span>
-        </div>
-        <details
-          className="video-generation-collapsible"
-          open={showVideoGenerationInspector}
-          onToggle={(event) => setShowVideoGenerationInspector(event.currentTarget.open)}
-        >
-          <summary>
-            <span>查询与分页设置</span>
-            <span>{showVideoGenerationInspector ? '收起' : '展开'}</span>
-          </summary>
-          <div className="video-generation-collapsible-body">
-            <div className="lab-inline-fields">
-              <label className="lab-field">
-                <span>列表数量</span>
-                <input
-                  type="number"
-                  min={1}
-                  name="videoGenerationListLimit"
-                  value={videoGenerationListLimit}
-                  onChange={(event) => onVideoGenerationListLimitChange(event.target.value)}
-                  placeholder="20"
-                />
-              </label>
-              <label className="lab-field">
-                <span>状态筛选</span>
-                <select
-                  name="videoGenerationStatusFilter"
-                  value={videoGenerationStatusFilter}
-                  onChange={(event) =>
-                    onVideoGenerationStatusFilterChange(
-                      event.target.value as 'all' | VideoGenerationJobStatus
-                    )
-                  }
-                >
-                  <option value="all">all</option>
-                  <option value="queued">queued</option>
-                  <option value="submitted">submitted</option>
-                  <option value="processing">processing</option>
-                  <option value="succeeded">succeeded</option>
-                  <option value="cancel_requested">cancel_requested</option>
-                  <option value="canceled">canceled</option>
-                  <option value="failed">failed</option>
-                </select>
-              </label>
-              <label className="lab-field">
-                <span>选中任务 ID</span>
-                <input
-                  name="videoGenerationSelectedJobId"
-                  value={videoGenerationSelectedJobId}
-                  onChange={(event) => onVideoGenerationSelectedJobIdChange(event.target.value)}
-                  placeholder="job_xxx"
-                />
-              </label>
-            </div>
-            <div className="video-generation-pagination">
-              <span className="video-generation-pagination-label">Cursor</span>
-              <code className="video-generation-pagination-value">
-                {videoGenerationCursor || '-'}
-              </code>
-              <span className="video-generation-pagination-sep">·</span>
-              <span className="video-generation-pagination-label">hasMore</span>
-              <strong>{videoGenerationHasMore ? 'true' : 'false'}</strong>
-            </div>
-          </div>
-        </details>
-        <div className="video-generation-list-head">
-          <span className="video-generation-count-chip active">
-            活跃任务：{activeVideoGenerationJobs.length}
-          </span>
-          <span className="video-generation-count-chip terminal">
-            终态任务：{terminalVideoGenerationJobs.length}
-          </span>
-          <span
-            className="video-generation-selected-chip"
-            title={selectedVideoGenerationJobId || '-'}
-          >
-            选中：{selectedVideoGenerationJobId || '-'}
-          </span>
-          <button
-            type="button"
-            className="video-generation-terminal-toggle"
-            onClick={() => setShowAllTerminalVideoJobs((prev) => !prev)}
-            disabled={terminalVideoGenerationJobs.length === 0}
-          >
-            {showAllTerminalVideoJobs ? '折叠终态任务' : '展开终态任务'}
-          </button>
-        </div>
-        <div className="video-generation-job-list" data-testid="area-video-generation-job-list">
-          {renderedVideoGenerationJobs.map((job) => {
-            const requestPromptValue = job.request?.['prompt']
-            const requestTextValue = job.request?.['text']
-            const requestPrompt =
-              typeof requestPromptValue === 'string'
-                ? requestPromptValue
-                : typeof requestTextValue === 'string'
-                  ? requestTextValue
-                  : ''
-            const isSelected = videoGenerationSelectedJobId === job.id
-            const isCancelled = job.status === 'canceled' || job.status === 'cancel_requested'
-            const statusText = resolveVideoGenerationStatusText(job.status)
-            const statusBadgeModifier = resolveVideoGenerationStatusBadgeModifier(job.status)
-            const promptText = normalizeVideoGenerationDisplayText(requestPrompt)
-            const errorText = normalizeVideoGenerationDisplayText(job.errorMessage)
-            const outputText = normalizeVideoGenerationDisplayText(job.outputUrl)
-            return (
-              <div
-                key={job.id}
-                className={`video-generation-job-item ${isSelected ? 'selected' : ''} ${
-                  isCancelled ? 'cancelled' : ''
-                }`}
-              >
-                <div className="video-generation-job-head">
-                  <button
-                    className="video-generation-job-select"
-                    onClick={() => onVideoGenerationSelectedJobIdChange(job.id)}
-                  >
-                    <span>{job.id}</span>
-                    <span>
-                      {job.generationMode} · {job.modelId}
-                    </span>
-                  </button>
-                  <span className={`video-generation-status-badge ${statusBadgeModifier}`}>
-                    {statusText}
-                  </span>
-                </div>
-                <div className="video-generation-job-meta">
-                  <span>渠道：{job.providerStatus}</span>
-                  <span>{new Date(job.updatedAt).toLocaleString()}</span>
-                </div>
-                <div className="video-generation-job-meta video-generation-job-meta-stack">
-                  <span className="video-generation-kv">
-                    <b>Prompt</b>
-                    <span className="video-generation-ellipsis" title={promptText}>
-                      {promptText}
-                    </span>
-                  </span>
-                  <span className="video-generation-kv">
-                    <b>错误</b>
-                    <span className="video-generation-ellipsis" title={errorText}>
-                      {errorText}
-                    </span>
-                  </span>
-                </div>
-                <div className="video-generation-job-meta video-generation-job-meta-stack">
-                  <span className="video-generation-kv">
-                    <b>输出</b>
-                    <span className="video-generation-ellipsis" title={outputText}>
-                      {outputText}
-                    </span>
-                  </span>
-                  <span>重试次数：{job.retryCount ?? 0}</span>
-                  <span>
-                    最近同步：{job.lastSyncedAt ? new Date(job.lastSyncedAt).toLocaleString() : '-'}
-                  </span>
-                </div>
-                <div className="video-generation-job-actions">
-                  <button
-                    disabled={
-                      isVideoGenerationBusy ||
-                      !(
-                        job.status === 'submitted' ||
-                        job.status === 'processing' ||
-                        job.status === 'queued' ||
-                        job.status === 'cancel_requested'
-                      )
-                    }
-                    onClick={() => onSyncVideoGenerationJob(job.id)}
-                  >
-                    同步
-                  </button>
-                  <button
-                    disabled={
-                      isVideoGenerationBusy ||
-                      !(
-                        job.status === 'failed' ||
-                        job.status === 'succeeded' ||
-                        job.status === 'canceled'
-                      )
-                    }
-                    onClick={() => onRetryVideoGenerationJob(job.id)}
-                  >
-                    重试
-                  </button>
-                  <button
-                    disabled={
-                      isVideoGenerationBusy ||
-                      isCancelled ||
-                      job.status === 'failed' ||
-                      job.status === 'succeeded'
-                    }
-                    onClick={() => onCancelVideoGenerationJob(job.id)}
-                  >
-                    取消
-                  </button>
-                  <button
-                    disabled={isVideoGenerationBusy}
-                    onClick={() => onRefreshVideoGenerationJobDetail(job.id)}
-                  >
-                    刷新详情
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-          {renderedVideoGenerationJobs.length === 0 ? (
-            <div className="api-empty">暂无视频任务</div>
-          ) : null}
-          {hiddenTerminalJobCount > 0 ? (
-            <div className="video-generation-terminal-collapsed">
-              还有 {hiddenTerminalJobCount} 条终态任务已折叠，点击“展开终态任务”查看。
-            </div>
-          ) : null}
-        </div>
-      </section>
+      <VideoGenerationWorkbench
+        geminiQuickCheck={geminiQuickCheck}
+        videoGenerationMode={videoGenerationMode}
+        videoGenerationModelId={videoGenerationModelId}
+        videoGenerationPrompt={videoGenerationPrompt}
+        videoGenerationNegativePrompt={videoGenerationNegativePrompt}
+        videoGenerationInputSourceType={videoGenerationInputSourceType}
+        videoGenerationImageInput={videoGenerationImageInput}
+        videoGenerationReferenceImagesInput={videoGenerationReferenceImagesInput}
+        videoGenerationVideoInput={videoGenerationVideoInput}
+        videoGenerationFirstFrameInput={videoGenerationFirstFrameInput}
+        videoGenerationLastFrameInput={videoGenerationLastFrameInput}
+        videoGenerationListLimit={videoGenerationListLimit}
+        videoGenerationStatusFilter={videoGenerationStatusFilter}
+        videoGenerationJobs={videoGenerationJobs}
+        videoGenerationCursor={videoGenerationCursor}
+        videoGenerationHasMore={videoGenerationHasMore}
+        videoGenerationSelectedJobId={videoGenerationSelectedJobId}
+        videoGenerationPollingEnabled={videoGenerationPollingEnabled}
+        videoGenerationLastAutoSyncAt={videoGenerationLastAutoSyncAt}
+        isVideoGenerationAutoSyncTicking={isVideoGenerationAutoSyncTicking}
+        isVideoGenerationBusy={isVideoGenerationBusy}
+        onRunGeminiQuickCheck={onRunGeminiQuickCheck}
+        onOpenChannelPanel={onOpenChannelPanel}
+        onVideoGenerationModeChange={onVideoGenerationModeChange}
+        onVideoGenerationModelIdChange={onVideoGenerationModelIdChange}
+        onVideoGenerationPromptChange={onVideoGenerationPromptChange}
+        onVideoGenerationNegativePromptChange={onVideoGenerationNegativePromptChange}
+        onVideoGenerationInputSourceTypeChange={onVideoGenerationInputSourceTypeChange}
+        onVideoGenerationImageInputChange={onVideoGenerationImageInputChange}
+        onVideoGenerationReferenceImagesInputChange={onVideoGenerationReferenceImagesInputChange}
+        onVideoGenerationVideoInputChange={onVideoGenerationVideoInputChange}
+        onVideoGenerationFirstFrameInputChange={onVideoGenerationFirstFrameInputChange}
+        onVideoGenerationLastFrameInputChange={onVideoGenerationLastFrameInputChange}
+        onVideoGenerationListLimitChange={onVideoGenerationListLimitChange}
+        onVideoGenerationStatusFilterChange={onVideoGenerationStatusFilterChange}
+        onVideoGenerationSelectedJobIdChange={onVideoGenerationSelectedJobIdChange}
+        onVideoGenerationPollingEnabledChange={onVideoGenerationPollingEnabledChange}
+        onCreateVideoGenerationTask={onCreateVideoGenerationTask}
+        onRefreshVideoGenerationJobs={onRefreshVideoGenerationJobs}
+        onLoadMoreVideoGenerationJobs={onLoadMoreVideoGenerationJobs}
+        onQueryVideoGenerationJobDetail={onQueryVideoGenerationJobDetail}
+        onSyncVideoGenerationJob={onSyncVideoGenerationJob}
+        onRetryVideoGenerationJob={onRetryVideoGenerationJob}
+        onCancelVideoGenerationJob={onCancelVideoGenerationJob}
+        onRefreshVideoGenerationJobDetail={onRefreshVideoGenerationJobDetail}
+      />
 
-      <section className="creative-card">
-        <h4>v4 Workflow</h4>
-        <div className="lab-inline-actions">
-          <button disabled={isV4Busy} onClick={onRefreshWorkflows}>
-            刷新列表
-          </button>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>工作流名称</span>
-            <input
-              name="v4WorkflowName"
-              value={workflowName}
-              onChange={(event) => onWorkflowNameChange(event.target.value)}
-            />
-          </label>
-          <label className="lab-field">
-            <span>描述</span>
-            <input
-              name="v4WorkflowDescription"
-              value={workflowDescription}
-              onChange={(event) => onWorkflowDescriptionChange(event.target.value)}
-            />
-          </label>
-        </div>
-        <div className="lab-inline-actions">
-          <button disabled={isV4Busy} onClick={onCreateWorkflow}>
-            创建 Workflow
-          </button>
-        </div>
-        <label className="lab-field">
-          <span>选择 Workflow</span>
-          <select
-            name="v4SelectedWorkflowId"
-            value={selectedWorkflowId}
-            onChange={(event) => onSelectedWorkflowIdChange(event.target.value)}
-          >
-            <option value="">请选择</option>
-            {workflows.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name} · {new Date(item.updatedAt).toLocaleString()}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="lab-field">
-          <span>Run Payload(JSON)</span>
-          <textarea
-            name="v4WorkflowRunPayload"
-            value={workflowRunPayload}
-            onChange={(event) => onWorkflowRunPayloadChange(event.target.value)}
-            placeholder='{"prompt":"8s cinematic city chase"}'
-          />
-        </label>
-        <div className="lab-inline-actions">
-          <button disabled={!selectedWorkflowId || isV4Busy} onClick={onRunWorkflow}>
-            运行 Workflow
-          </button>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>Runs 查询数量</span>
-            <input
-              type="number"
-              min={1}
-              name="v4WorkflowRunsLimit"
-              value={workflowRunsLimit}
-              onChange={(event) => onWorkflowRunsLimitChange(event.target.value)}
-              placeholder="20"
-            />
-          </label>
-          <button disabled={!selectedWorkflowId || isV4Busy} onClick={onQueryWorkflowRuns}>
-            查询 Runs
-          </button>
-          <button
-            disabled={!selectedWorkflowId || !workflowRunsHasMore || isV4Busy}
-            onClick={onLoadMoreWorkflowRuns}
-          >
-            加载更多 Runs
-          </button>
-        </div>
-        <div className="creative-summary">
-          <div>Run ID: {workflowRunResult?.id || '-'}</div>
-          <div>状态: {workflowRunResult?.status || '-'}</div>
-          <div>触发: {workflowRunResult?.triggerType || '-'}</div>
-        </div>
-        <div className="creative-scene-list">
-          {workflowRuns.map((item) => (
-            <div key={item.id} className="creative-scene-item">
-              <div className="scene-headline">
-                <strong>{item.id}</strong>
-                <span>{item.status}</span>
-              </div>
-              <div className="scene-meta-line">
-                <span>触发方式：{item.triggerType || '-'}</span>
-                <span>{new Date(item.createdAt).toLocaleString()}</span>
-              </div>
-            </div>
-          ))}
-          {workflowRuns.length === 0 ? (
-            <div className="api-empty">暂无 Workflow Runs 记录</div>
-          ) : null}
-        </div>
-      </section>
+      <WorkflowSection
+        workflows={workflows}
+        selectedWorkflowId={selectedWorkflowId}
+        workflowName={workflowName}
+        workflowDescription={workflowDescription}
+        workflowRunPayload={workflowRunPayload}
+        workflowRunResult={workflowRunResult}
+        workflowRuns={workflowRuns}
+        workflowRunsLimit={workflowRunsLimit}
+        workflowRunsHasMore={workflowRunsHasMore}
+        isV4Busy={isV4Busy}
+        onRefreshWorkflows={onRefreshWorkflows}
+        onSelectedWorkflowIdChange={onSelectedWorkflowIdChange}
+        onWorkflowNameChange={onWorkflowNameChange}
+        onWorkflowDescriptionChange={onWorkflowDescriptionChange}
+        onWorkflowRunPayloadChange={onWorkflowRunPayloadChange}
+        onCreateWorkflow={onCreateWorkflow}
+        onRunWorkflow={onRunWorkflow}
+        onWorkflowRunsLimitChange={onWorkflowRunsLimitChange}
+        onQueryWorkflowRuns={onQueryWorkflowRuns}
+        onLoadMoreWorkflowRuns={onLoadMoreWorkflowRuns}
+      />
 
-      <section className="creative-card">
-        <h4>v4 Batch Job</h4>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>Job 类型</span>
-            <input
-              name="v4BatchJobType"
-              value={batchJobType}
-              onChange={(event) => onBatchJobTypeChange(event.target.value)}
-              placeholder="render.batch"
-            />
-          </label>
-          <label className="lab-field">
-            <span>Job ID</span>
-            <input
-              name="v4BatchJobId"
-              value={batchJobId}
-              onChange={(event) => onBatchJobIdChange(event.target.value)}
-              placeholder="创建后自动回填"
-            />
-          </label>
-        </div>
-        <label className="lab-field">
-          <span>Job Payload(JSON)</span>
-          <textarea
-            name="v4BatchJobPayload"
-            value={batchJobPayload}
-            onChange={(event) => onBatchJobPayloadChange(event.target.value)}
-            placeholder='{"items":["clip-a","clip-b"]}'
-          />
-        </label>
-        <div className="lab-inline-actions">
-          <button disabled={isV4Busy} onClick={onCreateBatchJob}>
-            创建 Batch Job
-          </button>
-          <button disabled={!batchJobId.trim() || isV4Busy} onClick={onQueryBatchJob}>
-            查询状态
-          </button>
-        </div>
-        <div className="creative-summary">
-          <div>状态: {batchJobStatus?.status || '-'}</div>
-          <div>
-            项数:{' '}
-            {batchJobStatus ? `${batchJobStatus.completedItems}/${batchJobStatus.totalItems}` : '-'}
-          </div>
-          <div>失败: {batchJobStatus?.failedItems ?? '-'}</div>
-        </div>
-        <div className="creative-scene-list">
-          {(batchJobStatus?.items || []).map((item) => (
-            <div key={item.id} className="creative-scene-item">
-              <div className="scene-headline">
-                <strong>{item.itemKey}</strong>
-                <span>{item.status}</span>
-              </div>
-              <div className="scene-meta-line">
-                <span>错误：{item.errorMessage || '-'}</span>
-              </div>
-            </div>
-          ))}
-          {batchJobStatus && (batchJobStatus.items || []).length === 0 ? (
-            <div className="api-empty">暂无 Batch Job Items</div>
-          ) : null}
-        </div>
-      </section>
+      <BatchJobSection
+        batchJobType={batchJobType}
+        batchJobPayload={batchJobPayload}
+        batchJobId={batchJobId}
+        batchJobStatus={batchJobStatus}
+        isV4Busy={isV4Busy}
+        onBatchJobTypeChange={onBatchJobTypeChange}
+        onBatchJobPayloadChange={onBatchJobPayloadChange}
+        onBatchJobIdChange={onBatchJobIdChange}
+        onCreateBatchJob={onCreateBatchJob}
+        onQueryBatchJob={onQueryBatchJob}
+      />
 
-      <section className="creative-card">
-        <h4>v4 Asset Reuse</h4>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>来源 Asset</span>
-            <input
-              name="v4AssetReuseSourceId"
-              value={assetReuseSourceId}
-              onChange={(event) => onAssetReuseSourceIdChange(event.target.value)}
-              placeholder="asset_xxx"
-            />
-          </label>
-          <label className="lab-field">
-            <span>目标项目 ID</span>
-            <input
-              name="v4AssetReuseTargetId"
-              value={assetReuseTargetId}
-              onChange={(event) => onAssetReuseTargetIdChange(event.target.value)}
-              placeholder="project_xxx"
-            />
-          </label>
-        </div>
-        <label className="lab-field">
-          <span>说明</span>
-          <input
-            name="v4AssetReuseNote"
-            value={assetReuseNote}
-            onChange={(event) => onAssetReuseNoteChange(event.target.value)}
-            placeholder="reuse for style consistency"
-          />
-        </label>
-        <div className="lab-inline-actions">
-          <button
-            disabled={!assetReuseSourceId.trim() || !assetReuseTargetId.trim() || isV4Busy}
-            onClick={onCallAssetReuse}
-          >
-            调用 Asset Reuse
-          </button>
-        </div>
-        <div className="creative-summary">
-          <div>记录: {assetReuseResult?.id || '-'}</div>
-          <div>Asset: {assetReuseResult?.assetId || '-'}</div>
-          <div>目标项目: {assetReuseResult?.targetProjectId || '-'}</div>
-        </div>
-      </section>
-
-      <section className="creative-card">
-        <h4>v4 资产复用历史</h4>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>资产 ID</span>
-            <input
-              name="v4AssetReuseHistoryAssetId"
-              value={assetReuseHistoryAssetId}
-              onChange={(event) => onAssetReuseHistoryAssetIdChange(event.target.value)}
-              placeholder="为空则查询全部"
-            />
-          </label>
-          <label className="lab-field">
-            <span>来源项目 ID</span>
-            <input
-              name="v4AssetReuseHistorySourceProjectId"
-              value={assetReuseHistorySourceProjectId}
-              onChange={(event) => onAssetReuseHistorySourceProjectIdChange(event.target.value)}
-              placeholder="可选"
-            />
-          </label>
-          <label className="lab-field">
-            <span>目标项目 ID</span>
-            <input
-              name="v4AssetReuseHistoryTargetProjectId"
-              value={assetReuseHistoryTargetProjectId}
-              onChange={(event) => onAssetReuseHistoryTargetProjectIdChange(event.target.value)}
-              placeholder="可选"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>查询数量</span>
-            <input
-              type="number"
-              min={1}
-              name="v4AssetReuseHistoryLimit"
-              value={assetReuseHistoryLimit}
-              onChange={(event) => onAssetReuseHistoryLimitChange(event.target.value)}
-              placeholder="20"
-            />
-          </label>
-          <label className="lab-field">
-            <span>偏移量</span>
-            <input
-              type="number"
-              min={0}
-              name="v4AssetReuseHistoryOffset"
-              value={assetReuseHistoryOffset}
-              onChange={(event) => onAssetReuseHistoryOffsetChange(event.target.value)}
-              placeholder="0"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-actions">
-          <button disabled={isV4Busy} onClick={onQueryAssetReuseHistory}>
-            查询历史
-          </button>
-        </div>
-        <div className="creative-scene-list">
-          {assetReuseHistoryRecords.map((item) => (
-            <div key={item.id} className="creative-scene-item">
-              <div className="scene-headline">
-                <strong>{item.assetId}</strong>
-                <span>{new Date(item.createdAt).toLocaleString()}</span>
-              </div>
-              <div className="scene-meta-line">
-                <span>来源项目：{item.sourceProjectId || '-'}</span>
-                <span>目标项目：{item.targetProjectId || '-'}</span>
-              </div>
-              <div className="scene-meta-line">
-                <span>复用人：{item.reusedBy || '-'}</span>
-                <span>记录 ID：{item.id}</span>
-              </div>
-            </div>
-          ))}
-          {assetReuseHistoryRecords.length === 0 ? (
-            <div className="api-empty">暂无资产复用历史</div>
-          ) : null}
-        </div>
-      </section>
+      <AssetReuseSection
+        assetReuseSourceId={assetReuseSourceId}
+        assetReuseTargetId={assetReuseTargetId}
+        assetReuseNote={assetReuseNote}
+        assetReuseResult={assetReuseResult}
+        assetReuseHistoryAssetId={assetReuseHistoryAssetId}
+        assetReuseHistorySourceProjectId={assetReuseHistorySourceProjectId}
+        assetReuseHistoryTargetProjectId={assetReuseHistoryTargetProjectId}
+        assetReuseHistoryLimit={assetReuseHistoryLimit}
+        assetReuseHistoryOffset={assetReuseHistoryOffset}
+        assetReuseHistoryRecords={assetReuseHistoryRecords}
+        isV4Busy={isV4Busy}
+        onAssetReuseSourceIdChange={onAssetReuseSourceIdChange}
+        onAssetReuseTargetIdChange={onAssetReuseTargetIdChange}
+        onAssetReuseNoteChange={onAssetReuseNoteChange}
+        onCallAssetReuse={onCallAssetReuse}
+        onAssetReuseHistoryAssetIdChange={onAssetReuseHistoryAssetIdChange}
+        onAssetReuseHistorySourceProjectIdChange={onAssetReuseHistorySourceProjectIdChange}
+        onAssetReuseHistoryTargetProjectIdChange={onAssetReuseHistoryTargetProjectIdChange}
+        onAssetReuseHistoryLimitChange={onAssetReuseHistoryLimitChange}
+        onAssetReuseHistoryOffsetChange={onAssetReuseHistoryOffsetChange}
+        onQueryAssetReuseHistory={onQueryAssetReuseHistory}
+      />
     </div>
   )
 }
