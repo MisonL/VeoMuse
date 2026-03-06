@@ -8,6 +8,7 @@
 bun run format:check
 bun run lint
 bun run quality:api-contract
+bun run docker:smoke -- --no-build --wait-timeout 240
 bun run release:gate
 ```
 
@@ -15,16 +16,17 @@ bun run release:gate
 
 - `release:gate` 全绿（security/build/unit/e2e-smoke/e2e-regression/slo）
 - `artifacts/quality-summary.json` 中 `status=passed`
+- `docker:smoke` 全绿，并覆盖首页/API/WebSocket/上传/安全头/静态缓存
 - Docker 服务 `frontend/backend/redis` 为 `healthy`
 
 ## 2. 实网回归（有真实凭据时执行）
 
 ```bash
-# 快速凭据预检
+# 快速凭据预检（当前默认检查 `E2E_REAL_CHANNELS=true` 与 `GEMINI_API_KEYS`）
 bun run release:real:precheck
 
 # real 用例回归
-bun run e2e:regression:real -- --workers=1
+E2E_REAL_CHANNELS=true bun run e2e:regression:real -- --workers=1
 
 # 全量门禁 + real 回归
 bun run release:gate:real
@@ -35,6 +37,8 @@ bun run release:gate:real
 - `release:real:precheck` 返回 0
 - `release:gate:real` 全绿，且 real 用例非全部 skipped
 - `artifacts/quality-summary.json` 中 `realE2E.status=passed`
+- 如需扩展更多 provider 凭据校验，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加必需环境变量列表
+- 手工执行 `e2e:regression:real` 时需显式设置 `E2E_REAL_CHANNELS=true`
 
 ## 3. 发布产物复核
 

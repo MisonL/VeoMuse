@@ -115,7 +115,8 @@ bun run docker:smoke -- --no-build --wait-timeout 240
 bun run docker:smoke -- --keep-up
 ```
 
-- 默认探测接口：`/api/health`、`/api/capabilities`（基础地址 `http://127.0.0.1:18081`）。
+- 默认探测基础地址：`http://127.0.0.1:18081`。
+- 当前脚本覆盖：`redis/backend/frontend` 健康态、`GET /`、`/api/health`、`/api/capabilities`、`/ws/generation`、注册后上传链路、安全响应头、`/assets` 强缓存。
 - 失败时会自动输出 `docker compose ps` 与最近 `200` 行日志。
 - 默认执行 `docker compose down --volumes --remove-orphans` 回收环境，可用 `--keep-up` 跳过。
 
@@ -123,9 +124,9 @@ bun run docker:smoke -- --keep-up
 
 执行前请先确认：
 
-- 已安装 `jq`。
-- 已导出可用的 `ADMIN_TOKEN`。
-- Docker Compose 服务状态为 `healthy`。
+- Docker Compose 可用。
+- `.env` 已完成最小运行配置。
+- Docker Compose 服务可正常拉起为 `healthy`。
 
 ```bash
 curl -I http://127.0.0.1:18081
@@ -194,7 +195,7 @@ curl -i \
 # 标准发布门禁（本地标准回归 + SLO）
 bun run release:gate
 
-# 真实凭据预检（仅检查必需环境变量）
+# 真实凭据预检（当前默认检查 `E2E_REAL_CHANNELS=true` 与必需 Provider 凭据）
 bun run release:real:precheck
 
 # 含真实渠道回归（需要真实 AI 凭据，real 用例若全部 skipped 将直接失败）
@@ -294,6 +295,8 @@ CI 质量门禁策略（`.github/workflows/ci-quality-gate.yml`）：
 - `E2E_REAL_CHANNELS=true`
 - `GEMINI_API_KEYS` 已配置（用于真实导演生成链路）
 - 建议先执行 `bun run release:real:precheck`，确认必需凭据已就绪再进入 real 回归
+- 当前 `release:real:precheck` 默认检查 `E2E_REAL_CHANNELS=true` 与 real 用例所需的 Provider 凭据；直接手工运行 `e2e:regression:real` 时仍需显式设置 `E2E_REAL_CHANNELS=true`。
+- 当前仓库的 `@real` 回归默认要求已配置 `E2E_REAL_CHANNELS=true` 与 `GEMINI_API_KEYS`；如后续 real 用例扩展到更多 provider，可通过 `E2E_REAL_REQUIRED_ENV_KEYS=OPENAI_API_KEY,OPENAI_BASE_URL` 这类环境变量追加预检键。
 - 门禁启动阶段会先做 real 回归凭据预检；缺少必需变量会快速失败并输出缺失项。
 - `release:gate:real` 会校验 real 用例执行结果；若 `passed/failed/flaky/timed out/interrupted` 全为 0（即全部 skipped），门禁判定失败。
 - 真实渠道回归默认仍为手动执行（本地命令或手动 workflow），不纳入 PR/main 自动流水线。
@@ -303,7 +306,7 @@ CI 质量门禁策略（`.github/workflows/ci-quality-gate.yml`）：
 ```bash
 # 真实渠道回归（手动）
 bun run release:real:precheck
-bun run e2e:regression:real
+E2E_REAL_CHANNELS=true bun run e2e:regression:real
 # 或完整门禁 + 真实回归
 bun run release:gate:real
 

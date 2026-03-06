@@ -272,12 +272,35 @@ const buildRecommendations = (summary: QualitySummary, status: ReleaseGateStatus
   const recommendations: string[] = []
   const failedSteps = summary.steps.filter((step) => step.status === 'failed')
   const failedDomains: FailureDomain[] = []
+  const extractMissingRealEnvKeys = (message: string) => {
+    const matched = message.match(/缺少真实回归必需环境变量：(.+?)。/)
+    if (!matched?.[1]) return []
+    return matched[1]
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+  }
 
   for (const step of failedSteps) {
     if (step.name === REAL_E2E_PRECHECK_STEP_NAME) {
+      const missingKeys = extractMissingRealEnvKeys(String(step.failure?.message || ''))
+      const exportHints =
+        missingKeys.length > 0
+          ? missingKeys
+              .map((key) => {
+                if (key === 'GEMINI_API_KEYS') {
+                  return '`export GEMINI_API_KEYS=<your_keys>`'
+                }
+                if (key === 'E2E_REAL_CHANNELS' || key === 'E2E_REAL_CHANNELS=true') {
+                  return '`export E2E_REAL_CHANNELS=true`'
+                }
+                return `\`export ${key}=<value>\``
+              })
+              .join('、')
+          : '`bun run release:real:precheck`'
       uniquePush(
         recommendations,
-        '请先配置真实回归凭据：`export GEMINI_API_KEYS=<your_keys>`，再执行 `bun run release:gate:real`。'
+        `请先配置真实回归凭据：${exportHints}，再执行 \`bun run release:gate:real\`。`
       )
     } else {
       uniquePush(recommendations, `优先单独复现失败步骤「${step.name}」：\`${step.command}\`。`)
@@ -326,7 +349,10 @@ const buildRecommendations = (summary: QualitySummary, status: ReleaseGateStatus
       '真实渠道回归失败：建议先执行 `bun run e2e:regression:real -- --workers=1` 单独复现。'
     )
     if (summary.realE2E.failureType === 'auth') {
-      uniquePush(recommendations, '真实渠道鉴权失败：优先核对 `GEMINI_API_KEYS` 与供应商凭据权限。')
+      uniquePush(
+        recommendations,
+        '真实渠道鉴权失败：优先核对当前 real provider 凭据（如 `GEMINI_API_KEYS`）与供应商权限。'
+      )
     } else if (summary.realE2E.failureType === 'quota') {
       uniquePush(recommendations, '真实渠道配额/限流失败：优先检查供应商额度与组织并发配额。')
     } else if (summary.realE2E.failureType === 'timeout') {

@@ -29,7 +29,7 @@ const parseNonNegativeInt = (value: string | undefined, fallback: number) => {
 
 const quoteShellArg = (value: string) => JSON.stringify(value)
 
-const REAL_E2E_REQUIRED_ENV_KEYS = ['GEMINI_API_KEYS'] as const
+const DEFAULT_REAL_E2E_REQUIRED_ENV_KEYS = ['GEMINI_API_KEYS'] as const
 
 export const parseSloMode = (value: string | undefined): SloMode | null => {
   const normalized = String(value || '')
@@ -109,10 +109,17 @@ export const buildSloGateCommand = (mode: SloMode, apiBase: string) => {
   return `bun run scripts/slo_gate.ts --mode ${mode} --api-base ${quoteShellArg(apiBase)}`
 }
 
-export const resolveRealE2EPrecheckMissingEnv = (
-  env: NodeJS.ProcessEnv
-): ReadonlyArray<(typeof REAL_E2E_REQUIRED_ENV_KEYS)[number]> => {
-  return REAL_E2E_REQUIRED_ENV_KEYS.filter((key) => !String(env[key] || '').trim())
+export const resolveRealE2ERequiredEnvKeys = (env: NodeJS.ProcessEnv) => {
+  const extraKeys = String(env.E2E_REAL_REQUIRED_ENV_KEYS || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+
+  return [...new Set([...DEFAULT_REAL_E2E_REQUIRED_ENV_KEYS, ...extraKeys])]
+}
+
+export const resolveRealE2EPrecheckMissingEnv = (env: NodeJS.ProcessEnv): ReadonlyArray<string> => {
+  return resolveRealE2ERequiredEnvKeys(env).filter((key) => !String(env[key] || '').trim())
 }
 
 export const buildRealE2EPrecheckMessage = (missingEnv: ReadonlyArray<string>) => {

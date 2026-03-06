@@ -12,6 +12,7 @@ import {
   parseArgValue,
   parsePlaywrightResultCounters,
   parseSloMode,
+  resolveRealE2ERequiredEnvKeys,
   resolveRealE2EPrecheckMissingEnv,
   resolveFailureDomain,
   resolveSloApiBase,
@@ -326,19 +327,38 @@ Running 2 tests using 1 worker
     const missing = resolveRealE2EPrecheckMissingEnv(envOf({}))
     expect(Array.isArray(missing)).toBe(true)
     expect(missing).toContain('GEMINI_API_KEYS')
-
+    expect(missing).toContain('E2E_REAL_CHANNELS')
     const noneMissing = resolveRealE2EPrecheckMissingEnv(
       envOf({
-        GEMINI_API_KEYS: 'key-a,key-b'
+        GEMINI_API_KEYS: 'key-a,key-b',
+        E2E_REAL_CHANNELS: 'true'
       })
     )
     expect(noneMissing.length).toBe(0)
   })
 
+  it('应支持通过环境变量扩展 real 回归预检必需凭据', () => {
+    const requiredKeys = resolveRealE2ERequiredEnvKeys(
+      envOf({
+        E2E_REAL_REQUIRED_ENV_KEYS: 'OPENAI_API_KEY, OPENAI_BASE_URL, GEMINI_API_KEYS'
+      })
+    )
+    const missing = resolveRealE2EPrecheckMissingEnv(
+      envOf({
+        GEMINI_API_KEYS: 'key-a',
+        E2E_REAL_REQUIRED_ENV_KEYS: 'OPENAI_API_KEY, OPENAI_BASE_URL'
+      })
+    )
+
+    expect(requiredKeys).toEqual(['GEMINI_API_KEYS', 'OPENAI_API_KEY', 'OPENAI_BASE_URL'])
+    expect(missing).toEqual(['OPENAI_API_KEY', 'OPENAI_BASE_URL'])
+  })
+
   it('应生成 real 回归预检失败提示', () => {
-    const message = buildRealE2EPrecheckMessage(['GEMINI_API_KEYS'])
+    const message = buildRealE2EPrecheckMessage(['GEMINI_API_KEYS', 'OPENAI_API_KEY'])
     expect(message).toContain('缺少真实回归必需环境变量')
     expect(message).toContain('GEMINI_API_KEYS')
+    expect(message).toContain('OPENAI_API_KEY')
   })
 
   it('finalize 后应生成可执行 recommendations 并去重', () => {
@@ -421,7 +441,7 @@ Running 2 tests using 1 worker
       startedAtMs: 2_000,
       endedAtMs: 2_000,
       attempts: [],
-      failureMessage: '缺少真实回归必需环境变量：GEMINI_API_KEYS。',
+      failureMessage: '缺少真实回归必需环境变量：E2E_REAL_CHANNELS=true, GEMINI_API_KEYS。',
       failureExitCode: null
     })
 
@@ -432,12 +452,15 @@ Running 2 tests using 1 worker
       },
       {
         status: 'failed',
-        failureMessage: '缺少真实回归必需环境变量：GEMINI_API_KEYS。'
+        failureMessage: '缺少真实回归必需环境变量：E2E_REAL_CHANNELS=true, GEMINI_API_KEYS。'
       }
     )
 
     expect(
-      failed.recommendations.some((item) => item.includes('export GEMINI_API_KEYS=<your_keys>'))
+      failed.recommendations.some(
+        (item) =>
+          item.includes('export GEMINI_API_KEYS=') && item.includes('export E2E_REAL_CHANNELS=true')
+      )
     ).toBe(true)
     expect(
       failed.recommendations.some((item) =>

@@ -13,11 +13,12 @@
 
 - 目标：把 Docker Compose 作为正式交付基线重新验收一遍。
 - 覆盖范围：`GET /`、`/api/health`、`/api/capabilities`、`/ws` 握手、上传链路、安全响应头、静态资源缓存。
+- 当前自动化现状：`bun run docker:smoke` 已覆盖上述检查项与 `redis/backend/frontend` 健康态；本项剩余工作主要是“在正式部署环境实际执行并留痕”。
 - 验收标准：`redis/backend/frontend` 全部 `healthy`，网关首页与 API 正常，上传与 WebSocket 可用。
 
 2. 实网回归闭环（阻塞后置验收）
 
-- 前置条件：当前 `release:real:precheck` 只硬性校验 `GEMINI_API_KEYS`；如需扩展多 Provider 实网回归，再按场景补充对应渠道凭据。
+- 前置条件：当前 real 用例默认依赖 `E2E_REAL_CHANNELS=true` 与 `GEMINI_API_KEYS`；`release:real:precheck` 默认检查这两项，如需扩展多 Provider 实网回归，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加对应渠道凭据预检。
 - 执行命令：
   - `bun run release:real:precheck`
   - `bun run e2e:regression:real -- --workers=1`
