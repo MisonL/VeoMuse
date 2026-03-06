@@ -29,7 +29,7 @@ const parseNonNegativeInt = (value: string | undefined, fallback: number) => {
 
 const quoteShellArg = (value: string) => JSON.stringify(value)
 
-const DEFAULT_REAL_E2E_REQUIRED_ENV_KEYS = ['GEMINI_API_KEYS'] as const
+const DEFAULT_REAL_E2E_REQUIRED_ENV_KEYS = ['E2E_REAL_CHANNELS', 'GEMINI_API_KEYS'] as const
 
 export const parseSloMode = (value: string | undefined): SloMode | null => {
   const normalized = String(value || '')
@@ -119,12 +119,21 @@ export const resolveRealE2ERequiredEnvKeys = (env: NodeJS.ProcessEnv) => {
 }
 
 export const resolveRealE2EPrecheckMissingEnv = (env: NodeJS.ProcessEnv): ReadonlyArray<string> => {
-  return resolveRealE2ERequiredEnvKeys(env).filter((key) => !String(env[key] || '').trim())
+  return resolveRealE2ERequiredEnvKeys(env).filter((key) => {
+    const value = String(env[key] || '').trim()
+    if (key === 'E2E_REAL_CHANNELS') {
+      return value.toLowerCase() !== 'true'
+    }
+    return !value
+  })
 }
 
 export const buildRealE2EPrecheckMessage = (missingEnv: ReadonlyArray<string>) => {
   if (!missingEnv.length) return ''
-  return `缺少真实回归必需环境变量：${missingEnv.join(', ')}。请配置后重试，或移除 --with-real-e2e。`
+  const labels = missingEnv.map((key) =>
+    key === 'E2E_REAL_CHANNELS' ? 'E2E_REAL_CHANNELS=true' : key
+  )
+  return `缺少真实回归必需环境变量：${labels.join(', ')}。请配置后重试，或移除 --with-real-e2e。`
 }
 
 export const resolveSloCheckRetries = (params: { argv: string[]; env: NodeJS.ProcessEnv }) => {

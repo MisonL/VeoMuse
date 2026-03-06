@@ -4,17 +4,19 @@ import { runRealE2EPrecheck } from '../scripts/real_e2e_precheck'
 const envOf = (input: Record<string, string | undefined>) => input as NodeJS.ProcessEnv
 
 describe('真实回归预检脚本', () => {
-  it('缺少 GEMINI_API_KEYS 时应返回失败结果', () => {
+  it('缺少 E2E_REAL_CHANNELS 与 GEMINI_API_KEYS 时应返回失败结果', () => {
     const result = runRealE2EPrecheck(envOf({}))
 
     expect(result.ok).toBe(false)
+    expect(result.missingEnv).toContain('E2E_REAL_CHANNELS')
     expect(result.missingEnv).toContain('GEMINI_API_KEYS')
     expect(result.message).toContain('缺少真实回归必需环境变量')
   })
 
-  it('配置 GEMINI_API_KEYS 时应返回通过结果', () => {
+  it('配置 E2E_REAL_CHANNELS=true 与 GEMINI_API_KEYS 时应返回通过结果', () => {
     const result = runRealE2EPrecheck(
       envOf({
+        E2E_REAL_CHANNELS: 'true',
         GEMINI_API_KEYS: 'key-a,key-b'
       })
     )
@@ -27,6 +29,7 @@ describe('真实回归预检脚本', () => {
   it('可通过 E2E_REAL_REQUIRED_ENV_KEYS 扩展额外凭据检查', () => {
     const missingExtra = runRealE2EPrecheck(
       envOf({
+        E2E_REAL_CHANNELS: 'true',
         GEMINI_API_KEYS: 'key-a',
         E2E_REAL_REQUIRED_ENV_KEYS: 'OPENAI_API_KEY, OPENAI_BASE_URL'
       })
@@ -37,6 +40,7 @@ describe('真实回归预检脚本', () => {
 
     const ready = runRealE2EPrecheck(
       envOf({
+        E2E_REAL_CHANNELS: 'true',
         GEMINI_API_KEYS: 'key-a',
         E2E_REAL_REQUIRED_ENV_KEYS: 'OPENAI_API_KEY,OPENAI_BASE_URL',
         OPENAI_API_KEY: 'openai-key',

@@ -91,6 +91,7 @@ describe('发布门禁运行时路径（mock）', () => {
     await expect(
       runReleaseGate(['--with-real-e2e'], {
         GITHUB_REF_NAME: 'feature/real-e2e-skipped',
+        E2E_REAL_CHANNELS: 'true',
         GEMINI_API_KEYS: 'fake-real-key'
       } as NodeJS.ProcessEnv)
     ).rejects.toThrow('未执行任何 real E2E 用例')
@@ -125,6 +126,7 @@ describe('发布门禁运行时路径（mock）', () => {
     await expect(
       runReleaseGate(['--with-real-e2e'], {
         GITHUB_REF_NAME: 'feature/real-e2e-auth-fail',
+        E2E_REAL_CHANNELS: 'true',
         GEMINI_API_KEYS: 'fake-real-key'
       } as NodeJS.ProcessEnv)
     ).rejects.toThrow('E2E Regression (Real) failed with exit code 1')
