@@ -49,7 +49,8 @@ describe('前端表单可访问性回归', () => {
   it('TelemetryDashboard 数据库字段应具备 id/name 属性', () => {
     const content = [
       'apps/frontend/src/components/Editor/TelemetryDashboard.tsx',
-      'apps/frontend/src/components/Editor/telemetry-dashboard/DbOpsPanel.tsx'
+      'apps/frontend/src/components/Editor/telemetry-dashboard/DbOpsPanel.tsx',
+      'apps/frontend/src/components/Editor/telemetry-dashboard/DbRepairHistorySection.tsx'
     ]
       .map((file) => readFileSync(path.resolve(process.cwd(), file), 'utf8'))
       .join('\n')

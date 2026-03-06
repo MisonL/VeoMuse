@@ -6,7 +6,9 @@ import type {
   ProjectGovernanceTemplate,
   ProjectGovernanceTemplateApplyResult
 } from '../comparison-lab/types'
-import { GovernanceCommentPreviewList, GovernanceReviewPreviewList } from './GovernancePreviewLists'
+import GovernanceCommentsSection from './GovernanceCommentsSection'
+import GovernanceReviewsSection from './GovernanceReviewsSection'
+import GovernanceTemplateBatchSection from './GovernanceTemplateBatchSection'
 
 export interface ProjectGovernancePanelProps {
   governanceProjectId: string
@@ -114,193 +116,56 @@ const ProjectGovernancePanel: React.FC<ProjectGovernancePanelProps> = ({
         />
         <span>{governanceBusy ? '处理中...' : '空闲'}</span>
       </div>
-
-      <div className="governance-action-row">
-        <button disabled={governanceBusy} onClick={() => onLoadGovernanceComments(false)}>
-          刷新评论
-        </button>
-        <input
-          type="number"
-          min={1}
-          id="governance-comment-limit"
-          name="governanceCommentLimit"
-          aria-label="评论 limit"
-          value={governanceCommentLimit}
-          onChange={(event) => onGovernanceCommentLimitChange(event.target.value)}
-          placeholder="评论 limit"
-        />
-        <button
-          disabled={governanceBusy || !governanceCommentHasMore}
-          onClick={() => onLoadGovernanceComments(true)}
-        >
-          评论加载更多
-        </button>
-      </div>
-      <div className="governance-meta-row">
-        <span>评论游标：{governanceCommentCursor || '-'}</span>
-      </div>
-      <div className="governance-input-grid">
-        <input
-          type="text"
-          id="governance-comment-anchor"
-          name="governanceCommentAnchor"
-          aria-label="评论锚点（可选）"
-          value={governanceCommentAnchor}
-          onChange={(event) => onGovernanceCommentAnchorChange(event.target.value)}
-          placeholder="评论锚点（可选）"
-        />
-        <input
-          type="text"
-          id="governance-comment-content"
-          name="governanceCommentContent"
-          aria-label="评论内容"
-          value={governanceCommentContent}
-          onChange={(event) => onGovernanceCommentContentChange(event.target.value)}
-          placeholder="评论内容"
-        />
-        <input
-          type="text"
-          id="governance-comment-mentions"
-          name="governanceCommentMentions"
-          aria-label="评论 mentions"
-          value={governanceCommentMentions}
-          onChange={(event) => onGovernanceCommentMentionsChange(event.target.value)}
-          placeholder="mentions: owner,editor"
-        />
-        <button disabled={governanceBusy} onClick={onCreateGovernanceComment}>
-          新建评论
-        </button>
-      </div>
-      <div className="governance-action-row">
-        <select
-          id="governance-selected-comment-id"
-          name="governanceSelectedCommentId"
-          aria-label="选择评论"
-          value={governanceSelectedCommentId}
-          onChange={(event) => onGovernanceSelectedCommentIdChange(event.target.value)}
-        >
-          <option value="">选择评论后可 Resolve</option>
-          {governanceComments.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.id.slice(0, 8)} · {item.status}
-            </option>
-          ))}
-        </select>
-        <button
-          disabled={governanceBusy || !governanceSelectedCommentId}
-          onClick={onResolveGovernanceComment}
-        >
-          Resolve 评论
-        </button>
-      </div>
-      <GovernanceCommentPreviewList comments={governanceComments} />
-
-      <div className="governance-action-row">
-        <button disabled={governanceBusy} onClick={onLoadGovernanceReviews}>
-          刷新评审
-        </button>
-        <input
-          type="number"
-          min={1}
-          id="governance-review-limit"
-          name="governanceReviewLimit"
-          aria-label="评审 limit"
-          value={governanceReviewLimit}
-          onChange={(event) => onGovernanceReviewLimitChange(event.target.value)}
-          placeholder="评审 limit"
-        />
-        <select
-          id="governance-review-decision"
-          name="governanceReviewDecision"
-          aria-label="评审决策"
-          value={governanceReviewDecision}
-          onChange={(event) =>
-            onGovernanceReviewDecisionChange(
-              event.target.value as ProjectGovernanceReview['decision']
-            )
-          }
-        >
-          <option value="approved">approved</option>
-          <option value="changes_requested">changes_requested</option>
-        </select>
-        <input
-          type="text"
-          id="governance-review-summary"
-          name="governanceReviewSummary"
-          aria-label="评审摘要"
-          value={governanceReviewSummary}
-          onChange={(event) => onGovernanceReviewSummaryChange(event.target.value)}
-          placeholder="评审摘要"
-        />
-        <input
-          type="text"
-          id="governance-review-score"
-          name="governanceReviewScore"
-          aria-label="评审评分（可选）"
-          value={governanceReviewScore}
-          onChange={(event) => onGovernanceReviewScoreChange(event.target.value)}
-          placeholder="评分（可选）"
-        />
-        <button disabled={governanceBusy} onClick={onCreateGovernanceReview}>
-          新建评审
-        </button>
-      </div>
-      <GovernanceReviewPreviewList reviews={governanceReviews} />
-
-      <div className="governance-action-row">
-        <button disabled={governanceBusy} onClick={onLoadGovernanceTemplates}>
-          刷新模板
-        </button>
-        <select
-          id="governance-selected-template-id"
-          name="governanceSelectedTemplateId"
-          aria-label="选择模板"
-          value={governanceSelectedTemplateId}
-          onChange={(event) => onGovernanceSelectedTemplateIdChange(event.target.value)}
-        >
-          <option value="">选择模板</option>
-          {governanceTemplates.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-        <button
-          disabled={governanceBusy || !governanceSelectedTemplateId}
-          onClick={onApplyGovernanceTemplate}
-        >
-          应用模板
-        </button>
-      </div>
-      <textarea
-        id="governance-template-options"
-        name="governanceTemplateOptions"
-        aria-label="模板应用参数 JSON"
-        value={governanceTemplateOptions}
-        onChange={(event) => onGovernanceTemplateOptionsChange(event.target.value)}
-        placeholder='模板应用参数 JSON，例如 {"targetTrack":"track-v1"}'
+      <GovernanceCommentsSection
+        governanceBusy={governanceBusy}
+        governanceCommentLimit={governanceCommentLimit}
+        governanceCommentCursor={governanceCommentCursor}
+        governanceCommentHasMore={governanceCommentHasMore}
+        governanceComments={governanceComments}
+        governanceCommentAnchor={governanceCommentAnchor}
+        governanceCommentContent={governanceCommentContent}
+        governanceCommentMentions={governanceCommentMentions}
+        governanceSelectedCommentId={governanceSelectedCommentId}
+        onGovernanceCommentLimitChange={onGovernanceCommentLimitChange}
+        onLoadGovernanceComments={onLoadGovernanceComments}
+        onGovernanceCommentAnchorChange={onGovernanceCommentAnchorChange}
+        onGovernanceCommentContentChange={onGovernanceCommentContentChange}
+        onGovernanceCommentMentionsChange={onGovernanceCommentMentionsChange}
+        onCreateGovernanceComment={onCreateGovernanceComment}
+        onGovernanceSelectedCommentIdChange={onGovernanceSelectedCommentIdChange}
+        onResolveGovernanceComment={onResolveGovernanceComment}
       />
-      <div className="governance-meta-row">
-        <span>模板回执：{governanceTemplateResult?.traceId || '-'}</span>
-        <span>{governanceTemplateResult?.templateName || '-'}</span>
-      </div>
 
-      <textarea
-        id="governance-batch-operations"
-        name="governanceBatchOperations"
-        aria-label="片段批量更新 operations JSON 数组"
-        value={governanceBatchOperations}
-        onChange={(event) => onGovernanceBatchOperationsChange(event.target.value)}
-        placeholder="片段批量更新 operations JSON 数组"
+      <GovernanceReviewsSection
+        governanceBusy={governanceBusy}
+        governanceReviewLimit={governanceReviewLimit}
+        governanceReviews={governanceReviews}
+        governanceReviewDecision={governanceReviewDecision}
+        governanceReviewSummary={governanceReviewSummary}
+        governanceReviewScore={governanceReviewScore}
+        onLoadGovernanceReviews={onLoadGovernanceReviews}
+        onGovernanceReviewLimitChange={onGovernanceReviewLimitChange}
+        onGovernanceReviewDecisionChange={onGovernanceReviewDecisionChange}
+        onGovernanceReviewSummaryChange={onGovernanceReviewSummaryChange}
+        onGovernanceReviewScoreChange={onGovernanceReviewScoreChange}
+        onCreateGovernanceReview={onCreateGovernanceReview}
       />
-      <div className="governance-action-row">
-        <button disabled={governanceBusy} onClick={onGovernanceBatchUpdateClips}>
-          提交 clips/batch-update
-        </button>
-        <span>requested {governanceBatchResult?.requested ?? '-'}</span>
-        <span>accepted {governanceBatchResult?.accepted ?? '-'}</span>
-        <span>updated {governanceBatchResult?.updated ?? '-'}</span>
-      </div>
+
+      <GovernanceTemplateBatchSection
+        governanceBusy={governanceBusy}
+        governanceTemplates={governanceTemplates}
+        governanceSelectedTemplateId={governanceSelectedTemplateId}
+        governanceTemplateOptions={governanceTemplateOptions}
+        governanceTemplateResult={governanceTemplateResult}
+        governanceBatchOperations={governanceBatchOperations}
+        governanceBatchResult={governanceBatchResult}
+        onLoadGovernanceTemplates={onLoadGovernanceTemplates}
+        onGovernanceSelectedTemplateIdChange={onGovernanceSelectedTemplateIdChange}
+        onApplyGovernanceTemplate={onApplyGovernanceTemplate}
+        onGovernanceTemplateOptionsChange={onGovernanceTemplateOptionsChange}
+        onGovernanceBatchOperationsChange={onGovernanceBatchOperationsChange}
+        onGovernanceBatchUpdateClips={onGovernanceBatchUpdateClips}
+      />
       {governanceError ? <div className="db-error">{governanceError}</div> : null}
     </section>
   )
