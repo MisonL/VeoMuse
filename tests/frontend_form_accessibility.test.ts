@@ -10,6 +10,8 @@ describe('前端表单可访问性回归', () => {
       'apps/frontend/src/components/Editor/comparison-lab/modes/CompareModePanel.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/MarketplaceModePanel.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/creative/CreativeInputSection.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/creative/CreativeRunDetailsSection.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/creative/WorkflowSection.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/creative/BatchJobSection.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/creative/AssetReuseSection.tsx',
