@@ -1,26 +1,16 @@
 # VeoMuse
 
-> 基于 Bun Monorepo 的 AI 视频创作与协作平台
+VeoMuse 是一个基于 Bun Monorepo 的 AI 视频创作与协作平台，面向团队化视频生产场景，覆盖素材编辑、模型路由、创意工作流、协作评审、可观测性与发布门禁。
 
-VeoMuse 面向团队化视频生产场景，覆盖素材编辑、模型路由、创意工作流、协作评审、质量门禁与发布流程。
+## 项目范围
 
-## 项目定位
+- 创意生产：文本/图片转视频、导演分析、提示词增强、镜头建议、智能剪辑。
+- 协作治理：组织、工作区、成员权限、评论/评审、模板应用、批量治理动作。
+- 模型路由：多模型总线、渠道配置、策略治理、预算告警与降级。
+- 可靠性：SLO、Provider 健康检查、数据库自愈、回归门禁、质量汇总。
+- 编辑体验：时间轴、播放器同步、多面板工作台、任务闭环追踪。
 
-- 工程目标：构建可落地的 AI 视频生产系统，而不是单点 Demo
-- 典型场景：文本/图片转视频、工作区协作评审、组织级治理与审计
-- 运行方式：本地开发（Bun）+ 容器部署（Docker Compose）
-
-## 核心能力
-
-| 模块       | 能力                                                                                                |
-| ---------- | --------------------------------------------------------------------------------------------------- |
-| 模型能力层 | 多模型总线、渠道配置、策略治理、预算与降级                                                          |
-| 创意生产层 | 四种生成模式（`text_to_video` / `image_to_video` / `first_last_frame_transition` / `video_extend`） |
-| 协作治理层 | 组织/工作区权限、评论与评审、审计导出                                                               |
-| 可靠性层   | SLO、回归门禁、发布质量汇总、实网预检                                                               |
-| 编辑体验层 | 时间轴编辑器、多面板工作台、任务闭环与状态追踪                                                      |
-
-详细清单见 [docs/CORE_FEATURES.md](docs/CORE_FEATURES.md)。
+详细能力见 [docs/CORE_FEATURES.md](docs/CORE_FEATURES.md)。
 
 ## 技术栈
 
@@ -38,14 +28,14 @@ VeoMuse 面向团队化视频生产场景，覆盖素材编辑、模型路由、
 ```text
 .
 ├─ apps/
-│  ├─ backend/          # 后端 API 与服务实现
-│  └─ frontend/         # 编辑器与实验室前端
+│  ├─ backend/          # 后端 API、服务实现、runtime 启动逻辑
+│  └─ frontend/         # 编辑器、实验室与前端面板
 ├─ packages/
 │  └─ shared/           # 共享类型与公共定义
-├─ tests/               # API/脚本/对齐守卫回归测试
+├─ tests/               # API / DOM / 对齐守卫 / E2E 回归
 ├─ scripts/             # 质量门禁、部署与运维脚本
-├─ config/              # Docker/Nginx 等部署配置
-└─ docs/                # 部署、API、测试与需求文档
+├─ config/              # Docker、Nginx 与部署配置
+└─ docs/                # 部署、API、测试、需求与路线文档
 ```
 
 ## 快速开始
@@ -54,7 +44,7 @@ VeoMuse 面向团队化视频生产场景，覆盖素材编辑、模型路由、
 
 - Bun `>= 1.3.9`
 - Node.js（仅用于少量生态工具）
-- Docker（可选，用于容器化运行）
+- Docker（用于容器部署与烟测，可选）
 
 ### 2. 安装依赖
 
@@ -68,7 +58,8 @@ bun install
 cp .env.example .env
 ```
 
-生产环境请务必设置安全项：`JWT_SECRET`、`SECRET_ENCRYPTION_KEY`、`REDIS_PASSWORD`、`ADMIN_TOKEN`。
+生产环境至少需要补齐：`JWT_SECRET`、`SECRET_ENCRYPTION_KEY`、`REDIS_PASSWORD`、`ADMIN_TOKEN`。
+如需真实 Provider 回归，还需要配置 `GEMINI_API_KEYS` 等外部凭据。
 
 ### 4. 启动本地开发
 
@@ -81,43 +72,51 @@ bun run dev
 
 ## Docker 部署
 
+推荐优先使用一键脚本：
+
+```bash
+bash scripts/one-click-deploy.sh
+```
+
+备用手动方式：
+
 ```bash
 docker compose -f config/docker/docker-compose.yml up -d --build --wait --wait-timeout 180
 docker compose -f config/docker/docker-compose.yml ps
 ```
 
 - 网关地址：`http://127.0.0.1:18081`
-- 健康检查：`http://127.0.0.1:18081/api/health`
-
-部署细节见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
+- 网关/API 联通检查：`http://127.0.0.1:18081/api/health`
+- 详细部署说明见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ## 常用命令
 
 ### 开发与质量
 
-| 目标           | 命令                           |
-| -------------- | ------------------------------ |
-| 本地开发       | `bun run dev`                  |
-| 构建           | `bun run build`                |
-| 类型检查/Lint  | `bun run lint`                 |
-| 代码格式化     | `bun run format:prettier`      |
-| 格式检查       | `bun run format:check`         |
-| 单元与集成测试 | `bun run test`                 |
-| 覆盖率门禁     | `bun run test:coverage`        |
-| API 契约守卫   | `bun run quality:api-contract` |
+| 目标            | 命令                           |
+| --------------- | ------------------------------ |
+| 本地开发        | `bun run dev`                  |
+| 构建            | `bun run build`                |
+| 类型检查与 Lint | `bun run lint`                 |
+| 格式化          | `bun run format:prettier`      |
+| 格式检查        | `bun run format:check`         |
+| 单元与集成测试  | `bun run test`                 |
+| 覆盖率门禁      | `bun run test:coverage`        |
+| API 契约守卫    | `bun run quality:api-contract` |
+| Docker 烟测     | `bun run docker:smoke`         |
+| 全链路质量入口  | `bun run quality:full`         |
 
-### E2E 与发布
+### 发布与回归
 
-| 目标             | 命令                            |
-| ---------------- | ------------------------------- |
-| E2E 冒烟         | `bun run e2e:smoke`             |
-| E2E 回归（全量） | `bun run e2e:regression`        |
-| 发布门禁         | `bun run release:gate`          |
-| 实网凭据预检     | `bun run release:real:precheck` |
-| 实网门禁         | `bun run release:gate:real`     |
-| 一键质量链路     | `bun run quality:full`          |
+| 目标         | 命令                            |
+| ------------ | ------------------------------- |
+| E2E 冒烟     | `bun run e2e:smoke`             |
+| 标准回归     | `bun run e2e:regression`        |
+| 标准发布门禁 | `bun run release:gate`          |
+| 真实凭据预检 | `bun run release:real:precheck` |
+| 真实渠道门禁 | `bun run release:gate:real`     |
 
-## 发布流程建议
+## 推荐发布流程
 
 ```bash
 bun run format:check
@@ -126,21 +125,28 @@ bun run test
 bun run quality:api-contract
 bun run release:gate
 
-# 需要执行真实渠道回归时
+# 仅在真实 Provider 凭据齐全时执行
 bun run release:real:precheck
 bun run release:gate:real
 ```
 
 说明：
 
-- `release:gate` 默认执行全量回归，不再仅限 mock。
+- `release:gate` 是标准本地发布门禁，覆盖 security/build/unit/e2e/slo。
+- `release:gate:real` 额外验证真实第三方渠道，不会替代标准门禁。
 - 质量汇总输出：`artifacts/quality-summary.json`
 - SLO 报告输出：`artifacts/slo-report.json`
 
-## 当前状态与已知限制
+## 当前状态
 
-- 2026-03-05 审计中的 `P0/P1/S0` 阻塞项已修复并通过回归。
-- real E2E 依赖外部凭据（如 `GEMINI_API_KEYS`），未配置时会被预检阻断。
+- 后端入口与前端实验室已持续模块化，核心 API、DOM 与回归测试链路已稳定。
+- Docker Compose、Nginx、质量门禁、数据库自愈与 SLO 面板均已接线完成。
+- 当前仍需补齐的事项见 [docs/REMAINING_TASKS.md](docs/REMAINING_TASKS.md)。
+
+## 已知限制
+
+- 真实 Provider 成功率取决于外部凭据、额度和上游稳定性；未配置凭据时 `release:gate:real` 无法完成。
+- 当前质量基线以本地/Mock 回归与 Docker 烟测为主，尚未把长时间连续压测纳入当前验收清单。
 
 ## 文档导航
 

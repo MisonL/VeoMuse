@@ -1,52 +1,61 @@
 # VeoMuse 剩余任务清单（V3.2）
 
-## 当前状态
+## 当前基线
 
-- 发布阻塞项：`0`（已全部修复并回归通过）
-- 当前阶段：稳定性增强与实网验证
-- 发布基线：`release:gate`、`quality:api-contract`、`test:coverage` 已通过
-- 当前环境实网凭据：未配置（`GEMINI_API_KEYS`、`OPENAI_API_KEY`、`KLING_API_KEY` 等均为空）
+- 本地工程基线：`bun run lint`、`bun run build`、`bun run test`、`bun run release:gate` 已形成稳定回归路径。
+- 当前阶段：结构化收口、Docker 正式部署验收、真实渠道补验。
+- 已确认不纳入当前排期：`24h` 长稳压测。
+- 外部依赖限制：未配置真实 Provider 凭据时，`release:gate:real` 不能视为完成。
 
-## 仍需推进（按优先级）
+## 剩余事项（按优先级）
 
-1. 实网回归闭环（高优先级）
+1. Docker 正式部署复核
 
-- 目标：验证真实第三方渠道在生产配置下可用且稳定。
-- 前置：配置 `GEMINI_API_KEYS` 等实网凭据。
-- 执行：
+- 目标：把 Docker Compose 作为正式交付基线重新验收一遍。
+- 覆盖范围：`GET /`、`/api/health`、`/api/capabilities`、`/ws` 握手、上传链路、安全响应头、静态资源缓存。
+- 验收标准：`redis/backend/frontend` 全部 `healthy`，网关首页与 API 正常，上传与 WebSocket 可用。
+
+2. 实网回归闭环（阻塞后置验收）
+
+- 前置条件：配置 `GEMINI_API_KEYS`、`OPENAI_API_KEY`、`KLING_API_KEY` 等真实凭据。
+- 执行命令：
   - `bun run release:real:precheck`
   - `bun run e2e:regression:real -- --workers=1`
   - `bun run release:gate:real`
-- 验收：real 用例非全 skipped，`quality-summary.json` 中 `realE2E.status=passed`。
+- 验收标准：real 用例非全 skipped，`artifacts/quality-summary.json` 中 `realE2E.status=passed`。
 
-### 无实网凭据时的替代验证（当前默认）
+3. 前端大文件继续收口
 
-- 执行本地模拟闭环：`bun run test`、`bun run quality:api-contract`、`bun run release:gate`
-- 验收：全量测试通过，关键链路（视频生成生命周期/协作评论分页/工作区权限）回归通过。
-- 说明：替代验证只能证明本地契约与逻辑稳定，不代表第三方真实渠道可用。
+- 目标文件：`apps/frontend/src/App.tsx`、`apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx`、`apps/frontend/src/components/Editor/comparison-lab/modes/CreativeModePanel.tsx`、`apps/frontend/src/components/Editor/TelemetryDashboard.tsx`。
+- 当前方向：继续把纯展示块、面板动作、状态编排拆到独立组件或 hooks。
+- 验收标准：不改变交互语义，现有 DOM/SSR/对齐测试保持通过。
 
-2. 24h 长稳压测（高优先级）
+4. 后端大文件继续收口
 
-- 目标：建立全天候稳定性基线并固化阈值。
-- 执行：`COLLAB_STRESS_PROFILE=long COLLAB_STRESS_DURATION_MINUTES=1440 bun run stress:collab-ws`
-- 验收：`ackRate >= 0.99`，`errors=0`，无异常退出。
+- 目标文件：`apps/backend/src/services/LocalDatabaseService.ts`、`apps/backend/src/services/WorkspaceService.ts`、`apps/backend/src/services/ModelMarketplaceService.ts`、`apps/backend/src/services/VideoGenerationService.ts`。
+- 当前方向：按领域拆出查询、命令、修复/同步任务和 DTO 归一化层。
+- 验收标准：API 契约不变，现有路由测试与服务测试保持通过。
 
-3. 创意工作台体验收口（中优先级）
+5. 类型债务与错误处理治理
 
-- 目标：在 `1366/1440/1920` 分辨率下完成最终可用性收口。
-- 范围：三栏密度、任务列表可读性、主操作一屏可达。
-- 验收：关键控件无遮挡、无明显滚动抖动、主要流程可在单屏完成。
+- 目标：继续清理生产代码与脚本中的 `any / as any`，为历史空 `catch` 补最小粒度日志。
+- 优先范围：`scripts/`、前端网络边界、后端服务适配层。
+- 验收标准：生产代码中的类型豁免继续下降，异常不再静默吞掉。
 
-## 已完成能力摘要
+6. 文档与部署说明持续对齐
 
-- 工作区渠道权限边界修复（读 `viewer+`，写 `owner`）
-- 评论/工作流运行复合游标稳定分页（`created_at + id`）
-- 策略创建/更新防重复提交与渠道弹窗可访问性修复
-- CI 门禁实例统一与默认全量回归修复
-- 发布门禁 real E2E 预检与假绿防护
-- ComparisonLab 模块化拆分（`useMarketplacePolicy`、`useProjectGovernance`、`useV4CommentThreads`、`useV4CreativeOps`）
+- 目标：保证 `README`、`DEPLOYMENT`、`CORE_FEATURES`、`RELEASE_CHECKLIST` 与真实代码和 Compose 配置一致。
+- 重点：Nginx 配置路径映射、网关职责、发布门禁口径、Docker 验收前置条件。
+
+## 本轮已完成摘要
+
+- 后端入口继续拆分：`apps/backend/src/index.ts` 已压薄为 app 装配入口，启动调度迁入 `apps/backend/src/runtime/bootstrap.ts`。
+- 后端路由按领域拆分：认证、组织、渠道、模型、AI、视频生成、工作区、项目治理、存储、V4 实验室等路由已独立成模块。
+- 前端 `ComparisonLab` 持续拆分：认证/组织/渠道、工作区协作、V4 运维、视频生成、对比态管理、创意运行管理均已抽到 hooks。
+- 前端 `TelemetryDashboard` 已开始拆纯展示块：概览、Provider 健康、治理预览、数据库摘要、SLO 数据列表已模块化。
+- 发布门禁脚本模块化：`scripts/release_gate.ts` 作为 façade，核心实现下沉到 `scripts/release-gate/`。
 
 ## 说明
 
-- 旧审计过程文档已归档清理，当前文档只保留有效执行项。
-- 若新增需求，请提交到 `docs/requirements/PROJECT_REQUIREMENTS.md` 后再入排期。
+- 若新增功能需求，请先更新 `docs/requirements/PROJECT_REQUIREMENTS.md`，再纳入排期。
+- 若要声明“可正式上线”，仍需补齐 Docker 正式部署复核与真实渠道回归两项验收。

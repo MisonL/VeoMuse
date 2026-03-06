@@ -204,12 +204,21 @@
 
 - **Params**: `prompt`(required), `budgetUsd`(optional), `priority`(optional: `quality`/`speed`/`cost`)
 - **Response**: `decision`，包含 `policyId`、`recommendedModelId`、`estimatedCostUsd`、`estimatedLatencyMs`、`confidence`、`scoreBreakdown[]`、`candidates[]`、`budgetGuard`。
+- **Dry-run 语义**: 该接口只返回决策结果，不写执行记录、不写告警事件，也不会触发运行指标聚合刷新。
 - `budgetGuard` 字段说明：
   - `budgetUsd`: 本次模拟预算
   - `alertThresholdRatio`: 阈值比例（默认 0.8，可由 `MODEL_POLICY_BUDGET_ALERT_RATIO` 覆盖）
   - `status`: `ok` / `warning` / `critical` / `degraded`
   - `message`: 预算保护提示
   - `autoDegraded`: 是否触发自动降级至低成本模型
+
+### POST `/api/models/policy/execute`
+
+按默认启用策略执行一次真实路由决策。
+
+- **Params**: 与 `/api/models/policy/simulate` 一致。
+- **Response**: `decision`
+- **执行语义**: 会写入执行记录；当 `budgetGuard.status` 为 `warning` / `critical` / `degraded` 时，会按告警配置落库事件。
 
 ### GET `/api/models/policies`
 
@@ -233,6 +242,13 @@
 按指定策略执行模拟。策略不存在返回 `404`。
 
 - **Response**: 与 `/api/models/policy/simulate` 一致，包含 `decision.budgetGuard`（预算阈值告警与自动降级结果）。
+- **Dry-run 语义**: 不写执行记录、不写告警事件。
+
+### POST `/api/models/policies/:id/execute`
+
+按指定策略执行一次真实路由决策。策略不存在返回 `404`。
+
+- **Response**: 与 `/api/models/policy/execute` 一致。
 
 ### GET `/api/models/policies/:id/executions`
 
@@ -255,6 +271,7 @@
   - `result.total`
   - `result.results[]`（每个场景的 `decision`）
   - `result.summary`（`ok` / `warning` / `critical` / `degraded` 计数）
+- **Dry-run 语义**: 不写执行记录、不写告警事件。
 
 ### GET `/api/models/policies/:id/alerts`
 
@@ -275,7 +292,7 @@
   - `warningThresholdRatio`(optional，自动约束到 `0~1`)
   - `criticalThresholdRatio`(optional，自动约束到 `0~1` 且不低于 `warningThresholdRatio`)
 - **Response**: `config`
-- **告警落库规则**: `simulate`/`simulate-batch` 产生 `warning`/`critical`/`degraded` 时会写入告警事件表。
+- **告警落库规则**: 仅 `execute` 路径在产生 `warning`/`critical`/`degraded` 时写入告警事件表；`simulate` / `simulate-batch` 保持 dry-run。
 
 ### POST `/api/video/generations`
 

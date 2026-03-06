@@ -307,9 +307,47 @@ export const extractApiRoutesFromBackendSource = (source: string) => {
   return [...routes].sort((left, right) => left.localeCompare(right))
 }
 
+const listTypeScriptFiles = async (dirPath: string): Promise<string[]> => {
+  try {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true })
+    const files = await Promise.all(
+      entries.map(async (entry) => {
+        const absolutePath = path.join(dirPath, entry.name)
+        if (entry.isDirectory()) {
+          return listTypeScriptFiles(absolutePath)
+        }
+        if (entry.isFile() && entry.name.endsWith('.ts') && !entry.name.endsWith('.d.ts')) {
+          return [absolutePath]
+        }
+        return []
+      })
+    )
+    return files.flat().sort((left, right) => left.localeCompare(right))
+  } catch (error: unknown) {
+    const code = (error as { code?: string } | null | undefined)?.code
+    if (code === 'ENOENT') return []
+    throw error
+  }
+}
+
+const resolveBackendSourceFiles = async (backendPath: string) => {
+  const entryPath = path.resolve(backendPath)
+  const httpDirPath = path.join(path.dirname(entryPath), 'http')
+  const httpFiles = await listTypeScriptFiles(httpDirPath)
+  return [entryPath, ...httpFiles].sort((left, right) => left.localeCompare(right))
+}
+
 export const readApiRoutesFromBackend = async (backendPath: string) => {
-  const content = await fs.readFile(backendPath, 'utf8')
-  return extractApiRoutesFromBackendSource(content)
+  const sourceFiles = await resolveBackendSourceFiles(backendPath)
+  const routes = new Set<string>()
+
+  for (const sourceFile of sourceFiles) {
+    const content = await fs.readFile(sourceFile, 'utf8')
+    const extractedRoutes = extractApiRoutesFromBackendSource(content)
+    extractedRoutes.forEach((route) => routes.add(route))
+  }
+
+  return [...routes].sort((left, right) => left.localeCompare(right))
 }
 
 export const resolveArgValue = (argv: string[], flag: string) => {

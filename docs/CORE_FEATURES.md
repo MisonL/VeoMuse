@@ -1,6 +1,7 @@
 # VeoMuse 核心功能清单（V3.2）
 
-本文用于快速审阅当前项目“已完成并可用”的核心能力，按业务域归类。
+本文用于快速审阅当前项目已经接线完成、并已通过本地/Mock 回归验证的核心能力。
+涉及真实第三方 Provider 的链路，仍需在配置真实凭据后执行 `release:gate:real` 做最终确认。
 
 ## 1. AI 创作引擎
 
@@ -8,7 +9,7 @@
 
 - 能力：导演分析、镜头建议、提示词增强、智能剪辑，以及统一任务化视频生成。
 - 视频生成模式：`text_to_video`、`image_to_video`、`first_last_frame_transition`、`video_extend`。
-- 生命周期能力：支持 `sync / retry / cancel`，并可通过后端自动同步将活跃任务推进到终态。
+- 生命周期能力：支持 `sync / retry / cancel`，并可通过后端自动同步把活跃任务推进到终态。
 - 关键入口：`/api/video/generations*`、`/api/video/generate`、`/api/ai/director/analyze`、`/api/ai/suggest-cuts`、`/api/ai/enhance`。
 - 关键测试：`tests/video_generation_api_modes.test.ts`、`tests/video_generation_lifecycle_api.test.ts`、`tests/video_generation_service_cursor.test.ts`、`tests/ai_api.test.ts`、`tests/prompt_enhance.test.ts`、`tests/ai_clip.test.ts`。
 
@@ -23,24 +24,21 @@
   - `/api/ai/voice-morph`
   - `/api/ai/relighting/apply`
   - `/api/ai/spatial/render`
-- 关键测试：
-  - `tests/media_alchemy_translation.test.ts`
-  - `tests/media_alchemy_style_transfer.test.ts`
-  - `tests/vfx_apply_flow.test.ts`
-  - `tests/lip_sync_flow.test.ts`
+- 关键测试：`tests/media_alchemy_translation.test.ts`、`tests/media_alchemy_style_transfer.test.ts`、`tests/vfx_apply_flow.test.ts`、`tests/lip_sync_flow.test.ts`。
 
 ## 2. 多模型总线与渠道治理
 
 ### 2.1 模型编排
 
 - 默认模型：`veo-3.1`、`kling-v1`、`sora-preview`、`luma-dream`、`runway-gen3`、`pika-1.5`、`openai-compatible`。
+- 支持能力：统一任务创建、渠道切换、能力探测、上下文化工作区路由。
 - 关键入口：`/api/models`、`/api/models/marketplace`、`/api/video/generations`、`/api/video/generate`。
 - 关键测试：`tests/model_channels.test.ts`、`tests/model_marketplace_api.test.ts`。
 
 ### 2.2 策略治理
 
-- 能力：策略创建/更新、模拟、执行记录、预算告警与自动降级。
-- 关键入口：`/api/models/policies/**`、`/api/models/policy/simulate`。
+- 能力：策略创建/更新、dry-run 沙箱模拟、真实执行审计、预算告警与自动降级。
+- 关键入口：`/api/models/policies/**`、`/api/models/policy/simulate`、`/api/models/policy/execute`。
 - 关键测试：`tests/model_marketplace_policy_api.test.ts`、`tests/model_policy_sandbox_alerts_api.test.ts`。
 
 ## 3. 协作平台与治理
@@ -80,17 +78,15 @@
 
 ## 5. 编辑器核心体验
 
-- 多轨时间轴、播放器同步、布局自适应、导出编排。
+- 能力：多轨时间轴、播放器同步、布局自适应、导出编排。
 - 关键前端入口：`App.tsx`、`VideoEditor.tsx`、`ComparisonLab.tsx`、`TelemetryDashboard.tsx`。
 - 关键后端入口：`/api/video/compose`、`/api/storage/upload-token`。
 - 近期模块化收敛（2026-03）：
-  - 后端视频任务路由 handler 已从 `apps/backend/src/index.ts` 抽离到 `apps/backend/src/http/videoGenerationHandlers.ts`，保持 API 语义不变。
-  - 前端项目治理（评论/评审/模板/批量更新）状态与副作用已抽离到 `apps/frontend/src/components/Editor/comparison-lab/hooks/useProjectGovernance.ts`，`ComparisonLab` 仅保留容器编排职责。
-- 关键测试：
-  - `tests/editor_store.test.ts`
-  - `tests/player_sync.test.ts`
-  - `tests/composition_api.test.ts`
-  - `tests/layout_math.test.ts`
+  - 后端 HTTP 入口已按领域拆分为 `appMetaRoutes`、`authRoutes`、`organizationRoutes`、`channelConfigRoutes`、`journeyTelemetryRoutes`、`modelRoutes`、`videoGenerationRoutes`、`aiRoutes`、`workspaceRoutes`、`projectGovernanceRoutes`、`storageRoutes`、`v4*Routes`。
+  - 后端启动时调度迁入 `apps/backend/src/runtime/bootstrap.ts`，`index.ts` 仅保留 app 构造与启动骨架。
+  - 前端 `ComparisonLab` 已拆出 `useAuthOrganizationChannelManager`、`useWorkspaceCollaborationManager`、`useV4OpsManager`、`useVideoGenerationManager`、`useCompareModeManager`、`useCreativeRunManager`。
+  - 前端 `TelemetryDashboard` 已拆出概览、Provider 健康、治理预览、数据库摘要和 SLO 数据列表组件。
+- 关键测试：`tests/editor_store.test.ts`、`tests/player_sync.test.ts`、`tests/composition_api.test.ts`、`tests/layout_math.test.ts`。
 
 ## 6. 可观测性与门禁
 
@@ -99,9 +95,8 @@
 - SLO 摘要/分解/失败诊断：`/api/admin/slo/**`。
 - 数据库健康与修复：`/api/admin/db/**`。
 - 发布门禁脚本：`scripts/release_gate.ts`、`scripts/slo_gate.ts`、`scripts/api_contract_guard.ts`。
-- `release:gate` 质量汇总（`artifacts/quality-summary.json`）新增 `videoGenerateLoop` 字段，用于追踪视频生成闭环（注册/组织/工作区/生成/导出）在门禁中的执行状态。
-- `videoGenerateLoop` 状态与 `E2E Regression` 步骤同步：通过则标记 `passed`，失败则标记 `failed` 并记录重试次数；当重试耗尽后会终止后续步骤（例如 SLO Check），在质量报告中体现“失败即取消后续”。
-- `quality-summary.json` 同步新增 `realE2E` 字段：与 `E2E Regression (Real)` 同步记录执行状态、重试次数、失败明细与失败类型（`auth/quota/timeout/upstream_5xx/unknown`），用于实网问题分流。
+- `release:gate` 会生成 `artifacts/quality-summary.json`，用于追踪标准回归闭环状态。
+- `release:gate:real` 会额外追踪 `realE2E` 状态与失败类型（`auth/quota/timeout/upstream_5xx/unknown`），用于真实渠道问题分流。
 - 后端支持视频任务自动同步配置：
   - `VIDEO_JOB_AUTO_SYNC_ENABLED`（默认开启）
   - `VIDEO_JOB_AUTO_SYNC_INTERVAL_MS`（默认 `20000`）
@@ -114,4 +109,5 @@
 - 覆盖率门禁：`bun run test:coverage`
 - API 契约：`bun run quality:api-contract`
 - E2E 冒烟：`bun run e2e:smoke`
-- 发布门禁：`bun run release:gate`
+- 标准发布门禁：`bun run release:gate`
+- 真实渠道门禁：`bun run release:gate:real`

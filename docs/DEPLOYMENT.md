@@ -24,7 +24,7 @@ scripts\\one-click-deploy.cmd
 
 - 创建或修复 `.env` 中生产必需安全变量（随机强密钥）。
 - 自动启动 Docker Compose 集群（默认带 `--build`）。
-- 自动等待 `http://127.0.0.1:18081/api/health` 健康检查通过。
+- 自动等待 `http://127.0.0.1:18081/api/health` 网关/API 联通检查通过。
 
 ### Compose 健康检查与启动顺序
 
@@ -46,9 +46,15 @@ docker compose -f config/docker/docker-compose.yml ps
 - `--skip-build` / `-SkipBuild`：跳过镜像重建，直接 `up -d`。
 - `--api-port <port>` / `-ApiPort <port>`：自定义健康检查端口。
 
+### Nginx 配置映射
+
+- 仓库中的真实配置文件路径是 `config/nginx/nginx.conf`。
+- 前端镜像构建时会把它复制到容器内 `/etc/nginx/conf.d/default.conf`。
+- 因此排查部署问题时，应优先修改仓库文件，再重新构建前端镜像。
+
 ## 架构说明
 
-- **Nginx**: 入口网关，负责静态资源托管、`/api` 反代与 `/ws` WebSocket 转发。
+- **Nginx**: 入口网关，负责静态资源托管、`/api` 反代、`/ws` WebSocket 升级转发、`/assets` 强缓存、`500M` 上传上限与安全响应头/CSP。
 - **Bun Backend**: 模型调度、AI 服务编排、FFmpeg 合成。
 - **Redis**: 内网任务与状态缓存。
 
@@ -91,7 +97,8 @@ docker compose -f config/docker/docker-compose.yml ps
 ## 数据持久化
 
 - `docker-compose.yml` 当前使用命名卷 `veomuse-data:/app/data` 持久化 SQLite 数据目录。
-- 若需改为宿主机 bind mount，可在 `docker-compose.yml` 将该卷改写为目录映射，并同步 `VEOMUSE_DB_PATH`。
+- `docker-compose.yml` 同时使用命名卷 `veomuse-uploads:/app/uploads` 持久化上传与导出产物。
+- 若需改为宿主机 bind mount，可在 `docker-compose.yml` 将上述卷改写为目录映射，并同步 `VEOMUSE_DB_PATH` 与 `UPLOADS_PATH`。
 
 ## Docker Smoke 检查
 
@@ -114,7 +121,15 @@ bun run docker:smoke -- --keep-up
 
 ## 验证命令
 
+执行前请先确认：
+
+- 已安装 `jq`。
+- 已导出可用的 `ADMIN_TOKEN`。
+- Docker Compose 服务状态为 `healthy`。
+
 ```bash
+curl -I http://127.0.0.1:18081
+curl -s http://127.0.0.1:18081 | head -n 5
 curl -s http://127.0.0.1:18081/api/health
 curl -s http://127.0.0.1:18081/api/capabilities
 
@@ -163,12 +178,20 @@ curl -s http://127.0.0.1:18081/api/admin/slo/summary -H "x-admin-token: $ADMIN_T
 curl -s "http://127.0.0.1:18081/api/admin/slo/breakdown?category=non_ai&limit=5" -H "x-admin-token: $ADMIN_TOKEN" | jq '.breakdown.items'
 curl -I http://127.0.0.1:18081 | grep -E "Content-Security-Policy|X-Frame-Options|Referrer-Policy|Permissions-Policy"
 curl -s http://127.0.0.1:18081/api/admin/metrics -H "x-admin-token: $ADMIN_TOKEN" | jq '.api["System-Cleanup"]'
+
+# WebSocket 握手（期望返回 101）
+curl -i \
+  -H 'Connection: Upgrade' \
+  -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Key: SGVsbG9WZW9NdXNl' \
+  -H 'Sec-WebSocket-Version: 13' \
+  http://127.0.0.1:18081/ws/generation
 ```
 
 ## 发布门禁
 
 ```bash
-# 标准发布门禁（默认包含稳定 Mock 回归）
+# 标准发布门禁（本地标准回归 + SLO）
 bun run release:gate
 
 # 真实凭据预检（仅检查必需环境变量）
@@ -215,13 +238,13 @@ bun run scripts/api_contract_guard.ts \
 
 SLO 门禁说明：
 
-- CI 主门禁统一由 `release:gate` 驱动，默认链路为 `security + build + unit + e2e smoke + e2e regression mock + SLO`。
+- CI 主门禁统一由 `release:gate` 驱动，默认链路为 `security + build + unit + e2e smoke + e2e regression + SLO`。
 - `release:gate` 默认策略：本地执行默认 `soft`；CI 环境按分支选择 `main=hard`、其他分支=`soft`。
 - `soft`：仅告警，不阻断发布；`hard`：任何未达标将阻断发布。
 - 报告输出默认路径：`artifacts/slo-report.json`。
 - 质量汇总输出：`artifacts/quality-summary.json`，失败步骤新增 `steps[].failure.domain`（`security/build/test/e2e/slo/unknown`）。
 - 质量汇总新增 `recommendations` 字段：输出中文可执行修复动作，并按失败域自动去重。
-- 质量汇总中 `videoGenerateLoop` 追踪 mock 闭环；`realE2E` 追踪实网回归，失败时会按 `auth/quota/timeout/upstream_5xx/unknown` 输出 `failureType`，便于快速分流。
+- 质量汇总中 `videoGenerateLoop` 追踪标准回归闭环；`realE2E` 追踪实网回归，失败时会按 `auth/quota/timeout/upstream_5xx/unknown` 输出 `failureType`，便于快速分流。
 - 本地执行 `release:gate` 时会在 SLO 检查前自动探测 `/api/health`；若 SLO API 不可达且地址为本机（`127.0.0.1/localhost/0.0.0.0`），会自动拉起后端并在结束后回收。
 - 仍兼容历史开关 `SLO_GATE_ENFORCE=true`，等价于 `mode=hard`。
 - 若需手动覆盖模式，请在执行前设置：

@@ -1,17 +1,12 @@
 import { describe, it, expect } from 'bun:test'
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import path from 'path'
 
 describe('主题系统物理层验证 (Phase 1)', () => {
   const cssPath = path.resolve(process.cwd(), 'apps/frontend/src/theme.css')
 
   it('theme.css 文件应物理存在', () => {
-    let exists = false
-    try {
-      readFileSync(cssPath)
-      exists = true
-    } catch (e) {}
-    expect(exists).toBe(true)
+    expect(existsSync(cssPath)).toBe(true)
   })
 
   it('theme.css 应定义核心 Apple Pro 视觉变量', () => {

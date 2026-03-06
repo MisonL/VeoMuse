@@ -23,7 +23,16 @@
    - 逻辑单测：`tests/collab_mode_panel_logic.test.ts`
    - 组件 DOM：`tests/collab_mode_panel_component.dom.test.tsx`
 
-2. `App` 壳层
+2. `CreativeModePanel`
+   - 逻辑单测：`tests/creative_mode_panel_logic.test.ts`
+   - 组件 DOM：`tests/creative_mode_panel_component.dom.test.tsx`
+   - SSR 补强：`tests/editor_panels_ssr_coverage.test.tsx`
+
+3. `TelemetryDashboard`
+   - 逻辑单测：`tests/telemetry_dashboard_logic.test.ts`
+   - 组件 DOM：`tests/telemetry_dashboard_component.dom.test.tsx`
+
+4. `App` 壳层
    - 运行态交互：`tests/app_component_interactions.dom.test.tsx`
    - SSR/分支守卫：`tests/app_component_runtime.dom.test.tsx`
 
@@ -33,3 +42,4 @@
 2. 新增对应 logic 单测，覆盖正常路径 + 边界路径。
 3. 新增至少一个组件级 DOM 测试，覆盖空态与非空态。
 4. 不使用按文件路径硬忽略覆盖率作为长期方案。
+5. 热点面板需要同步纳入 `scripts/target_coverage_guard.ts`。
