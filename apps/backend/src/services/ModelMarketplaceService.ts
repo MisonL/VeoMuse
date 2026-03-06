@@ -1,442 +1,60 @@
 import type {
   MarketplaceModel,
   ModelProfile,
-  ModelRoutingPriority,
-  ModelRuntimeMetrics,
   RoutingDecision,
-  RoutingExecution,
-  RoutingPolicy,
-  RoutingWeightConfig
+  RoutingPolicy
 } from '@veomuse/shared'
 import { getLocalDb } from './LocalDatabaseService'
+import {
+  DEFAULT_CRITICAL_THRESHOLD_RATIO,
+  DEFAULT_POLICY_ALERT_CHANNELS,
+  DEFAULT_PROFILES,
+  DEFAULT_WARNING_THRESHOLD_RATIO,
+  DEFAULT_WEIGHTS,
+  alertConfigFromRow,
+  alertEventFromRow,
+  calcCostScore,
+  calcP95,
+  calcQualityScore,
+  calcSpeedScore,
+  estimateDurationFromPrompt,
+  executionFromRow,
+  metricsFromRow,
+  normalizeAlertChannels,
+  normalizeAlertThresholds,
+  normalizeWeights,
+  nowIso,
+  policyFromRow,
+  profileFromRow,
+  resolveBudgetAlertRatio,
+  type DbRecord,
+  type EvaluatePolicyResult,
+  type PolicyAlertConfig,
+  type PolicyAlertConfigPatch,
+  type PolicyExecutionQuery,
+  type PolicyMutationPayload,
+  type ScoredCandidate,
+  type ScoreBreakdownRow,
+  type SimulatePayload
+} from './modelMarketplaceShared'
 import { TelemetryService } from './TelemetryService'
-
-interface SimulatePayload {
-  prompt: string
-  budgetUsd?: number
-  priority?: ModelRoutingPriority
-}
-
-interface PolicyMutationPayload {
-  name?: string
-  description?: string
-  priority?: ModelRoutingPriority
-  maxBudgetUsd?: number
-  enabled?: boolean
-  allowedModels?: string[]
-  weights?: Partial<RoutingWeightConfig>
-  fallbackPolicyId?: string | null
-}
-
-interface PolicyExecutionQuery {
-  limit?: number
-  offset?: number
-}
-
-interface ScoreBreakdownRow {
-  modelId: string
-  quality: number
-  speed: number
-  cost: number
-  reliability: number
-  finalScore: number
-}
-
-interface ScoredCandidate {
-  modelId: string
-  score: number
-  estimatedCostUsd: number
-  estimatedLatencyMs: number
-}
-
-interface EvaluatePolicyResult {
-  decision: RoutingDecision
-  scoreBreakdown: ScoreBreakdownRow[]
-  scoredCandidates: ScoredCandidate[]
-  hasBudgetMiss: boolean
-  budgetUsd: number
-}
-
-interface PolicyAlertConfig {
-  policyId: string
-  organizationId: string
-  enabled: boolean
-  channels: string[]
-  warningThresholdRatio: number
-  criticalThresholdRatio: number
-  createdAt: string
-  updatedAt: string
-}
-
-interface PolicyAlertConfigPatch {
-  enabled?: boolean
-  channels?: string[]
-  warningThresholdRatio?: number
-  criticalThresholdRatio?: number
-}
-
-interface PolicyAlertEvent {
-  id: string
-  policyId: string
-  organizationId: string
-  status: 'warning' | 'critical' | 'degraded'
-  message: string
-  prompt: string
-  recommendedModelId: string
-  estimatedCostUsd: number
-  budgetUsd: number
-  meta: Record<string, unknown>
-  createdAt: string
-}
-
-const nowIso = () => new Date().toISOString()
-
-const DEFAULT_WEIGHTS: Record<ModelRoutingPriority, RoutingWeightConfig> = {
-  quality: { quality: 0.52, speed: 0.13, cost: 0.1, reliability: 0.25 },
-  speed: { quality: 0.14, speed: 0.55, cost: 0.1, reliability: 0.21 },
-  cost: { quality: 0.12, speed: 0.14, cost: 0.55, reliability: 0.19 }
-}
-
-const DEFAULT_PROFILES: ModelProfile[] = [
-  {
-    id: 'veo-3.1',
-    name: 'Google Gemini Veo 3.1',
-    provider: 'google',
-    capabilities: ['cinematic', 'storytelling', 'dialogue', 'realistic'],
-    costPerSecond: 0.11,
-    maxDurationSec: 120,
-    supports4k: true,
-    supportsAudio: true,
-    supportsStylization: true,
-    region: 'global',
-    enabled: true,
-    updatedAt: nowIso()
-  },
-  {
-    id: 'kling-v1',
-    name: 'Kuaishou Kling V1',
-    provider: 'kling',
-    capabilities: ['fast-motion', 'anime', 'stylized'],
-    costPerSecond: 0.09,
-    maxDurationSec: 60,
-    supports4k: false,
-    supportsAudio: true,
-    supportsStylization: true,
-    region: 'apac',
-    enabled: true,
-    updatedAt: nowIso()
-  },
-  {
-    id: 'sora-preview',
-    name: 'OpenAI Sora Preview',
-    provider: 'openai',
-    capabilities: ['cinematic', 'physics', 'world-consistency', 'realistic'],
-    costPerSecond: 0.13,
-    maxDurationSec: 90,
-    supports4k: true,
-    supportsAudio: true,
-    supportsStylization: true,
-    region: 'us',
-    enabled: true,
-    updatedAt: nowIso()
-  },
-  {
-    id: 'luma-dream',
-    name: 'Luma Dream Machine',
-    provider: 'luma',
-    capabilities: ['fast-iterate', 'camera-move', 'stylized'],
-    costPerSecond: 0.08,
-    maxDurationSec: 30,
-    supports4k: false,
-    supportsAudio: false,
-    supportsStylization: true,
-    region: 'global',
-    enabled: true,
-    updatedAt: nowIso()
-  },
-  {
-    id: 'runway-gen3',
-    name: 'Runway Gen-3 Alpha',
-    provider: 'runway',
-    capabilities: ['commercial', 'product-shot', 'camera-control', 'realistic'],
-    costPerSecond: 0.1,
-    maxDurationSec: 40,
-    supports4k: true,
-    supportsAudio: false,
-    supportsStylization: true,
-    region: 'us',
-    enabled: true,
-    updatedAt: nowIso()
-  },
-  {
-    id: 'pika-1.5',
-    name: 'Pika Art 1.5',
-    provider: 'pika',
-    capabilities: ['effects', 'stylized', 'social-short'],
-    costPerSecond: 0.07,
-    maxDurationSec: 20,
-    supports4k: false,
-    supportsAudio: false,
-    supportsStylization: true,
-    region: 'global',
-    enabled: true,
-    updatedAt: nowIso()
-  }
-]
-
-type DbRecord = Record<string, unknown>
-
-const profileFromRow = (row: DbRecord): ModelProfile => ({
-  id: String(row.id || ''),
-  name: String(row.name || ''),
-  provider: String(row.provider || ''),
-  capabilities: (() => {
-    try {
-      const value = JSON.parse(String(row.capabilities_json || '[]'))
-      return Array.isArray(value) ? value.map(String) : []
-    } catch {
-      return []
-    }
-  })(),
-  costPerSecond: Number(row.cost_per_second || 0),
-  maxDurationSec: Number(row.max_duration_sec || 0),
-  supports4k: Boolean(row.supports_4k),
-  supportsAudio: Boolean(row.supports_audio),
-  supportsStylization: Boolean(row.supports_stylization),
-  region: String(row.region || 'global'),
-  enabled: Boolean(row.enabled),
-  updatedAt: String(row.updated_at || nowIso())
-})
-
-const metricsFromRow = (
-  row: DbRecord | null | undefined,
-  modelId: string
-): ModelRuntimeMetrics => ({
-  modelId,
-  windowMinutes: Number(row?.window_minutes ?? 1440),
-  totalRequests: Number(row?.total_requests ?? 0),
-  successRate: Number(row?.success_rate ?? 1),
-  p95LatencyMs: Number(row?.p95_latency_ms ?? 0),
-  avgCostUsd: Number(row?.avg_cost_usd ?? 0),
-  updatedAt: String(row?.updated_at ?? nowIso())
-})
-
-const normalizeWeights = (
-  priority: ModelRoutingPriority,
-  raw?: Partial<RoutingWeightConfig> | null
-): RoutingWeightConfig => {
-  const merged: RoutingWeightConfig = {
-    ...DEFAULT_WEIGHTS[priority],
-    ...(raw || {})
-  }
-  const values = [merged.quality, merged.speed, merged.cost, merged.reliability]
-  const valid = values.every((v) => Number.isFinite(v) && v >= 0)
-  if (!valid) return { ...DEFAULT_WEIGHTS[priority] }
-  const total = values.reduce((acc, value) => acc + value, 0)
-  if (total <= 0) return { ...DEFAULT_WEIGHTS[priority] }
-  return {
-    quality: Number((merged.quality / total).toFixed(4)),
-    speed: Number((merged.speed / total).toFixed(4)),
-    cost: Number((merged.cost / total).toFixed(4)),
-    reliability: Number((merged.reliability / total).toFixed(4))
-  }
-}
-
-const policyFromRow = (row: DbRecord): RoutingPolicy => {
-  const priority: ModelRoutingPriority =
-    row.priority === 'speed' || row.priority === 'cost'
-      ? (row.priority as ModelRoutingPriority)
-      : 'quality'
-  const rawWeights = (() => {
-    try {
-      return JSON.parse(String(row.weights_json || '{}'))
-    } catch {
-      return {}
-    }
-  })()
-  const allowed = (() => {
-    try {
-      const value = JSON.parse(String(row.allowed_models_json || '[]'))
-      return Array.isArray(value) ? value.map(String) : []
-    } catch {
-      return []
-    }
-  })()
-  return {
-    id: String(row.id || ''),
-    name: String(row.name || ''),
-    description: String(row.description || ''),
-    priority,
-    maxBudgetUsd: Number(row.max_budget_usd || 0),
-    enabled: Boolean(row.enabled ?? 1),
-    allowedModels: allowed,
-    weights: normalizeWeights(priority, rawWeights),
-    fallbackPolicyId: row.fallback_policy_id ? String(row.fallback_policy_id) : null,
-    createdAt: String(row.created_at || nowIso()),
-    updatedAt: String(row.updated_at || nowIso())
-  }
-}
-
-const executionFromRow = (row: DbRecord): RoutingExecution => ({
-  id: String(row.id || ''),
-  policyId: String(row.policy_id || ''),
-  prompt: String(row.prompt || ''),
-  priority:
-    row.priority === 'speed' || row.priority === 'cost'
-      ? (row.priority as ModelRoutingPriority)
-      : 'quality',
-  recommendedModelId: String(row.recommended_model_id || ''),
-  estimatedCostUsd: Number(row.estimated_cost_usd || 0),
-  estimatedLatencyMs: Number(row.estimated_latency_ms || 0),
-  confidence: Number(row.confidence || 0),
-  reason: String(row.reason || ''),
-  fallbackUsed: Boolean(row.fallback_used),
-  candidates: (() => {
-    try {
-      const value = JSON.parse(String(row.candidates_json || '[]'))
-      return Array.isArray(value) ? value : []
-    } catch {
-      return []
-    }
-  })(),
-  scoreBreakdown: (() => {
-    try {
-      const value = JSON.parse(String(row.score_breakdown_json || '[]'))
-      return Array.isArray(value) ? value : []
-    } catch {
-      return []
-    }
-  })(),
-  createdAt: String(row.created_at || nowIso())
-})
-
-const calcP95 = (samples: number[]) => {
-  if (!samples.length) return 0
-  const sorted = [...samples].sort((a, b) => a - b)
-  const index = Math.max(0, Math.ceil(sorted.length * 0.95) - 1)
-  return sorted[index] || sorted[sorted.length - 1] || 0
-}
-
-const estimateDurationFromPrompt = (prompt: string) => {
-  const value = prompt.toLowerCase()
-  const minuteMatch = value.match(/(\d+(?:\.\d+)?)\s*(min|minute|分钟|m)/)
-  if (minuteMatch?.[1]) return Math.max(4, Math.round(Number(minuteMatch[1]) * 60))
-  const secondMatch = value.match(/(\d+(?:\.\d+)?)\s*(s|sec|second|秒)/)
-  if (secondMatch?.[1]) return Math.max(4, Math.round(Number(secondMatch[1])))
-  return 8
-}
-
-const calcQualityScore = (profile: ModelProfile) => {
-  const tags = profile.capabilities
-  const score =
-    (profile.supports4k ? 0.25 : 0) +
-    (profile.supportsAudio ? 0.12 : 0) +
-    (tags.includes('cinematic') ? 0.2 : 0) +
-    (tags.includes('realistic') ? 0.18 : 0) +
-    (tags.includes('effects') ? 0.08 : 0) +
-    (tags.includes('world-consistency') ? 0.1 : 0)
-  return Number(Math.min(1, Math.max(0, score)).toFixed(4))
-}
-
-const calcSpeedScore = (latencyMs: number) => Number(Math.max(0, 1 - latencyMs / 4000).toFixed(4))
-
-const calcCostScore = (estimatedCostUsd: number) =>
-  Number(Math.max(0, 1 - estimatedCostUsd / 2).toFixed(4))
-
-const resolveBudgetAlertRatio = () => {
-  const value = Number.parseFloat(String(process.env.MODEL_POLICY_BUDGET_ALERT_RATIO || ''))
-  if (!Number.isFinite(value)) return 0.8
-  return Math.min(0.99, Math.max(0.5, value))
-}
-
-const DEFAULT_POLICY_ALERT_CHANNELS = ['dashboard']
-const DEFAULT_WARNING_THRESHOLD_RATIO = 0.8
-const DEFAULT_CRITICAL_THRESHOLD_RATIO = 1
-
-const normalizeAlertRatio = (value: unknown, fallback: number) => {
-  const ratio = Number(value)
-  if (!Number.isFinite(ratio)) return fallback
-  return Number(Math.min(1, Math.max(0, ratio)).toFixed(4))
-}
-
-const normalizeAlertThresholds = (warningInput: unknown, criticalInput: unknown) => {
-  const warning = normalizeAlertRatio(warningInput, DEFAULT_WARNING_THRESHOLD_RATIO)
-  const criticalRaw = normalizeAlertRatio(criticalInput, DEFAULT_CRITICAL_THRESHOLD_RATIO)
-  const critical = Number(Math.max(warning, criticalRaw).toFixed(4))
-  return { warning, critical }
-}
-
-const normalizeAlertChannels = (channels: unknown) => {
-  if (!Array.isArray(channels)) return [...DEFAULT_POLICY_ALERT_CHANNELS]
-  const normalized = channels.map((item) => String(item || '').trim()).filter(Boolean)
-  if (!normalized.length) return [...DEFAULT_POLICY_ALERT_CHANNELS]
-  return Array.from(new Set(normalized))
-}
-
-const alertConfigFromRow = (
-  row: DbRecord | null | undefined,
-  organizationId: string,
-  policyId: string
-): PolicyAlertConfig => {
-  const channels = (() => {
-    try {
-      const parsed = JSON.parse(String(row?.channels_json || '[]'))
-      return normalizeAlertChannels(parsed)
-    } catch {
-      return [...DEFAULT_POLICY_ALERT_CHANNELS]
-    }
-  })()
-
-  const { warning, critical } = normalizeAlertThresholds(
-    row?.warning_threshold_ratio,
-    row?.critical_threshold_ratio
-  )
-
-  const createdAt = row?.created_at ? String(row.created_at) : nowIso()
-  const updatedAt = row?.updated_at ? String(row.updated_at) : createdAt
-
-  return {
-    policyId,
-    organizationId,
-    enabled: Boolean(row?.enabled ?? 1),
-    channels,
-    warningThresholdRatio: warning,
-    criticalThresholdRatio: critical,
-    createdAt,
-    updatedAt
-  }
-}
-
-const alertEventFromRow = (row: DbRecord): PolicyAlertEvent => {
-  const status: PolicyAlertEvent['status'] =
-    row.status === 'critical' ? 'critical' : row.status === 'degraded' ? 'degraded' : 'warning'
-  return {
-    id: String(row.id || ''),
-    policyId: String(row.policy_id || ''),
-    organizationId: String(row.organization_id || 'org_default'),
-    status,
-    message: String(row.message || ''),
-    prompt: String(row.prompt || ''),
-    recommendedModelId: String(row.recommended_model_id || ''),
-    estimatedCostUsd: Number(row.estimated_cost_usd || 0),
-    budgetUsd: Number(row.budget_usd || 0),
-    meta: (() => {
-      try {
-        const parsed = JSON.parse(String(row.meta_json || '{}'))
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          return parsed as Record<string, unknown>
-        }
-      } catch {
-        // ignore invalid meta payload
-      }
-      return {}
-    })(),
-    createdAt: String(row.created_at || nowIso())
-  }
-}
 
 export class ModelMarketplaceService {
   private static initialized = false
+
+  private static readonly defaultFallbackPolicy: RoutingPolicy = {
+    id: 'default-auto',
+    name: '默认智能路由',
+    description: '内存回退策略',
+    priority: 'quality',
+    maxBudgetUsd: 0,
+    enabled: true,
+    allowedModels: [],
+    weights: normalizeWeights('quality', {}),
+    fallbackPolicyId: null,
+    createdAt: '',
+    updatedAt: ''
+  }
 
   private static normalizeFallbackPolicyId(value: unknown) {
     if (value === undefined) return undefined
@@ -620,8 +238,12 @@ export class ModelMarketplaceService {
     return row ? profileFromRow(row) : null
   }
 
-  static listMarketplace(): MarketplaceModel[] {
-    this.collectAndPersistMetrics()
+  static listMarketplace(options: { refreshMetrics?: boolean } = {}): MarketplaceModel[] {
+    if (options.refreshMetrics !== false) {
+      this.collectAndPersistMetrics()
+    } else {
+      this.ensureInitialized()
+    }
     const profiles = this.getAllProfiles()
     const getMetric = getLocalDb().prepare(`SELECT * FROM model_runtime_metrics WHERE model_id = ?`)
     return profiles.map((profile) => ({
@@ -983,7 +605,10 @@ export class ModelMarketplaceService {
 
   private static evaluateWithPolicy(
     payload: SimulatePayload,
-    policy: RoutingPolicy
+    policy: RoutingPolicy,
+    options: {
+      refreshMetrics?: boolean
+    } = {}
   ): EvaluatePolicyResult {
     const prompt = payload.prompt || ''
     const priority = payload.priority || policy.priority
@@ -993,7 +618,7 @@ export class ModelMarketplaceService {
         ? Math.max(0, payload.budgetUsd)
         : Math.max(0, policy.maxBudgetUsd)
     const weights = normalizeWeights(priority, policy.weights)
-    const marketplace = this.listMarketplace()
+    const marketplace = this.listMarketplace({ refreshMetrics: options.refreshMetrics })
       .filter((item) => item.profile.enabled)
       .filter(
         (item) =>
@@ -1237,31 +862,39 @@ export class ModelMarketplaceService {
       )
   }
 
-  static simulateDecision(
+  private static resolveEffectivePolicy(
     payload: SimulatePayload,
-    specificPolicyId?: string,
-    organizationId: string = 'org_default'
-  ): RoutingDecision {
-    this.ensureInitialized()
+    specificPolicyId: string | undefined,
+    organizationId: string
+  ) {
     const policy = specificPolicyId
       ? this.getPolicy(specificPolicyId, organizationId)
       : this.listPolicies(organizationId).find((item) => item.enabled) || null
 
-    const effectivePolicy = policy || {
-      id: 'default-auto',
-      name: '默认智能路由',
-      description: '内存回退策略',
-      priority: payload.priority || 'quality',
-      maxBudgetUsd: 0,
-      enabled: true,
-      allowedModels: [],
-      weights: normalizeWeights(payload.priority || 'quality', {}),
-      fallbackPolicyId: null,
-      createdAt: nowIso(),
-      updatedAt: nowIso()
-    }
+    if (policy) return policy
 
-    let evaluated = this.evaluateWithPolicy(payload, effectivePolicy)
+    const now = nowIso()
+    return {
+      ...this.defaultFallbackPolicy,
+      priority: payload.priority || this.defaultFallbackPolicy.priority,
+      weights: normalizeWeights(payload.priority || this.defaultFallbackPolicy.priority, {}),
+      createdAt: now,
+      updatedAt: now
+    }
+  }
+
+  private static computeDecision(
+    payload: SimulatePayload,
+    specificPolicyId?: string,
+    organizationId: string = 'org_default',
+    options: {
+      refreshMetrics?: boolean
+    } = {}
+  ): RoutingDecision {
+    this.ensureInitialized()
+    const effectivePolicy = this.resolveEffectivePolicy(payload, specificPolicyId, organizationId)
+
+    let evaluated = this.evaluateWithPolicy(payload, effectivePolicy, options)
     let decision = evaluated.decision
     let fallbackUsed = false
 
@@ -1277,7 +910,7 @@ export class ModelMarketplaceService {
     ) {
       const fallbackPolicy = this.getPolicy(effectivePolicy.fallbackPolicyId, organizationId)
       if (fallbackPolicy && fallbackPolicy.enabled) {
-        const fallbackResult = this.evaluateWithPolicy(payload, fallbackPolicy)
+        const fallbackResult = this.evaluateWithPolicy(payload, fallbackPolicy, options)
         const fallbackBetterCost =
           fallbackResult.decision.estimatedCostUsd <= decision.estimatedCostUsd
         const fallbackBackInBudget =
@@ -1334,7 +967,28 @@ export class ModelMarketplaceService {
       finalDecision.reason = `${finalDecision.reason}；${budgetGuard.message}`
     }
 
-    const finalPolicyId = finalDecision.policyId || effectivePolicy.id
+    return finalDecision
+  }
+
+  static simulateDecision(
+    payload: SimulatePayload,
+    specificPolicyId?: string,
+    organizationId: string = 'org_default'
+  ): RoutingDecision {
+    return this.computeDecision(payload, specificPolicyId, organizationId, {
+      refreshMetrics: false
+    })
+  }
+
+  static executeDecision(
+    payload: SimulatePayload,
+    specificPolicyId?: string,
+    organizationId: string = 'org_default'
+  ): RoutingDecision {
+    const finalDecision = this.computeDecision(payload, specificPolicyId, organizationId, {
+      refreshMetrics: true
+    })
+    const finalPolicyId = finalDecision.policyId || this.defaultFallbackPolicy.id
     const prompt = payload.prompt || ''
     this.recordExecution(organizationId, finalPolicyId, prompt, finalDecision)
     this.recordPolicyAlertEvent(organizationId, finalPolicyId, prompt, finalDecision)

@@ -4,6 +4,11 @@ import { BaseAiService } from './BaseAiService'
 import type { ChannelRuntimeContext } from './ChannelConfigService'
 import { ChannelConfigService } from './ChannelConfigService'
 
+interface TtsSynthesizeResponse {
+  audioBase64?: string
+  audioUrl?: string
+}
+
 export class TtsService extends BaseAiService {
   protected serviceName = 'AI-TTS'
   private static instance = new TtsService()
@@ -43,14 +48,17 @@ export class TtsService extends BaseAiService {
     const outputPath = path.join(outputDir, fileName)
 
     try {
-      const { data } = await this.instance.request<any>(`${apiUrl.replace(/\/$/, '')}/synthesize`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({ text })
-      })
+      const { data } = await this.instance.request<TtsSynthesizeResponse>(
+        `${apiUrl.replace(/\/$/, '')}/synthesize`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({ text })
+        }
+      )
       if (data.audioBase64) {
         await fs.writeFile(outputPath, Buffer.from(data.audioBase64, 'base64'))
         return {

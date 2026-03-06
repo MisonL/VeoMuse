@@ -8,6 +8,22 @@ export interface PerformanceMetrics {
   endpoint: string
 }
 
+export interface GeminiGenerateContentPart {
+  text?: string
+}
+
+export interface GeminiGenerateContentContent {
+  parts?: GeminiGenerateContentPart[]
+}
+
+export interface GeminiGenerateContentCandidate {
+  content?: GeminiGenerateContentContent
+}
+
+export interface GeminiGenerateContentResponse {
+  candidates?: GeminiGenerateContentCandidate[]
+}
+
 const getErrorMessage = (error: unknown, fallback: string): string => {
   if (error instanceof Error && error.message.trim()) return error.message
   if (typeof error === 'string' && error.trim()) return error

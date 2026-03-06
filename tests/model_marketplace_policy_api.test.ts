@@ -3,7 +3,7 @@ import { app } from '../apps/backend/src/index'
 import { createAuthHeaders, createTestSession } from './helpers/auth'
 
 describe('模型策略治理 API', () => {
-  it('应支持策略创建、更新、模拟与执行记录查询', async () => {
+  it('应支持策略创建、更新、纯模拟与执行记录查询', async () => {
     const session = await createTestSession('policy-api')
     const createResp = await app.handle(
       new Request('http://localhost/api/models/policies', {
@@ -84,6 +84,35 @@ describe('模型策略治理 API', () => {
     expect(simulateData.decision.policyId).toBe(policyId)
     expect(Array.isArray(simulateData.decision.candidates)).toBe(true)
     expect(Array.isArray(simulateData.decision.scoreBreakdown)).toBe(true)
+
+    const dryRunExecResp = await app.handle(
+      new Request(`http://localhost/api/models/policies/${policyId}/executions?limit=10&offset=0`, {
+        headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
+      })
+    )
+    const dryRunExecData = (await dryRunExecResp.json()) as any
+    expect(dryRunExecResp.status).toBe(200)
+    expect(dryRunExecData.success).toBe(true)
+    expect(Array.isArray(dryRunExecData.executions)).toBe(true)
+    expect(dryRunExecData.executions.length).toBe(0)
+
+    const executeResp = await app.handle(
+      new Request(`http://localhost/api/models/policies/${policyId}/execute`, {
+        method: 'POST',
+        headers: createAuthHeaders(session.accessToken, {
+          organizationId: session.organizationId,
+          contentTypeJson: true
+        }),
+        body: JSON.stringify({
+          prompt: '写实风格商业广告镜头，8秒',
+          budgetUsd: 0.9
+        })
+      })
+    )
+    const executeData = (await executeResp.json()) as any
+    expect(executeResp.status).toBe(200)
+    expect(executeData.success).toBe(true)
+    expect(executeData.decision.policyId).toBe(policyId)
 
     const execResp = await app.handle(
       new Request(`http://localhost/api/models/policies/${policyId}/executions?limit=10&offset=0`, {

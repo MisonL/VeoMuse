@@ -8,19 +8,7 @@ import {
   resolveRequestTraceId,
   resolveRuntimeContext
 } from './context'
-
-const readErrorMessage = (error: unknown) => {
-  if (error instanceof Error) return error.message
-  if (typeof error === 'string') return error
-  if (!error || typeof error !== 'object') return ''
-  const candidate = error as { message?: unknown }
-  return typeof candidate.message === 'string' ? candidate.message : ''
-}
-
-const resolveErrorMessage = (error: unknown, fallback: string) => {
-  const message = readErrorMessage(error)
-  return message || fallback
-}
+import { resolveErrorMessage } from './errors'
 
 export const videoComposeRoute = new Elysia().post(
   '/api/video/compose',

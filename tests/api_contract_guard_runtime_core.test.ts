@@ -18,6 +18,7 @@ import {
   type ApiContractGuardConfig,
   type ApiContractGuardReport
 } from '../scripts/api_contract_guard'
+import { readApiRoutesFromBackend } from '../scripts/generate_api_route_registry'
 
 const tempDirs: string[] = []
 
@@ -108,6 +109,33 @@ describe('API 契约守卫 runtime 核心覆盖', () => {
     )
   })
 
+  it('readApiRoutesFromBackend 应合并入口文件与同级 http 目录中的路由模块', async () => {
+    const dir = await createCaseDir('route-registry')
+    const backendPath = path.join(dir, 'index.ts')
+    const httpDir = path.join(dir, 'http')
+    await fs.mkdir(httpDir, { recursive: true })
+
+    await Promise.all([
+      fs.writeFile(backendPath, 'export const app = createApp()\n', 'utf8'),
+      fs.writeFile(
+        path.join(httpDir, 'authRoutes.ts'),
+        "new Elysia().post('/api/auth/login', () => ({ ok: true }))\n",
+        'utf8'
+      ),
+      fs.writeFile(
+        path.join(httpDir, 'workspaceRoutes.ts'),
+        "new Elysia().group('/api/workspaces', (group) => group.get('/:id', () => ({ ok: true })))\n",
+        'utf8'
+      ),
+      fs.writeFile(path.join(httpDir, 'context.ts'), 'export const noop = true\n', 'utf8')
+    ])
+
+    await expect(readApiRoutesFromBackend(backendPath)).resolves.toEqual([
+      '/api/auth/login',
+      '/api/workspaces/:id'
+    ])
+  })
+
   it('loadApiContractGuardConfig 与 resolveApiContractEndpoints 应支持 include/exclude/manual 规则', async () => {
     const dir = await createCaseDir('config')
     const configPath = path.join(dir, 'api_contract_guard.config.json')
@@ -183,6 +211,52 @@ describe('API 契约守卫 runtime 核心覆盖', () => {
     ])
     const missing = report.failures.find((item) => item.endpoint === '/api/demo/b')
     expect(missing?.missing).toEqual(['route', 'documentation', 'tests'])
+  })
+
+  it('generateApiContractReport 应优先使用 registry 判断模块化路由存在', async () => {
+    const dir = await createCaseDir('report-registry-first')
+    const backendPath = path.join(dir, 'backend.ts')
+    const docsPath = path.join(dir, 'api.md')
+    const testsDir = path.join(dir, 'tests')
+    const configPath = path.join(dir, 'api_contract_guard.config.json')
+    const registryPath = path.join(dir, 'api-routes.generated.json')
+    await fs.mkdir(testsDir, { recursive: true })
+
+    await Promise.all([
+      fs.writeFile(backendPath, 'export const app = createApp()\n', 'utf8'),
+      fs.writeFile(docsPath, 'POST `/api/demo/a`', 'utf8'),
+      fs.writeFile(path.join(testsDir, 'demo_api.test.ts'), 'const url = "/api/demo/a"', 'utf8'),
+      fs.writeFile(
+        configPath,
+        JSON.stringify(
+          {
+            includePrefixes: ['/api/demo'],
+            excludePatterns: [],
+            manualRequiredEndpoints: []
+          } satisfies ApiContractGuardConfig,
+          null,
+          2
+        ),
+        'utf8'
+      ),
+      fs.writeFile(registryPath, JSON.stringify(['/api/demo/a'], null, 2), 'utf8')
+    ])
+
+    const report = await generateApiContractReport({
+      backendPath,
+      docsPath,
+      testsDir,
+      configPath,
+      registryPath
+    })
+
+    expect(report.status).toBe('passed')
+    expect(report.checks[0]).toEqual({
+      endpoint: '/api/demo/a',
+      route: true,
+      documentation: true,
+      tests: true
+    })
   })
 
   it('runApiContractGuard 应返回成功/失败退出码，并覆盖异常分支', async () => {

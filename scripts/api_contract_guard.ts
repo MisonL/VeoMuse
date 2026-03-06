@@ -315,10 +315,13 @@ export const generateApiContractReport = async (
     listApiTestFiles(resolvedInput.testsDir)
   ])
   const apiTestContents = await Promise.all(apiTestFiles.map((filePath) => readTextFile(filePath)))
+  const routeRegistry = await loadApiRouteRegistry(resolvedInput.registryPath)
+  const routeRegistrySet = new Set(routeRegistry.map((endpoint) => normalizeEndpoint(endpoint)))
 
   const checks: ApiContractCheck[] = endpoints.map((endpoint) => ({
     endpoint,
-    route: hasEndpoint(backendContent, endpoint),
+    route:
+      routeRegistrySet.has(normalizeEndpoint(endpoint)) || hasEndpoint(backendContent, endpoint),
     documentation: hasEndpoint(docsContent, endpoint),
     tests: apiTestContents.some((content) => hasEndpoint(content, endpoint))
   }))

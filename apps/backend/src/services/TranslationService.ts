@@ -1,6 +1,11 @@
 // apps/backend/src/services/TranslationService.ts
-import { BaseAiService } from './BaseAiService'
+import { BaseAiService, type GeminiGenerateContentResponse } from './BaseAiService'
 import { ApiKeyService } from './ApiKeyService'
+
+interface TranslationPayload {
+  translatedText: string
+  detectedLang: string
+}
 
 export interface TranslationResult {
   originalText: string
@@ -20,7 +25,7 @@ export class TranslationService extends BaseAiService {
     const key = ApiKeyService.getNextKey()
     const url = `${this.API_URL}/${this.MODEL}:generateContent?key=${key}`
 
-    const { data } = await this.instance.request<any>(url, {
+    const { data } = await this.instance.request<GeminiGenerateContentResponse>(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -37,7 +42,7 @@ export class TranslationService extends BaseAiService {
       })
     })
 
-    const content = JSON.parse(data.candidates[0].content.parts[0].text)
+    const content = this.instance.parseGeminiJson<TranslationPayload>(data)
     return {
       originalText: text,
       translatedText: content.translatedText,

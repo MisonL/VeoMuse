@@ -1,5 +1,5 @@
 // apps/backend/src/services/InpaintService.ts
-import { BaseAiService } from './BaseAiService'
+import { BaseAiService, type GeminiGenerateContentResponse } from './BaseAiService'
 import { ApiKeyService } from './ApiKeyService'
 
 export interface RepairAdvice {
@@ -21,7 +21,7 @@ export class InpaintService extends BaseAiService {
     const key = ApiKeyService.getNextKey()
     const url = `${this.API_URL}/${this.MODEL}:generateContent?key=${key}`
 
-    const { data } = await this.instance.request<any>(url, {
+    const { data } = await this.instance.request<GeminiGenerateContentResponse>(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

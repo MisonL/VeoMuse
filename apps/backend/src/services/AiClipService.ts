@@ -1,5 +1,5 @@
 // apps/backend/src/services/AiClipService.ts
-import { BaseAiService } from './BaseAiService'
+import { BaseAiService, type GeminiGenerateContentResponse } from './BaseAiService'
 import { ApiKeyService } from './ApiKeyService'
 
 export interface CutPoint {
@@ -48,7 +48,7 @@ export class AiClipService extends BaseAiService {
 
     const url = `${this.API_URL}/${this.MODEL}:generateContent?key=${key}`
     try {
-      const { data } = await this.instance.request<any>(url, {
+      const { data } = await this.instance.request<GeminiGenerateContentResponse>(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

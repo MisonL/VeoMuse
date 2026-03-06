@@ -102,6 +102,28 @@ describe('模型策略沙箱与告警接口', () => {
       Number(result.summary.critical || 0) +
       Number(result.summary.degraded || 0)
     expect(total).toBe(result.results.length)
+
+    const execResp = await app.handle(
+      new Request(`http://localhost/api/models/policies/${policyId}/executions?limit=10&offset=0`, {
+        headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
+      })
+    )
+    const execData = (await execResp.json()) as any
+    expect(execResp.status).toBe(200)
+    expect(execData.success).toBe(true)
+    expect(Array.isArray(execData.executions)).toBe(true)
+    expect(execData.executions.length).toBe(0)
+
+    const alertResp = await app.handle(
+      new Request(`http://localhost/api/models/policies/${policyId}/alerts?limit=10`, {
+        headers: createAuthHeaders(session.accessToken, { organizationId: session.organizationId })
+      })
+    )
+    const alertData = (await alertResp.json()) as any
+    expect(alertResp.status).toBe(200)
+    expect(alertData.success).toBe(true)
+    expect(Array.isArray(alertData.alerts)).toBe(true)
+    expect(alertData.alerts.length).toBe(0)
   })
 
   it('update/get alerts config 应支持更新并返回边界兜底后的阈值', async () => {
@@ -198,7 +220,7 @@ describe('模型策略沙箱与告警接口', () => {
 
     for (const item of simulateCases) {
       const resp = await app.handle(
-        new Request(`http://localhost/api/models/policies/${item.policyId}/simulate`, {
+        new Request(`http://localhost/api/models/policies/${item.policyId}/execute`, {
           method: 'POST',
           headers: createAuthHeaders(session.accessToken, {
             organizationId: session.organizationId,
