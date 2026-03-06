@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync, readdirSync } from 'fs'
 import path from 'path'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -13,6 +13,27 @@ import {
   resolveExportFeedbackSubtitle,
   resolveExportFeedbackTitle
 } from '../apps/frontend/src/utils/appHelpers'
+
+const collectSourceFiles = (dir: string): string[] => {
+  if (!existsSync(dir)) return []
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) return collectSourceFiles(fullPath)
+    return entry.isFile() && fullPath.endsWith('.tsx') ? [fullPath] : []
+  })
+}
+
+const readAppSourceBundle = () => {
+  const sourceRoot = path.resolve(process.cwd(), 'apps/frontend/src')
+  const files = [
+    path.join(sourceRoot, 'App.tsx'),
+    ...collectSourceFiles(path.join(sourceRoot, 'components/App'))
+  ].sort()
+  return {
+    files,
+    content: files.map((file) => readFileSync(file, 'utf8')).join('\n')
+  }
+}
 
 describe('App 运行态关键分支（DOM/SSR）', () => {
   it('应输出模式切换与导出关键 DOM 结构', () => {
@@ -99,8 +120,10 @@ describe('App 运行态关键分支（DOM/SSR）', () => {
   })
 
   it('App 应保留导出守卫、引导与模式分支实现', () => {
-    const appPath = path.resolve(process.cwd(), 'apps/frontend/src/App.tsx')
-    const content = readFileSync(appPath, 'utf8')
+    const { files, content } = readAppSourceBundle()
+    expect(
+      files.some((file) => file.includes(`${path.sep}components${path.sep}App${path.sep}`))
+    ).toBe(true)
     expect(content).toContain('if (!hasRenderableClips)')
     expect(content).toContain("window.localStorage.getItem(GUIDE_STORAGE_KEY) === 'done'")
     expect(content).toContain("activeMode === 'edit' ? (")

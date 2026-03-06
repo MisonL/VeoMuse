@@ -26,8 +26,11 @@ import { buildAuthHeaders, resolveApiBase } from './utils/eden'
 import { classifyRequestError } from './utils/requestError'
 import { calcAspectFit } from './utils/layoutMath'
 import { requestJsonWithRetry } from './components/Editor/comparison-lab/api'
+import AppCenterPanel from './components/App/AppCenterPanel'
+import AppGuideOverlay from './components/App/AppGuideOverlay'
+import AppHeader from './components/App/AppHeader'
+import AppTimeline from './components/App/AppTimeline'
 import ResizeHandle from './components/Common/ResizeHandle'
-import ThemeSwitcher from './components/Common/ThemeSwitcher'
 import WorkspaceShell from './components/Layout/WorkspaceShell'
 // type imports are handled via appHelpers below or are not needed here if unused
 import {
@@ -61,8 +64,7 @@ import type {
   ExportActionState,
   ExportQuality,
   GuideStep,
-  DirectorScene,
-  PreviewAspect
+  DirectorScene
 } from './utils/appHelpers'
 import './App.css'
 
@@ -84,6 +86,9 @@ const TimecodeDisplay = memo(() => {
   const currentTime = useEditorStore((state) => state.currentTime)
   return <div className="timecode">{formatTimecode(currentTime)}</div>
 })
+
+type AppMode = 'edit' | 'color' | 'audio'
+type AppTool = 'select' | 'cut' | 'hand'
 
 const LazyFallback = memo(({ label = '加载中...' }: { label?: string }) => (
   <div
@@ -176,8 +181,8 @@ function App() {
     }))
   )
 
-  const [activeMode, setActiveMode] = useState('edit')
-  const [activeTool, setActiveTool] = useState('select')
+  const [activeMode, setActiveMode] = useState<AppMode>('edit')
+  const [activeTool, setActiveTool] = useState<AppTool>('select')
   const [activeSidebar, setActiveSidebar] = useState<'assets' | 'director' | 'actors' | 'motion'>(
     'assets'
   )
@@ -935,182 +940,44 @@ function App() {
         <ToastContainer />
       </Suspense>
 
-      <header className="pro-panel os-header" data-testid="area-top-header">
-        <div className="brand-zone">
-          <div className="brand-logo">V</div>
-          <span className="brand-title">VEOMUSE PRO</span>
-        </div>
-        <div className="mode-selector" data-guide="mode-selector" data-testid="area-mode-selector">
-          {['edit', 'color', 'audio'].map((m) => (
-            <button
-              key={m}
-              className={`mode-tab ${activeMode === m ? 'active' : ''}`}
-              onMouseEnter={() => {
-                if (m === 'color') void loadComparisonLab()
-                if (m === 'edit') {
-                  void loadVideoEditor()
-                  void loadMultiVideoPlayer()
-                }
-              }}
-              onClick={() => setActiveMode(m)}
-              data-testid={`btn-mode-${m}`}
-            >
-              {m === 'edit' ? '剪辑' : m === 'color' ? '实验室' : '音频大师'}
-            </button>
-          ))}
-        </div>
-        <div className="header-actions" data-testid="area-header-actions">
-          <div
-            className="header-actions-group header-actions-layout"
-            data-testid="group-header-layout"
-          >
-            <div className="header-segment" data-testid="group-center-mode">
-              <button
-                type="button"
-                className={`header-segment-btn ${centerMode === 'fit' ? 'active' : ''}`}
-                onClick={() => setCenterMode('fit')}
-                data-testid="btn-center-mode-fit"
-              >
-                均衡
-              </button>
-              <button
-                type="button"
-                className={`header-segment-btn ${centerMode === 'focus' ? 'active' : ''}`}
-                onClick={() => setCenterMode('focus')}
-                data-testid="btn-center-mode-focus"
-              >
-                聚焦
-              </button>
-            </div>
-            <div className="header-segment" data-testid="group-topbar-density">
-              <button
-                type="button"
-                className={`header-segment-btn ${topBarDensity === 'comfortable' ? 'active' : ''}`}
-                onClick={() => setTopBarDensity('comfortable')}
-                data-testid="btn-density-comfortable"
-              >
-                舒展
-              </button>
-              <button
-                type="button"
-                className={`header-segment-btn ${topBarDensity === 'compact' ? 'active' : ''}`}
-                onClick={() => setTopBarDensity('compact')}
-                data-testid="btn-density-compact"
-              >
-                紧凑
-              </button>
-            </div>
-          </div>
-          <div
-            className="header-actions-group header-actions-quick"
-            data-testid="group-header-quick-actions"
-          >
-            <button
-              id="btn-open-channel-access"
-              aria-label="打开 AI 渠道接入"
-              className="channel-entry-btn"
-              onClick={openChannelAccess}
-              data-testid="btn-open-channel-access"
-            >
-              AI接入
-            </button>
-            <button
-              id="btn-open-guide"
-              aria-label="打开使用引导"
-              className="guide-toggle-btn"
-              onClick={() => {
-                setGuideStepIndex(0)
-                setIsGuideOpen(true)
-              }}
-              data-testid="btn-open-guide"
-            >
-              使用引导
-            </button>
-            <ThemeSwitcher />
-            <button
-              id="btn-reset-layout"
-              aria-label="重置布局"
-              className="layout-reset-btn"
-              onClick={resetLayout}
-              data-testid="btn-reset-layout"
-            >
-              重置布局
-            </button>
-          </div>
-          <div
-            className="header-actions-group header-actions-export"
-            data-testid="group-header-export"
-          >
-            <select
-              id="export-quality"
-              name="exportQuality"
-              aria-label="导出规格"
-              value={exportQuality}
-              onChange={(e) =>
-                setExportQuality(e.target.value as 'standard' | '4k-hdr' | 'spatial-vr')
-              }
-              className="header-select"
-              data-testid="select-export-quality"
-            >
-              <option value="standard">标准导出</option>
-              <option value="4k-hdr">4K HDR</option>
-              <option value="spatial-vr">空间视频</option>
-            </select>
-            <select
-              id="preview-aspect"
-              name="previewAspect"
-              aria-label="预览宽高比"
-              value={previewAspect}
-              onChange={(e) => setPreviewAspect(e.target.value as PreviewAspect)}
-              className="header-select preview-aspect-select"
-              data-testid="select-preview-aspect"
-            >
-              <option value="16:9">预览 16:9</option>
-              <option value="21:9">预览 21:9</option>
-            </select>
-            <div className="export-action-wrap">
-              <button
-                id="btn-export"
-                aria-label="导出视频"
-                className={`export-btn ${exportUiStatus === 'pending' ? 'is-pending' : ''} ${exportUiStatus === 'done' ? 'is-done' : ''} ${exportUiStatus === 'error' ? 'is-error' : ''}`}
-                onClick={handleExport}
-                disabled={isProcessing || isExportPending}
-                data-testid="btn-export"
-              >
-                {getExportButtonLabel(isExportPending, optimisticExportStatus, exportProgress)}
-              </button>
-              {exportUiStatus !== 'idle' ? (
-                <div
-                  className={`export-feedback-pop ${exportUiStatus}`}
-                  role="status"
-                  aria-live="polite"
-                >
-                  <div className="export-feedback-top">
-                    <span className="export-feedback-title">{exportFeedbackTitle}</span>
-                    {exportUiStatus === 'pending' ? (
-                      <span className="export-feedback-percent">{Math.round(exportProgress)}%</span>
-                    ) : null}
-                  </div>
-                  <div className="export-feedback-subtitle">{exportFeedbackSubtitle}</div>
-                  {exportUiStatus === 'pending' ? (
-                    <div className="export-progress-track">
-                      <span
-                        className="export-progress-fill"
-                        style={{ width: `${Math.max(6, Math.min(100, exportProgress))}%` }}
-                      />
-                    </div>
-                  ) : null}
-                  {exportUiStatus === 'done' && lastExportOutput ? (
-                    <div className="export-feedback-path" title={lastExportOutput}>
-                      {lastExportOutput}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        activeMode={activeMode}
+        centerMode={centerMode}
+        topBarDensity={topBarDensity}
+        exportQuality={exportQuality}
+        previewAspect={previewAspect}
+        exportUiStatus={exportUiStatus}
+        exportButtonLabel={getExportButtonLabel(
+          isExportPending,
+          optimisticExportStatus,
+          exportProgress
+        )}
+        exportFeedbackTitle={exportFeedbackTitle}
+        exportFeedbackSubtitle={exportFeedbackSubtitle}
+        exportProgress={exportProgress}
+        lastExportOutput={lastExportOutput}
+        isProcessing={isProcessing}
+        isExportPending={isExportPending}
+        onModeHover={(mode) => {
+          if (mode === 'color') void loadComparisonLab()
+          if (mode === 'edit') {
+            void loadVideoEditor()
+            void loadMultiVideoPlayer()
+          }
+        }}
+        onModeChange={setActiveMode}
+        onCenterModeChange={setCenterMode}
+        onTopBarDensityChange={setTopBarDensity}
+        onOpenChannelAccess={openChannelAccess}
+        onOpenGuide={() => {
+          setGuideStepIndex(0)
+          setIsGuideOpen(true)
+        }}
+        onResetLayout={resetLayout}
+        onExportQualityChange={setExportQuality}
+        onPreviewAspectChange={setPreviewAspect}
+        onExport={handleExport}
+      />
 
       <div className="os-main main-layout" ref={mainLayoutRef} data-testid="area-main-layout">
         <aside className="pro-panel panel-left" ref={leftPanelRef} data-testid="area-left-panel">
@@ -1168,99 +1035,34 @@ function App() {
           />
         ) : null}
 
-        <section className="pro-panel monitor-core panel-center" data-testid="area-center-panel">
-          {activeMode === 'edit' ? (
-            <div className="monitor-content">
-              <div className="preview-host" ref={previewHostRef} data-testid="area-preview-host">
-                <div
-                  className="preview-frame"
-                  style={previewFrameStyle}
-                  data-testid="area-preview-frame"
-                  data-aspect-ratio={previewAspect}
-                >
-                  <div className="monitor-overlay">
-                    <div className="monitor-overlay-left">
-                      <div className="live-badge">● 实时</div>
-                      <TimecodeDisplay />
-                    </div>
-                    <div className="preview-meta">
-                      <button
-                        onClick={() => setSpatialPreview(!isSpatialPreview)}
-                        className={`preview-mode-toggle ${isSpatialPreview ? 'active' : ''}`}
-                        data-testid="btn-preview-mode-toggle"
-                      >
-                        {isSpatialPreview ? '3D 模式' : '2D 模式'}
-                      </button>
-                      <div className="preview-quality">4K | HDR</div>
-                    </div>
-                  </div>
-
-                  <Suspense fallback={<LazyFallback label="预览器加载中..." />}>
-                    <MultiVideoPlayer
-                      onOpenAssets={openImportFromAnywhere}
-                      onOpenDirector={openDirectorFromAnywhere}
-                    />
-                  </Suspense>
-                </div>
-              </div>
-
-              <div className="transport-controls">
-                <button
-                  id="tool-prev"
-                  aria-label="跳转到开头"
-                  className="transport-btn"
-                  onClick={() => setCurrentTime(0)}
-                  data-testid="btn-player-prev"
-                >
-                  ⏮
-                </button>
-                <button
-                  id="tool-play"
-                  aria-label={isPlaying ? '暂停播放' : '开始播放'}
-                  className="transport-btn play"
-                  onClick={togglePlay}
-                  data-testid="btn-player-play"
-                >
-                  {isPlaying ? '⏸' : '▶'}
-                </button>
-                <button
-                  id="tool-next"
-                  aria-label="跳转到下一片段"
-                  className="transport-btn"
-                  onClick={() => setCurrentTime(getNextClipTime())}
-                  data-testid="btn-player-next"
-                >
-                  ⏭
-                </button>
-              </div>
-            </div>
-          ) : activeMode === 'color' ? (
+        <AppCenterPanel
+          activeMode={activeMode}
+          previewAspect={previewAspect}
+          previewFrameStyle={previewFrameStyle}
+          previewHostRef={previewHostRef}
+          isSpatialPreview={isSpatialPreview}
+          isPlaying={isPlaying}
+          timecodeDisplay={<TimecodeDisplay />}
+          previewPlayer={
+            <Suspense fallback={<LazyFallback label="预览器加载中..." />}>
+              <MultiVideoPlayer
+                onOpenAssets={openImportFromAnywhere}
+                onOpenDirector={openDirectorFromAnywhere}
+              />
+            </Suspense>
+          }
+          comparisonLab={
             <Suspense fallback={<LazyFallback label="实验室加载中..." />}>
               <ComparisonLab onOpenAssets={openImportFromAnywhere} />
             </Suspense>
-          ) : (
-            <div className="audio-master-state">
-              <div className="audio-master-icon">🎚️</div>
-              <div className="audio-master-title">AUDIO MASTER 引擎已就绪</div>
-              <div className="audio-master-actions">
-                <button
-                  type="button"
-                  className="audio-master-btn primary"
-                  onClick={openImportFromAnywhere}
-                >
-                  导入素材开始处理
-                </button>
-                <button
-                  type="button"
-                  className="audio-master-btn"
-                  onClick={() => setActiveMode('color')}
-                >
-                  切换到实验室对比
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
+          }
+          onToggleSpatialPreview={() => setSpatialPreview(!isSpatialPreview)}
+          onSeekToStart={() => setCurrentTime(0)}
+          onTogglePlay={togglePlay}
+          onSeekToNextClip={() => setCurrentTime(getNextClipTime())}
+          onOpenAssets={openImportFromAnywhere}
+          onSwitchToLab={() => setActiveMode('color')}
+        />
 
         {isDesktopLayout ? (
           <ResizeHandle
@@ -1300,144 +1102,38 @@ function App() {
         />
       ) : null}
 
-      <footer
-        className="pro-panel timeline-container"
-        onMouseEnter={ensureTimelineReady}
-        onFocusCapture={ensureTimelineReady}
-        data-testid="area-timeline"
-      >
-        <div className="timeline-actions">
-          <div className="timeline-tools" data-guide="timeline-tools">
-            <span className="timeline-section-title">编辑工具</span>
-            <div className="undo-group">
-              <button
-                id="tool-undo"
-                aria-label="撤销"
-                className="tool-icon"
-                onClick={() => undo()}
-                disabled={pastStates.length === 0}
-                data-testid="btn-tool-undo"
-              >
-                ↩
-              </button>
-              <button
-                id="tool-redo"
-                aria-label="重做"
-                className="tool-icon"
-                onClick={() => redo()}
-                disabled={futureStates.length === 0}
-                data-testid="btn-tool-redo"
-              >
-                ↪
-              </button>
-            </div>
-            <button
-              id="tool-select"
-              aria-label="选择工具"
-              className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`}
-              onClick={() => setActiveTool('select')}
-              data-testid="btn-tool-select"
-            >
-              ↖
-            </button>
-            <button
-              id="tool-cut"
-              aria-label="切割工具"
-              className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`}
-              onClick={() => setActiveTool('cut')}
-              data-testid="btn-tool-cut"
-            >
-              ✂
-            </button>
-            <button
-              id="tool-hand"
-              aria-label="平移工具"
-              className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`}
-              onClick={() => setActiveTool('hand')}
-              data-testid="btn-tool-hand"
-            >
-              ✋
-            </button>
-          </div>
-
-          <div className="system-telemetry">
-            <span className="timeline-section-title telemetry-label">系统状态</span>
-            <div className="telemetry-item">
-              <span>
-                GPU LOAD: <b className="telemetry-value success">{currentMetrics.gpu}%</b>
-              </span>
-              <div className="telemetry-sparkline">
-                {telemetryHistory.map((v, i) => (
-                  <div
-                    key={i}
-                    className="spark-bar"
-                    style={{ height: `${Math.max(2, Math.min(100, v))}%` }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="telemetry-item telemetry-divider">
-              RAM: <span className="telemetry-value success">{currentMetrics.ram}</span>
-            </div>
-            <div className="telemetry-item telemetry-divider">
-              CACHE: <span className="telemetry-value accent">{currentMetrics.cache}</span>
-            </div>
-          </div>
-        </div>
-        <div className="timeline-body">
-          {isTimelineReady ? (
+      <AppTimeline
+        canUndo={pastStates.length > 0}
+        canRedo={futureStates.length > 0}
+        activeTool={activeTool}
+        currentMetrics={currentMetrics}
+        telemetryHistory={telemetryHistory}
+        timelineContent={
+          isTimelineReady ? (
             <Suspense fallback={<LazyFallback label="时间轴加载中..." />}>
-              <VideoEditor activeTool={activeTool as 'select' | 'hand' | 'cut'} />
+              <VideoEditor activeTool={activeTool} />
             </Suspense>
           ) : (
             <LazyFallback label="时间轴预热中..." />
-          )}
-        </div>
-      </footer>
+          )
+        }
+        onActivate={ensureTimelineReady}
+        onUndo={undo}
+        onRedo={redo}
+        onActiveToolChange={setActiveTool}
+      />
 
       {isGuideOpen && currentGuideStep ? (
-        <div
-          className="guide-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="新手引导"
-          data-testid="area-guide-overlay"
-        >
-          <div className="guide-dim" />
-          {guideHighlightStyle ? (
-            <div className="guide-highlight" style={guideHighlightStyle} />
-          ) : null}
-          <section className="guide-card" style={guideCardStyle}>
-            <div className="guide-card-head">
-              <span className="guide-step">
-                步骤 {guideStepIndex + 1} / {guideSteps.length}
-              </span>
-              <button type="button" className="guide-close" onClick={() => closeGuide(true)}>
-                跳过
-              </button>
-            </div>
-            <h3>{currentGuideStep.title}</h3>
-            <p>{currentGuideStep.description}</p>
-            <div className="guide-actions">
-              {currentGuideStep.actionLabel && currentGuideStep.onAction ? (
-                <button type="button" className="guide-action" onClick={currentGuideStep.onAction}>
-                  {currentGuideStep.actionLabel}
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="guide-nav"
-                onClick={goGuidePrev}
-                disabled={guideStepIndex === 0}
-              >
-                上一步
-              </button>
-              <button type="button" className="guide-nav primary" onClick={goGuideNext}>
-                {guideStepIndex === guideSteps.length - 1 ? '完成引导' : '下一步'}
-              </button>
-            </div>
-          </section>
-        </div>
+        <AppGuideOverlay
+          currentGuideStep={currentGuideStep}
+          guideStepIndex={guideStepIndex}
+          guideStepCount={guideSteps.length}
+          guideHighlightStyle={guideHighlightStyle}
+          guideCardStyle={guideCardStyle}
+          onClose={() => closeGuide(true)}
+          onPrev={goGuidePrev}
+          onNext={goGuideNext}
+        />
       ) : null}
     </WorkspaceShell>
   )

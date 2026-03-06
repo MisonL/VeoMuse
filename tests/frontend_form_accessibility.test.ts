@@ -1,6 +1,27 @@
 import { describe, expect, it } from 'bun:test'
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync, readdirSync } from 'fs'
 import path from 'path'
+
+const collectSourceFiles = (dir: string): string[] => {
+  if (!existsSync(dir)) return []
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) return collectSourceFiles(fullPath)
+    return entry.isFile() && fullPath.endsWith('.tsx') ? [fullPath] : []
+  })
+}
+
+const readAppSourceBundle = () => {
+  const sourceRoot = path.resolve(process.cwd(), 'apps/frontend/src')
+  const files = [
+    path.join(sourceRoot, 'App.tsx'),
+    ...collectSourceFiles(path.join(sourceRoot, 'components/App'))
+  ].sort()
+  return {
+    files,
+    content: files.map((file) => readFileSync(file, 'utf8')).join('\n')
+  }
+}
 
 describe('前端表单可访问性回归', () => {
   it('ComparisonLab 关键表单字段应具备 name 属性', () => {
@@ -64,7 +85,10 @@ describe('前端表单可访问性回归', () => {
   })
 
   it('App 关键按钮应具备 aria-label 语义', () => {
-    const content = readFileSync(path.resolve(process.cwd(), 'apps/frontend/src/App.tsx'), 'utf8')
+    const { files, content } = readAppSourceBundle()
+    expect(
+      files.some((file) => file.includes(`${path.sep}components${path.sep}App${path.sep}`))
+    ).toBe(true)
     expect(content).toContain('id="export-quality"')
     expect(content).toContain('name="exportQuality"')
     expect(content).toContain('aria-label="导出视频"')
