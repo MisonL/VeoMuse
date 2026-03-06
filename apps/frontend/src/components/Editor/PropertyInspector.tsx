@@ -190,13 +190,13 @@ const PropertyInspector: React.FC = () => {
             className={activeTab === 'properties' ? 'active' : ''}
             onClick={() => setActiveTab('properties')}
           >
-            属性
+            片段属性
           </button>
           <button
             className={activeTab === 'lab' ? 'active' : ''}
             onClick={() => setActiveTab('lab')}
           >
-            监控
+            系统监控
           </button>
         </div>
         {current && <span className="clip-type-badge">{current.type}</span>}
@@ -208,7 +208,10 @@ const PropertyInspector: React.FC = () => {
         ) : !current ? (
           <div className="inspector-empty">
             <p>未选中片段</p>
-            <small>点击时间轴片段开始炼金</small>
+            <small>点击时间轴片段开始炼金，或切换到系统监控查看运行状态。</small>
+            <button type="button" className="pro-master-btn" onClick={() => setActiveTab('lab')}>
+              查看系统监控
+            </button>
           </div>
         ) : (
           <div className="pro-inspector-content">

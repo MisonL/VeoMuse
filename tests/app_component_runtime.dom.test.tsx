@@ -129,4 +129,15 @@ describe('App 运行态关键分支（DOM/SSR）', () => {
     expect(content).toContain("activeMode === 'edit' ? (")
     expect(content).toContain(") : activeMode === 'color' ? (")
   })
+
+  it('主壳样式应避免默认横向溢出并压缩移动端时间轴', () => {
+    const cssPath = path.resolve(process.cwd(), 'apps/frontend/src/App.css')
+    const css = readFileSync(cssPath, 'utf8')
+    expect(css).toContain('width: 100%;')
+    expect(css).toContain('box-sizing: border-box;')
+    expect(css).not.toContain('width: 100vw;')
+    expect(css).toContain('overflow-x: hidden;')
+    expect(css).toContain('min-height: 220px;')
+    expect(css).toContain('min-height: 180px;')
+  })
 })

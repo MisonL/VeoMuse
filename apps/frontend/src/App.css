@@ -29,6 +29,14 @@
   }
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 .pro-master-shell {
   --left-panel-w: 400px;
   --right-panel-w: 340px;
@@ -41,7 +49,9 @@
   --split-handle-w: 10px;
   --split-handle-h: 8px;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   display: grid;
   grid-template-rows: var(--header-h) minmax(0, 1fr) var(--split-handle-h) var(--timeline-h);
   gap: 8px;
@@ -57,6 +67,7 @@
   padding: 8px;
   position: relative;
   isolation: isolate;
+  overflow-x: clip;
 }
 
 .pro-master-shell::before,
@@ -1446,7 +1457,7 @@ body.resizing-y {
   .os-main {
     grid-template-columns: 1fr;
     gap: 10px;
-    grid-template-rows: minmax(240px, auto) minmax(220px, auto) minmax(240px, auto);
+    grid-template-rows: auto auto auto;
     min-height: auto;
   }
 
@@ -1454,6 +1465,15 @@ body.resizing-y {
   .panel-center,
   .panel-right {
     grid-column: 1;
+  }
+
+  .panel-left,
+  .panel-right {
+    max-height: min(34vh, 320px);
+  }
+
+  .panel-center {
+    max-height: min(52vh, 430px);
   }
 
   .main-resize-handle,
@@ -1468,11 +1488,12 @@ body.resizing-y {
 
   .timeline-container {
     height: auto;
-    min-height: 300px;
+    min-height: 220px;
   }
 
   .transport-controls {
-    gap: 24px;
+    gap: 18px;
+    height: 72px;
   }
 
   .timeline-actions {
@@ -1497,6 +1518,14 @@ body.resizing-y {
 
   .timeline-body {
     padding: 10px;
+    max-height: 150px;
+    overflow: auto;
+  }
+
+  .sidebar-content,
+  .inspector-scroll {
+    max-height: min(26vh, 260px);
+    overflow: auto;
   }
 }
 
@@ -1518,6 +1547,19 @@ body.resizing-y {
   .header-actions-group {
     width: 100%;
     justify-content: center;
+  }
+
+  .os-main {
+    gap: 8px;
+  }
+
+  .panel-left,
+  .panel-right {
+    max-height: min(31vh, 280px);
+  }
+
+  .panel-center {
+    max-height: min(46vh, 360px);
   }
 
   .header-select,
@@ -1549,6 +1591,37 @@ body.resizing-y {
   .telemetry-divider {
     border-left: none;
     padding-left: 0;
+  }
+
+  .timecode {
+    font-size: 22px;
+    letter-spacing: -0.8px;
+  }
+
+  .transport-controls {
+    gap: 14px;
+    height: 64px;
+  }
+
+  .transport-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .transport-btn.play {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
+
+  .timeline-container {
+    min-height: 180px;
+  }
+
+  .timeline-body {
+    max-height: 112px;
+    padding: 8px;
   }
 
   .sidebar-content {
