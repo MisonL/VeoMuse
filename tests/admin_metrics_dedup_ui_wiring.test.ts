@@ -11,6 +11,7 @@ const readTelemetryDashboardSources = () =>
     'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryGovernanceController.ts',
     'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryProviderHealthController.ts',
     'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetrySloController.ts',
+    'apps/frontend/src/components/Editor/telemetry-dashboard/SloSection.tsx',
     'apps/frontend/src/components/Editor/telemetry-dashboard/ProjectGovernancePanel.tsx',
     'apps/frontend/src/components/Editor/telemetry-dashboard/DbOpsPanel.tsx'
   ]

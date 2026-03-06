@@ -22,6 +22,10 @@ const comparisonLabFiles = [
   'apps/frontend/src/components/Editor/comparison-lab/modes/creative/VideoGenerationWorkbench.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/CollabModeContainer.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/WorkspaceSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/InviteJoinSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/RealtimeChannelSection.tsx',
+  'apps/frontend/src/components/Editor/comparison-lab/modes/collab/CommentThreadsSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/ProjectGovernanceSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/OpsToolsSection.tsx',
   'apps/frontend/src/components/Editor/comparison-lab/modes/collab/PermissionMergeSection.tsx',
@@ -35,6 +39,7 @@ const telemetryDashboardFiles = [
   'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryGovernanceController.ts',
   'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryProviderHealthController.ts',
   'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetrySloController.ts',
+  'apps/frontend/src/components/Editor/telemetry-dashboard/SloSection.tsx',
   'apps/frontend/src/components/Editor/telemetry-dashboard/ProjectGovernancePanel.tsx',
   'apps/frontend/src/components/Editor/telemetry-dashboard/DbOpsPanel.tsx'
 ]

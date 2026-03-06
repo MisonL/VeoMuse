@@ -15,6 +15,9 @@ describe('前端表单可访问性回归', () => {
       'apps/frontend/src/components/Editor/comparison-lab/modes/creative/AssetReuseSection.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/creative/VideoGenerationWorkbench.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/modes/CollabModePanel.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/collab/WorkspaceSection.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/collab/InviteJoinSection.tsx',
+      'apps/frontend/src/components/Editor/comparison-lab/modes/collab/CommentThreadsSection.tsx',
       'apps/frontend/src/components/Editor/comparison-lab/ChannelAccessPanel.tsx'
     ]
       .map((file) => readFileSync(path.resolve(process.cwd(), file), 'utf8'))

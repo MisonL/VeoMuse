@@ -1,8 +1,6 @@
 import React from 'react'
 import { useAdminMetricsPolling, useAdminMetricsStore } from '../../store/adminMetricsStore'
 import {
-  SLO_MIN_JOURNEY_SAMPLES,
-  SLO_MIN_NON_AI_SAMPLES,
   formatApiAverageMs,
   formatApiSuccessRate,
   resolveMetricsOverview
@@ -11,7 +9,7 @@ import TelemetryOverviewSection from './telemetry-dashboard/TelemetryOverviewSec
 import ProviderHealthPanel from './telemetry-dashboard/ProviderHealthPanel'
 import DbOpsPanel from './telemetry-dashboard/DbOpsPanel'
 import ProjectGovernancePanel from './telemetry-dashboard/ProjectGovernancePanel'
-import { SloBreakdownList, SloFailureList } from './telemetry-dashboard/SloDataLists'
+import SloSection from './telemetry-dashboard/SloSection'
 import { useTelemetryDashboardPolling } from './telemetry-dashboard/hooks/useTelemetryDashboardPolling'
 import { useTelemetryDbOpsController } from './telemetry-dashboard/hooks/useTelemetryDbOpsController'
 import { useTelemetryFpsMonitor } from './telemetry-dashboard/hooks/useTelemetryFpsMonitor'
@@ -19,8 +17,6 @@ import { useTelemetryGovernanceController } from './telemetry-dashboard/hooks/us
 import { useTelemetryProviderHealthController } from './telemetry-dashboard/hooks/useTelemetryProviderHealthController'
 import { useTelemetrySloController } from './telemetry-dashboard/hooks/useTelemetrySloController'
 import './TelemetryDashboard.css'
-
-const SLO_JOURNEY_FAILURE_LIMIT = 10
 
 const TelemetryDashboard: React.FC = () => {
   useAdminMetricsPolling()
@@ -138,21 +134,6 @@ const TelemetryDashboard: React.FC = () => {
     avgText: formatApiAverageMs(stats)
   }))
 
-  const formatPercent = (value: number | null, fractionDigits = 1) => {
-    if (value === null || !Number.isFinite(value)) return '--'
-    return `${(value * 100).toFixed(fractionDigits)}%`
-  }
-
-  const formatMs = (value: number | null, fractionDigits = 0) => {
-    if (value === null || !Number.isFinite(value)) return '--'
-    return `${value.toFixed(fractionDigits)}ms`
-  }
-
-  const formatSteps = (value: number | null) => {
-    if (value === null || !Number.isFinite(value)) return '--'
-    return `${value.toFixed(2)} 步`
-  }
-
   return (
     <div className="telemetry-dashboard">
       <TelemetryOverviewSection
@@ -165,72 +146,14 @@ const TelemetryDashboard: React.FC = () => {
         apiRows={apiRows}
       />
 
-      <section className="slo-panel">
-        <h3 className="telemetry-section-title">北极星 SLO（24h）</h3>
-        {sloSummary ? (
-          <>
-            <div className="slo-grid">
-              <div
-                className={`slo-card ${sloSummary.passFlags.primaryFlowSuccessRate ? 'pass' : 'fail'}`}
-              >
-                <span className="slo-name">主链路成功率</span>
-                <strong>{formatPercent(sloSummary.current.primaryFlowSuccessRate, 2)}</strong>
-                <span className="slo-target">
-                  目标 ≥ {formatPercent(sloSummary.targets.primaryFlowSuccessRate, 2)}
-                </span>
-              </div>
-              <div className={`slo-card ${sloSummary.passFlags.nonAiApiP95Ms ? 'pass' : 'fail'}`}>
-                <span className="slo-name">非 AI API P95</span>
-                <strong>{formatMs(sloSummary.current.nonAiApiP95Ms, 0)}</strong>
-                <span className="slo-target">
-                  目标 ≤ {formatMs(sloSummary.targets.nonAiApiP95Ms, 0)}
-                </span>
-              </div>
-              <div
-                className={`slo-card ${sloSummary.passFlags.firstSuccessAvgSteps ? 'pass' : 'fail'}`}
-              >
-                <span className="slo-name">首次成功平均步数</span>
-                <strong>{formatSteps(sloSummary.current.firstSuccessAvgSteps)}</strong>
-                <span className="slo-target">
-                  目标 ≤ {sloSummary.targets.firstSuccessAvgSteps.toFixed(2)} 步
-                </span>
-              </div>
-            </div>
-            <div className="slo-summary-row">
-              <span>
-                样本：旅程 {sloSummary.counts.totalJourneys}（成功{' '}
-                {sloSummary.counts.successJourneys}）
-              </span>
-              <span>非 AI 请求样本 {sloSummary.counts.nonAiSamples}</span>
-            </div>
-            {sloDecision ? (
-              <div className="slo-threshold-row">
-                <span>
-                  样本阈值：旅程 {sloDecision.journeySamples}/{SLO_MIN_JOURNEY_SAMPLES}，非 AI{' '}
-                  {sloDecision.nonAiSamples}/{SLO_MIN_NON_AI_SAMPLES}
-                </span>
-                <span className={`slo-decision-pill ${sloDecision.status}`}>
-                  判定来源：{sloDecision.reasonText}
-                </span>
-              </div>
-            ) : null}
-            <SloBreakdownList
-              items={sloBreakdown}
-              formatPercent={formatPercent}
-              formatMs={formatMs}
-            />
-            <SloFailureList
-              items={sloJourneyFailures}
-              totalCount={sloJourneyFailCount}
-              limit={SLO_JOURNEY_FAILURE_LIMIT}
-              formatPercent={formatPercent}
-            />
-          </>
-        ) : (
-          <div className="api-empty">暂无 SLO 数据，请先保存管理员令牌</div>
-        )}
-        {sloError ? <div className="db-error">{sloError}</div> : null}
-      </section>
+      <SloSection
+        sloSummary={sloSummary}
+        sloBreakdown={sloBreakdown}
+        sloJourneyFailures={sloJourneyFailures}
+        sloJourneyFailCount={sloJourneyFailCount}
+        sloError={sloError}
+        sloDecision={sloDecision}
+      />
 
       <ProviderHealthPanel
         isLoading={isProviderHealthLoading}

@@ -1,18 +1,12 @@
 import React from 'react'
-import {
-  formatCursor,
-  formatLocalTime,
-  formatMentions,
-  formatShortId,
-  getConnectionStatusText,
-  isCreateInviteDisabled,
-  isLoadMoreDisabled,
-  takePreviewItems
-} from './collabModePanel.logic'
+import CommentThreadsSection from './collab/CommentThreadsSection'
+import InviteJoinSection from './collab/InviteJoinSection'
 import OpsToolsSection from './collab/OpsToolsSection'
 import PermissionMergeSection from './collab/PermissionMergeSection'
 import ProjectGovernanceSection from './collab/ProjectGovernanceSection'
+import RealtimeChannelSection from './collab/RealtimeChannelSection'
 import StorageSnapshotsSection from './collab/StorageSnapshotsSection'
+import WorkspaceSection from './collab/WorkspaceSection'
 import type {
   CollabEvent,
   CollabPresence,
@@ -343,302 +337,69 @@ const CollabModePanel: React.FC<CollabModePanelProps> = ({
 
   return (
     <div className="collab-shell" data-testid="area-collab-shell">
-      <section className="collab-card" data-testid="area-collab-workspace-card">
-        <h4>团队空间</h4>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>空间名</span>
-            <input
-              name="workspaceName"
-              value={workspaceName}
-              onChange={(event) => onWorkspaceNameChange(event.target.value)}
-              data-testid="input-workspace-name"
-            />
-          </label>
-          <label className="lab-field">
-            <span>Owner</span>
-            <input
-              name="workspaceOwner"
-              value={workspaceOwner}
-              onChange={(event) => onWorkspaceOwnerChange(event.target.value)}
-              data-testid="input-workspace-owner"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-actions">
-          <button
-            onClick={onCreateWorkspace}
-            data-testid="btn-create-workspace"
-            disabled={!isAuthenticated}
-            title={!isAuthenticated ? '请先登录后再创建工作区' : ''}
-          >
-            创建工作区
-          </button>
-          <button
-            disabled={!workspaceId}
-            onClick={onRefreshWorkspaceState}
-            data-testid="btn-refresh-workspace-state"
-          >
-            刷新状态
-          </button>
-        </div>
-        <div className="collab-meta">
-          <span data-testid="text-workspace-id">workspace: {workspaceId || '-'}</span>
-          <span>project: {projectId || '-'}</span>
-        </div>
-      </section>
+      <WorkspaceSection
+        isAuthenticated={isAuthenticated}
+        workspaceName={workspaceName}
+        workspaceOwner={workspaceOwner}
+        workspaceId={workspaceId}
+        projectId={projectId}
+        onWorkspaceNameChange={onWorkspaceNameChange}
+        onWorkspaceOwnerChange={onWorkspaceOwnerChange}
+        onCreateWorkspace={onCreateWorkspace}
+        onRefreshWorkspaceState={onRefreshWorkspaceState}
+      />
 
-      <section className="collab-card" data-testid="area-collab-invite-card">
-        <h4>邀请与加入</h4>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>邀请角色</span>
-            <select
-              name="inviteRole"
-              value={inviteRole}
-              onChange={(event) => onInviteRoleChange(event.target.value as WorkspaceRole)}
-            >
-              <option value="editor">editor</option>
-              <option value="viewer">viewer</option>
-              <option value="owner">owner</option>
-            </select>
-          </label>
-          <label className="lab-field">
-            <span>成员名</span>
-            <input
-              name="memberName"
-              value={memberName}
-              onChange={(event) => onMemberNameChange(event.target.value)}
-            />
-          </label>
-          <label className="lab-field">
-            <span>协作角色</span>
-            <select
-              name="collabRole"
-              value={collabRole}
-              onChange={(event) => onCollabRoleChange(event.target.value as WorkspaceRole)}
-            >
-              <option value="editor">editor</option>
-              <option value="viewer">viewer</option>
-              <option value="owner">owner</option>
-            </select>
-          </label>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>邀请码</span>
-            <input
-              name="inviteCode"
-              value={inviteCode}
-              onChange={(event) => onInviteCodeChange(event.target.value)}
-              data-testid="input-invite-code"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-actions">
-          <button
-            disabled={isCreateInviteDisabled(workspaceId, collabRole)}
-            onClick={onCreateInvite}
-            data-testid="btn-create-invite"
-          >
-            生成邀请
-          </button>
-          <button onClick={onAcceptInvite} data-testid="btn-accept-invite">
-            接受邀请
-          </button>
-        </div>
-        <div className="collab-list">
-          {takePreviewItems(invites, 6).map((item) => (
-            <div key={item.id} className="collab-list-item">
-              <span>{item.code}</span>
-              <span>{item.role}</span>
-              <span>{item.status}</span>
-            </div>
-          ))}
-          {invites.length === 0 ? <div className="api-empty">暂无邀请记录</div> : null}
-        </div>
-      </section>
+      <InviteJoinSection
+        workspaceId={workspaceId}
+        inviteRole={inviteRole}
+        memberName={memberName}
+        collabRole={collabRole}
+        inviteCode={inviteCode}
+        invites={invites}
+        onInviteRoleChange={onInviteRoleChange}
+        onMemberNameChange={onMemberNameChange}
+        onCollabRoleChange={onCollabRoleChange}
+        onInviteCodeChange={onInviteCodeChange}
+        onCreateInvite={onCreateInvite}
+        onAcceptInvite={onAcceptInvite}
+      />
 
-      <section className="collab-card">
-        <h4>多人协同通道</h4>
-        <div className="lab-inline-actions">
-          <button
-            aria-label="连接协作通道"
-            disabled={isWsConnected || !workspaceId}
-            onClick={onConnectWs}
-          >
-            连接 WS
-          </button>
-          <button aria-label="断开协作通道" disabled={!isWsConnected} onClick={onDisconnectWs}>
-            断开 WS
-          </button>
-          <button
-            aria-label="发送时间轴补丁"
-            disabled={!isWsConnected}
-            onClick={() => onSendCollabEvent('timeline.patch')}
-          >
-            发送 Timeline Patch
-          </button>
-          <button
-            aria-label="发送光标更新"
-            disabled={!isWsConnected}
-            onClick={() => onSendCollabEvent('cursor.update')}
-          >
-            发送 Cursor 更新
-          </button>
-        </div>
-        <div className="collab-meta">
-          <span>连接状态：{getConnectionStatusText(isWsConnected)}</span>
-          <span>在线人数：{presence.length}</span>
-        </div>
-        <div className="collab-split">
-          <div className="collab-column">
-            <h5>在线成员</h5>
-            <div className="collab-list">
-              {presence.map((item) => (
-                <div key={`${item.workspaceId}-${item.sessionId}`} className="collab-list-item">
-                  <span>{item.memberName}</span>
-                  <span>{item.role}</span>
-                  <span>{item.status}</span>
-                </div>
-              ))}
-              {presence.length === 0 ? <div className="api-empty">暂无在线成员</div> : null}
-            </div>
-          </div>
-          <div className="collab-column">
-            <h5>协作事件</h5>
-            <div className="collab-list">
-              {takePreviewItems(collabEvents, 20).map((item) => (
-                <div key={item.id} className="collab-list-item">
-                  <span>{item.eventType}</span>
-                  <span>{item.actorName}</span>
-                  <span>{formatLocalTime(item.createdAt)}</span>
-                </div>
-              ))}
-              {collabEvents.length === 0 ? <div className="api-empty">暂无协作事件</div> : null}
-            </div>
-          </div>
-        </div>
-      </section>
+      <RealtimeChannelSection
+        workspaceId={workspaceId}
+        isWsConnected={isWsConnected}
+        presence={presence}
+        collabEvents={collabEvents}
+        onConnectWs={onConnectWs}
+        onDisconnectWs={onDisconnectWs}
+        onSendCollabEvent={onSendCollabEvent}
+      />
 
-      <section className="collab-card">
-        <h4>v4 评论线程</h4>
-        <div className="lab-inline-actions">
-          <button disabled={!projectId || isV4Busy} onClick={onRefreshCommentThreads}>
-            {isV4Busy ? '处理中...' : '刷新线程'}
-          </button>
-          <label className="lab-field">
-            <span>limit</span>
-            <input
-              type="number"
-              min={1}
-              name="v4CommentThreadLimit"
-              value={commentThreadLimit}
-              onChange={(event) => onCommentThreadLimitChange(event.target.value)}
-              placeholder="20"
-            />
-          </label>
-          <button
-            disabled={isLoadMoreDisabled(projectId, commentThreadHasMore, isV4Busy)}
-            onClick={onLoadMoreCommentThreads}
-          >
-            加载更多
-          </button>
-        </div>
-        <div className="collab-meta">
-          <span>下一页游标：{formatCursor(commentThreadCursor)}</span>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>锚点</span>
-            <input
-              name="v4CommentAnchor"
-              value={commentAnchor}
-              onChange={(event) => onCommentAnchorChange(event.target.value)}
-              placeholder="timeline:12.4s"
-            />
-          </label>
-          <label className="lab-field">
-            <span>线程内容</span>
-            <input
-              name="v4CommentContent"
-              value={commentContent}
-              onChange={(event) => onCommentContentChange(event.target.value)}
-              placeholder="输入评论线程内容"
-            />
-          </label>
-          <label className="lab-field">
-            <span>mentions</span>
-            <input
-              name="v4CommentMentions"
-              value={commentMentions}
-              onChange={(event) => onCommentMentionsChange(event.target.value)}
-              placeholder="alice,bob"
-            />
-          </label>
-          <button
-            className="inline-fill-btn"
-            disabled={!projectId || isV4Busy}
-            onClick={onCreateCommentThread}
-          >
-            创建线程
-          </button>
-        </div>
-        <div className="lab-inline-fields">
-          <label className="lab-field">
-            <span>线程</span>
-            <select
-              name="v4SelectedThreadId"
-              value={selectedThreadId}
-              onChange={(event) => onSelectedThreadIdChange(event.target.value)}
-            >
-              <option value="">选择线程</option>
-              {commentThreads.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {formatShortId(item.id, 8)} · {item.status}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="lab-field">
-            <span>回复</span>
-            <input
-              name="v4CommentReplyContent"
-              value={commentReplyContent}
-              onChange={(event) => onCommentReplyContentChange(event.target.value)}
-              placeholder="输入回复内容"
-            />
-          </label>
-          <label className="lab-field">
-            <span>回复 mentions</span>
-            <input
-              name="v4CommentReplyMentions"
-              value={commentReplyMentions}
-              onChange={(event) => onCommentReplyMentionsChange(event.target.value)}
-              placeholder="alice,bob"
-            />
-          </label>
-        </div>
-        <div className="lab-inline-actions">
-          <button disabled={!selectedThreadId || isV4Busy} onClick={onReplyCommentThread}>
-            回复线程
-          </button>
-          <button disabled={!selectedThreadId || isV4Busy} onClick={onResolveCommentThread}>
-            标记 Resolve
-          </button>
-        </div>
-        <div className="collab-list">
-          {takePreviewItems(commentThreads, 12).map((item) => (
-            <div key={item.id} className="collab-list-item">
-              <span>{item.content}</span>
-              <span>{item.status}</span>
-              <span>{formatMentions(item.mentions)}</span>
-              <span>{formatLocalTime(item.updatedAt)}</span>
-            </div>
-          ))}
-          {commentThreads.length === 0 ? <div className="api-empty">暂无评论线程</div> : null}
-        </div>
-      </section>
+      <CommentThreadsSection
+        projectId={projectId}
+        commentThreads={commentThreads}
+        commentThreadCursor={commentThreadCursor}
+        commentThreadLimit={commentThreadLimit}
+        commentThreadHasMore={commentThreadHasMore}
+        commentAnchor={commentAnchor}
+        commentContent={commentContent}
+        commentMentions={commentMentions}
+        selectedThreadId={selectedThreadId}
+        commentReplyContent={commentReplyContent}
+        commentReplyMentions={commentReplyMentions}
+        isV4Busy={isV4Busy}
+        onRefreshCommentThreads={onRefreshCommentThreads}
+        onLoadMoreCommentThreads={onLoadMoreCommentThreads}
+        onCommentThreadLimitChange={onCommentThreadLimitChange}
+        onCommentAnchorChange={onCommentAnchorChange}
+        onCommentContentChange={onCommentContentChange}
+        onCommentMentionsChange={onCommentMentionsChange}
+        onSelectedThreadIdChange={onSelectedThreadIdChange}
+        onCommentReplyContentChange={onCommentReplyContentChange}
+        onCommentReplyMentionsChange={onCommentReplyMentionsChange}
+        onCreateCommentThread={onCreateCommentThread}
+        onReplyCommentThread={onReplyCommentThread}
+        onResolveCommentThread={onResolveCommentThread}
+      />
 
       <section className="collab-card collab-card--compact">
         <h4>高级功能</h4>
