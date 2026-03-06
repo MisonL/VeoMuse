@@ -17,7 +17,7 @@
 
 2. 实网回归闭环（阻塞后置验收）
 
-- 前置条件：配置 `GEMINI_API_KEYS`、`OPENAI_API_KEY`、`KLING_API_KEY` 等真实凭据。
+- 前置条件：当前 `release:real:precheck` 只硬性校验 `GEMINI_API_KEYS`；如需扩展多 Provider 实网回归，再按场景补充对应渠道凭据。
 - 执行命令：
   - `bun run release:real:precheck`
   - `bun run e2e:regression:real -- --workers=1`

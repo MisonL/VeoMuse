@@ -31,6 +31,7 @@
 3. `TelemetryDashboard`
    - 逻辑单测：`tests/telemetry_dashboard_logic.test.ts`
    - 组件 DOM：`tests/telemetry_dashboard_component.dom.test.tsx`
+   - SSR 补强：`tests/editor_panels_ssr_coverage.test.tsx`
 
 4. `App` 壳层
    - 运行态交互：`tests/app_component_interactions.dom.test.tsx`
