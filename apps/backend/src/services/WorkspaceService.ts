@@ -10,38 +10,55 @@ import type {
 } from '@veomuse/shared'
 import { getLocalDb } from './LocalDatabaseService'
 import {
-  decodeStableCursor,
-  encodeStableCursor,
-  generateInviteCode,
-  resolveOrganizationIdByProject,
-  resolveOrganizationIdByWorkspace,
-  resolveWorkspaceIdByProject,
-  toAudit,
-  toCollabEvent,
-  toInvite,
-  toMember,
-  toProject,
-  toProjectComment,
-  toProjectReview,
-  toProjectTemplate,
-  toPresence,
-  toSnapshot,
-  toWorkspace,
-  type ProjectClipBatchOperation,
   type ProjectClipBatchUpdateReceipt,
   type ProjectComment,
-  type ProjectCommentRow,
   type ProjectReview,
   type ProjectTemplate,
-  type ProjectTemplateApplyReceipt,
-  type WorkspaceAcceptInviteResult,
-  type WorkspaceCreateResult,
-  type WorkspaceInviteRow
+  type ProjectTemplateApplyReceipt
 } from './workspaceShared'
-
-const now = () => new Date().toISOString()
-
-type WorkspaceActionIdempotencyAction = 'workspace.create' | 'workspace.invite.accept'
+import {
+  createProjectForWorkspace,
+  createWorkspaceRecord,
+  doesProjectBelongToWorkspace,
+  getDefaultProjectForWorkspace,
+  getMemberByName,
+  getMemberByUserIdForWorkspace,
+  getProjectById,
+  getWorkspaceById,
+  listMembersByWorkspaceId,
+  listProjectsByWorkspaceId,
+  listWorkspaceIdsByUserId
+} from './workspace-service/core'
+import {
+  acceptWorkspaceInvite,
+  addWorkspaceMember,
+  createWorkspaceInvite,
+  getWorkspacePresenceBySession,
+  listWorkspaceInvites,
+  listWorkspacePresence,
+  removeWorkspacePresence,
+  upsertWorkspacePresence
+} from './workspace-service/membership'
+import {
+  applyProjectTemplateRecord,
+  batchUpdateProjectClipsRecord,
+  createProjectCommentRecord,
+  createProjectReviewRecord,
+  createProjectSnapshotRecord,
+  listProjectCommentsByProject,
+  listProjectCommentsPageByProject,
+  listProjectReviewsByProject,
+  listProjectSnapshotsByProject,
+  listProjectTemplatesByProject,
+  resolveProjectCommentRecord
+} from './workspace-service/governance'
+import {
+  listProjectAuditLogs,
+  listWorkspaceCollabEvents,
+  logWorkspaceCollabEvent
+} from './workspace-service/collab'
+import type { WorkspaceActionIdempotencyAction } from './workspace-service/contracts'
+import { nowIso } from './workspace-service/contracts'
 
 export class WorkspaceService {
   private static isConstraintError(error: unknown) {
@@ -103,7 +120,7 @@ export class WorkspaceService {
         action,
         normalizedIdempotencyKey,
         JSON.stringify(response || null),
-        now()
+        nowIso()
       )
   }
 
@@ -132,7 +149,7 @@ export class WorkspaceService {
         action,
         JSON.stringify(detail),
         traceId || null,
-        now()
+        nowIso()
       )
   }
 
@@ -143,163 +160,41 @@ export class WorkspaceService {
     ownerUserId?: string,
     idempotencyKey?: string | null
   ) {
-    const normalizedOwnerUserId = ownerUserId?.trim() || ''
-    const normalizedIdempotencyKey = (idempotencyKey || '').trim()
-    const existing = this.findIdempotentActionResult<WorkspaceCreateResult>(
-      normalizedOwnerUserId,
-      'workspace.create',
-      normalizedIdempotencyKey
-    )
-    if (existing) return existing
-
-    const tx = getLocalDb().transaction(() => {
-      const workspaceId = `ws_${crypto.randomUUID()}`
-      const projectId = `prj_${crypto.randomUUID()}`
-      const ownerId = `member_${crypto.randomUUID()}`
-      const createdAt = now()
-      const traceId = `trace_${crypto.randomUUID()}`
-
-      getLocalDb()
-        .prepare(
-          `
-        INSERT INTO workspaces (id, organization_id, name, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?)
-      `
-        )
-        .run(workspaceId, organizationId, name, createdAt, createdAt)
-
-      getLocalDb()
-        .prepare(
-          `
-        INSERT INTO workspace_members (id, workspace_id, user_id, name, role, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `
-        )
-        .run(ownerId, workspaceId, normalizedOwnerUserId || null, ownerName, 'owner', createdAt)
-
-      getLocalDb()
-        .prepare(
-          `
-        INSERT INTO projects (id, organization_id, workspace_id, name, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `
-        )
-        .run(projectId, organizationId, workspaceId, `${name} 默认项目`, createdAt, createdAt)
-
-      this.writeAudit(
-        'workspace.created',
-        ownerName,
-        { workspaceId, name },
-        organizationId,
-        workspaceId,
-        projectId,
-        traceId
-      )
-
-      const result: WorkspaceCreateResult = {
-        workspace: this.getWorkspace(workspaceId),
-        defaultProject: this.getProject(projectId),
-        owner: this.getMembers(workspaceId).find((member) => member.id === ownerId) || null
-      }
-
-      if (normalizedOwnerUserId && normalizedIdempotencyKey) {
-        this.writeIdempotentActionResult(
-          normalizedOwnerUserId,
-          'workspace.create',
-          normalizedIdempotencyKey,
-          result,
-          organizationId,
-          workspaceId
-        )
-      }
-
-      return result
+    return createWorkspaceRecord({
+      name,
+      ownerName,
+      organizationId,
+      ownerUserId,
+      idempotencyKey,
+      findIdempotentActionResult: this.findIdempotentActionResult.bind(this),
+      writeIdempotentActionResult: this.writeIdempotentActionResult.bind(this),
+      isConstraintError: this.isConstraintError.bind(this),
+      writeAudit: this.writeAudit.bind(this)
     })
-
-    try {
-      return tx()
-    } catch (error) {
-      if (this.isConstraintError(error)) {
-        const duplicated = this.findIdempotentActionResult<WorkspaceCreateResult>(
-          normalizedOwnerUserId,
-          'workspace.create',
-          normalizedIdempotencyKey
-        )
-        if (duplicated) return duplicated
-      }
-      throw error
-    }
   }
 
   static getWorkspace(workspaceId: string): Workspace | null {
-    const row = getLocalDb().prepare(`SELECT * FROM workspaces WHERE id = ?`).get(workspaceId)
-    return row ? toWorkspace(row) : null
+    return getWorkspaceById(workspaceId)
   }
 
   static getProject(projectId: string): Project | null {
-    const row = getLocalDb().prepare(`SELECT * FROM projects WHERE id = ?`).get(projectId)
-    return row ? toProject(row) : null
+    return getProjectById(projectId)
   }
 
   static getMembers(workspaceId: string): WorkspaceMember[] {
-    return getLocalDb()
-      .prepare(
-        `
-      SELECT * FROM workspace_members WHERE workspace_id = ? ORDER BY created_at ASC
-    `
-      )
-      .all(workspaceId)
-      .map(toMember)
+    return listMembersByWorkspaceId(workspaceId)
   }
 
   static getMember(workspaceId: string, name: string): WorkspaceMember | null {
-    const normalizedName = name.trim()
-    if (!normalizedName) return null
-    const row = getLocalDb()
-      .prepare(
-        `
-      SELECT * FROM workspace_members
-      WHERE workspace_id = ? AND name = ?
-      ORDER BY created_at DESC
-      LIMIT 1
-    `
-      )
-      .get(workspaceId, normalizedName)
-    return row ? toMember(row) : null
+    return getMemberByName(workspaceId, name)
   }
 
   static getMemberByUserId(workspaceId: string, userId: string): WorkspaceMember | null {
-    const normalizedUserId = userId.trim()
-    if (!normalizedUserId) return null
-    const row = getLocalDb()
-      .prepare(
-        `
-      SELECT * FROM workspace_members
-      WHERE workspace_id = ? AND user_id = ?
-      ORDER BY created_at DESC
-      LIMIT 1
-    `
-      )
-      .get(workspaceId, normalizedUserId)
-    return row ? toMember(row) : null
+    return getMemberByUserIdForWorkspace(workspaceId, userId)
   }
 
   static listWorkspaceIdsByUser(organizationId: string, userId: string): string[] {
-    const normalizedOrganizationId = organizationId.trim()
-    const normalizedUserId = userId.trim()
-    if (!normalizedOrganizationId || !normalizedUserId) return []
-    const rows = getLocalDb()
-      .prepare(
-        `
-      SELECT DISTINCT wm.workspace_id
-      FROM workspace_members wm
-      INNER JOIN workspaces ws ON ws.id = wm.workspace_id
-      WHERE wm.user_id = ? AND ws.organization_id = ?
-      ORDER BY wm.workspace_id ASC
-    `
-      )
-      .all(normalizedUserId, normalizedOrganizationId) as Array<{ workspace_id?: string }>
-    return rows.map((row) => String(row.workspace_id || '').trim()).filter(Boolean)
+    return listWorkspaceIdsByUserId(organizationId, userId)
   }
 
   static getMemberRole(workspaceId: string, name: string): WorkspaceRole | null {
@@ -323,25 +218,11 @@ export class WorkspaceService {
   }
 
   static projectBelongsToWorkspace(workspaceId: string, projectId: string): boolean {
-    const row = getLocalDb()
-      .prepare(
-        `
-      SELECT id FROM projects WHERE id = ? AND workspace_id = ? LIMIT 1
-    `
-      )
-      .get(projectId, workspaceId)
-    return Boolean(row)
+    return doesProjectBelongToWorkspace(workspaceId, projectId)
   }
 
   static getDefaultProject(workspaceId: string): Project | null {
-    const row = getLocalDb()
-      .prepare(
-        `
-      SELECT * FROM projects WHERE workspace_id = ? ORDER BY created_at ASC LIMIT 1
-    `
-      )
-      .get(workspaceId)
-    return row ? toProject(row) : null
+    return getDefaultProjectForWorkspace(workspaceId)
   }
 
   static addMember(
@@ -351,34 +232,7 @@ export class WorkspaceService {
     actorName: string,
     userId?: string
   ) {
-    const id = `member_${crypto.randomUUID()}`
-    const createdAt = now()
-    const traceId = `trace_${crypto.randomUUID()}`
-    const normalizedUserId = userId?.trim() || null
-    if (normalizedUserId) {
-      const existing = this.getMemberByUserId(workspaceId, normalizedUserId)
-      if (existing) {
-        throw new Error('该用户已是工作区成员')
-      }
-    }
-    getLocalDb()
-      .prepare(
-        `
-      INSERT INTO workspace_members (id, workspace_id, user_id, name, role, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `
-      )
-      .run(id, workspaceId, normalizedUserId, name, role, createdAt)
-    this.writeAudit(
-      'workspace.member_added',
-      actorName,
-      { workspaceId, memberName: name, role },
-      resolveOrganizationIdByWorkspace(workspaceId),
-      workspaceId,
-      undefined,
-      traceId
-    )
-    return this.getMembers(workspaceId)
+    return addWorkspaceMember(workspaceId, name, role, actorName, this.writeAudit.bind(this), userId)
   }
 
   static createInvite(
@@ -387,42 +241,13 @@ export class WorkspaceService {
     inviter: string,
     expiresInHours: number = 24
   ) {
-    const inviteId = `invite_${crypto.randomUUID()}`
-    const code = generateInviteCode()
-    const createdAt = now()
-    const expiresAt = new Date(
-      Date.now() + Math.max(1, expiresInHours) * 60 * 60 * 1000
-    ).toISOString()
-    getLocalDb()
-      .prepare(
-        `
-      INSERT INTO workspace_invites (
-        id, organization_id, workspace_id, code, role, inviter, status, expires_at, accepted_by, accepted_at, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-      )
-      .run(
-        inviteId,
-        resolveOrganizationIdByWorkspace(workspaceId),
-        workspaceId,
-        code,
-        role,
-        inviter,
-        'pending',
-        expiresAt,
-        null,
-        null,
-        createdAt
-      )
-    this.writeAudit(
-      'workspace.invite_created',
+    return createWorkspaceInvite(
+      workspaceId,
+      role,
       inviter,
-      { workspaceId, role, code },
-      resolveOrganizationIdByWorkspace(workspaceId),
-      workspaceId
+      this.writeAudit.bind(this),
+      expiresInHours
     )
-    const row = getLocalDb().prepare(`SELECT * FROM workspace_invites WHERE id = ?`).get(inviteId)
-    return toInvite(row)
   }
 
   static acceptInvite(
@@ -431,162 +256,20 @@ export class WorkspaceService {
     userId?: string,
     idempotencyKey?: string | null
   ) {
-    const normalizedCode = code.trim()
-    if (!normalizedCode) return null
-    const normalizedUserId = userId?.trim() || null
-    const normalizedIdempotencyKey = (idempotencyKey || '').trim()
-    const existing = this.findIdempotentActionResult<WorkspaceAcceptInviteResult>(
-      normalizedUserId || undefined,
-      'workspace.invite.accept',
-      normalizedIdempotencyKey
-    )
-    if (existing) return existing
-
-    const tx = getLocalDb().transaction((): WorkspaceAcceptInviteResult | null => {
-      const row = getLocalDb()
-        .prepare(
-          `
-        SELECT * FROM workspace_invites WHERE code = ? LIMIT 1
-      `
-        )
-        .get(normalizedCode) as WorkspaceInviteRow | null
-      if (!row) return null
-      if (row.status !== 'pending') return null
-
-      const nowTs = Date.now()
-      if (new Date(row.expires_at).getTime() < nowTs) {
-        getLocalDb()
-          .prepare(`UPDATE workspace_invites SET status = ? WHERE id = ?`)
-          .run('expired', row.id)
-        return null
-      }
-
-      if (normalizedUserId) {
-        const existingMember = this.getMemberByUserId(row.workspace_id, normalizedUserId)
-        if (existingMember) {
-          getLocalDb()
-            .prepare(
-              `
-            UPDATE workspace_invites
-            SET status = ?, accepted_by = ?, accepted_at = ?
-            WHERE id = ?
-          `
-            )
-            .run('accepted', existingMember.name, now(), row.id)
-          const inviteRow = getLocalDb()
-            .prepare(`SELECT * FROM workspace_invites WHERE id = ?`)
-            .get(row.id)
-          const result: WorkspaceAcceptInviteResult = {
-            invite: toInvite(inviteRow),
-            member: existingMember,
-            workspace: this.getWorkspace(row.workspace_id),
-            defaultProject: this.getDefaultProject(row.workspace_id)
-          }
-          if (normalizedUserId && normalizedIdempotencyKey) {
-            this.writeIdempotentActionResult(
-              normalizedUserId,
-              'workspace.invite.accept',
-              normalizedIdempotencyKey,
-              result,
-              row.organization_id || resolveOrganizationIdByWorkspace(row.workspace_id),
-              row.workspace_id
-            )
-          }
-          return result
-        }
-      }
-
-      const memberId = `member_${crypto.randomUUID()}`
-      const createdAt = now()
-      getLocalDb()
-        .prepare(
-          `
-        INSERT INTO workspace_members (id, workspace_id, user_id, name, role, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `
-        )
-        .run(memberId, row.workspace_id, normalizedUserId, memberName, row.role, createdAt)
-
-      getLocalDb()
-        .prepare(
-          `
-        UPDATE workspace_invites
-        SET status = ?, accepted_by = ?, accepted_at = ?
-        WHERE id = ?
-      `
-        )
-        .run('accepted', memberName, createdAt, row.id)
-
-      this.writeAudit(
-        'workspace.invite_accepted',
-        memberName,
-        {
-          workspaceId: row.workspace_id,
-          role: row.role,
-          inviteCode: normalizedCode,
-          userId: normalizedUserId
-        },
-        row.organization_id || resolveOrganizationIdByWorkspace(row.workspace_id),
-        row.workspace_id
-      )
-
-      const inviteRow = getLocalDb()
-        .prepare(`SELECT * FROM workspace_invites WHERE id = ?`)
-        .get(row.id)
-      const member = getLocalDb()
-        .prepare(`SELECT * FROM workspace_members WHERE id = ? LIMIT 1`)
-        .get(memberId)
-      const result: WorkspaceAcceptInviteResult = {
-        invite: toInvite(inviteRow),
-        member: member ? toMember(member) : null,
-        workspace: this.getWorkspace(row.workspace_id),
-        defaultProject: this.getDefaultProject(row.workspace_id)
-      }
-
-      if (normalizedUserId && normalizedIdempotencyKey) {
-        this.writeIdempotentActionResult(
-          normalizedUserId,
-          'workspace.invite.accept',
-          normalizedIdempotencyKey,
-          result,
-          row.organization_id || resolveOrganizationIdByWorkspace(row.workspace_id),
-          row.workspace_id
-        )
-      }
-
-      return result
+    return acceptWorkspaceInvite({
+      code,
+      memberName,
+      userId,
+      idempotencyKey,
+      writeAudit: this.writeAudit.bind(this),
+      findIdempotentActionResult: this.findIdempotentActionResult.bind(this),
+      writeIdempotentActionResult: this.writeIdempotentActionResult.bind(this),
+      isConstraintError: this.isConstraintError.bind(this)
     })
-
-    try {
-      const result = tx()
-      if (!result) {
-        const duplicated = this.findIdempotentActionResult<WorkspaceAcceptInviteResult>(
-          normalizedUserId || undefined,
-          'workspace.invite.accept',
-          normalizedIdempotencyKey
-        )
-        if (duplicated) return duplicated
-        return null
-      }
-      return result
-    } catch (error) {
-      if (this.isConstraintError(error)) {
-        const duplicated = this.findIdempotentActionResult<WorkspaceAcceptInviteResult>(
-          normalizedUserId || undefined,
-          'workspace.invite.accept',
-          normalizedIdempotencyKey
-        )
-        if (duplicated) return duplicated
-      }
-      throw error
-    }
   }
 
   static listInvites(workspaceId: string) {
-    return getLocalDb()
-      .prepare(`SELECT * FROM workspace_invites WHERE workspace_id = ? ORDER BY created_at DESC`)
-      .all(workspaceId)
-      .map(toInvite)
+    return listWorkspaceInvites(workspaceId)
   }
 
   static upsertPresence(
@@ -595,73 +278,19 @@ export class WorkspaceService {
     memberName: string,
     role: WorkspaceRole = 'viewer'
   ) {
-    const lastSeenAt = now()
-    const expiresAt = new Date(Date.now() + 30_000).toISOString()
-    const organizationId = resolveOrganizationIdByWorkspace(workspaceId)
-    getLocalDb()
-      .prepare(
-        `
-      INSERT INTO workspace_presence (id, organization_id, workspace_id, session_id, member_name, role, status, last_seen_at, expires_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(workspace_id, session_id) DO UPDATE SET
-        organization_id = excluded.organization_id,
-        member_name = excluded.member_name,
-        role = excluded.role,
-        status = excluded.status,
-        last_seen_at = excluded.last_seen_at,
-        expires_at = excluded.expires_at
-    `
-      )
-      .run(
-        `presence_${workspaceId}_${sessionId}`,
-        organizationId,
-        workspaceId,
-        sessionId,
-        memberName,
-        role,
-        'online',
-        lastSeenAt,
-        expiresAt
-      )
+    upsertWorkspacePresence(workspaceId, sessionId, memberName, role)
   }
 
   static removePresence(workspaceId: string, sessionId: string) {
-    getLocalDb()
-      .prepare(`DELETE FROM workspace_presence WHERE workspace_id = ? AND session_id = ?`)
-      .run(workspaceId, sessionId)
+    removeWorkspacePresence(workspaceId, sessionId)
   }
 
   static listPresence(workspaceId: string): CollabPresence[] {
-    const nowIso = now()
-    getLocalDb().prepare(`DELETE FROM workspace_presence WHERE expires_at < ?`).run(nowIso)
-    return getLocalDb()
-      .prepare(
-        `
-        SELECT * FROM workspace_presence
-        WHERE workspace_id = ? AND expires_at >= ?
-        ORDER BY last_seen_at DESC
-      `
-      )
-      .all(workspaceId, nowIso)
-      .map(toPresence)
+    return listWorkspacePresence(workspaceId)
   }
 
   static getPresenceBySession(workspaceId: string, sessionId: string): CollabPresence | null {
-    const normalizedWorkspaceId = workspaceId.trim()
-    const normalizedSessionId = sessionId.trim()
-    if (!normalizedWorkspaceId || !normalizedSessionId) return null
-    const nowIso = now()
-    const row = getLocalDb()
-      .prepare(
-        `
-      SELECT * FROM workspace_presence
-      WHERE workspace_id = ? AND session_id = ? AND expires_at >= ?
-      ORDER BY last_seen_at DESC
-      LIMIT 1
-    `
-      )
-      .get(normalizedWorkspaceId, normalizedSessionId, nowIso)
-    return row ? toPresence(row) : null
+    return getWorkspacePresenceBySession(workspaceId, sessionId)
   }
 
   static createProjectSnapshot(
@@ -669,43 +298,11 @@ export class WorkspaceService {
     actorName: string,
     content: Record<string, unknown>
   ) {
-    const id = `snap_${crypto.randomUUID()}`
-    const createdAt = now()
-    const organizationId = resolveOrganizationIdByProject(projectId)
-    getLocalDb()
-      .prepare(
-        `
-      INSERT INTO project_snapshots (id, organization_id, project_id, actor_name, content_json, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `
-      )
-      .run(id, organizationId, projectId, actorName, JSON.stringify(content || {}), createdAt)
-    const workspaceId = resolveWorkspaceIdByProject(projectId) || undefined
-    this.writeAudit(
-      'project.snapshot_created',
-      actorName,
-      { projectId, snapshotId: id },
-      organizationId,
-      workspaceId,
-      projectId
-    )
-    const row = getLocalDb().prepare(`SELECT * FROM project_snapshots WHERE id = ?`).get(id)
-    return toSnapshot(row)
+    return createProjectSnapshotRecord(projectId, actorName, content, this.writeAudit.bind(this))
   }
 
   static listProjectSnapshots(projectId: string, limit: number = 20): ProjectSnapshot[] {
-    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(100, Math.floor(limit)) : 20
-    return getLocalDb()
-      .prepare(
-        `
-        SELECT * FROM project_snapshots
-        WHERE project_id = ?
-        ORDER BY created_at DESC
-        LIMIT ${safeLimit}
-      `
-      )
-      .all(projectId)
-      .map(toSnapshot)
+    return listProjectSnapshotsByProject(projectId, limit)
   }
 
   static listProjectComments(
@@ -713,7 +310,7 @@ export class WorkspaceService {
     cursor?: string,
     limit: number = 20
   ): ProjectComment[] {
-    return this.listProjectCommentsPage(projectId, cursor, limit).comments
+    return listProjectCommentsByProject(projectId, cursor, limit)
   }
 
   static listProjectCommentsPage(
@@ -728,68 +325,7 @@ export class WorkspaceService {
       nextCursor: string | null
     }
   } {
-    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(100, Math.floor(limit)) : 20
-    const queryLimit = safeLimit + 1
-    const decodedCursor = decodeStableCursor(cursor)
-    const rows: ProjectCommentRow[] =
-      decodedCursor && decodedCursor.id
-        ? (getLocalDb()
-            .prepare(
-              `
-          SELECT * FROM project_comments
-          WHERE project_id = ?
-            AND (
-              created_at < ?
-              OR (created_at = ? AND id < ?)
-            )
-          ORDER BY created_at DESC, id DESC
-          LIMIT ${queryLimit}
-        `
-            )
-            .all(
-              projectId,
-              decodedCursor.createdAt,
-              decodedCursor.createdAt,
-              decodedCursor.id
-            ) as ProjectCommentRow[])
-        : decodedCursor
-          ? (getLocalDb()
-              .prepare(
-                `
-          SELECT * FROM project_comments
-          WHERE project_id = ? AND created_at < ?
-          ORDER BY created_at DESC, id DESC
-          LIMIT ${queryLimit}
-        `
-              )
-              .all(projectId, decodedCursor.createdAt) as ProjectCommentRow[])
-          : (getLocalDb()
-              .prepare(
-                `
-          SELECT * FROM project_comments
-          WHERE project_id = ?
-          ORDER BY created_at DESC, id DESC
-          LIMIT ${queryLimit}
-        `
-              )
-              .all(projectId) as ProjectCommentRow[])
-    const hasMore = rows.length > safeLimit
-    const pageRows = hasMore ? rows.slice(0, safeLimit) : rows
-    const comments = pageRows.map(toProjectComment)
-    const nextCursor = hasMore
-      ? encodeStableCursor(
-          pageRows[pageRows.length - 1]?.created_at,
-          pageRows[pageRows.length - 1]?.id
-        )
-      : null
-    return {
-      comments,
-      page: {
-        limit: safeLimit,
-        hasMore,
-        nextCursor: nextCursor || null
-      }
-    }
+    return listProjectCommentsPageByProject(projectId, cursor, limit)
   }
 
   static createProjectComment(
@@ -797,63 +333,7 @@ export class WorkspaceService {
     actorName: string,
     payload: { anchor?: string; content: string; mentions?: string[] }
   ): ProjectComment {
-    const id = `pc_${crypto.randomUUID()}`
-    const createdAt = now()
-    const updatedAt = createdAt
-    const organizationId = resolveOrganizationIdByProject(projectId)
-    const workspaceId = resolveWorkspaceIdByProject(projectId) || undefined
-    const traceId = `trace_${crypto.randomUUID()}`
-    const content = String(payload?.content || '').trim()
-    if (!content) {
-      throw new Error('评论内容不能为空')
-    }
-    const anchor =
-      typeof payload?.anchor === 'string' && payload.anchor.trim() ? payload.anchor.trim() : null
-    const mentions = Array.from(
-      new Set(
-        Array.isArray(payload?.mentions)
-          ? payload.mentions.map((item) => String(item).trim()).filter(Boolean)
-          : []
-      )
-    )
-    getLocalDb()
-      .prepare(
-        `
-      INSERT INTO project_comments (
-        id, organization_id, project_id, actor_name, anchor, content, mentions_json, status, resolved_by, resolved_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-      )
-      .run(
-        id,
-        organizationId,
-        projectId,
-        actorName,
-        anchor,
-        content,
-        JSON.stringify(mentions),
-        'open',
-        null,
-        null,
-        createdAt,
-        updatedAt
-      )
-    this.writeAudit(
-      'project.comment_created',
-      actorName,
-      {
-        projectId,
-        commentId: id,
-        hasAnchor: Boolean(anchor),
-        mentionsCount: mentions.length
-      },
-      organizationId,
-      workspaceId,
-      projectId,
-      traceId
-    )
-    const row = getLocalDb().prepare(`SELECT * FROM project_comments WHERE id = ?`).get(id)
-    return toProjectComment(row)
+    return createProjectCommentRecord(projectId, actorName, payload, this.writeAudit.bind(this))
   }
 
   static resolveProjectComment(
@@ -861,70 +341,11 @@ export class WorkspaceService {
     commentId: string,
     actorName: string
   ): ProjectComment | null {
-    const normalizedCommentId = commentId.trim()
-    if (!normalizedCommentId) return null
-    const existing = getLocalDb()
-      .prepare(
-        `
-      SELECT * FROM project_comments
-      WHERE project_id = ? AND id = ?
-      LIMIT 1
-    `
-      )
-      .get(projectId, normalizedCommentId) as { status?: string } | null
-    if (!existing) return null
-    if (existing.status !== 'resolved') {
-      const resolvedAt = now()
-      const organizationId = resolveOrganizationIdByProject(projectId)
-      const workspaceId = resolveWorkspaceIdByProject(projectId) || undefined
-      const traceId = `trace_${crypto.randomUUID()}`
-      getLocalDb()
-        .prepare(
-          `
-        UPDATE project_comments
-        SET status = ?, resolved_by = ?, resolved_at = ?, updated_at = ?
-        WHERE project_id = ? AND id = ?
-      `
-        )
-        .run('resolved', actorName, resolvedAt, resolvedAt, projectId, normalizedCommentId)
-      this.writeAudit(
-        'project.comment_resolved',
-        actorName,
-        {
-          projectId,
-          commentId: normalizedCommentId
-        },
-        organizationId,
-        workspaceId,
-        projectId,
-        traceId
-      )
-    }
-    const row = getLocalDb()
-      .prepare(
-        `
-      SELECT * FROM project_comments
-      WHERE project_id = ? AND id = ?
-      LIMIT 1
-    `
-      )
-      .get(projectId, normalizedCommentId)
-    return row ? toProjectComment(row) : null
+    return resolveProjectCommentRecord(projectId, commentId, actorName, this.writeAudit.bind(this))
   }
 
   static listProjectReviews(projectId: string, limit: number = 20): ProjectReview[] {
-    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(100, Math.floor(limit)) : 20
-    return getLocalDb()
-      .prepare(
-        `
-        SELECT * FROM project_reviews
-        WHERE project_id = ?
-        ORDER BY created_at DESC
-        LIMIT ${safeLimit}
-      `
-      )
-      .all(projectId)
-      .map(toProjectReview)
+    return listProjectReviewsByProject(projectId, limit)
   }
 
   static createProjectReview(
@@ -932,55 +353,11 @@ export class WorkspaceService {
     actorName: string,
     payload: { decision: 'approved' | 'changes_requested'; summary: string; score?: number }
   ): ProjectReview {
-    const decision = payload?.decision === 'changes_requested' ? 'changes_requested' : 'approved'
-    const summary = String(payload?.summary || '').trim()
-    if (!summary) {
-      throw new Error('评审摘要不能为空')
-    }
-    const score = Number.isFinite(payload?.score) ? Number(payload?.score) : null
-    const id = `prv_${crypto.randomUUID()}`
-    const createdAt = now()
-    const organizationId = resolveOrganizationIdByProject(projectId)
-    const workspaceId = resolveWorkspaceIdByProject(projectId) || undefined
-    const traceId = `trace_${crypto.randomUUID()}`
-    getLocalDb()
-      .prepare(
-        `
-      INSERT INTO project_reviews (
-        id, organization_id, project_id, actor_name, decision, summary, score, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `
-      )
-      .run(id, organizationId, projectId, actorName, decision, summary, score, createdAt)
-    this.writeAudit(
-      'project.review_created',
-      actorName,
-      {
-        projectId,
-        reviewId: id,
-        decision,
-        hasScore: score !== null
-      },
-      organizationId,
-      workspaceId,
-      projectId,
-      traceId
-    )
-    const row = getLocalDb().prepare(`SELECT * FROM project_reviews WHERE id = ?`).get(id)
-    return toProjectReview(row)
+    return createProjectReviewRecord(projectId, actorName, payload, this.writeAudit.bind(this))
   }
 
   static listProjectTemplates(projectId: string): ProjectTemplate[] {
-    return getLocalDb()
-      .prepare(
-        `
-        SELECT * FROM project_templates
-        WHERE project_id = ?
-        ORDER BY updated_at DESC, created_at DESC
-      `
-      )
-      .all(projectId)
-      .map(toProjectTemplate)
+    return listProjectTemplatesByProject(projectId)
   }
 
   static applyProjectTemplate(
@@ -989,50 +366,13 @@ export class WorkspaceService {
     templateId: string,
     options?: Record<string, unknown>
   ): ProjectTemplateApplyReceipt | null {
-    const normalizedTemplateId = templateId.trim()
-    if (!normalizedTemplateId) return null
-    const row = getLocalDb()
-      .prepare(
-        `
-      SELECT * FROM project_templates
-      WHERE project_id = ? AND id = ?
-      LIMIT 1
-    `
-      )
-      .get(projectId, normalizedTemplateId) as { name?: string } | null
-    if (!row) return null
-    const organizationId = resolveOrganizationIdByProject(projectId)
-    const workspaceId = resolveWorkspaceIdByProject(projectId)
-    const normalizedOptions =
-      options && typeof options === 'object' && !Array.isArray(options) ? options : {}
-    const templateName = String(row.name || '未命名模板')
-    const appliedAt = now()
-    const traceId = `trace_${crypto.randomUUID()}`
-    this.writeAudit(
-      'project.template_applied',
-      actorName,
-      {
-        projectId,
-        templateId: normalizedTemplateId,
-        templateName,
-        options: normalizedOptions
-      },
-      organizationId,
-      workspaceId || undefined,
+    return applyProjectTemplateRecord(
       projectId,
-      traceId
+      actorName,
+      templateId,
+      this.writeAudit.bind(this),
+      options
     )
-    return {
-      projectId,
-      templateId: normalizedTemplateId,
-      templateName,
-      actorName,
-      options: normalizedOptions,
-      organizationId,
-      workspaceId,
-      traceId,
-      appliedAt
-    }
   }
 
   static batchUpdateProjectClips(
@@ -1040,62 +380,12 @@ export class WorkspaceService {
     actorName: string,
     operations: Array<{ clipId: string; patch: Record<string, unknown> }>
   ): ProjectClipBatchUpdateReceipt {
-    const safeOperations = Array.isArray(operations) ? operations : []
-    const normalizedOperations: ProjectClipBatchOperation[] = []
-    let rejected = 0
-    let skipped = 0
-    for (const operation of safeOperations) {
-      const clipId = String(operation?.clipId || '').trim()
-      const rawPatch = operation?.patch
-      const patch =
-        rawPatch && typeof rawPatch === 'object' && !Array.isArray(rawPatch) ? rawPatch : null
-      if (!clipId || !patch) {
-        rejected += 1
-        continue
-      }
-      if (Object.keys(patch).length === 0) {
-        skipped += 1
-        continue
-      }
-      normalizedOperations.push({ clipId, patch })
-    }
-    const requested = safeOperations.length
-    const accepted = normalizedOperations.length
-    const updated = accepted
-    const organizationId = resolveOrganizationIdByProject(projectId)
-    const workspaceId = resolveWorkspaceIdByProject(projectId)
-    const traceId = `trace_${crypto.randomUUID()}`
-    const processedAt = now()
-    this.writeAudit(
-      'project.clips_batch_updated',
-      actorName,
-      {
-        projectId,
-        requested,
-        accepted,
-        rejected,
-        skipped,
-        updated,
-        clipIds: normalizedOperations.map((item) => item.clipId)
-      },
-      organizationId,
-      workspaceId || undefined,
+    return batchUpdateProjectClipsRecord(
       projectId,
-      traceId
+      actorName,
+      operations,
+      this.writeAudit.bind(this)
     )
-    return {
-      projectId,
-      actorName,
-      organizationId,
-      workspaceId,
-      requested,
-      accepted,
-      skipped,
-      rejected,
-      updated,
-      traceId,
-      processedAt
-    }
   }
 
   static logCollabEvent(
@@ -1105,114 +395,22 @@ export class WorkspaceService {
     payload: Record<string, unknown>,
     options?: { projectId?: string | null; sessionId?: string | null }
   ) {
-    const id = `ce_${crypto.randomUUID()}`
-    const createdAt = now()
-    const organizationId = resolveOrganizationIdByWorkspace(workspaceId)
-    getLocalDb()
-      .prepare(
-        `
-      INSERT INTO collab_events (
-        id, organization_id, workspace_id, project_id, actor_name, session_id, event_type, payload_json, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-      )
-      .run(
-        id,
-        organizationId,
-        workspaceId,
-        options?.projectId || null,
-        actorName,
-        options?.sessionId || null,
-        eventType,
-        JSON.stringify(payload || {}),
-        createdAt
-      )
-    const row = getLocalDb().prepare(`SELECT * FROM collab_events WHERE id = ?`).get(id)
-    return toCollabEvent(row)
+    return logWorkspaceCollabEvent(workspaceId, actorName, eventType, payload, options)
   }
 
   static listCollabEvents(workspaceId: string, limit: number = 50): CollabEvent[] {
-    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(200, Math.floor(limit)) : 50
-    return getLocalDb()
-      .prepare(
-        `
-        SELECT * FROM collab_events
-        WHERE workspace_id = ?
-        ORDER BY created_at DESC
-        LIMIT ${safeLimit}
-      `
-      )
-      .all(workspaceId)
-      .map(toCollabEvent)
+    return listWorkspaceCollabEvents(workspaceId, limit)
   }
 
   static listAuditsByProject(projectId: string): AuditLog[] {
-    return getLocalDb()
-      .prepare(
-        `
-      SELECT * FROM audit_logs WHERE project_id = ? ORDER BY created_at DESC LIMIT 100
-    `
-      )
-      .all(projectId)
-      .map(toAudit)
+    return listProjectAuditLogs(projectId)
   }
 
   static createProject(workspaceId: string, name: string, actorName: string): Project | null {
-    const normalizedWorkspaceId = workspaceId.trim()
-    const normalizedName = name.trim()
-    if (!normalizedWorkspaceId) {
-      throw new Error('工作区 ID 不能为空')
-    }
-    if (!normalizedName) {
-      throw new Error('项目名称不能为空')
-    }
-
-    const workspace = this.getWorkspace(normalizedWorkspaceId)
-    if (!workspace) {
-      throw new Error('Workspace not found')
-    }
-
-    const projectId = `prj_${crypto.randomUUID()}`
-    const createdAt = now()
-    const traceId = `trace_${crypto.randomUUID()}`
-
-    getLocalDb()
-      .prepare(
-        `
-      INSERT INTO projects (id, organization_id, workspace_id, name, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `
-      )
-      .run(
-        projectId,
-        workspace.organizationId || resolveOrganizationIdByWorkspace(normalizedWorkspaceId),
-        normalizedWorkspaceId,
-        normalizedName,
-        createdAt,
-        createdAt
-      )
-
-    this.writeAudit(
-      'project.created',
-      actorName,
-      { workspaceId: normalizedWorkspaceId, projectId, name: normalizedName },
-      workspace.organizationId || resolveOrganizationIdByWorkspace(normalizedWorkspaceId),
-      normalizedWorkspaceId,
-      projectId,
-      traceId
-    )
-
-    return this.getProject(projectId)
+    return createProjectForWorkspace(workspaceId, name, actorName, this.writeAudit.bind(this))
   }
 
   static listWorkspaceProjects(workspaceId: string): Project[] {
-    return getLocalDb()
-      .prepare(
-        `
-      SELECT * FROM projects WHERE workspace_id = ? ORDER BY created_at ASC
-    `
-      )
-      .all(workspaceId)
-      .map(toProject)
+    return listProjectsByWorkspaceId(workspaceId)
   }
 }
