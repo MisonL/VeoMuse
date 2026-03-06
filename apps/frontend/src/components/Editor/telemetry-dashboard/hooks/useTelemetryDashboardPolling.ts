@@ -46,12 +46,12 @@ export const useTelemetryDashboardPolling = ({
       let runtimeOk = true
       let sloOk = true
 
-      if (runtimeTick % 3 === 0) {
+      if (runtimeTick === 1 || runtimeTick % 3 === 0) {
         runtimeOk = await fetchDbRuntime()
         await refreshProviderHealth()
       }
 
-      if (runtimeTick % 2 === 0) {
+      if (runtimeTick === 1 || runtimeTick % 2 === 0) {
         sloOk = await refreshSloData()
       }
 

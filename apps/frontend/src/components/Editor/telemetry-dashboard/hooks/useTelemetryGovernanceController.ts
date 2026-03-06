@@ -375,7 +375,11 @@ export const useTelemetryGovernanceController = () => {
   useEffect(() => {
     setGovernanceCommentCursor('')
     setGovernanceCommentHasMore(false)
+    setGovernanceComments([])
     setGovernanceSelectedCommentId('')
+    setGovernanceReviews([])
+    setGovernanceTemplates([])
+    setGovernanceSelectedTemplateId('')
     setGovernanceTemplateResult(null)
     setGovernanceBatchResult(null)
     setGovernanceError('')

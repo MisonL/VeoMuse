@@ -1,10 +1,11 @@
 import './helpers/dom-test-setup'
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import TelemetryDashboard from '../apps/frontend/src/components/Editor/TelemetryDashboard'
 import { useAdminMetricsStore } from '../apps/frontend/src/store/adminMetricsStore'
 import * as adminMetricsStore from '../apps/frontend/src/store/adminMetricsStore'
+import { useTelemetryGovernanceController } from '../apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryGovernanceController'
 
 const jsonResponse = (payload: unknown, status = 200) =>
   new Response(JSON.stringify(payload), {
@@ -154,6 +155,23 @@ describe('TelemetryDashboard DOM 交互', () => {
     })
   })
 
+  it('已有 Admin Token 时首屏应立即拉取 runtime/provider/SLO 数据', async () => {
+    await renderDashboardReady()
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some((args) => String(args[0]).includes('/api/admin/db/runtime'))
+      ).toBe(true)
+      expect(
+        fetchMock.mock.calls.some((args) =>
+          String(args[0]).includes('/api/admin/providers/health')
+        )
+      ).toBe(true)
+      expect(
+        fetchMock.mock.calls.some((args) => String(args[0]).includes('/api/admin/slo/summary'))
+      ).toBe(true)
+    })
+  })
+
   it('点击刷新 Provider 状态应触发对应请求', async () => {
     const view = await renderDashboardReady()
     const providerEndpoint = '/api/admin/providers/health'
@@ -194,6 +212,173 @@ describe('TelemetryDashboard DOM 交互', () => {
         String(args[0]).includes(healthEndpoint)
       ).length
       expect(after).toBeGreaterThan(before)
+    })
+  })
+
+  it('切换项目 ID 时应清空旧评论、评审和模板列表', async () => {
+    fetchMock.mockImplementation((input: string | URL) => {
+      const url = String(input)
+      if (url.includes('/api/admin/providers/health')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            providers: [{ providerId: 'openai', category: 'llm', status: 'ok', latencyMs: 128 }]
+          })
+        )
+      }
+      if (url.includes('/api/admin/db/repairs')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            repairs: [],
+            page: { hasMore: false, total: 0 }
+          })
+        )
+      }
+      if (url.includes('/api/admin/db/health')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            health: {
+              status: 'ok',
+              mode: 'quick',
+              checkedAt: new Date().toISOString(),
+              messages: []
+            }
+          })
+        )
+      }
+      if (url.includes('/api/admin/db/runtime')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            runtime: {
+              autoRepairEnabled: true,
+              runtimeHealthcheckEnabled: true,
+              runtimeHealthcheckIntervalMs: 5000,
+              dbPath: '/tmp/test.sqlite'
+            }
+          })
+        )
+      }
+      if (url.includes('/api/admin/slo/summary')) {
+        return Promise.resolve(jsonResponse({ success: true, summary: null }))
+      }
+      if (url.includes('/api/admin/slo/breakdown')) {
+        return Promise.resolve(jsonResponse({ success: true, breakdown: { items: [] } }))
+      }
+      if (url.includes('/api/admin/slo/journey-failures')) {
+        return Promise.resolve(
+          jsonResponse({ success: true, counts: { totalFailJourneys: 0 }, items: [] })
+        )
+      }
+      if (url.includes('/api/projects/prj-old/comments')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            comments: [
+              {
+                id: 'comment-old',
+                content: '旧项目评论',
+                status: 'open',
+                mentions: [],
+                createdAt: '2026-03-07T10:00:00.000Z'
+              }
+            ],
+            page: { hasMore: false, nextCursor: null, limit: 20 }
+          })
+        )
+      }
+      if (url.includes('/api/projects/prj-old/reviews')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            reviews: [
+              {
+                id: 'review-old',
+                decision: 'approved',
+                summary: '旧项目评审',
+                score: 0.9
+              }
+            ]
+          })
+        )
+      }
+      if (url.includes('/api/projects/prj-old/templates')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            templates: [{ id: 'template-old', name: '旧项目模板' }]
+          })
+        )
+      }
+      if (url.includes('/api/projects/prj-new/comments')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            comments: [],
+            page: { hasMore: false, nextCursor: null, limit: 20 }
+          })
+        )
+      }
+      if (url.includes('/api/projects/prj-new/reviews')) {
+        return Promise.resolve(jsonResponse({ success: true, reviews: [] }))
+      }
+      if (url.includes('/api/projects/prj-new/templates')) {
+        return Promise.resolve(jsonResponse({ success: true, templates: [] }))
+      }
+      if (url.includes('/api/projects/')) {
+        return Promise.resolve(jsonResponse({ success: true }))
+      }
+      return Promise.resolve(jsonResponse({ success: true }))
+    })
+
+    let controller: ReturnType<typeof useTelemetryGovernanceController> | null = null
+
+    const GovernanceHarness = () => {
+      controller = useTelemetryGovernanceController()
+      return (
+        <div>
+          <div data-testid="comments-count">{controller.governanceComments.length}</div>
+          <div data-testid="reviews-count">{controller.governanceReviews.length}</div>
+          <div data-testid="templates-count">{controller.governanceTemplates.length}</div>
+          <div data-testid="selected-template">
+            {controller.governanceSelectedTemplateId || '-'}
+          </div>
+        </div>
+      )
+    }
+
+    const view = render(<GovernanceHarness />)
+
+    await act(async () => {
+      controller?.setGovernanceProjectId('prj-old')
+    })
+    await act(async () => {
+      await controller?.handleLoadGovernanceComments(false)
+      await controller?.handleLoadGovernanceReviews()
+      await controller?.handleLoadGovernanceTemplates()
+    })
+    await act(async () => {
+      controller?.setGovernanceSelectedTemplateId('template-old')
+    })
+
+    await waitFor(() => {
+      expect(view.getByTestId('comments-count').textContent).toBe('1')
+      expect(view.getByTestId('reviews-count').textContent).toBe('1')
+      expect(view.getByTestId('templates-count').textContent).toBe('1')
+      expect(view.getByTestId('selected-template').textContent).toBe('template-old')
+    })
+
+    await act(async () => {
+      controller?.setGovernanceProjectId('prj-new')
+    })
+
+    await waitFor(() => {
+      expect(view.getByTestId('comments-count').textContent).toBe('0')
+      expect(view.getByTestId('reviews-count').textContent).toBe('0')
+      expect(view.getByTestId('templates-count').textContent).toBe('0')
+      expect(view.getByTestId('selected-template').textContent).toBe('-')
     })
   })
 })
