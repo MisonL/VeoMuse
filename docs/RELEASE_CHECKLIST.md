@@ -1,6 +1,7 @@
 # VeoMuse 发布检查清单（2026-03-05）
 
 本清单用于发布前“短流程收口 + 实网回归”执行，不包含 24h 长测。
+最近一次本地 Docker 正式复核记录见：`docs/DOCKER_ACCEPTANCE_2026-03-07.md`。
 
 ## 1. 本地收口（必做）
 
@@ -18,6 +19,7 @@ bun run release:gate
 - `artifacts/quality-summary.json` 中 `status=passed`
 - `docker:smoke` 全绿，并覆盖首页/API/WebSocket/上传/安全头/静态缓存
 - Docker 服务 `frontend/backend/redis` 为 `healthy`
+- 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-07.md`
 
 ## 2. 实网回归（有真实凭据时执行）
 
@@ -39,6 +41,7 @@ bun run release:gate:real
 - `artifacts/quality-summary.json` 中 `realE2E.status=passed`
 - 如需扩展更多 provider 凭据校验，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加必需环境变量列表
 - `bun run release:real:precheck` 已内置 `E2E_REAL_CHANNELS=true`；手工执行 `e2e:regression:real` 时仍需显式设置该环境变量
+- 本项仍属于外部真实凭据后置验收，不应被本地 Docker 复核替代
 
 ## 3. 发布产物复核
 

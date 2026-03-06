@@ -9,12 +9,13 @@
 
 ## 剩余事项（按优先级）
 
-1. Docker 正式部署复核
+1. 生产环境 Docker 正式部署留痕
 
-- 目标：把 Docker Compose 作为正式交付基线重新验收一遍。
+- 目标：把已完成的本地 Docker Compose 正式复核迁移到目标正式部署环境执行并留痕。
 - 覆盖范围：`GET /`、`/api/health`、`/api/capabilities`、`/ws` 握手、上传链路、安全响应头、静态资源缓存。
-- 当前自动化现状：`bun run docker:smoke` 已覆盖上述检查项与 `redis/backend/frontend` 健康态；本项剩余工作主要是“在正式部署环境实际执行并留痕”。
-- 验收标准：`redis/backend/frontend` 全部 `healthy`，网关首页与 API 正常，上传与 WebSocket 可用。
+- 当前自动化现状：`bun run docker:smoke` 已覆盖上述检查项与 `redis/backend/frontend` 健康态；本地正式复核已完成并留痕于 `docs/DOCKER_ACCEPTANCE_2026-03-07.md`。
+- 剩余内容：在目标正式部署环境重新执行同等验收并留痕。
+- 验收标准：目标环境 `redis/backend/frontend` 全部 `healthy`，网关首页与 API 正常，上传与 WebSocket 可用。
 
 2. 实网回归闭环（阻塞后置验收）
 
@@ -55,8 +56,9 @@
 - 前端 `ComparisonLab` 持续拆分：认证/组织/渠道、工作区协作、V4 运维、视频生成、对比态管理、创意运行管理均已抽到 hooks。
 - 前端 `TelemetryDashboard` 已开始拆纯展示块：概览、Provider 健康、治理预览、数据库摘要、SLO 数据列表已模块化。
 - 发布门禁脚本模块化：`scripts/release_gate.ts` 作为 façade，核心实现下沉到 `scripts/release-gate/`。
+- 本地 Docker Compose 正式复核已完成：服务健康态、首页/API/WebSocket/上传链路、安全头与静态缓存均已验证，并已形成留痕文档 `docs/DOCKER_ACCEPTANCE_2026-03-07.md`。
 
 ## 说明
 
 - 若新增功能需求，请先更新 `docs/requirements/PROJECT_REQUIREMENTS.md`，再纳入排期。
-- 若要声明“可正式上线”，仍需补齐 Docker 正式部署复核与真实渠道回归两项验收。
+- 若要声明“可正式上线”，仍需补齐目标正式部署环境的 Docker 留痕复核与真实渠道回归两项后置验收。
