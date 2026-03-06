@@ -346,11 +346,17 @@ Running 2 tests using 1 worker
     const missing = resolveRealE2EPrecheckMissingEnv(
       envOf({
         GEMINI_API_KEYS: 'key-a',
+        E2E_REAL_CHANNELS: 'true',
         E2E_REAL_REQUIRED_ENV_KEYS: 'OPENAI_API_KEY, OPENAI_BASE_URL'
       })
     )
 
-    expect(requiredKeys).toEqual(['GEMINI_API_KEYS', 'OPENAI_API_KEY', 'OPENAI_BASE_URL'])
+    expect(requiredKeys).toEqual([
+      'GEMINI_API_KEYS',
+      'E2E_REAL_CHANNELS',
+      'OPENAI_API_KEY',
+      'OPENAI_BASE_URL'
+    ])
     expect(missing).toEqual(['OPENAI_API_KEY', 'OPENAI_BASE_URL'])
   })
 
