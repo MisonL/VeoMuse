@@ -6,6 +6,7 @@ const read = (relative: string) => readFileSync(path.resolve(process.cwd(), rela
 const readTelemetryDashboardSources = () =>
   [
     'apps/frontend/src/components/Editor/TelemetryDashboard.tsx',
+    'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryDashboardController.ts',
     'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryDashboardPolling.ts',
     'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryDbOpsController.ts',
     'apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryGovernanceController.ts',
