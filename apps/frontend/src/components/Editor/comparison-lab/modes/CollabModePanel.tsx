@@ -1,11 +1,10 @@
 import React from 'react'
+import CollabAdvancedSections, {
+  type CollabAdvancedSectionsProps
+} from './collab/CollabAdvancedSections'
 import CommentThreadsSection from './collab/CommentThreadsSection'
 import InviteJoinSection from './collab/InviteJoinSection'
-import OpsToolsSection from './collab/OpsToolsSection'
-import PermissionMergeSection from './collab/PermissionMergeSection'
-import ProjectGovernanceSection from './collab/ProjectGovernanceSection'
 import RealtimeChannelSection from './collab/RealtimeChannelSection'
-import StorageSnapshotsSection from './collab/StorageSnapshotsSection'
 import WorkspaceSection from './collab/WorkspaceSection'
 import type {
   CollabEvent,
@@ -329,11 +328,123 @@ const CollabModePanel: React.FC<CollabModePanelProps> = ({
   onRollbackDrillIdChange,
   onQueryRollbackDrill
 }) => {
-  const [showAdvancedSections, setShowAdvancedSections] = React.useState(false)
-  const [showAdvancedGovernance, setShowAdvancedGovernance] = React.useState(true)
-  const [showAdvancedPermissionMerge, setShowAdvancedPermissionMerge] = React.useState(true)
-  const [showAdvancedOps, setShowAdvancedOps] = React.useState(true)
-  const [showAdvancedStorage, setShowAdvancedStorage] = React.useState(true)
+  const advancedSectionsProps: CollabAdvancedSectionsProps = {
+    projectGovernanceProps: {
+      projectId,
+      isProjectGovernanceBusy,
+      projectComments,
+      projectCommentCursor,
+      projectCommentLimit,
+      projectCommentHasMore,
+      projectCommentAnchor,
+      projectCommentContent,
+      projectCommentMentions,
+      projectSelectedCommentId,
+      projectReviews,
+      projectReviewLimit,
+      projectReviewDecision,
+      projectReviewSummary,
+      projectReviewScore,
+      projectTemplates,
+      projectSelectedTemplateId,
+      projectTemplateApplyOptions,
+      projectTemplateApplyResult,
+      projectClipBatchOperations,
+      projectClipBatchResult,
+      onRefreshProjectComments,
+      onLoadMoreProjectComments,
+      onProjectCommentLimitChange,
+      onProjectCommentAnchorChange,
+      onProjectCommentContentChange,
+      onProjectCommentMentionsChange,
+      onProjectSelectedCommentIdChange,
+      onCreateProjectComment,
+      onResolveProjectComment,
+      onRefreshProjectReviews,
+      onProjectReviewLimitChange,
+      onProjectReviewDecisionChange,
+      onProjectReviewSummaryChange,
+      onProjectReviewScoreChange,
+      onCreateProjectReview,
+      onRefreshProjectTemplates,
+      onProjectSelectedTemplateIdChange,
+      onProjectTemplateApplyOptionsChange,
+      onApplyProjectTemplate,
+      onProjectClipBatchOperationsChange,
+      onBatchUpdateProjectClips
+    },
+    permissionMergeProps: {
+      workspaceId,
+      projectId,
+      permissionSubjectId,
+      permissionRole,
+      permissions,
+      timelineMergeResult,
+      isV4Busy,
+      onRefreshPermissions,
+      onPermissionSubjectIdChange,
+      onPermissionRoleChange,
+      onUpdatePermission,
+      onMergeTimeline
+    },
+    opsToolsProps: {
+      adminToken,
+      reliabilityAlertLevel,
+      reliabilityAlertStatus,
+      reliabilityAlertLimit,
+      reliabilityAlerts,
+      errorBudget,
+      errorBudgetScope,
+      errorBudgetTargetSlo,
+      errorBudgetWindowDays,
+      errorBudgetWarningThresholdRatio,
+      errorBudgetAlertThresholdRatio,
+      errorBudgetFreezeDeployOnBreach,
+      rollbackPolicyId,
+      rollbackEnvironment,
+      rollbackTriggerType,
+      rollbackSummary,
+      rollbackPlan,
+      rollbackResult,
+      rollbackDrillId,
+      rollbackDrillResult,
+      isOpsBusy,
+      onAdminTokenChange,
+      onReliabilityAlertLevelChange,
+      onReliabilityAlertStatusChange,
+      onReliabilityAlertLimitChange,
+      onLoadReliabilityAlerts,
+      onAcknowledgeReliabilityAlert,
+      onLoadErrorBudget,
+      onErrorBudgetScopeChange,
+      onErrorBudgetTargetSloChange,
+      onErrorBudgetWindowDaysChange,
+      onErrorBudgetWarningThresholdRatioChange,
+      onErrorBudgetAlertThresholdRatioChange,
+      onErrorBudgetFreezeDeployOnBreachChange,
+      onRollbackPolicyIdChange,
+      onRollbackEnvironmentChange,
+      onRollbackTriggerTypeChange,
+      onRollbackSummaryChange,
+      onRollbackPlanChange,
+      onRollbackResultChange,
+      onUpdateErrorBudget,
+      onTriggerRollbackDrill,
+      onRollbackDrillIdChange,
+      onQueryRollbackDrill
+    },
+    storageSnapshotsProps: {
+      projectId,
+      workspaceId,
+      uploadFileName,
+      uploadToken,
+      snapshots,
+      onCreateSnapshot,
+      onRefreshWorkspaceState,
+      onUploadFileNameChange,
+      onRequestUploadToken
+    }
+  }
 
   return (
     <div className="collab-shell" data-testid="area-collab-shell">
@@ -401,187 +512,7 @@ const CollabModePanel: React.FC<CollabModePanelProps> = ({
         onResolveCommentThread={onResolveCommentThread}
       />
 
-      <section className="collab-card collab-card--compact">
-        <h4>高级功能</h4>
-        <div className="collab-meta">
-          <span>项目治理 / 权限 / 运维 / 快照已收纳为高级区，按需展开。</span>
-        </div>
-        <div className="lab-inline-actions">
-          <button
-            data-testid="btn-toggle-advanced-sections"
-            onClick={() => setShowAdvancedSections((prev) => !prev)}
-          >
-            {showAdvancedSections ? '收起高级功能' : '展开高级功能'}
-          </button>
-        </div>
-        {showAdvancedSections ? (
-          <div className="lab-inline-actions">
-            <button
-              type="button"
-              className="collab-sub-toggle"
-              data-testid="btn-toggle-advanced-governance"
-              onClick={() => setShowAdvancedGovernance((prev) => !prev)}
-            >
-              {showAdvancedGovernance ? '隐藏项目治理' : '显示项目治理'}
-            </button>
-            <button
-              type="button"
-              className="collab-sub-toggle"
-              data-testid="btn-toggle-advanced-permission-merge"
-              onClick={() => setShowAdvancedPermissionMerge((prev) => !prev)}
-            >
-              {showAdvancedPermissionMerge ? '隐藏权限与合并' : '显示权限与合并'}
-            </button>
-            <button
-              type="button"
-              className="collab-sub-toggle"
-              data-testid="btn-toggle-advanced-ops"
-              onClick={() => setShowAdvancedOps((prev) => !prev)}
-            >
-              {showAdvancedOps ? '隐藏运维工具' : '显示运维工具'}
-            </button>
-            <button
-              type="button"
-              className="collab-sub-toggle"
-              data-testid="btn-toggle-advanced-storage"
-              onClick={() => setShowAdvancedStorage((prev) => !prev)}
-            >
-              {showAdvancedStorage ? '隐藏云存储与快照' : '显示云存储与快照'}
-            </button>
-          </div>
-        ) : null}
-      </section>
-
-      {showAdvancedSections ? (
-        <>
-          {showAdvancedGovernance ? (
-            <ProjectGovernanceSection
-              projectId={projectId}
-              isProjectGovernanceBusy={isProjectGovernanceBusy}
-              projectComments={projectComments}
-              projectCommentCursor={projectCommentCursor}
-              projectCommentLimit={projectCommentLimit}
-              projectCommentHasMore={projectCommentHasMore}
-              projectCommentAnchor={projectCommentAnchor}
-              projectCommentContent={projectCommentContent}
-              projectCommentMentions={projectCommentMentions}
-              projectSelectedCommentId={projectSelectedCommentId}
-              projectReviews={projectReviews}
-              projectReviewLimit={projectReviewLimit}
-              projectReviewDecision={projectReviewDecision}
-              projectReviewSummary={projectReviewSummary}
-              projectReviewScore={projectReviewScore}
-              projectTemplates={projectTemplates}
-              projectSelectedTemplateId={projectSelectedTemplateId}
-              projectTemplateApplyOptions={projectTemplateApplyOptions}
-              projectTemplateApplyResult={projectTemplateApplyResult}
-              projectClipBatchOperations={projectClipBatchOperations}
-              projectClipBatchResult={projectClipBatchResult}
-              onRefreshProjectComments={onRefreshProjectComments}
-              onLoadMoreProjectComments={onLoadMoreProjectComments}
-              onProjectCommentLimitChange={onProjectCommentLimitChange}
-              onProjectCommentAnchorChange={onProjectCommentAnchorChange}
-              onProjectCommentContentChange={onProjectCommentContentChange}
-              onProjectCommentMentionsChange={onProjectCommentMentionsChange}
-              onProjectSelectedCommentIdChange={onProjectSelectedCommentIdChange}
-              onCreateProjectComment={onCreateProjectComment}
-              onResolveProjectComment={onResolveProjectComment}
-              onRefreshProjectReviews={onRefreshProjectReviews}
-              onProjectReviewLimitChange={onProjectReviewLimitChange}
-              onProjectReviewDecisionChange={onProjectReviewDecisionChange}
-              onProjectReviewSummaryChange={onProjectReviewSummaryChange}
-              onProjectReviewScoreChange={onProjectReviewScoreChange}
-              onCreateProjectReview={onCreateProjectReview}
-              onRefreshProjectTemplates={onRefreshProjectTemplates}
-              onProjectSelectedTemplateIdChange={onProjectSelectedTemplateIdChange}
-              onProjectTemplateApplyOptionsChange={onProjectTemplateApplyOptionsChange}
-              onApplyProjectTemplate={onApplyProjectTemplate}
-              onProjectClipBatchOperationsChange={onProjectClipBatchOperationsChange}
-              onBatchUpdateProjectClips={onBatchUpdateProjectClips}
-            />
-          ) : null}
-
-          {showAdvancedPermissionMerge ? (
-            <PermissionMergeSection
-              workspaceId={workspaceId}
-              projectId={projectId}
-              permissionSubjectId={permissionSubjectId}
-              permissionRole={permissionRole}
-              permissions={permissions}
-              timelineMergeResult={timelineMergeResult}
-              isV4Busy={isV4Busy}
-              onRefreshPermissions={onRefreshPermissions}
-              onPermissionSubjectIdChange={onPermissionSubjectIdChange}
-              onPermissionRoleChange={onPermissionRoleChange}
-              onUpdatePermission={onUpdatePermission}
-              onMergeTimeline={onMergeTimeline}
-            />
-          ) : null}
-
-          {showAdvancedOps ? (
-            <OpsToolsSection
-              adminToken={adminToken}
-              reliabilityAlertLevel={reliabilityAlertLevel}
-              reliabilityAlertStatus={reliabilityAlertStatus}
-              reliabilityAlertLimit={reliabilityAlertLimit}
-              reliabilityAlerts={reliabilityAlerts}
-              errorBudget={errorBudget}
-              errorBudgetScope={errorBudgetScope}
-              errorBudgetTargetSlo={errorBudgetTargetSlo}
-              errorBudgetWindowDays={errorBudgetWindowDays}
-              errorBudgetWarningThresholdRatio={errorBudgetWarningThresholdRatio}
-              errorBudgetAlertThresholdRatio={errorBudgetAlertThresholdRatio}
-              errorBudgetFreezeDeployOnBreach={errorBudgetFreezeDeployOnBreach}
-              rollbackPolicyId={rollbackPolicyId}
-              rollbackEnvironment={rollbackEnvironment}
-              rollbackTriggerType={rollbackTriggerType}
-              rollbackSummary={rollbackSummary}
-              rollbackPlan={rollbackPlan}
-              rollbackResult={rollbackResult}
-              rollbackDrillId={rollbackDrillId}
-              rollbackDrillResult={rollbackDrillResult}
-              isOpsBusy={isOpsBusy}
-              onAdminTokenChange={onAdminTokenChange}
-              onReliabilityAlertLevelChange={onReliabilityAlertLevelChange}
-              onReliabilityAlertStatusChange={onReliabilityAlertStatusChange}
-              onReliabilityAlertLimitChange={onReliabilityAlertLimitChange}
-              onLoadReliabilityAlerts={onLoadReliabilityAlerts}
-              onAcknowledgeReliabilityAlert={onAcknowledgeReliabilityAlert}
-              onLoadErrorBudget={onLoadErrorBudget}
-              onErrorBudgetScopeChange={onErrorBudgetScopeChange}
-              onErrorBudgetTargetSloChange={onErrorBudgetTargetSloChange}
-              onErrorBudgetWindowDaysChange={onErrorBudgetWindowDaysChange}
-              onErrorBudgetWarningThresholdRatioChange={onErrorBudgetWarningThresholdRatioChange}
-              onErrorBudgetAlertThresholdRatioChange={onErrorBudgetAlertThresholdRatioChange}
-              onErrorBudgetFreezeDeployOnBreachChange={onErrorBudgetFreezeDeployOnBreachChange}
-              onRollbackPolicyIdChange={onRollbackPolicyIdChange}
-              onRollbackEnvironmentChange={onRollbackEnvironmentChange}
-              onRollbackTriggerTypeChange={onRollbackTriggerTypeChange}
-              onRollbackSummaryChange={onRollbackSummaryChange}
-              onRollbackPlanChange={onRollbackPlanChange}
-              onRollbackResultChange={onRollbackResultChange}
-              onUpdateErrorBudget={onUpdateErrorBudget}
-              onTriggerRollbackDrill={onTriggerRollbackDrill}
-              onRollbackDrillIdChange={onRollbackDrillIdChange}
-              onQueryRollbackDrill={onQueryRollbackDrill}
-            />
-          ) : null}
-
-          {showAdvancedStorage ? (
-            <StorageSnapshotsSection
-              projectId={projectId}
-              workspaceId={workspaceId}
-              uploadFileName={uploadFileName}
-              uploadToken={uploadToken}
-              snapshots={snapshots}
-              onCreateSnapshot={onCreateSnapshot}
-              onRefreshWorkspaceState={onRefreshWorkspaceState}
-              onUploadFileNameChange={onUploadFileNameChange}
-              onRequestUploadToken={onRequestUploadToken}
-            />
-          ) : null}
-        </>
-      ) : null}
+      <CollabAdvancedSections {...advancedSectionsProps} />
     </div>
   )
 }
