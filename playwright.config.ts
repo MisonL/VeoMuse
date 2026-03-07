@@ -1,9 +1,19 @@
 import { defineConfig, devices } from '@playwright/test'
+import { GUIDE_STORAGE_KEY } from './apps/frontend/src/utils/appHelpers'
 
 const FRONTEND_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:42873'
 const BACKEND_URL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:33117'
 const REUSE_EXISTING_SERVER =
   process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'true' || !process.env.CI
+const REGRESSION_STORAGE_STATE = {
+  cookies: [],
+  origins: [
+    {
+      origin: FRONTEND_URL,
+      localStorage: [{ name: GUIDE_STORAGE_KEY, value: 'done' }]
+    }
+  ]
+}
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -41,7 +51,8 @@ export default defineConfig({
       testDir: './tests/e2e/regression',
       use: {
         ...devices['Desktop Chrome'],
-        viewport: { width: 1366, height: 768 }
+        viewport: { width: 1366, height: 768 },
+        storageState: REGRESSION_STORAGE_STATE
       }
     }
   ],
