@@ -1,11 +1,13 @@
 import { expect, test } from '@playwright/test'
 import { attachPageDebug } from '../helpers/debug'
+import { dismissGuideIfPresent } from '../helpers/guide'
 
 const TARGET_RATIO = 16 / 9
 
 test('预览区保持 16:9 比例', async ({ page }) => {
   attachPageDebug(page, 'preview-16x9')
   await page.goto('/')
+  await dismissGuideIfPresent(page)
   await page.getByTestId('btn-mode-edit').click()
 
   const preview = page.getByTestId('area-preview-frame')

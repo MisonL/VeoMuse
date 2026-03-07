@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { buildTestPassword } from '../../helpers/credentials'
 import { attachPageDebug } from '../helpers/debug'
+import { dismissGuideIfPresent } from '../helpers/guide'
 
 const uniq = () => `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
 
@@ -13,6 +14,7 @@ test('可通过实验室 UI 完成注册、登录、创建工作区', async ({ p
   const password = buildTestPassword(suffix)
 
   await page.goto('/')
+  await dismissGuideIfPresent(page)
   await page.getByTestId('btn-mode-color').click()
   await expect(page.getByTestId('area-comparison-lab')).toBeVisible()
 

@@ -1,19 +1,12 @@
 import { expect, test } from '@playwright/test'
-import type { Page } from '@playwright/test'
 import { attachPageDebug } from '../helpers/debug'
+import { dismissGuideIfPresent } from '../helpers/guide'
 
 const VIEWPORTS = [
   { width: 1366, height: 900 },
   { width: 1440, height: 900 },
   { width: 1920, height: 1080 }
 ]
-
-const dismissGuideIfPresent = async (page: Page) => {
-  const skipBtn = page.getByRole('button', { name: '跳过' })
-  if (await skipBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-    await skipBtn.click()
-  }
-}
 
 test('主布局三区域在常见桌面分辨率不重叠且关键操作可达', async ({ page }) => {
   for (const viewport of VIEWPORTS) {
@@ -82,5 +75,13 @@ test('主布局三区域在常见桌面分辨率不重叠且关键操作可达',
       clientWidth: node.clientWidth
     }))
     expect(creativeOverflow.scrollWidth).toBeLessThanOrEqual(creativeOverflow.clientWidth + 2)
+    const creativeBox = await creativeShell.boundingBox()
+    expect(creativeBox?.height ?? 0).toBeGreaterThan(120)
+
+    await page.getByTestId('btn-lab-mode-collab').click()
+    const collabShell = page.getByTestId('area-collab-shell')
+    await expect(collabShell).toBeVisible()
+    const collabBox = await collabShell.boundingBox()
+    expect(collabBox?.height ?? 0).toBeGreaterThan(120)
   }
 })

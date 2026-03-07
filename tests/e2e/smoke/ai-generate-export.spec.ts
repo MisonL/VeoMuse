@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import path from 'path'
 import { injectAuthSession, seedAuthSession } from '../helpers/session'
 import { attachPageDebug } from '../helpers/debug'
+import { dismissGuideIfPresent } from '../helpers/guide'
 
 const fixtureFile = path.resolve(process.cwd(), 'tests/e2e/fixtures/sample.mp4')
 
@@ -36,6 +37,7 @@ test('可完成导演生成并导出（稳定桩）', async ({ page, request }) 
   })
 
   await page.goto('/')
+  await dismissGuideIfPresent(page)
   await expect(page.getByTestId('area-left-panel')).toBeVisible()
 
   await page.getByTestId('area-left-panel').getByRole('button', { name: 'AI 导演' }).click()
