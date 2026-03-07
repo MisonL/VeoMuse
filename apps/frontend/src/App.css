@@ -2532,11 +2532,33 @@ body.resizing-y {
   flex-wrap: wrap;
 }
 
+.timeline-control-surface {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+    ),
+    radial-gradient(
+      circle at 86% 16%,
+      color-mix(in srgb, var(--ap-accent-soft) 14%, transparent),
+      transparent 24%
+    );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
+}
+
 .timeline-priority-band {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  flex: 1;
   padding: 10px 12px;
   border-radius: 16px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 66%, var(--ap-signal) 34%);
@@ -2575,7 +2597,7 @@ body.resizing-y {
 
 .timeline-priority-copy {
   flex: 1;
-  min-width: 240px;
+  min-width: 220px;
   font-size: 11px;
   line-height: 1.45;
   color: color-mix(in srgb, var(--ap-text) 78%, var(--ap-text-dim) 22%);
@@ -2588,6 +2610,7 @@ body.resizing-y {
 
 .timeline-tools {
   width: fit-content;
+  align-self: stretch;
   padding: 10px 12px;
   border-radius: 18px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
@@ -2636,6 +2659,10 @@ body.resizing-y {
   .timeline-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .timeline-control-surface {
+    flex-direction: column;
   }
 
   .monitor-launchpad-stats,

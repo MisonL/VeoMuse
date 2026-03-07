@@ -50,64 +50,66 @@ const AppTimeline = ({
             {hasTimelineClips ? 'Run of Show / Prime Cut' : '节目待命 / Waiting For First Clip'}
           </span>
         </div>
-        <div className="timeline-priority-band">
-          <span className="timeline-priority-pill">主操作区</span>
-          <span className="timeline-priority-copy">
-            {hasTimelineClips
-              ? '继续在这里剪切、拖拽、对齐和回退，节目轨会优先承接你的操作。'
-              : '先把第一批片段送入这里，后续的剪切、编排和导出前整理都会在这里完成。'}
-          </span>
-        </div>
-        <div className="timeline-tools" data-guide="timeline-tools">
-          <div className="undo-group">
+        <div className="timeline-control-surface">
+          <div className="timeline-priority-band">
+            <span className="timeline-priority-pill">主操作区</span>
+            <span className="timeline-priority-copy">
+              {hasTimelineClips
+                ? '继续在这里剪切、拖拽、对齐和回退，节目轨会优先承接你的操作。'
+                : '先把第一批片段送入这里，后续的剪切、编排和导出前整理都会在这里完成。'}
+            </span>
+          </div>
+          <div className="timeline-tools" data-guide="timeline-tools">
+            <div className="undo-group">
+              <button
+                id="tool-undo"
+                aria-label="撤销"
+                className="tool-icon"
+                onClick={onUndo}
+                disabled={!canUndo}
+                data-testid="btn-tool-undo"
+              >
+                ↩
+              </button>
+              <button
+                id="tool-redo"
+                aria-label="重做"
+                className="tool-icon"
+                onClick={onRedo}
+                disabled={!canRedo}
+                data-testid="btn-tool-redo"
+              >
+                ↪
+              </button>
+            </div>
             <button
-              id="tool-undo"
-              aria-label="撤销"
-              className="tool-icon"
-              onClick={onUndo}
-              disabled={!canUndo}
-              data-testid="btn-tool-undo"
+              id="tool-select"
+              aria-label="选择工具"
+              className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`}
+              onClick={() => onActiveToolChange('select')}
+              data-testid="btn-tool-select"
             >
-              ↩
+              ↖
             </button>
             <button
-              id="tool-redo"
-              aria-label="重做"
-              className="tool-icon"
-              onClick={onRedo}
-              disabled={!canRedo}
-              data-testid="btn-tool-redo"
+              id="tool-cut"
+              aria-label="切割工具"
+              className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`}
+              onClick={() => onActiveToolChange('cut')}
+              data-testid="btn-tool-cut"
             >
-              ↪
+              ✂
+            </button>
+            <button
+              id="tool-hand"
+              aria-label="平移工具"
+              className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`}
+              onClick={() => onActiveToolChange('hand')}
+              data-testid="btn-tool-hand"
+            >
+              ✋
             </button>
           </div>
-          <button
-            id="tool-select"
-            aria-label="选择工具"
-            className={`tool-icon ${activeTool === 'select' ? 'active' : ''}`}
-            onClick={() => onActiveToolChange('select')}
-            data-testid="btn-tool-select"
-          >
-            ↖
-          </button>
-          <button
-            id="tool-cut"
-            aria-label="切割工具"
-            className={`tool-icon ${activeTool === 'cut' ? 'active' : ''}`}
-            onClick={() => onActiveToolChange('cut')}
-            data-testid="btn-tool-cut"
-          >
-            ✂
-          </button>
-          <button
-            id="tool-hand"
-            aria-label="平移工具"
-            className={`tool-icon ${activeTool === 'hand' ? 'active' : ''}`}
-            onClick={() => onActiveToolChange('hand')}
-            data-testid="btn-tool-hand"
-          >
-            ✋
-          </button>
         </div>
       </div>
 
