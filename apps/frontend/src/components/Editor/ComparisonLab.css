@@ -2443,12 +2443,50 @@
   gap: 2px;
 }
 
+.lab-stage-marker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .lab-stage-marker-state {
   font-size: 10px;
   font-weight: 700;
   color: color-mix(in srgb, var(--ap-text) 64%, var(--ap-text-dim) 36%);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.lab-stage-state-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 78%, #ffffff 22%);
+  background: color-mix(in srgb, var(--ap-panel) 92%, #ffffff 8%);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lab-stage-state-chip--current {
+  color: color-mix(in srgb, var(--ap-accent-strong) 84%, var(--ap-accent) 16%);
+  border-color: color-mix(in srgb, var(--ap-accent) 38%, var(--ap-border));
+  background: color-mix(in srgb, var(--ap-accent-soft) 72%, #ffffff 28%);
+}
+
+.lab-stage-state-chip--completed {
+  color: color-mix(in srgb, var(--ap-signal) 82%, #166534 18%);
+  border-color: color-mix(in srgb, var(--ap-signal) 36%, var(--ap-border));
+  background: color-mix(in srgb, var(--ap-signal-soft) 68%, #ffffff 32%);
+}
+
+.lab-stage-state-chip--available {
+  color: color-mix(in srgb, var(--ap-text) 72%, var(--ap-text-dim) 28%);
 }
 
 .lab-stage-main,
@@ -3440,6 +3478,10 @@
   color: color-mix(in srgb, var(--ap-accent-strong) 82%, var(--ap-accent) 18%);
 }
 
+.comparison-lab-pro .lab-stage-marker.is-current .lab-stage-marker-label {
+  color: color-mix(in srgb, var(--ap-accent-strong) 72%, var(--ap-text) 28%);
+}
+
 .comparison-lab-pro .lab-stage-marker.is-completed {
   border-style: solid;
   border-color: color-mix(in srgb, var(--ap-signal) 28%, var(--ap-border) 72%);
@@ -3462,12 +3504,20 @@
   color: color-mix(in srgb, var(--ap-signal) 86%, #166534 14%);
 }
 
+.comparison-lab-pro .lab-stage-marker.is-completed .lab-stage-marker-label {
+  color: color-mix(in srgb, var(--ap-signal) 78%, var(--ap-text) 22%);
+}
+
 .comparison-lab-pro .lab-stage-marker.is-completed .lab-stage-marker-state {
   color: color-mix(in srgb, var(--ap-signal) 74%, #166534 26%);
 }
 
 .comparison-lab-pro .lab-stage-marker.is-available .lab-stage-marker-state {
   color: color-mix(in srgb, var(--ap-text-dim) 82%, var(--ap-text) 18%);
+}
+
+.comparison-lab-pro .lab-stage-marker.is-available .lab-stage-state-chip {
+  opacity: 0.88;
 }
 
 .comparison-lab-pro .lab-stage-marker.is-available:hover {

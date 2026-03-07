@@ -82,6 +82,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
                   aria-controls={`lab-panel-${stage.mode}`}
                   aria-selected={stage.mode === labMode}
                   aria-current={status === 'current' ? 'step' : undefined}
+                  aria-label={`${LAB_STAGE_META[stage.mode].label}，${LAB_STAGE_STATUS_LABEL[status]}`}
                   tabIndex={stage.mode === labMode ? 0 : -1}
                   data-testid={`btn-lab-mode-${stage.mode}`}
                   data-stage-status={status}
@@ -92,7 +93,16 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
                 >
                   <span className="lab-stage-marker-index">{LAB_STAGE_META[stage.mode].index}</span>
                   <span className="lab-stage-marker-copy">
-                    <span className="lab-stage-marker-label">{stage.short}</span>
+                    <span className="lab-stage-marker-header">
+                      <span className="lab-stage-marker-label">{stage.short}</span>
+                      <span className={`lab-stage-state-chip lab-stage-state-chip--${status}`}>
+                        {status === 'current'
+                          ? '进行中'
+                          : status === 'completed'
+                            ? '已完成'
+                            : '待进入'}
+                      </span>
+                    </span>
                     <span className="lab-stage-marker-state">{LAB_STAGE_STATUS_LABEL[status]}</span>
                   </span>
                 </button>

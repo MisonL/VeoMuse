@@ -246,10 +246,12 @@ describe('ComparisonLab 请求去重守卫', () => {
         'data-stage-status',
         'current'
       )
+      expect(view.getByTestId('btn-lab-mode-compare')).toHaveAttribute('aria-current', 'step')
       expect(view.getByTestId('btn-lab-mode-marketplace')).toHaveAttribute(
         'data-stage-status',
         'available'
       )
+      expect(view.getByText('进行中')).toBeInTheDocument()
     })
 
     fireEvent.click(view.getByTestId('btn-lab-mode-collab'))
@@ -267,6 +269,8 @@ describe('ComparisonLab 请求去重守卫', () => {
         'data-stage-status',
         'current'
       )
+      expect(view.getByTestId('btn-lab-mode-collab')).toHaveAttribute('aria-current', 'step')
+      expect(view.getAllByText('已完成').length).toBeGreaterThan(0)
     })
   })
 })
