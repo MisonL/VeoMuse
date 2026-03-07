@@ -1631,3 +1631,304 @@
     gap: 10px;
   }
 }
+
+/* Editorial Control Deck redesign */
+
+.comparison-lab-pro {
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--ap-accent) 9%, transparent), transparent 26%),
+    radial-gradient(circle at 86% 12%, color-mix(in srgb, var(--ap-signal) 8%, transparent), transparent 22%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 92%, #ffffff 8%), color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%));
+}
+
+.lab-toolbar {
+  min-height: 84px;
+  gap: 10px;
+  padding: 12px 14px 14px;
+  border-bottom-style: dashed;
+  border-bottom-color: color-mix(in srgb, var(--ap-border) 72%, var(--ap-accent) 28%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    );
+}
+
+.lab-status {
+  letter-spacing: 0.08em;
+}
+
+.lab-btn {
+  border-radius: 999px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+}
+
+.lab-btn:not(.lab-btn--secondary) {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
+      color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
+    );
+  color: #fff8ef;
+  box-shadow: 0 12px 20px var(--ap-accent-glow);
+}
+
+.lab-btn--secondary {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ap-signal) 16%, var(--ap-surface) 84%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    );
+  color: color-mix(in srgb, var(--ap-text) 84%, var(--ap-signal) 16%);
+}
+
+.sync-toggle,
+.lab-mode-switch,
+.lab-inline-actions button,
+.video-generation-head-actions button,
+.inline-fill-btn,
+.execution-head button,
+.execution-load-more,
+.policy-controls button,
+.channel-close-btn,
+.channel-refresh-btn,
+.channel-hint,
+.video-generation-terminal-toggle {
+  border-radius: 999px;
+}
+
+.lab-mode-switch {
+  padding: 4px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-card) 90%, #ffffff 10%),
+      color-mix(in srgb, var(--ap-panel) 82%, #ffffff 18%)
+    );
+}
+
+.lab-mode-btn {
+  border-radius: 999px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.lab-mode-btn.active {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
+      color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
+    );
+  color: #fff8ef;
+  box-shadow: 0 10px 16px var(--ap-accent-glow);
+}
+
+.lab-field input,
+.lab-field select,
+.lab-field textarea,
+.policy-controls input,
+.policy-controls select,
+.channel-row-controls input,
+.channel-row-controls select {
+  border-radius: 14px;
+  padding: 9px 11px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    );
+}
+
+.marketplace-policy,
+.execution-panel,
+.market-card,
+.creative-card,
+.collab-card,
+.channel-card,
+.video-generation-card {
+  border-radius: 18px;
+  border-color: color-mix(in srgb, var(--ap-border) 82%, var(--ap-outline) 18%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+      color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 14px 28px rgba(70, 46, 18, 0.1);
+}
+
+.marketplace-policy h4,
+.execution-head h4,
+.creative-card h4,
+.collab-card h4,
+.channel-card h4,
+.market-head strong,
+.video-generation-quick-check-title {
+  font-family: var(--ap-font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.market-tags span,
+.policy-model-chip,
+.video-generation-status-badge,
+.video-generation-count-chip,
+.video-generation-selected-chip,
+.capability-badge {
+  border-radius: 999px;
+}
+
+.policy-result,
+.video-generation-polling-hint,
+.video-generation-terminal-collapsed {
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-signal-soft) 42%, var(--ap-surface) 58%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+}
+
+.policy-budget-guard,
+.video-generation-job-item,
+.creative-scene-item,
+.creative-version-item,
+.collab-list-item,
+.capability-row {
+  border-radius: 16px;
+}
+
+.marketplace-shell,
+.creative-shell,
+.collab-shell {
+  padding: 14px;
+  gap: 14px;
+}
+
+.creative-summary,
+.video-generation-job-meta-stack,
+.market-metrics {
+  gap: 10px;
+}
+
+.market-metrics > div,
+.creative-summary > div {
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    );
+  border: 1px solid color-mix(in srgb, var(--ap-border) 76%, transparent);
+  padding: 10px;
+}
+
+.video-generation-card {
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--ap-accent-soft) 40%, transparent), transparent 24%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+}
+
+.channel-panel-mask {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(12, 14, 21, 0.5);
+}
+
+.channel-panel {
+  border-radius: 24px;
+  border-color: color-mix(in srgb, var(--ap-accent) 32%, var(--ap-outline) 68%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 97%, #ffffff 3%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+  box-shadow:
+    0 28px 60px rgba(15, 23, 42, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.channel-panel-head,
+.channel-panel-actions {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+.channel-panel-head {
+  padding-top: 16px;
+  padding-bottom: 14px;
+  border-bottom-style: dashed;
+}
+
+.channel-panel-head h3 {
+  font-family: var(--ap-font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.channel-grid {
+  padding: 14px 18px 18px;
+  gap: 14px;
+}
+
+.channel-card h4 {
+  padding: 13px 14px;
+}
+
+.channel-list {
+  padding: 12px;
+}
+
+.capability-row {
+  padding: 12px;
+}
+
+@media (max-width: 980px) {
+  .marketplace-shell,
+  .creative-shell,
+  .collab-shell {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .channel-panel {
+    width: min(100%, 960px);
+  }
+}
+
+@media (max-width: 640px) {
+  .lab-toolbar {
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .marketplace-shell,
+  .creative-shell,
+  .collab-shell {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .channel-grid {
+    padding: 10px 12px 14px;
+  }
+}

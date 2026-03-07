@@ -428,3 +428,112 @@
     padding: 16px;
   }
 }
+
+/* Editorial Control Deck redesign */
+
+.pro-asset-panel {
+  gap: 12px;
+}
+
+.asset-header-actions {
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.asset-search-bar {
+  border-radius: 16px;
+  padding: 11px 13px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 10px 22px rgba(75, 52, 23, 0.08);
+}
+
+.import-btn-pro {
+  border-radius: 16px;
+  padding: 0 16px;
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ap-signal) 86%, #ffffff 14%),
+      color-mix(in srgb, var(--ap-signal) 72%, #8f3609 28%)
+    );
+  box-shadow: 0 14px 22px var(--ap-signal-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.asset-categories {
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.cat-btn {
+  border-radius: 999px;
+  padding: 7px 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pro-asset-grid {
+  gap: 12px;
+}
+
+.pro-empty-state-v2 {
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+}
+
+.asset-tile {
+  border-radius: 16px;
+  border-color: color-mix(in srgb, var(--ap-border) 82%, var(--ap-outline) 18%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 14px 24px rgba(72, 49, 22, 0.08);
+}
+
+.tile-preview {
+  height: 92px;
+  background:
+    linear-gradient(180deg, rgba(12, 18, 26, 0.08), rgba(12, 18, 26, 0.22)),
+    radial-gradient(circle at 24% 22%, color-mix(in srgb, var(--ap-accent-soft) 42%, transparent), transparent 36%);
+}
+
+.tile-actions {
+  background: rgba(11, 14, 22, 0.42);
+}
+
+.tile-actions button {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
+      color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
+    );
+  box-shadow: 0 10px 18px var(--ap-accent-glow);
+}
+
+.tile-footer {
+  padding: 10px;
+  gap: 4px;
+}
+
+.tile-name {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tile-duration {
+  font-family: var(--ap-font-mono);
+  font-size: 10px;
+}

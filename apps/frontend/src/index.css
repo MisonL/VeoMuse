@@ -55,22 +55,48 @@
   text-rendering: optimizeLegibility;
 }
 
+html {
+  background: var(--ap-bg);
+}
+
 body {
+  min-height: 100vh;
+  width: 100%;
   background-color: var(--ap-bg);
   color: var(--ap-text);
   overflow: hidden;
-  height: 100vh;
-  width: 100%;
   transition:
-    background-color 0.28s ease,
-    color 0.28s ease;
+    background-color 0.32s ease,
+    color 0.32s ease;
   background-image:
-    radial-gradient(
-      circle at 8% -6%,
-      color-mix(in srgb, var(--ap-accent) 11%, transparent),
-      transparent 34%
-    ),
-    radial-gradient(circle at 91% 0%, rgba(16, 185, 129, 0.1), transparent 38%);
+    radial-gradient(circle at 14% 12%, color-mix(in srgb, var(--ap-accent) 12%, transparent), transparent 34%),
+    radial-gradient(circle at 86% 8%, color-mix(in srgb, var(--ap-signal) 11%, transparent), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-bg) 88%, #ffffff 12%), var(--ap-bg)),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 42px,
+      var(--ap-grid-line) 42px,
+      var(--ap-grid-line) 43px
+    );
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.08), transparent 18%),
+    radial-gradient(circle at 20% 24%, rgba(255, 255, 255, 0.18), transparent 20%),
+    radial-gradient(circle at 80% 76%, rgba(255, 255, 255, 0.12), transparent 18%);
+  opacity: 0.45;
+  mix-blend-mode: screen;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--ap-accent) 22%, transparent);
+  color: var(--ap-text);
 }
 
 button,
@@ -85,37 +111,32 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--ap-accent) 55%, #ffffff 45%);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
-/* 渐变流体背景 */
 .liquid-bg {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background:
-    radial-gradient(circle at 20% 20%, var(--accent-glow) 0%, transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(52, 199, 89, 0.1) 0%, transparent 40%);
-  filter: blur(80px);
+    radial-gradient(circle at 18% 18%, var(--accent-glow) 0%, transparent 38%),
+    radial-gradient(circle at 84% 78%, var(--ap-signal-soft) 0%, transparent 34%);
+  filter: blur(78px);
   z-index: -1;
 }
 
-/* 核心原子组件：玻璃卡片 */
 .glass-panel {
-  background: color-mix(in srgb, var(--ap-glass-bg) 96%, #ffffff 4%);
+  background: color-mix(in srgb, var(--ap-glass-bg) 97%, #ffffff 3%);
   backdrop-filter: blur(var(--ap-blur)) saturate(var(--ap-saturate));
   -webkit-backdrop-filter: blur(var(--ap-blur)) saturate(var(--ap-saturate));
   border: 1px solid var(--ap-border);
-  border-radius: 18px;
+  border-radius: 22px;
   box-shadow: var(--ap-shadow-panel);
 }
 
-/* 动效：Spring 物理感 */
 .spring-interact {
   transition: transform 0.2s cubic-bezier(0.22, 1.15, 0.35, 1);
 }
+
 .spring-interact:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }

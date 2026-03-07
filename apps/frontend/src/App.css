@@ -1629,6 +1629,389 @@ body.resizing-y {
   }
 }
 
+/* Editorial Control Deck redesign */
+
+.pro-master-shell {
+  gap: 12px;
+  padding: 12px;
+  background:
+    radial-gradient(circle at 14% 10%, color-mix(in srgb, var(--ap-accent) 11%, transparent), transparent 26%),
+    radial-gradient(circle at 86% 9%, color-mix(in srgb, var(--ap-signal) 11%, transparent), transparent 22%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-bg) 78%, #ffffff 22%), var(--ap-bg)),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 58px,
+      var(--ap-grid-line) 58px,
+      var(--ap-grid-line) 59px
+    );
+}
+
+.pro-panel {
+  border-radius: 22px;
+  border-color: color-mix(in srgb, var(--ap-border) 86%, var(--ap-outline) 14%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 93%, #ffffff 7%),
+      color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%)
+    );
+  box-shadow: var(--ap-shadow-panel);
+}
+
+.os-header {
+  min-height: 78px;
+  padding: 0 18px;
+  gap: 16px;
+  border-radius: 26px;
+}
+
+.brand-zone {
+  gap: 14px;
+}
+
+.brand-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 16px;
+  clip-path: polygon(16% 0, 100% 0, 100% 84%, 84% 100%, 0 100%, 0 16%);
+  background:
+    linear-gradient(155deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent-strong) 82%, #0a1b35 18%));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 14px 26px var(--ap-accent-glow);
+}
+
+.brand-title {
+  font-size: 28px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.mode-selector {
+  padding: 5px;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-card) 90%, #ffffff 10%),
+      color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%)
+    );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.mode-tab {
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mode-tab.active {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ap-accent) 88%, #ffffff 12%),
+      color-mix(in srgb, var(--ap-accent-strong) 78%, #0b2e61 22%)
+    );
+  color: #fff8ee;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 10px 16px var(--ap-accent-glow);
+}
+
+.header-actions-group,
+.header-segment {
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    );
+}
+
+.header-segment-btn,
+.channel-entry-btn,
+.guide-toggle-btn,
+.layout-reset-btn,
+.header-select,
+.export-btn {
+  border-radius: 999px;
+}
+
+.channel-entry-btn {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ap-signal) 82%, #ffffff 18%),
+      color-mix(in srgb, var(--ap-signal) 72%, #8b2f04 28%)
+    );
+  color: #fff6ef;
+  border-color: color-mix(in srgb, var(--ap-signal) 72%, rgba(255, 255, 255, 0.28));
+}
+
+.channel-entry-btn:hover {
+  box-shadow: 0 12px 18px var(--ap-signal-soft);
+}
+
+.panel-title-bar {
+  height: 52px;
+  padding: 0 14px;
+  position: relative;
+}
+
+.panel-title-bar::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  width: 34px;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--ap-accent), var(--ap-signal));
+  opacity: 0.82;
+}
+
+.sidebar-tab {
+  border-radius: 999px;
+  padding: 7px 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebar-content {
+  padding: 14px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 80%, #ffffff 20%),
+      color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%)
+    );
+}
+
+.monitor-content {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08), transparent 24%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 78%, var(--ap-panel) 22%), color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%));
+}
+
+.preview-frame {
+  border-radius: 20px;
+  border-color: color-mix(in srgb, var(--ap-monitor-border) 64%, rgba(255, 255, 255, 0.36));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 22px 44px rgba(6, 11, 20, 0.32);
+}
+
+.preview-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.08), transparent 16%),
+    linear-gradient(transparent 0, transparent 97%, rgba(255, 255, 255, 0.03) 97%, rgba(255, 255, 255, 0.03) 100%);
+}
+
+.live-badge {
+  letter-spacing: 0.18em;
+  color: var(--ap-signal);
+}
+
+.preview-mode-toggle,
+.preview-quality {
+  border-radius: 999px;
+}
+
+.preview-quality {
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--ap-monitor-border) 64%, rgba(255, 255, 255, 0.24));
+  background: rgba(7, 15, 27, 0.56);
+}
+
+.timecode {
+  font-size: 30px;
+  letter-spacing: -0.06em;
+}
+
+.transport-controls {
+  border-top-style: dashed;
+  border-top-width: 1px;
+  border-top-color: color-mix(in srgb, var(--ap-border) 74%, var(--ap-accent) 26%);
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--ap-accent-soft) 38%, transparent), transparent 46%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 86%, var(--ap-panel) 14%), color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%));
+}
+
+.transport-btn {
+  border-radius: 16px;
+}
+
+.transport-btn.play {
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ap-accent) 82%, #ffffff 18%),
+      color-mix(in srgb, var(--ap-signal) 20%, var(--ap-accent-strong) 80%)
+    );
+}
+
+.timeline-container {
+  border-radius: 26px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%)
+    );
+}
+
+.timeline-actions {
+  border-bottom-style: dashed;
+  border-bottom-width: 1px;
+  border-bottom-color: color-mix(in srgb, var(--ap-border) 76%, var(--ap-accent) 24%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 84%, #ffffff 16%),
+      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+    );
+}
+
+.timeline-section-title {
+  border-radius: 999px;
+  letter-spacing: 0.1em;
+}
+
+.tool-icon {
+  border-radius: 12px;
+}
+
+.system-telemetry {
+  gap: 12px;
+}
+
+.telemetry-item {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.guide-card {
+  width: min(360px, 92vw);
+  border-radius: 20px;
+  border-color: color-mix(in srgb, var(--ap-accent) 34%, var(--ap-outline) 66%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+    );
+}
+
+.guide-card-head {
+  margin-bottom: 12px;
+}
+
+.guide-step {
+  letter-spacing: 0.08em;
+}
+
+.guide-action,
+.guide-nav {
+  border-radius: 999px;
+}
+
+.guide-nav.primary {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
+      color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
+    );
+  color: #fff7ef;
+  border-color: transparent;
+}
+
+@media (max-width: 980px) {
+  .pro-master-shell {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .os-header {
+    min-height: auto;
+    padding: 14px;
+  }
+
+  .brand-title {
+    font-size: 24px;
+    letter-spacing: 0.1em;
+  }
+
+  .panel-left,
+  .panel-right {
+    max-height: min(36vh, 340px);
+  }
+
+  .panel-center {
+    max-height: min(54vh, 440px);
+  }
+
+  .timeline-container {
+    min-height: 190px;
+  }
+
+  .timeline-body {
+    max-height: 126px;
+  }
+}
+
+@media (max-width: 640px) {
+  .pro-master-shell {
+    padding: 6px;
+    gap: 8px;
+  }
+
+  .brand-logo {
+    width: 34px;
+    height: 34px;
+  }
+
+  .brand-title {
+    font-size: 20px;
+    letter-spacing: 0.08em;
+  }
+
+  .transport-controls {
+    gap: 12px;
+  }
+
+  .transport-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+  }
+
+  .transport-btn.play {
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+  }
+
+  .timeline-container {
+    min-height: 160px;
+  }
+
+  .timeline-body {
+    max-height: 98px;
+    padding: 8px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pro-panel,
   .pro-master-shell::before,
