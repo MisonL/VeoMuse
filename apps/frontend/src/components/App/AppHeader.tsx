@@ -64,7 +64,10 @@ const AppHeader = ({
   <header className="pro-panel os-header" data-testid="area-top-header">
     <div className="brand-zone">
       <div className="brand-logo">V</div>
-      <span className="brand-title">VEOMUSE PRO</span>
+      <div className="brand-copy">
+        <span className="brand-kicker">Flagship AI Video Bus</span>
+        <span className="brand-title">VEOMUSE PRO</span>
+      </div>
     </div>
     <div className="mode-selector" data-guide="mode-selector" data-testid="area-mode-selector">
       {MODE_OPTIONS.map((mode) => (

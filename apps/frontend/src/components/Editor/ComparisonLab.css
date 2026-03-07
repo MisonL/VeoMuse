@@ -1932,3 +1932,25 @@
     padding: 10px 12px 14px;
   }
 }
+
+.lab-kicker {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--ap-signal) 26%, var(--ap-border));
+  background: color-mix(in srgb, var(--ap-signal-soft) 46%, #ffffff 54%);
+  color: color-mix(in srgb, var(--ap-text) 84%, var(--ap-signal) 16%);
+  font-family: var(--ap-font-display);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .lab-kicker {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -48,6 +48,7 @@ const AppCenterPanel = ({
             data-testid="area-preview-frame"
             data-aspect-ratio={previewAspect}
           >
+            <div className="monitor-deck-label">PROGRAM MONITOR</div>
             <div className="monitor-overlay">
               <div className="monitor-overlay-left">
                 <div className="live-badge">● 实时</div>

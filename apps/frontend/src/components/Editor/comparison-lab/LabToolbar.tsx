@@ -24,6 +24,7 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
     <div className="lab-toolbar" data-guide="lab-toolbar" data-testid="area-lab-toolbar">
       <div className="lab-toolbar-main">
         <div className="lab-toolbar-left">
+          <div className="lab-kicker">实验协议 / routing deck</div>
           <div className="lab-status">
             <span className="live-dot">●</span> 实验室在线
           </div>

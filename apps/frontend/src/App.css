@@ -2012,6 +2012,70 @@ body.resizing-y {
   }
 }
 
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.brand-kicker {
+  font-family: var(--ap-font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-text-dim) 82%, var(--ap-accent) 18%);
+  white-space: nowrap;
+}
+
+.monitor-deck-label {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 10;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-family: var(--ap-font-display);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 245, 234, 0.88);
+  background: rgba(7, 15, 27, 0.58);
+  border: 1px solid color-mix(in srgb, var(--ap-monitor-border) 72%, rgba(255, 255, 255, 0.18));
+}
+
+.timeline-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ap-signal) 28%, var(--ap-border));
+  background: color-mix(in srgb, var(--ap-signal-soft) 56%, #ffffff 44%);
+  color: color-mix(in srgb, var(--ap-text) 86%, var(--ap-signal) 14%);
+  font-family: var(--ap-font-display);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 980px) {
+  .brand-kicker {
+    font-size: 8px;
+    letter-spacing: 0.14em;
+  }
+}
+
+@media (max-width: 640px) {
+  .brand-kicker {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pro-panel,
   .pro-master-shell::before,

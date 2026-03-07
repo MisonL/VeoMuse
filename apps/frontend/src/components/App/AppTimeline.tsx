@@ -39,6 +39,7 @@ const AppTimeline = ({
   >
     <div className="timeline-actions">
       <div className="timeline-tools" data-guide="timeline-tools">
+        <span className="timeline-eyebrow">节目编排</span>
         <span className="timeline-section-title">编辑工具</span>
         <div className="undo-group">
           <button
