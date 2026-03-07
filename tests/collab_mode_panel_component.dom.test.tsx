@@ -220,6 +220,18 @@ describe('CollabModePanel DOM 组件回归', () => {
 
     fireEvent.click(view.getByTestId('btn-toggle-advanced-storage'))
     expect(view.queryByTestId('storage-snapshot-watchboard')).toBeNull()
+
+    fireEvent.click(view.getByTestId('btn-toggle-advanced-sections'))
+    expect(view.queryByTestId('project-governance-watchboard')).toBeNull()
+    expect(view.queryByTestId('permission-merge-watchboard')).toBeNull()
+    expect(view.queryByTestId('ops-watchboard')).toBeNull()
+    expect(view.queryByTestId('storage-snapshot-watchboard')).toBeNull()
+
+    fireEvent.click(view.getByTestId('btn-toggle-advanced-sections'))
+    expect(view.queryByTestId('project-governance-watchboard')).toBeNull()
+    expect(view.queryByTestId('permission-merge-watchboard')).toBeNull()
+    expect(view.queryByTestId('ops-watchboard')).toBeNull()
+    expect(view.queryByTestId('storage-snapshot-watchboard')).toBeNull()
   })
 
   it('非空态应渲染列表并触发关键操作回调', () => {

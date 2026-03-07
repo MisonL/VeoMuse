@@ -185,6 +185,111 @@ describe('TelemetryDashboard DOM 交互', () => {
     ).toBe('1')
   })
 
+  it('SLO 异常时命令条应计入 degraded 异常信号', async () => {
+    fetchMock.mockImplementation((input: string | URL) => {
+      const url = String(input)
+      if (url.includes('/api/admin/providers/health')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            providers: [{ providerId: 'openai', category: 'llm', status: 'ok', latencyMs: 128 }]
+          })
+        )
+      }
+      if (url.includes('/api/admin/db/repairs')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            repairs: [],
+            page: { hasMore: false, total: 0 }
+          })
+        )
+      }
+      if (url.includes('/api/admin/db/health')) {
+        return Promise.resolve(jsonResponse({ success: true, health: { status: 'ok' } }))
+      }
+      if (url.includes('/api/admin/db/runtime')) {
+        return Promise.resolve(jsonResponse({ success: true, runtime: { dbPath: '/tmp/test.sqlite' } }))
+      }
+      if (url.includes('/api/admin/slo/summary')) {
+        return Promise.resolve(jsonResponse({ success: false, error: 'slo summary failed' }, 500))
+      }
+      if (url.includes('/api/admin/slo/breakdown')) {
+        return Promise.resolve(jsonResponse({ success: true, breakdown: { items: [] } }))
+      }
+      if (url.includes('/api/admin/slo/journey-failures')) {
+        return Promise.resolve(jsonResponse({ success: true, counts: { totalFailJourneys: 0 }, items: [] }))
+      }
+      return Promise.resolve(jsonResponse({ success: true }))
+    })
+
+    const view = await renderDashboardReady()
+
+    await waitFor(() => {
+      expect(view.container.querySelector('.telemetry-dashboard')).toHaveAttribute(
+        'data-tone',
+        'degraded'
+      )
+    })
+    expect(view.getByText('当前已捕获 1 处异常信号，建议先查看告警与 Provider 健康状态。')).toBeInTheDocument()
+  })
+
+  it('Provider unhealthy 时命令条应计入异常 Provider 信号', async () => {
+    fetchMock.mockImplementation((input: string | URL) => {
+      const url = String(input)
+      if (url.includes('/api/admin/providers/health')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            providers: [
+              { providerId: 'openai', category: 'llm', status: 'ok', latencyMs: 128 },
+              { providerId: 'veo', category: 'video', status: 'degraded', latencyMs: 820 }
+            ]
+          })
+        )
+      }
+      if (url.includes('/api/admin/db/repairs')) {
+        return Promise.resolve(
+          jsonResponse({
+            success: true,
+            repairs: [],
+            page: { hasMore: false, total: 0 }
+          })
+        )
+      }
+      if (url.includes('/api/admin/db/health')) {
+        return Promise.resolve(jsonResponse({ success: true, health: { status: 'ok' } }))
+      }
+      if (url.includes('/api/admin/db/runtime')) {
+        return Promise.resolve(jsonResponse({ success: true, runtime: { dbPath: '/tmp/test.sqlite' } }))
+      }
+      if (url.includes('/api/admin/slo/summary')) {
+        return Promise.resolve(jsonResponse({ success: true, summary: null }))
+      }
+      if (url.includes('/api/admin/slo/breakdown')) {
+        return Promise.resolve(jsonResponse({ success: true, breakdown: { items: [] } }))
+      }
+      if (url.includes('/api/admin/slo/journey-failures')) {
+        return Promise.resolve(jsonResponse({ success: true, counts: { totalFailJourneys: 0 }, items: [] }))
+      }
+      return Promise.resolve(jsonResponse({ success: true }))
+    })
+
+    const view = await renderDashboardReady()
+
+    await waitFor(() => {
+      expect(view.container.querySelector('.telemetry-dashboard')).toHaveAttribute(
+        'data-tone',
+        'degraded'
+      )
+    })
+    expect(
+      Array.from(view.container.querySelectorAll('.telemetry-command-stat strong')).map(
+        (node) => node.textContent
+      )
+    ).toEqual(['1', '2', 'Pending'])
+  })
+
   it('首次挂载仅请求一次数据库修复历史', async () => {
     await renderDashboardReady()
     await waitFor(() => {
