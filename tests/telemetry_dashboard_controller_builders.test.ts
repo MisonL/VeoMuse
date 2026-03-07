@@ -1,12 +1,14 @@
 import type React from 'react'
 import { describe, expect, it, mock } from 'bun:test'
-import { buildTelemetryCommandBarModel } from '../apps/frontend/src/components/Editor/TelemetryDashboard'
 import { resolveMetricsOverview } from '../apps/frontend/src/components/Editor/telemetryDashboard.logic'
 import {
+  buildTelemetryCommandBarModel,
   buildTelemetryDbOpsPanelProps,
-  buildTelemetryOverviewSectionProps,
+  buildTelemetryOverviewModel,
   buildTelemetryProjectGovernancePanelProps,
-  buildTelemetryProviderHealthPanelProps
+  buildTelemetryProviderHealthModel,
+  buildTelemetrySloModel,
+  resolveTelemetryProviderAlertCount
 } from '../apps/frontend/src/components/Editor/telemetry-dashboard/hooks/useTelemetryDashboardController'
 
 describe('TelemetryDashboard controller builders', () => {
@@ -48,8 +50,8 @@ describe('TelemetryDashboard controller builders', () => {
     })
   })
 
-  it('概览与 Provider builder 应格式化监控视图数据', () => {
-    const overviewSectionProps = buildTelemetryOverviewSectionProps({
+  it('概览、Provider 与 SLO model 应输出 section props 与 signal', () => {
+    const overviewModel = buildTelemetryOverviewModel({
       canvasRef: { current: null } as React.RefObject<HTMLCanvasElement | null>,
       fpsSummary: '稳定',
       metricsError: '',
@@ -64,7 +66,7 @@ describe('TelemetryDashboard controller builders', () => {
         }
       })
     })
-    const providerHealthPanelProps = buildTelemetryProviderHealthPanelProps({
+    const providerHealthModel = buildTelemetryProviderHealthModel({
       providerHealthRows: [
         { providerId: 'openai', category: 'llm', status: 'ok', latencyMs: 128 },
         { providerId: 'veo', category: 'video', status: 'degraded', latencyMs: 820 }
@@ -74,19 +76,56 @@ describe('TelemetryDashboard controller builders', () => {
       fetchProviderHealth: mock(() => Promise.resolve(true)),
       resetProviderHealth: mock(() => {})
     })
+    const sloModel = buildTelemetrySloModel({
+      sloSummary: null,
+      sloBreakdown: [],
+      sloJourneyFailures: [],
+      sloJourneyFailCount: 0,
+      sloError: 'slo unavailable',
+      sloDecision: null,
+      refreshSloData: mock(() => Promise.resolve(false)),
+      resetSloData: mock(() => {})
+    })
 
-    expect(overviewSectionProps.showOverview).toBe(true)
-    expect(overviewSectionProps.memoryUsageText).toBe('42.0%')
-    expect(overviewSectionProps.systemLoadText).toBe('0.76')
-    expect(overviewSectionProps.apiRows).toEqual([
+    expect(overviewModel.sectionProps.showOverview).toBe(true)
+    expect(overviewModel.sectionProps.memoryUsageText).toBe('42.0%')
+    expect(overviewModel.sectionProps.systemLoadText).toBe('0.76')
+    expect(overviewModel.sectionProps.apiRows).toEqual([
       {
         name: 'render',
         successText: '90%',
         avgText: '45ms'
       }
     ])
-    expect(providerHealthPanelProps.rows).toHaveLength(2)
-    expect(providerHealthPanelProps.rows[1]?.status).toBe('degraded')
+    expect(overviewModel.signal).toEqual({
+      hasMetrics: true,
+      hasMetricsError: false
+    })
+    expect(providerHealthModel.panelProps.rows).toHaveLength(2)
+    expect(providerHealthModel.panelProps.rows[1]?.status).toBe('degraded')
+    expect(providerHealthModel.signal).toEqual({
+      providerCount: 2,
+      alertCount: 1,
+      hasError: false
+    })
+    expect(sloModel.sectionProps.sloError).toBe('slo unavailable')
+    expect(sloModel.signal).toEqual({
+      hasSummary: false,
+      hasError: true,
+      decisionStatus: null
+    })
+  })
+
+  it('Provider alert 计数应稳定忽略 ok/healthy/pass', () => {
+    expect(
+      resolveTelemetryProviderAlertCount([
+        { status: 'ok' },
+        { status: 'healthy' },
+        { status: 'pass' },
+        { status: 'degraded' },
+        { status: 'not_implemented' }
+      ])
+    ).toBe(2)
   })
 
   it('治理与数据库 builder 应保持 wrapper 接线语义', () => {
