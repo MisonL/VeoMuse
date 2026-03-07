@@ -197,6 +197,31 @@ describe('CollabModePanel DOM 组件回归', () => {
     expect(view.getAllByText('暂无项目快照').length).toBe(1)
   })
 
+  it('高级区子开关应可独立控制各 watchboard 显隐', () => {
+    const view = render(<CollabModePanel {...createProps()} />)
+
+    fireEvent.click(view.getByTestId('btn-toggle-advanced-sections'))
+    expect(view.getByTestId('project-governance-watchboard')).toBeInTheDocument()
+    expect(view.getByTestId('permission-merge-watchboard')).toBeInTheDocument()
+    expect(view.getByTestId('ops-watchboard')).toBeInTheDocument()
+    expect(view.getByTestId('storage-snapshot-watchboard')).toBeInTheDocument()
+
+    fireEvent.click(view.getByTestId('btn-toggle-advanced-governance'))
+    expect(view.queryByTestId('project-governance-watchboard')).toBeNull()
+    expect(view.getByTestId('permission-merge-watchboard')).toBeInTheDocument()
+
+    fireEvent.click(view.getByTestId('btn-toggle-advanced-permission-merge'))
+    expect(view.queryByTestId('permission-merge-watchboard')).toBeNull()
+    expect(view.getByTestId('ops-watchboard')).toBeInTheDocument()
+
+    fireEvent.click(view.getByTestId('btn-toggle-advanced-ops'))
+    expect(view.queryByTestId('ops-watchboard')).toBeNull()
+    expect(view.getByTestId('storage-snapshot-watchboard')).toBeInTheDocument()
+
+    fireEvent.click(view.getByTestId('btn-toggle-advanced-storage'))
+    expect(view.queryByTestId('storage-snapshot-watchboard')).toBeNull()
+  })
+
   it('非空态应渲染列表并触发关键操作回调', () => {
     const onCreateWorkspace = mock(() => {})
     const onCreateInvite = mock(() => {})

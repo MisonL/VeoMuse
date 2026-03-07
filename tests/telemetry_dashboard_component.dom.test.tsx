@@ -145,6 +145,46 @@ describe('TelemetryDashboard DOM 交互', () => {
     expect(view.getByText('数据库自愈中心')).toBeInTheDocument()
   })
 
+  it('稳定态命令条应渲染 stable tone 与 0 异常信号', async () => {
+    const view = await renderDashboardReady()
+
+    await waitFor(() => {
+      expect(view.container.querySelector('.telemetry-dashboard')).toHaveAttribute(
+        'data-tone',
+        'stable'
+      )
+    })
+    expect(view.getByText('总控链路稳定')).toBeInTheDocument()
+    expect(view.getByText('关键指标、Provider 链路与 SLO 判定处于可播出状态。')).toBeInTheDocument()
+    expect(
+      Array.from(view.container.querySelectorAll('.telemetry-command-stat strong')).map(
+        (node) => node.textContent
+      )
+    ).toEqual(['0', '1', 'Pending'])
+  })
+
+  it('降级态命令条应渲染 degraded tone 与异常副标题', async () => {
+    useAdminMetricsStore.setState((state) => ({
+      ...state,
+      error: 'metrics unavailable'
+    }))
+    const view = await renderDashboardReady()
+
+    await waitFor(() => {
+      expect(view.container.querySelector('.telemetry-dashboard')).toHaveAttribute(
+        'data-tone',
+        'degraded'
+      )
+    })
+    expect(view.getByText('总控链路存在异常待复核')).toBeInTheDocument()
+    expect(view.getByText('当前已捕获 1 处异常信号，建议先查看告警与 Provider 健康状态。')).toBeInTheDocument()
+    expect(
+      Array.from(view.container.querySelectorAll('.telemetry-command-stat strong')).map(
+        (node) => node.textContent
+      )[0]
+    ).toBe('1')
+  })
+
   it('首次挂载仅请求一次数据库修复历史', async () => {
     await renderDashboardReady()
     await waitFor(() => {
