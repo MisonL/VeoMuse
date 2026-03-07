@@ -10,6 +10,7 @@ import {
   parseArgs,
   parseHttpStatusCode,
   REQUIRED_SECURITY_HEADERS,
+  TELEMETRY_ENTRY_MARKERS,
   resolveJavaScriptAssetUrl,
   resolveMissingLabEntryMarkers,
   resolveMissingSecurityHeaders
@@ -80,6 +81,12 @@ describe('docker smoke 脚本辅助逻辑', () => {
     ]
     expect(resolveMissingLabEntryMarkers(splitBundles)).toEqual([])
     expect(resolveMissingLabEntryMarkers('lab-tab-compare 双通道比对')).toContain('lab-tab-collab')
+  })
+
+  it('应暴露系统监控入口标识常量', () => {
+    expect(TELEMETRY_ENTRY_MARKERS).toContain('系统监控')
+    expect(TELEMETRY_ENTRY_MARKERS).toContain('ops watch / live audit')
+    expect(TELEMETRY_ENTRY_MARKERS).toContain('系统监控与当前创作工位并行值守')
   })
 
   it('应从入口脚本中递归识别拆包 JS 依赖', () => {

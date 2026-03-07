@@ -81,6 +81,13 @@ export const LAB_ENTRY_MARKERS = [
   '协作平台'
 ] as const
 
+export const TELEMETRY_ENTRY_MARKERS = [
+  '系统监控',
+  '系统监控正在值守',
+  '系统监控与当前创作工位并行值守',
+  'ops watch / live audit'
+] as const
+
 const HELP_TEXT = `
 Docker Smoke Check
 
