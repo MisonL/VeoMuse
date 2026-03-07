@@ -2514,21 +2514,22 @@ body.resizing-y {
 
 .timeline-actions {
   height: auto;
-  padding: 14px 18px;
+  padding: 12px 16px;
   align-items: flex-start;
-  gap: 14px;
+  gap: 12px;
 }
 
 .timeline-command-deck {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
+  flex: 1;
 }
 
 .timeline-command-copy {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -2536,10 +2537,15 @@ body.resizing-y {
   display: flex;
   align-items: stretch;
   gap: 12px;
-  padding: 8px;
-  border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  padding: 10px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-outline) 28%);
   background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--ap-accent-soft) 10%, transparent),
+      transparent 46%
+    ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
@@ -2550,22 +2556,39 @@ body.resizing-y {
       color-mix(in srgb, var(--ap-accent-soft) 14%, transparent),
       transparent 24%
     );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 12px 20px rgba(15, 76, 173, 0.08);
 }
 
 .timeline-priority-band {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
   flex: 1;
-  padding: 10px 12px;
-  border-radius: 16px;
+  padding: 12px 14px;
+  border-radius: 18px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 66%, var(--ap-signal) 34%);
   background:
     radial-gradient(
       circle at 88% 18%,
       color-mix(in srgb, var(--ap-signal-soft) 24%, transparent),
+      transparent 26%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+}
+
+.timeline-priority-band.is-idle {
+  border-color: color-mix(in srgb, var(--ap-border) 64%, var(--ap-accent) 36%);
+  background:
+    radial-gradient(
+      circle at 88% 18%,
+      color-mix(in srgb, var(--ap-accent-soft) 20%, transparent),
       transparent 26%
     ),
     linear-gradient(
@@ -2609,33 +2632,75 @@ body.resizing-y {
 }
 
 .timeline-tools {
-  width: fit-content;
+  width: auto;
   align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 12px;
   border-radius: 18px;
-  border: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-  );
+  border: 1px solid color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    ),
+    radial-gradient(
+      circle at 14% 20%,
+      color-mix(in srgb, var(--ap-accent-soft) 16%, transparent),
+      transparent 26%
+    );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.timeline-tools .undo-group {
+  margin-right: 0;
+  padding-right: 10px;
+  border-right: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
 }
 
 .system-telemetry {
+  flex: 0 0 330px;
+  max-width: 360px;
   align-items: stretch !important;
   gap: 8px;
+  padding: 10px 12px;
+  border-radius: 20px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-outline) 30%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+    );
+}
+
+.system-telemetry.is-idle {
+  border-color: color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+}
+
+.system-telemetry.is-armed {
+  border-color: color-mix(in srgb, var(--ap-border) 66%, var(--ap-signal) 34%);
 }
 
 .telemetry-dock-head {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.telemetry-dock-copy {
+  font-size: 11px;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--ap-text) 72%, var(--ap-text-dim) 28%);
 }
 
 .telemetry-item {
   padding: 8px 10px;
-  border-radius: 999px;
+  border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
   background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
 }
@@ -2655,14 +2720,9 @@ body.resizing-y {
   }
 
   .monitor-control-band,
-  .monitor-launchpad-actions,
-  .timeline-actions {
+  .monitor-launchpad-actions {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .timeline-control-surface {
-    flex-direction: column;
   }
 
   .monitor-launchpad-stats,
@@ -2676,6 +2736,26 @@ body.resizing-y {
 
   .system-telemetry {
     width: 100%;
+    max-width: none;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 1180px) {
+  .timeline-actions,
+  .timeline-control-surface {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .timeline-priority-band {
+    align-items: flex-start;
+  }
+
+  .system-telemetry {
+    width: 100%;
+    max-width: none;
     flex-wrap: wrap;
     justify-content: flex-start;
   }

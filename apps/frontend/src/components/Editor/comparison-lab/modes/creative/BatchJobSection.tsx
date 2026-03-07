@@ -52,9 +52,18 @@ const BatchJobSection: React.FC<BatchJobSectionProps> = ({
       : batchJobStatus?.status === 'completed'
         ? 100
         : 0
+  const isBatchIdle =
+    !batchJobId.trim() &&
+    !(batchJobStatus?.id || '').trim() &&
+    (batchJobStatus?.items || []).length === 0
+  const batchLeadText = isBatchIdle
+    ? '先定义 Job 类型和 Payload，再让执行塔台接管后续进度。'
+    : '队列已启动，继续围绕进度塔台观察处理率、失败项和刷新节奏。'
 
   return (
-    <section className="creative-card creative-card--batch">
+    <section
+      className={`creative-card creative-card--batch ${isBatchIdle ? 'is-idle' : 'has-items'}`}
+    >
       <div className="creative-section-head">
         <div className="creative-section-copy">
           <span className="creative-section-kicker">batch engine</span>
@@ -85,6 +94,11 @@ const BatchJobSection: React.FC<BatchJobSectionProps> = ({
       </div>
       <div className="batch-job-layout">
         <div className="batch-job-compose">
+          <div className="creative-stage-callout">
+            <span className="creative-section-kicker">dispatch queue</span>
+            <strong>Batch 先定义任务，再把执行进度交给右侧塔台。</strong>
+            <span>{batchLeadText}</span>
+          </div>
           <div className="lab-inline-fields">
             <label className="lab-field">
               <span>Job 类型</span>

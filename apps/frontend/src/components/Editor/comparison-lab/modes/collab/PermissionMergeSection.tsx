@@ -52,6 +52,9 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
   const enabledPermissionCount = permissions.reduce((sum, item) => {
     return sum + Object.values(item.permissions || {}).filter(Boolean).length
   }, 0)
+  const permissionTone = permissions.length > 0 ? 'accent' : 'neutral'
+  const mergeTone = resolveMergeTone(timelineMergeResult?.status)
+  const watchTone = mergeConflictCount > 0 ? 'critical' : timelineMergeResult?.status === 'merged' ? 'success' : 'neutral'
 
   return (
     <section className="collab-card">
@@ -60,14 +63,12 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
         className="lab-metric-grid permission-merge-summary-grid"
         data-testid="permission-merge-watchboard"
       >
-        <div className="lab-metric-card lab-metric-card--accent">
+        <div className={`lab-metric-card lab-metric-card--${permissionTone}`}>
           <span>权限记录</span>
           <strong>{permissions.length}</strong>
           <small>启用权限 {enabledPermissionCount} 项</small>
         </div>
-        <div
-          className={`lab-metric-card lab-metric-card--${resolveMergeTone(timelineMergeResult?.status)}`}
-        >
+        <div className={`lab-metric-card lab-metric-card--${mergeTone}`}>
           <span>Merge 结果</span>
           <strong>{timelineMergeResult?.status || '待执行'}</strong>
           <small>冲突 {mergeConflictCount} 项</small>
@@ -78,7 +79,7 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
           <small>权限键：{permissionSubjectId || FALLBACK_TEXT}</small>
         </div>
       </div>
-      <div className="collab-watch-spotlight">
+      <div className={`collab-watch-spotlight collab-watch-spotlight--${watchTone}`}>
         <div className="collab-watch-spotlight-copy">
           <span className="collab-advanced-group-kicker">merge watch</span>
           <strong>
@@ -90,7 +91,7 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
               : '权限更新和 Timeline Merge 的最新结果会在这里汇总展示。'}
           </span>
         </div>
-        <div className="collab-watch-inline">
+        <div className="collab-watch-inline collab-watch-inline--readout">
           <div>
             <b>Workspace</b>
             <span>{workspaceId || FALLBACK_TEXT}</span>

@@ -53,6 +53,30 @@ const CollabAdvancedSections: React.FC<CollabAdvancedSectionsProps> = ({
   const snapshotCount = storageSnapshotsProps.snapshots.length
   const hasUploadToken = trimText(storageSnapshotsProps.uploadToken).length > 0
   const hasAdminToken = trimText(opsToolsProps.adminToken).length > 0
+  const governanceTone =
+    openProjectComments > 0 || changeRequestedReviews > 0
+      ? changeRequestedReviews > 0
+        ? 'warning'
+        : 'accent'
+      : 'success'
+  const alertTone =
+    !hasAdminToken
+      ? 'warning'
+      : openReliabilityAlerts > 0
+        ? criticalReliabilityAlerts > 0
+          ? 'critical'
+          : 'warning'
+        : 'success'
+  const mergeTone = mergeConflictCount > 0 ? 'critical' : latestMergeStatus === 'merged' ? 'success' : 'neutral'
+  const storageTone = snapshotCount > 0 ? 'accent' : hasUploadToken ? 'success' : 'neutral'
+  const calloutTone =
+    criticalReliabilityAlerts > 0
+      ? 'critical'
+      : mergeConflictCount > 0
+        ? 'warning'
+        : openProjectComments > 0
+          ? 'accent'
+          : 'success'
   const watchboardMessage =
     criticalReliabilityAlerts > 0
       ? `当前有 ${criticalReliabilityAlerts} 条 critical 告警待处理，建议优先检查错误预算和回滚演练。`
@@ -73,30 +97,30 @@ const CollabAdvancedSections: React.FC<CollabAdvancedSectionsProps> = ({
           className="lab-metric-grid collab-advanced-watchboard"
           data-testid="collab-advanced-watchboard"
         >
-          <div className="lab-metric-card lab-metric-card--accent">
+          <div className={`lab-metric-card lab-metric-card--${governanceTone}`}>
             <span>治理待办</span>
             <strong>{openProjectComments}</strong>
             <small>变更请求 {changeRequestedReviews} 条</small>
           </div>
-          <div className="lab-metric-card lab-metric-card--critical">
+          <div className={`lab-metric-card lab-metric-card--${alertTone}`}>
             <span>值班告警</span>
             <strong>{openReliabilityAlerts}</strong>
             <small>
               critical {criticalReliabilityAlerts} 条 · 令牌 {hasAdminToken ? '已就绪' : '缺失'}
             </small>
           </div>
-          <div className="lab-metric-card lab-metric-card--warning">
+          <div className={`lab-metric-card lab-metric-card--${mergeTone}`}>
             <span>合并压力</span>
             <strong>{mergeConflictCount}</strong>
             <small>最近 Merge：{latestMergeStatus}</small>
           </div>
-          <div className="lab-metric-card lab-metric-card--neutral">
+          <div className={`lab-metric-card lab-metric-card--${storageTone}`}>
             <span>快照归档</span>
             <strong>{snapshotCount}</strong>
             <small>上传令牌：{hasUploadToken ? '已生成' : '未生成'}</small>
           </div>
         </div>
-        <div className="collab-watch-callout">
+        <div className={`collab-watch-callout collab-watch-callout--${calloutTone}`}>
           <strong>值班提醒</strong>
           <span>{watchboardMessage}</span>
         </div>

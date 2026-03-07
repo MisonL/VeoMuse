@@ -26,16 +26,24 @@ const RealtimeChannelSection: React.FC<RealtimeChannelSectionProps> = ({
   onSendCollabEvent
 }) => {
   const previewEvents = takePreviewItems(collabEvents, 20)
+  const connectionTone = !workspaceId ? 'neutral' : isWsConnected ? 'success' : 'warning'
+  const presenceTone = !workspaceId ? 'neutral' : isWsConnected ? 'success' : 'warning'
+  const eventTone = previewEvents.length > 0 ? 'accent' : 'neutral'
 
   return (
-    <section className="collab-card realtime-channel-hero" data-testid="area-realtime-channel-hero">
+    <section
+      className={`collab-card realtime-channel-hero realtime-channel-hero--${connectionTone}`}
+      data-testid="area-realtime-channel-hero"
+    >
       <div className="realtime-channel-head">
         <div className="collab-section-copy">
           <span className="collab-section-kicker">live relay</span>
           <h4>多人协同通道</h4>
         </div>
-        <div className="realtime-channel-status-band">
-          <span>连接状态：{getConnectionStatusText(isWsConnected)}</span>
+        <div className={`realtime-channel-status-band realtime-channel-status-band--${connectionTone}`}>
+          <span className={`realtime-channel-status-pill realtime-channel-status-pill--${connectionTone}`}>
+            连接状态：{getConnectionStatusText(isWsConnected)}
+          </span>
           <span>在线人数：{presence.length}</span>
           <span>Workspace：{workspaceId || '-'}</span>
         </div>
@@ -67,15 +75,15 @@ const RealtimeChannelSection: React.FC<RealtimeChannelSectionProps> = ({
         </button>
       </div>
       <div className="collab-command-summary">
-        <div className="collab-command-summary-card">
+        <div className={`collab-command-summary-card collab-command-summary-card--${presenceTone}`}>
           <span>presence rail</span>
           <strong>{presence.length}</strong>
-          <small>当前在线成员</small>
+          <small>{isWsConnected ? '实时在线成员' : '通道未连接，在线态待刷新'}</small>
         </div>
-        <div className="collab-command-summary-card">
+        <div className={`collab-command-summary-card collab-command-summary-card--${eventTone}`}>
           <span>event spine</span>
           <strong>{previewEvents.length}</strong>
-          <small>已载入协作事件</small>
+          <small>{previewEvents.length > 0 ? '已载入协作事件' : '等待协作事件写入'}</small>
         </div>
       </div>
       <div className="collab-split collab-split--live">

@@ -1392,22 +1392,35 @@
 }
 
 .video-generation-overview-grid {
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(4, minmax(132px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+  align-items: stretch;
+}
+
+.video-generation-overview-grid .lab-metric-card {
+  padding: 12px;
+  box-shadow: none;
+  border-style: dashed;
 }
 
 .video-generation-focus-panel {
-  padding: 12px;
-  border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--ap-border) 74%, var(--ap-accent) 26%);
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
   background:
     radial-gradient(
       circle at 92% 12%,
-      color-mix(in srgb, var(--ap-accent-soft) 24%, transparent),
-      transparent 28%
+      color-mix(in srgb, var(--ap-accent-soft) 28%, transparent),
+      transparent 24%
     ),
-    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .video-generation-focus-copy {
@@ -1436,7 +1449,7 @@
 
 .video-generation-focus-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 10px;
 }
 
@@ -1444,7 +1457,7 @@
   padding: 10px;
   border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 78%, #ffffff 22%);
-  background: color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%);
+  background: color-mix(in srgb, var(--ap-panel) 92%, #ffffff 8%);
   display: grid;
   gap: 4px;
 }
@@ -2131,12 +2144,8 @@
 .market-metrics > div,
 .creative-summary > div {
   border-radius: 14px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%),
-    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-  );
-  border: 1px solid color-mix(in srgb, var(--ap-border) 76%, transparent);
+  background: color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%);
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 72%, transparent);
   padding: 10px;
 }
 
@@ -2781,20 +2790,41 @@
   gap: 12px;
 }
 
-.creative-broadcast-shell > *,
+.creative-broadcast-shell .creative-card {
+  overflow: visible;
+}
+
 .collab-command-room > * {
   min-height: 0;
 }
 
 .creative-hero-stage {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1.56fr) minmax(340px, 0.74fr);
+  gap: 14px;
   min-height: 0;
+  padding: 14px;
+  border-radius: 28px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-accent) 28%);
+  background:
+    radial-gradient(
+      circle at 14% 16%,
+      color-mix(in srgb, var(--ap-accent-soft) 22%, transparent),
+      transparent 28%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 20px 28px rgba(15, 76, 173, 0.08);
 }
 
 .creative-hero-main,
 .creative-hero-side,
+.creative-side-stack,
 .creative-support-grid,
 .creative-support-card,
 .creative-ops-rail,
@@ -2808,57 +2838,92 @@
   min-height: 0;
 }
 
+.creative-broadcast-shell > *,
+.creative-hero-main,
+.creative-hero-side,
+.creative-side-stack,
+.creative-support-grid,
+.creative-support-card,
+.creative-ops-rail,
+.creative-ops-card {
+  min-height: auto;
+}
+
+.creative-hero-main {
+  display: grid;
+}
+
 .creative-hero-side {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  align-content: start;
+  padding: 10px;
+  border-radius: 24px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    ),
+    repeating-linear-gradient(180deg, transparent 0 18px, var(--ap-grid-line) 18px 19px);
+}
+
+.creative-side-stack,
+.creative-support-card,
+.creative-ops-card {
+  display: grid;
+  gap: 14px;
   align-content: start;
 }
 
 .creative-support-grid {
   display: grid;
-  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
-  gap: 12px;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+  gap: 14px;
 }
 
 .creative-ops-rail {
   display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
-  gap: 12px;
+  grid-template-columns: minmax(300px, 0.94fr) minmax(0, 1.06fr);
+  gap: 14px;
 }
 
 .creative-hero-main .creative-card,
 .creative-side-stack .creative-card,
 .creative-support-card .creative-card,
 .creative-ops-card .creative-card {
-  height: 100%;
+  height: auto;
+  min-height: 0;
+  align-self: start;
 }
 
 .creative-hero-main .video-generation-card {
   grid-column: auto;
-  min-height: 560px;
-  padding: 16px;
-  border-radius: 24px;
+  min-height: 500px;
+  padding: 20px;
+  border-radius: 28px;
   background:
     radial-gradient(
       circle at 82% 12%,
-      color-mix(in srgb, var(--ap-accent-soft) 34%, transparent),
-      transparent 22%
+      color-mix(in srgb, var(--ap-accent-soft) 42%, transparent),
+      transparent 20%
     ),
     radial-gradient(
       circle at 12% 88%,
-      color-mix(in srgb, var(--ap-signal-soft) 26%, transparent),
-      transparent 28%
+      color-mix(in srgb, var(--ap-signal-soft) 28%, transparent),
+      transparent 26%
     ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
       color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
     );
-  border-color: color-mix(in srgb, var(--ap-accent) 40%, var(--ap-border));
+  border-color: color-mix(in srgb, var(--ap-accent) 48%, var(--ap-border));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    0 18px 34px rgba(15, 76, 173, 0.12),
-    0 10px 20px rgba(70, 48, 20, 0.08);
+    0 24px 44px rgba(15, 76, 173, 0.16),
+    0 12px 22px rgba(70, 48, 20, 0.08);
 }
 
 .creative-side-stack .creative-card,
@@ -2921,14 +2986,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 5px 10px;
+  padding: 4px 9px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--ap-accent) 28%, var(--ap-border));
-  background: color-mix(in srgb, var(--ap-accent-soft) 68%, #ffffff 32%);
-  color: var(--ap-accent);
-  font-size: 10px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+  background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+  color: color-mix(in srgb, var(--ap-text-dim) 74%, var(--ap-accent) 26%);
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -2955,16 +3020,59 @@
   gap: 10px;
 }
 
+.video-generation-stage-lead,
+.video-generation-ops-lead,
+.creative-stage-callout {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+}
+
+.video-generation-stage-lead strong,
+.video-generation-ops-lead strong,
+.creative-stage-callout strong {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.video-generation-stage-lead span:last-child,
+.video-generation-ops-lead span:last-child,
+.creative-stage-callout span:last-child {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--ap-text-dim);
+}
+
+.creative-stage-callout--secondary {
+  border-color: color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  background: color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+}
+
 .video-generation-status-ribbon {
   display: grid;
   grid-template-columns: minmax(0, 0.86fr) minmax(280px, 1.14fr);
+  gap: 12px;
+}
+
+.video-generation-telemetry-strip {
+  display: grid;
   gap: 10px;
 }
 
 .video-generation-command-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(280px, 0.82fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1.26fr) minmax(300px, 0.74fr);
+  gap: 14px;
   min-height: 0;
 }
 
@@ -2977,11 +3085,33 @@
   align-content: start;
 }
 
+.video-generation-prompt-stage {
+  padding: 12px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    ),
+    radial-gradient(
+      circle at 86% 18%,
+      color-mix(in srgb, var(--ap-accent-soft) 20%, transparent),
+      transparent 24%
+    );
+}
+
 .video-generation-ops-sidebar {
   padding: 12px;
-  border-radius: 18px;
+  border-radius: 20px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
-  background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
 }
 
 .video-generation-ops-fields {
@@ -3005,8 +3135,8 @@
 .workflow-stage-layout,
 .batch-job-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(240px, 0.92fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1.04fr) minmax(260px, 0.96fr);
+  gap: 14px;
 }
 
 .workflow-stage-compose,
@@ -3022,18 +3152,18 @@
 .workflow-focus-card,
 .asset-reuse-route-spotlight,
 .ops-budget-card {
-  padding: 12px;
-  border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--ap-border) 74%, var(--ap-accent) 26%);
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-accent) 28%);
   background:
     radial-gradient(
       circle at 92% 12%,
-      color-mix(in srgb, var(--ap-accent-soft) 22%, transparent),
-      transparent 28%
+      color-mix(in srgb, var(--ap-accent-soft) 24%, transparent),
+      transparent 24%
     ),
     color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .workflow-focus-card strong,
@@ -3053,27 +3183,130 @@
 }
 
 .batch-job-progress-panel {
-  padding: 12px;
-  border-radius: 18px;
+  padding: 14px;
+  border-radius: 20px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
-  background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
 }
 
 .asset-reuse-panels {
   display: grid;
-  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
-  gap: 12px;
+  grid-template-columns: minmax(320px, 0.92fr) minmax(0, 1.08fr);
+  gap: 14px;
   min-height: 0;
 }
 
 .asset-reuse-panel {
   min-height: 0;
   display: grid;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 18px;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
-  background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+  background: color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+}
+
+.asset-reuse-panel--compose {
+  border-color: color-mix(in srgb, var(--ap-accent) 36%, var(--ap-border));
+  background:
+    radial-gradient(
+      circle at 90% 14%,
+      color-mix(in srgb, var(--ap-accent-soft) 20%, transparent),
+      transparent 24%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+}
+
+.asset-reuse-panel--history {
+  border-style: dashed;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    ),
+    repeating-linear-gradient(180deg, transparent 0 16px, var(--ap-grid-line) 16px 17px);
+}
+
+.creative-card--workflow .lab-metric-card,
+.creative-card--batch .lab-metric-card,
+.creative-card--archive .lab-metric-card {
+  padding: 12px;
+  box-shadow: none;
+}
+
+.creative-card--workflow .lab-metric-grid,
+.creative-card--batch .lab-metric-grid,
+.creative-card--archive .lab-metric-grid {
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.creative-card--workflow .lab-metric-card,
+.creative-card--batch .lab-metric-card,
+.creative-card--archive .lab-metric-card,
+.video-generation-overview-grid .lab-metric-card {
+  min-width: 132px;
+}
+
+.creative-card--workflow .workflow-focus-card {
+  border-color: color-mix(in srgb, var(--ap-accent) 42%, var(--ap-border));
+  background:
+    radial-gradient(
+      circle at 88% 16%,
+      color-mix(in srgb, var(--ap-accent-soft) 26%, transparent),
+      transparent 26%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+}
+
+.creative-card--batch .batch-job-progress-panel {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--ap-signal) 30%, var(--ap-border) 70%);
+  background:
+    radial-gradient(
+      circle at 90% 12%,
+      color-mix(in srgb, var(--ap-signal-soft) 22%, transparent),
+      transparent 24%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+}
+
+.creative-card--batch .workflow-focus-card strong {
+  font-size: 30px;
+  letter-spacing: 0.08em;
+}
+
+.creative-card--archive .asset-reuse-route-spotlight {
+  border-color: color-mix(in srgb, var(--ap-accent) 44%, var(--ap-border));
+  background:
+    radial-gradient(
+      circle at 88% 16%,
+      color-mix(in srgb, var(--ap-accent-soft) 26%, transparent),
+      transparent 26%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
 }
 
 .collab-command-stage {
@@ -3115,6 +3348,36 @@
   color: var(--ap-text-dim);
 }
 
+.realtime-channel-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
+  background: color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+  font-family: var(--ap-font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.realtime-channel-status-pill--success {
+  color: #166534;
+  border-color: rgba(34, 197, 94, 0.4);
+  background: color-mix(in srgb, #22c55e 14%, #ecfdf5 86%);
+}
+
+.realtime-channel-status-pill--warning {
+  color: #92400e;
+  border-color: rgba(245, 158, 11, 0.38);
+  background: color-mix(in srgb, #f59e0b 16%, #fffbeb 84%);
+}
+
+.realtime-channel-status-pill--neutral {
+  color: #475569;
+}
+
 .collab-live-actions {
   padding-bottom: 2px;
   border-bottom: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
@@ -3133,6 +3396,26 @@
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
   background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+}
+
+.collab-command-summary-card--success {
+  border-color: rgba(34, 197, 94, 0.28);
+  background: color-mix(in srgb, #ecfdf5 82%, var(--ap-surface) 18%);
+}
+
+.collab-command-summary-card--warning {
+  border-color: rgba(245, 158, 11, 0.26);
+  background: color-mix(in srgb, #fffbeb 78%, var(--ap-surface) 22%);
+}
+
+.collab-command-summary-card--accent {
+  border-color: color-mix(in srgb, var(--ap-accent) 34%, var(--ap-border));
+  background: color-mix(in srgb, var(--ap-accent-soft) 58%, #ffffff 42%);
+}
+
+.collab-command-summary-card--critical {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: color-mix(in srgb, #fef2f2 78%, var(--ap-surface) 22%);
 }
 
 .collab-command-summary-card span {
@@ -3184,9 +3467,9 @@
 
 .comment-thread-spotlight {
   display: grid;
-  gap: 5px;
-  padding: 12px;
-  border-radius: 18px;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--ap-signal) 28%, var(--ap-border));
   background:
     radial-gradient(
@@ -3195,6 +3478,39 @@
       transparent 26%
     ),
     color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+}
+
+.comment-thread-spotlight-head,
+.comment-thread-spotlight-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.comment-thread-spotlight-meta {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+}
+
+.comment-thread-spotlight--success {
+  border-color: rgba(34, 197, 94, 0.32);
+  background:
+    radial-gradient(circle at 90% 10%, rgba(34, 197, 94, 0.12), transparent 28%),
+    color-mix(in srgb, #ecfdf5 78%, var(--ap-surface) 22%);
+}
+
+.comment-thread-spotlight--warning {
+  border-color: rgba(245, 158, 11, 0.34);
+  background:
+    radial-gradient(circle at 90% 10%, rgba(245, 158, 11, 0.14), transparent 28%),
+    color-mix(in srgb, #fffbeb 78%, var(--ap-surface) 22%);
+}
+
+.comment-thread-spotlight--neutral {
+  border-color: color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  background: color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
 }
 
 .comment-thread-spotlight strong {
@@ -3210,6 +3526,24 @@
   line-height: 1.45;
 }
 
+.comment-thread-list-item {
+  gap: 8px;
+  padding: 12px;
+}
+
+.comment-thread-list-item.is-selected {
+  border-color: color-mix(in srgb, var(--ap-accent) 44%, var(--ap-border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ap-accent-soft) 42%, transparent);
+}
+
+.comment-thread-list-item--success {
+  background: color-mix(in srgb, #ecfdf5 84%, var(--ap-surface) 16%);
+}
+
+.comment-thread-list-item--warning {
+  background: color-mix(in srgb, #fffbeb 84%, var(--ap-surface) 16%);
+}
+
 .collab-governance-deck {
   display: grid;
   gap: 12px;
@@ -3217,9 +3551,9 @@
 
 .collab-watch-spotlight {
   display: grid;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 18px;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
   background:
     radial-gradient(
@@ -3228,6 +3562,32 @@
       transparent 28%
     ),
     color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+}
+
+.collab-watch-spotlight--success {
+  border-color: rgba(34, 197, 94, 0.28);
+  background:
+    radial-gradient(circle at 92% 12%, rgba(34, 197, 94, 0.14), transparent 28%),
+    color-mix(in srgb, #ecfdf5 80%, var(--ap-surface) 20%);
+}
+
+.collab-watch-spotlight--warning {
+  border-color: rgba(245, 158, 11, 0.3);
+  background:
+    radial-gradient(circle at 92% 12%, rgba(245, 158, 11, 0.16), transparent 28%),
+    color-mix(in srgb, #fffbeb 80%, var(--ap-surface) 20%);
+}
+
+.collab-watch-spotlight--critical {
+  border-color: rgba(239, 68, 68, 0.3);
+  background:
+    radial-gradient(circle at 92% 12%, rgba(239, 68, 68, 0.14), transparent 28%),
+    color-mix(in srgb, #fef2f2 80%, var(--ap-surface) 20%);
+}
+
+.collab-watch-spotlight--neutral {
+  border-color: color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  background: color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
 }
 
 .collab-watch-spotlight-copy {
@@ -3253,6 +3613,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 8px;
+}
+
+.collab-watch-inline--readout {
+  grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
 }
 
 .collab-watch-inline > div,
@@ -3291,6 +3655,21 @@
   gap: 4px;
 }
 
+.collab-watch-callout--success {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: color-mix(in srgb, #ecfdf5 70%, transparent);
+}
+
+.collab-watch-callout--warning {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: color-mix(in srgb, #fffbeb 70%, transparent);
+}
+
+.collab-watch-callout--critical {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: color-mix(in srgb, #fef2f2 70%, transparent);
+}
+
 .collab-watch-callout strong {
   font-size: 11px;
   color: var(--ap-text);
@@ -3311,12 +3690,12 @@
 .collab-advanced-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 .collab-advanced-group {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   min-height: 0;
 }
 
@@ -3330,11 +3709,52 @@
 
 .collab-advanced-stack {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .collab-card--advanced-control {
   border-style: dashed;
+}
+
+.collab-advanced-group--storage {
+  grid-column: 1 / -1;
+}
+
+.collab-advanced-group--storage .collab-advanced-stack {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.collab-workflow-cluster {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+}
+
+.collab-workflow-cluster-head {
+  display: grid;
+  gap: 4px;
+}
+
+.collab-workflow-cluster-head strong {
+  font-family: var(--ap-font-display);
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.collab-workflow-cluster-head span:last-child {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+  line-height: 1.45;
 }
 
 .ops-budget-card-head {
@@ -3352,6 +3772,18 @@
   color: var(--ap-text);
 }
 
+.ops-budget-card--success .lab-mini-progress > span {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.ops-budget-card--warning .lab-mini-progress > span {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.ops-budget-card--critical .lab-mini-progress > span {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
 .comparison-lab-pro .lab-status,
 .comparison-lab-pro .sync-toggle,
 .comparison-lab-pro .lab-field,
@@ -3359,6 +3791,7 @@
 .comparison-lab-pro .lab-stage-kicker,
 .comparison-lab-pro .creative-subhead span,
 .comparison-lab-pro .creative-summary,
+.comparison-lab-pro .collab-workflow-cluster-head span:last-child,
 .comparison-lab-pro .realtime-channel-status-band,
 .comparison-lab-pro .collab-command-summary-card small,
 .comparison-lab-pro .collab-watch-spotlight-copy span:last-child,
@@ -3396,6 +3829,33 @@
 .comparison-lab-pro .video-generation-head-actions button:first-child,
 .comparison-lab-pro .execution-head button:first-child,
 .comparison-lab-pro .inline-fill-btn {
+  border-color: color-mix(in srgb, var(--ap-accent) 60%, var(--ap-accent-strong) 40%);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 86%, #ffffff 14%),
+    color-mix(in srgb, var(--ap-accent-strong) 82%, #0b2e61 18%)
+  );
+  color: #fff8ef;
+  box-shadow: 0 12px 20px var(--ap-accent-glow);
+}
+
+.comparison-lab-pro .creative-card--workflow .lab-inline-actions button:first-child,
+.comparison-lab-pro .creative-card--batch .lab-inline-actions button:first-child,
+.comparison-lab-pro .creative-card--archive .lab-inline-actions button:first-child,
+.comparison-lab-pro .collab-card .lab-inline-actions button:first-child {
+  border-color: color-mix(in srgb, var(--ap-border) 58%, var(--ap-accent) 42%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
+  color: color-mix(in srgb, var(--ap-text) 88%, var(--ap-accent) 12%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+.comparison-lab-pro .video-generation-prompt-stage .lab-inline-actions button:first-child,
+.comparison-lab-pro .creative-side-stack--compose .lab-inline-actions button:first-child,
+.comparison-lab-pro .collab-card--advanced-control .lab-inline-actions button:first-child {
   border-color: color-mix(in srgb, var(--ap-accent) 60%, var(--ap-accent-strong) 40%);
   background: linear-gradient(
     165deg,
@@ -3550,7 +4010,6 @@
 }
 
 @container lab-frame (max-width: 1460px) {
-  .creative-hero-stage,
   .creative-support-grid,
   .creative-ops-rail,
   .workflow-stage-layout,
@@ -3568,13 +4027,23 @@
   }
 
   .creative-hero-main .video-generation-card {
-    min-height: 460px;
+    min-height: 380px;
+  }
+
+  .creative-hero-stage {
+    grid-template-columns: minmax(0, 1.24fr) minmax(300px, 0.76fr);
+  }
+
+  .collab-advanced-group--storage .collab-advanced-stack {
+    grid-template-columns: 1fr;
   }
 }
 
-@container lab-frame (max-width: 1180px) {
+@container lab-frame (max-width: 760px) {
+  .creative-hero-stage,
   .comment-threads-desk-layout,
-  .collab-split--live {
+  .collab-split--live,
+  .collab-advanced-grid {
     grid-template-columns: 1fr;
   }
 
@@ -3583,7 +4052,11 @@
   }
 
   .creative-hero-main .video-generation-card {
-    min-height: 380px;
+    min-height: 320px;
+  }
+
+  .collab-advanced-group--storage {
+    grid-column: auto;
   }
 }
 

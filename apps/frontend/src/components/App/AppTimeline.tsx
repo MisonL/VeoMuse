@@ -36,7 +36,7 @@ const AppTimeline = ({
   onActiveToolChange
 }: AppTimelineProps) => (
   <footer
-    className="pro-panel timeline-container"
+    className={`pro-panel timeline-container ${hasTimelineClips ? 'is-armed' : 'is-idle'}`}
     onMouseEnter={onActivate}
     onFocusCapture={onActivate}
     data-testid="area-timeline"
@@ -51,7 +51,7 @@ const AppTimeline = ({
           </span>
         </div>
         <div className="timeline-control-surface">
-          <div className="timeline-priority-band">
+          <div className={`timeline-priority-band ${hasTimelineClips ? 'is-armed' : 'is-idle'}`}>
             <span className="timeline-priority-pill">主操作区</span>
             <span className="timeline-priority-copy">
               {hasTimelineClips
@@ -113,7 +113,7 @@ const AppTimeline = ({
         </div>
       </div>
 
-      <div className="system-telemetry">
+      <div className={`system-telemetry ${hasTimelineClips ? 'is-armed' : 'is-idle'}`}>
         <div className="telemetry-dock-head">
           <span className="timeline-section-title telemetry-label">系统状态</span>
           <span className="telemetry-dock-copy">

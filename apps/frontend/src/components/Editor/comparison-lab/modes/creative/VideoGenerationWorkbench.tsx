@@ -229,10 +229,17 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
   const focusProviderStatus = focusVideoGenerationJob?.providerStatus || FALLBACK_TEXT
   const isVideoGenerationAdvancedInputsOpen =
     showVideoGenerationAdvancedInputs || requiredVideoInputs.length > 0
+  const hasVideoGenerationJobs = sortedVideoGenerationJobs.length > 0
+  const dispatchLeadText = hasVideoGenerationJobs
+    ? '继续补充 prompt 与输入条件，右侧会同步给出焦点结果与队列状态。'
+    : '先写 Prompt 并提交任务，任务队列和结果聚焦会在这里接管后续流程。'
+  const operationsLeadText = hasVideoGenerationJobs
+    ? '模型、查询和分页设置作为值班层保留在这里，避免打断主创作路径。'
+    : '先确认模式与模型，批量查询、翻页和选中任务等次级动作都收在这一侧。'
 
   return (
     <section
-      className="creative-card video-generation-card"
+      className={`creative-card video-generation-card ${hasVideoGenerationJobs ? 'has-jobs' : 'is-empty'}`}
       data-testid="area-video-generation-hero"
     >
       <div className="video-generation-hero-head">
@@ -264,65 +271,13 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
         </div>
       </div>
 
-      <div className="video-generation-status-ribbon">
-        <div
-          className={`video-generation-quick-check video-generation-quick-check--${geminiQuickCheck.status}`}
-        >
-          <div className="video-generation-quick-check-title">{geminiQuickCheck.title}</div>
-          <div className="video-generation-quick-check-desc">{geminiQuickCheck.description}</div>
-          <div className="lab-inline-actions">
-            <button disabled={isVideoGenerationBusy} onClick={onRunGeminiQuickCheck}>
-              Gemini 快速自检
-            </button>
-            <button onClick={onOpenChannelPanel}>打开渠道面板</button>
-          </div>
-        </div>
-        <div
-          className="video-generation-polling-hint video-generation-polling-hint--hero"
-          data-testid="video-generation-polling-hint"
-        >
-          <span className={`video-generation-polling-state ${pollingState.tone}`}>
-            {pollingState.text}
-          </span>
-          <span className="video-generation-polling-desc">
-            后端自动同步终态已启用，前端自动轮询仅刷新展示。
-          </span>
-          <span className="video-generation-polling-time">最近轮询：{latestAutoSyncText}</span>
-        </div>
-      </div>
-
-      <div
-        className="lab-metric-grid video-generation-overview-grid"
-        data-testid="video-generation-overview"
-      >
-        <div className="lab-metric-card lab-metric-card--accent">
-          <span>活跃任务</span>
-          <strong>{activeVideoGenerationJobs.length}</strong>
-          <small>
-            总任务 {sortedVideoGenerationJobs.length}，当前筛选 {videoGenerationStatusFilter}
-          </small>
-        </div>
-        <div className="lab-metric-card lab-metric-card--success">
-          <span>成功交付</span>
-          <strong>{succeededVideoGenerationJobs.length}</strong>
-          <small>最近成功：{formatLocalDateTime(latestSucceededJob?.finishedAt)}</small>
-        </div>
-        <div className="lab-metric-card lab-metric-card--warning">
-          <span>异常回收</span>
-          <strong>{failedVideoGenerationJobs.length + canceledVideoGenerationJobs.length}</strong>
-          <small>
-            失败 {failedVideoGenerationJobs.length} · 取消 {canceledVideoGenerationJobs.length}
-          </small>
-        </div>
-        <div className="lab-metric-card lab-metric-card--neutral">
-          <span>平均耗时</span>
-          <strong>{averageSucceededDurationText}</strong>
-          <small>仅统计成功完成的任务</small>
-        </div>
-      </div>
-
       <div className="video-generation-command-bar">
         <div className="video-generation-prompt-stage">
+          <div className="video-generation-stage-lead">
+            <span className="creative-section-kicker">dispatch lane</span>
+            <strong>先完成主描述，再进入队列与结果调度。</strong>
+            <span>{dispatchLeadText}</span>
+          </div>
           <label className="lab-field">
             <span>Prompt</span>
             <textarea
@@ -422,6 +377,11 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
         </div>
 
         <aside className="video-generation-ops-sidebar">
+          <div className="video-generation-ops-lead">
+            <span className="creative-section-kicker">operations rail</span>
+            <strong>次级控制集中在这一侧。</strong>
+            <span>{operationsLeadText}</span>
+          </div>
           <div className="lab-inline-fields video-generation-ops-fields">
             <label className="lab-field">
               <span>生成模式</span>
@@ -620,6 +580,65 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
             ) : null}
           </div>
         </aside>
+      </div>
+
+      <div className="video-generation-telemetry-strip">
+        <div className="video-generation-status-ribbon">
+          <div
+            className={`video-generation-quick-check video-generation-quick-check--${geminiQuickCheck.status}`}
+          >
+            <div className="video-generation-quick-check-title">{geminiQuickCheck.title}</div>
+            <div className="video-generation-quick-check-desc">{geminiQuickCheck.description}</div>
+            <div className="lab-inline-actions">
+              <button disabled={isVideoGenerationBusy} onClick={onRunGeminiQuickCheck}>
+                Gemini 快速自检
+              </button>
+              <button onClick={onOpenChannelPanel}>打开渠道面板</button>
+            </div>
+          </div>
+          <div
+            className="video-generation-polling-hint video-generation-polling-hint--hero"
+            data-testid="video-generation-polling-hint"
+          >
+            <span className={`video-generation-polling-state ${pollingState.tone}`}>
+              {pollingState.text}
+            </span>
+            <span className="video-generation-polling-desc">
+              后端自动同步终态已启用，前端自动轮询仅刷新展示。
+            </span>
+            <span className="video-generation-polling-time">最近轮询：{latestAutoSyncText}</span>
+          </div>
+        </div>
+
+        <div
+          className="lab-metric-grid video-generation-overview-grid"
+          data-testid="video-generation-overview"
+        >
+          <div className="lab-metric-card lab-metric-card--accent">
+            <span>活跃任务</span>
+            <strong>{activeVideoGenerationJobs.length}</strong>
+            <small>
+              总任务 {sortedVideoGenerationJobs.length}，当前筛选 {videoGenerationStatusFilter}
+            </small>
+          </div>
+          <div className="lab-metric-card lab-metric-card--success">
+            <span>成功交付</span>
+            <strong>{succeededVideoGenerationJobs.length}</strong>
+            <small>最近成功：{formatLocalDateTime(latestSucceededJob?.finishedAt)}</small>
+          </div>
+          <div className="lab-metric-card lab-metric-card--warning">
+            <span>异常回收</span>
+            <strong>{failedVideoGenerationJobs.length + canceledVideoGenerationJobs.length}</strong>
+            <small>
+              失败 {failedVideoGenerationJobs.length} · 取消 {canceledVideoGenerationJobs.length}
+            </small>
+          </div>
+          <div className="lab-metric-card lab-metric-card--neutral">
+            <span>平均耗时</span>
+            <strong>{averageSucceededDurationText}</strong>
+            <small>仅统计成功完成的任务</small>
+          </div>
+        </div>
       </div>
 
       <div className="video-generation-jobs-deck">

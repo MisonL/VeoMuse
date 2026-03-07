@@ -75,9 +75,16 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
   const focusWorkflowRun = workflowRunResult || latestWorkflowRun
   const completedWorkflowRuns = workflowRuns.filter((item) => item.status === 'completed')
   const failedWorkflowRuns = workflowRuns.filter((item) => item.status === 'failed')
+  const isWorkflowIdle =
+    workflows.length === 0 && workflowRuns.length === 0 && !selectedWorkflowId.trim()
+  const workflowLeadText = isWorkflowIdle
+    ? '先创建或选择一个 Workflow，再把 payload 送进运行队列。'
+    : '工作流已就绪，继续围绕当前选择的编排链做运行和复盘。'
 
   return (
-    <section className="creative-card creative-card--workflow">
+    <section
+      className={`creative-card creative-card--workflow ${isWorkflowIdle ? 'is-idle' : 'has-runs'}`}
+    >
       <div className="creative-section-head">
         <div className="creative-section-copy">
           <span className="creative-section-kicker">workflow deck</span>
@@ -111,6 +118,11 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
       </div>
       <div className="workflow-stage-layout">
         <div className="workflow-stage-compose">
+          <div className="creative-stage-callout">
+            <span className="creative-section-kicker">compose focus</span>
+            <strong>Workflow 先承担编排入口，再承接运行回放。</strong>
+            <span>{workflowLeadText}</span>
+          </div>
           <div className="lab-inline-fields">
             <label className="lab-field">
               <span>工作流名称</span>

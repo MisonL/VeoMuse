@@ -34,6 +34,9 @@ const StorageSnapshotsSection: React.FC<StorageSnapshotsSectionProps> = ({
 }) => {
   const latestSnapshot = snapshots[0] || null
   const hasUploadToken = uploadToken.trim().length > 0
+  const snapshotTone = latestSnapshot ? 'accent' : 'neutral'
+  const uploadTone = hasUploadToken ? 'success' : 'neutral'
+  const watchTone = latestSnapshot ? 'success' : hasUploadToken ? 'accent' : 'neutral'
 
   return (
     <section className="collab-card">
@@ -42,18 +45,18 @@ const StorageSnapshotsSection: React.FC<StorageSnapshotsSectionProps> = ({
         className="lab-metric-grid storage-snapshot-summary-grid"
         data-testid="storage-snapshot-watchboard"
       >
-        <div className="lab-metric-card lab-metric-card--accent">
+        <div className={`lab-metric-card lab-metric-card--${snapshotTone}`}>
           <span>项目快照</span>
           <strong>{snapshots.length}</strong>
           <small>最近快照：{formatLocalDateTime(latestSnapshot?.createdAt)}</small>
         </div>
-        <div className="lab-metric-card lab-metric-card--neutral">
+        <div className={`lab-metric-card lab-metric-card--${uploadTone}`}>
           <span>上传令牌</span>
           <strong>{hasUploadToken ? 'ready' : 'pending'}</strong>
           <small>文件名：{uploadFileName || FALLBACK_TEXT}</small>
         </div>
       </div>
-      <div className="collab-watch-spotlight">
+      <div className={`collab-watch-spotlight collab-watch-spotlight--${watchTone}`}>
         <div className="collab-watch-spotlight-copy">
           <span className="collab-advanced-group-kicker">archive watch</span>
           <strong>{latestSnapshot ? latestSnapshot.actorName : '等待首次快照'}</strong>
@@ -63,7 +66,7 @@ const StorageSnapshotsSection: React.FC<StorageSnapshotsSectionProps> = ({
               : '创建快照或生成上传令牌后，可在这里快速确认归档准备状态。'}
           </span>
         </div>
-        <div className="collab-watch-inline">
+        <div className="collab-watch-inline collab-watch-inline--readout">
           <div>
             <b>Workspace</b>
             <span>{workspaceId || FALLBACK_TEXT}</span>

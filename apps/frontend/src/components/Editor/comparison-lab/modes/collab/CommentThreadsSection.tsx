@@ -9,6 +9,11 @@ import {
 } from '../collabModePanel.logic'
 import type { V4CommentThread } from '../../types'
 
+const resolveThreadTone = (status: V4CommentThread['status']) => {
+  if (status === 'resolved') return 'success'
+  return 'warning'
+}
+
 export interface CommentThreadsSectionProps {
   projectId: string
   commentThreads: V4CommentThread[]
@@ -63,6 +68,7 @@ const CommentThreadsSection: React.FC<CommentThreadsSectionProps> = ({
   onResolveCommentThread
 }) => {
   const selectedThread = commentThreads.find((item) => item.id === selectedThreadId) || null
+  const selectedThreadTone = selectedThread ? resolveThreadTone(selectedThread.status) : 'neutral'
 
   return (
     <section className="collab-card comment-threads-desk" data-testid="area-comment-threads-desk">
@@ -180,22 +186,46 @@ const CommentThreadsSection: React.FC<CommentThreadsSectionProps> = ({
           </div>
         </div>
         <div className="comment-threads-review-column">
-          <div className="comment-thread-spotlight">
-            <span className="comment-thread-spotlight-kicker">当前焦点</span>
+          <div className={`comment-thread-spotlight comment-thread-spotlight--${selectedThreadTone}`}>
+            <div className="comment-thread-spotlight-head">
+              <span className="comment-thread-spotlight-kicker">当前焦点</span>
+              <span className={`lab-status-badge lab-status-badge--${selectedThreadTone}`}>
+                {selectedThread ? selectedThread.status : '未选择'}
+              </span>
+            </div>
             <strong>{selectedThread ? selectedThread.content : '尚未选中评论线程'}</strong>
+            <div className="comment-thread-spotlight-meta">
+              <span>锚点：{selectedThread?.anchor || '-'}</span>
+              <span>{selectedThread ? formatMentions(selectedThread.mentions) : '暂无 mentions'}</span>
+            </div>
             <span>
               {selectedThread
-                ? `${selectedThread.status} · ${formatMentions(selectedThread.mentions)}`
+                ? `${selectedThread.status} · 最近更新 ${formatLocalTime(selectedThread.updatedAt)}`
                 : '选择线程后可直接回复或 Resolve。'}
             </span>
           </div>
           <div className="collab-list">
             {takePreviewItems(commentThreads, 12).map((item) => (
-              <div key={item.id} className="collab-list-item">
-                <span>{item.content}</span>
-                <span>{item.status}</span>
-                <span>{formatMentions(item.mentions)}</span>
-                <span>{formatLocalTime(item.updatedAt)}</span>
+              <div
+                key={item.id}
+                className={`collab-list-item collab-list-item--rich comment-thread-list-item comment-thread-list-item--${resolveThreadTone(
+                  item.status
+                )} ${selectedThreadId === item.id ? 'is-selected' : ''}`}
+              >
+                <div className="collab-list-item-head">
+                  <strong>{item.content}</strong>
+                  <span className={`lab-status-badge lab-status-badge--${resolveThreadTone(item.status)}`}>
+                    {item.status}
+                  </span>
+                </div>
+                <div className="collab-list-meta">
+                  <span>锚点：{item.anchor || '-'}</span>
+                  <span>{formatMentions(item.mentions)}</span>
+                </div>
+                <div className="collab-list-meta">
+                  <span>更新：{formatLocalTime(item.updatedAt)}</span>
+                  <span>创建：{formatLocalTime(item.createdAt)}</span>
+                </div>
               </div>
             ))}
             {commentThreads.length === 0 ? <div className="api-empty">暂无评论线程</div> : null}

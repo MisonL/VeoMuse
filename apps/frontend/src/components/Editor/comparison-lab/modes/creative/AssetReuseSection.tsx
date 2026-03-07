@@ -72,9 +72,18 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
   const operatorCount = new Set(
     orderedHistoryRecords.map((item) => String(item.reusedBy || '').trim()).filter(Boolean)
   ).size
+  const isAssetReuseIdle = !assetReuseResult && orderedHistoryRecords.length === 0
+  const assetComposeLeadText = isAssetReuseIdle
+    ? '先确定来源 Asset 和目标项目，把第一条复用路径送进档案。'
+    : '当前复用链已经形成，左侧继续发起，右侧回看历史轨迹。'
+  const assetHistoryLeadText = orderedHistoryRecords.length === 0
+    ? '暂无历史时，把它当成档案台预留位；生成首条记录后再从这里复盘。'
+    : '历史区只负责归档和回看，不再抢走发起复用这条主动作。'
 
   return (
-    <section className="creative-card creative-card--archive">
+    <section
+      className={`creative-card creative-card--archive ${isAssetReuseIdle ? 'is-idle' : 'has-history'}`}
+    >
       <div className="creative-section-head">
         <div className="creative-section-copy">
           <span className="creative-section-kicker">asset archive</span>
@@ -103,7 +112,12 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
         </div>
       </div>
       <div className="asset-reuse-panels">
-        <div className="asset-reuse-panel">
+        <div className="asset-reuse-panel asset-reuse-panel--compose">
+          <div className="creative-stage-callout">
+            <span className="creative-section-kicker">reuse lane</span>
+            <strong>发起复用是主动作，档案追踪放到另一侧。</strong>
+            <span>{assetComposeLeadText}</span>
+          </div>
           <div className="creative-subhead">
             <strong>发起复用</strong>
             <span>把关键资产转运到目标项目，保持风格与制作链路一致。</span>
@@ -160,7 +174,12 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
           </div>
         </div>
 
-        <div className="asset-reuse-panel">
+        <div className="asset-reuse-panel asset-reuse-panel--history">
+          <div className="creative-stage-callout creative-stage-callout--secondary">
+            <span className="creative-section-kicker">archive lane</span>
+            <strong>历史区只做回看，不干扰主路径。</strong>
+            <span>{assetHistoryLeadText}</span>
+          </div>
           <div className="creative-subhead">
             <strong>复用历史</strong>
             <span>用资产、来源项目和目标项目回看整个复用轨迹。</span>
@@ -234,13 +253,16 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
               <div key={item.id} className="creative-scene-item creative-scene-item--rich">
                 <div className="scene-headline">
                   <strong>{item.assetId}</strong>
-                  <span>{formatLocalDateTime(item.createdAt)}</span>
+                  <span className="lab-status-badge lab-status-badge--neutral">
+                    {item.id === latestHistoryRecord?.id ? '最新记录' : '历史记录'}
+                  </span>
                 </div>
                 <div className="scene-meta-line">
                   <span>来源项目：{item.sourceProjectId || '-'}</span>
                   <span>目标项目：{item.targetProjectId || '-'}</span>
                 </div>
                 <div className="scene-meta-line">
+                  <span>时间：{formatLocalDateTime(item.createdAt)}</span>
                   <span>复用人：{item.reusedBy || '-'}</span>
                   <span>记录 ID：{item.id}</span>
                   <span>上下文字段：{Object.keys(item.context || {}).length}</span>
