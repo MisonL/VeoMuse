@@ -36,6 +36,12 @@ const MODE_OPTIONS: Array<{ value: AppMode; label: string }> = [
   { value: 'audio', label: '音频大师' }
 ]
 
+const MODE_RUNTIME_COPY: Record<AppMode, string> = {
+  edit: '主编排链路在线，节目单已锁定到剪辑总线',
+  color: '实验与策略工位就绪，双通道路由保持热备',
+  audio: '音频母带链路待命，旁白与节奏引擎可立即接入'
+}
+
 const AppHeader = ({
   activeMode,
   centerMode,
@@ -63,24 +69,37 @@ const AppHeader = ({
 }: AppHeaderProps) => (
   <header className="pro-panel os-header" data-testid="area-top-header">
     <div className="brand-zone">
-      <div className="brand-logo">V</div>
+      <div className="brand-mark">
+        <div className="brand-logo">V</div>
+        <span className="brand-beacon">LIVE</span>
+      </div>
       <div className="brand-copy">
         <span className="brand-kicker">Flagship AI Video Bus</span>
         <span className="brand-title">VEOMUSE PRO</span>
       </div>
+      <div className="brand-status-ribbon">
+        <span className="brand-status-pill">On Air</span>
+        <span className="brand-status-copy">导播总线稳定 / 三路节目待播</span>
+      </div>
     </div>
-    <div className="mode-selector" data-guide="mode-selector" data-testid="area-mode-selector">
-      {MODE_OPTIONS.map((mode) => (
-        <button
-          key={mode.value}
-          className={`mode-tab ${activeMode === mode.value ? 'active' : ''}`}
-          onMouseEnter={() => onModeHover(mode.value)}
-          onClick={() => onModeChange(mode.value)}
-          data-testid={`btn-mode-${mode.value}`}
-        >
-          {mode.label}
-        </button>
-      ))}
+    <div className="header-center-stack">
+      <div className="mode-selector" data-guide="mode-selector" data-testid="area-mode-selector">
+        {MODE_OPTIONS.map((mode) => (
+          <button
+            key={mode.value}
+            className={`mode-tab ${activeMode === mode.value ? 'active' : ''}`}
+            onMouseEnter={() => onModeHover(mode.value)}
+            onClick={() => onModeChange(mode.value)}
+            data-testid={`btn-mode-${mode.value}`}
+          >
+            {mode.label}
+          </button>
+        ))}
+      </div>
+      <div className="mode-runtime">
+        <span className="mode-runtime-pill">Run Of Show</span>
+        <span className="mode-runtime-copy">{MODE_RUNTIME_COPY[activeMode]}</span>
+      </div>
     </div>
     <div className="header-actions" data-testid="area-header-actions">
       <div className="header-actions-group header-actions-layout" data-testid="group-header-layout">

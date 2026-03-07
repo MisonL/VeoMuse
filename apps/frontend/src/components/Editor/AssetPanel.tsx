@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useEditorStore } from '../../store/editorStore'
 import type { Asset } from '../../store/editorStore'
@@ -112,6 +112,27 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
   const [isMotionSyncing, setIsMotionSyncing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const objectUrlsRef = useRef<Set<string>>(new Set())
+
+  const assetUsageMap = useMemo(() => {
+    return new Map(
+      assets.map((asset) => {
+        const inTimeline = tracks.some((track) =>
+          track.clips.some((clip) => clip.src === asset.src || clip.src === asset.exportSrc)
+        )
+        return [asset.id, inTimeline]
+      })
+    )
+  }, [assets, tracks])
+
+  const assetStats = useMemo(
+    () => ({
+      total: assets.length,
+      video: assets.filter((asset) => asset.type === 'video').length,
+      audio: assets.filter((asset) => asset.type === 'audio').length,
+      live: assets.filter((asset) => assetUsageMap.get(asset.id)).length
+    }),
+    [assets, assetUsageMap]
+  )
 
   useEffect(() => {
     const objectUrls = objectUrlsRef.current
@@ -299,7 +320,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
   const assetCategories: AssetCategory[] = ['all', 'video', 'audio']
 
   return (
-    <div className="pro-asset-panel">
+    <div className="pro-asset-panel" data-mode={mode}>
       <input
         type="file"
         id="asset-upload-files"
@@ -349,22 +370,66 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             ))}
           </div>
 
+          <div className="asset-intel-strip">
+            <div className="asset-intel-card">
+              <span className="asset-intel-label">总素材</span>
+              <strong>{assetStats.total}</strong>
+              <small>当前素材抽屉</small>
+            </div>
+            <div className="asset-intel-card">
+              <span className="asset-intel-label">视频 / 音频</span>
+              <strong>
+                {assetStats.video} / {assetStats.audio}
+              </strong>
+              <small>按节目类型分层</small>
+            </div>
+            <div className="asset-intel-card">
+              <span className="asset-intel-label">已上轨</span>
+              <strong>{assetStats.live}</strong>
+              <small>正在参与编排</small>
+            </div>
+          </div>
+
           <div className="pro-asset-grid">
             {filteredAssets.length > 0 ? (
-              filteredAssets.map((asset) => (
-                <div key={asset.id} className={`asset-tile ${asset.type}`}>
-                  <div className="tile-preview">
-                    {asset.type === 'video' ? '🎬' : '🎵'}
-                    <div className="tile-actions">
-                      <button onClick={() => handleAddToTimeline(asset)}>➕</button>
+              filteredAssets.map((asset) => {
+                const isLive = assetUsageMap.get(asset.id)
+                const assetTypeLabel =
+                  asset.type === 'video' ? '视频' : asset.type === 'audio' ? '音频' : '图像'
+                const assetStateLabel = isLive
+                  ? '已上轨'
+                  : asset.exportSrc
+                    ? '云端可导出'
+                    : '待编排'
+
+                return (
+                  <div
+                    key={asset.id}
+                    className={`asset-tile ${asset.type} ${isLive ? 'is-live' : ''}`}
+                  >
+                    <div className="tile-preview">
+                      {asset.type === 'video' ? '🎬' : '🎵'}
+                      <div className="tile-actions">
+                        <button onClick={() => handleAddToTimeline(asset)}>➕</button>
+                      </div>
+                    </div>
+                    <div className="tile-footer">
+                      <div className="tile-meta-row">
+                        <span className={`tile-kind ${asset.type}`}>{assetTypeLabel}</span>
+                        <span
+                          className={`tile-state ${isLive ? 'live' : asset.exportSrc ? 'synced' : 'queued'}`}
+                        >
+                          {assetStateLabel}
+                        </span>
+                      </div>
+                      <span className="tile-name">{asset.name}</span>
+                      <span className="tile-duration">
+                        {asset.exportSrc ? '已同步云端导出链路' : '本地资产 / 等待编排'}
+                      </span>
                     </div>
                   </div>
-                  <div className="tile-footer">
-                    <span className="tile-name">{asset.name}</span>
-                    <span className="tile-duration">本地资产</span>
-                  </div>
-                </div>
-              ))
+                )
+              })
             ) : (
               <div
                 className="pro-empty-state-v2"

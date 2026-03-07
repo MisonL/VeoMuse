@@ -183,7 +183,7 @@ const PropertyInspector: React.FC = () => {
   const current = selectedClip as Clip | null
 
   return (
-    <div className="pro-inspector-inner">
+    <div className="pro-inspector-inner" data-active-tab={activeTab}>
       <header className="inspector-header">
         <div className="inspector-tabs">
           <button
@@ -202,9 +202,48 @@ const PropertyInspector: React.FC = () => {
         {current && <span className="clip-type-badge">{current.type}</span>}
       </header>
 
+      <div className="inspector-context-bar">
+        <div className="inspector-context-copy">
+          <span className="inspector-context-kicker">
+            {activeTab === 'lab' ? 'ops watch / live audit' : 'clip forge / active context'}
+          </span>
+          <strong className="inspector-context-title">
+            {current
+              ? current.name
+              : activeTab === 'lab'
+                ? '系统监控正在值守'
+                : '等待片段进入工位'}
+          </strong>
+          <span className="inspector-context-subtitle">
+            {activeTab === 'lab'
+              ? '运行态、告警与治理记录会在当前侧栏持续值守显示。'
+              : '属性、炼金与空间渲染动作都绑定到当前片段，不再丢失上下文。'}
+          </span>
+        </div>
+        <div className="inspector-context-pills">
+          <span className="inspector-context-pill">{current?.type || 'idle'}</span>
+          <span className={`inspector-context-pill ${activeTab === 'lab' ? 'is-live' : ''}`}>
+            {activeTab === 'lab' ? 'monitor live' : 'clip live'}
+          </span>
+        </div>
+      </div>
+
       <div className="inspector-body">
         {activeTab === 'lab' ? (
-          <TelemetryDashboard />
+          <div className="inspector-lab-shell">
+            <div className="inspector-lab-banner">
+              <div className="inspector-lab-banner-copy">
+                <span className="inspector-lab-banner-kicker">system room</span>
+                <strong>系统监控与当前创作工位并行值守</strong>
+                <span>告警、SLO 与 Provider 健康状态将围绕当前节目上下文持续更新。</span>
+              </div>
+              <div className="inspector-lab-banner-status">
+                <span>{current ? current.name : '无活跃片段'}</span>
+                <strong>{current ? 'Clip Context Bound' : 'Ops Only'}</strong>
+              </div>
+            </div>
+            <TelemetryDashboard />
+          </div>
         ) : !current ? (
           <div className="inspector-empty">
             <p>未选中片段</p>
@@ -215,7 +254,7 @@ const PropertyInspector: React.FC = () => {
           </div>
         ) : (
           <div className="pro-inspector-content">
-            <section className="inspector-section">
+            <section className="inspector-section inspector-section--identity">
               <label>片段名称</label>
               <input
                 name="clipName"
@@ -226,7 +265,7 @@ const PropertyInspector: React.FC = () => {
               />
             </section>
 
-            <section className="inspector-section">
+            <section className="inspector-section inspector-section--hero">
               <label>媒体炼金术 (Alchemy)</label>
               <div className="alchemy-grid">
                 <button className="alchemy-mini-btn" onClick={() => handleAlchemy('repair')}>
@@ -245,7 +284,7 @@ const PropertyInspector: React.FC = () => {
             </section>
 
             {current.type === 'video' && (
-              <section className="inspector-section">
+              <section className="inspector-section inspector-section--support">
                 <label>风格重塑预设</label>
                 <div className="pro-control-row mt-4">
                   <select
@@ -277,7 +316,7 @@ const PropertyInspector: React.FC = () => {
             )}
 
             {current.type === 'video' && (
-              <section className="inspector-section">
+              <section className="inspector-section inspector-section--support">
                 <label>神经渲染特效</label>
                 <div className="pro-control-row mt-4">
                   <select
@@ -315,7 +354,7 @@ const PropertyInspector: React.FC = () => {
             )}
 
             {current.type === 'video' && (
-              <section className="inspector-section">
+              <section className="inspector-section inspector-section--support">
                 <label>World-Link 一致性</label>
                 <div className="pro-control-row mt-4">
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -340,7 +379,7 @@ const PropertyInspector: React.FC = () => {
             )}
 
             {current.type === 'video' && (
-              <section className="inspector-section">
+              <section className="inspector-section inspector-section--support">
                 <label>虚拟演员与口型同步</label>
                 <div className="pro-control-row mt-4">
                   <select
@@ -384,7 +423,7 @@ const PropertyInspector: React.FC = () => {
             )}
 
             {current.type === 'video' && (
-              <section className="inspector-section">
+              <section className="inspector-section inspector-section--focus">
                 <label>空间 3D 控制 (NeRF)</label>
                 <div className="pro-control-row">
                   <span>水平轴</span>
@@ -425,7 +464,7 @@ const PropertyInspector: React.FC = () => {
             )}
 
             {current.type === 'text' && (
-              <section className="inspector-section">
+              <section className="inspector-section inspector-section--support">
                 <label>TTS 配音控制器</label>
                 <textarea
                   name="ttsContent"
@@ -464,7 +503,7 @@ const PropertyInspector: React.FC = () => {
             )}
 
             {current.type === 'audio' && (
-              <section className="inspector-section">
+              <section className="inspector-section inspector-section--support">
                 <label>音频翻译克隆</label>
                 <div className="pro-control-row mt-4">
                   <select
@@ -487,7 +526,7 @@ const PropertyInspector: React.FC = () => {
               </section>
             )}
 
-            <section className="inspector-section">
+            <section className="inspector-section inspector-section--support">
               <label>智能音频辅助</label>
               <div className="pro-control-row">
                 <span>BGM 匹配</span>

@@ -11,6 +11,29 @@ interface LabToolbarProps {
   onOpenChannelPanel: () => void
 }
 
+const MODE_META: Record<LabMode, { index: string; title: string; summary: string }> = {
+  compare: {
+    index: '01',
+    title: '双通道比对',
+    summary: '同一素材在两路模型上并行播出，适合快速做节目判断。'
+  },
+  marketplace: {
+    index: '02',
+    title: '策略治理',
+    summary: '把路由、预算和策略超市拉进同一块播控台，控制整个实验室。'
+  },
+  creative: {
+    index: '03',
+    title: '创意闭环',
+    summary: '让提示词、工作流、生成结果和复用资产围绕主引擎运转。'
+  },
+  collab: {
+    index: '04',
+    title: '协作平台',
+    summary: 'Presence、事件流和实时频道集中到一处协作作战室。'
+  }
+}
+
 const LabToolbar: React.FC<LabToolbarProps> = ({
   labMode,
   syncPlayback,
@@ -20,25 +43,38 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
   onRefreshMarketplace,
   onOpenChannelPanel
 }) => {
+  const currentModeMeta = MODE_META[labMode]
+
   return (
     <div className="lab-toolbar" data-guide="lab-toolbar" data-testid="area-lab-toolbar">
       <div className="lab-toolbar-main">
         <div className="lab-toolbar-left">
-          <div className="lab-kicker">实验协议 / routing deck</div>
-          <div className="lab-status">
-            <span className="live-dot">●</span> 实验室在线
+          <div className="lab-toolbar-identity">
+            <div className="lab-kicker">实验协议 / routing deck</div>
+            <div className="lab-mode-deck">
+              <span className="lab-mode-index">{currentModeMeta.index}</span>
+              <div className="lab-mode-copy">
+                <strong className="lab-mode-title">{currentModeMeta.title}</strong>
+                <span className="lab-mode-summary">{currentModeMeta.summary}</span>
+              </div>
+            </div>
           </div>
-          {labMode === 'compare' ? (
-            <label className="sync-toggle">
-              <input
-                name="syncPlayback"
-                type="checkbox"
-                checked={syncPlayback}
-                onChange={(e) => onSyncPlaybackChange(e.target.checked)}
-              />
-              <span>同步预览</span>
-            </label>
-          ) : null}
+          <div className="lab-status-cluster">
+            <div className="lab-status">
+              <span className="live-dot">●</span> 实验室在线
+            </div>
+            {labMode === 'compare' ? (
+              <label className="sync-toggle">
+                <input
+                  name="syncPlayback"
+                  type="checkbox"
+                  checked={syncPlayback}
+                  onChange={(e) => onSyncPlaybackChange(e.target.checked)}
+                />
+                <span>同步预览</span>
+              </label>
+            ) : null}
+          </div>
         </div>
         <div className="lab-toolbar-cta">
           {labMode === 'compare' ? (
@@ -71,7 +107,8 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
             onClick={() => onModeChange('compare')}
             data-testid="btn-lab-mode-compare"
           >
-            对比
+            <span className="lab-mode-number">01</span>
+            <span className="lab-mode-label">对比</span>
           </button>
           <button
             id="lab-tab-marketplace"
@@ -83,7 +120,8 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
             onClick={() => onModeChange('marketplace')}
             data-testid="btn-lab-mode-marketplace"
           >
-            策略治理
+            <span className="lab-mode-number">02</span>
+            <span className="lab-mode-label">策略治理</span>
           </button>
           <button
             id="lab-tab-creative"
@@ -95,7 +133,8 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
             onClick={() => onModeChange('creative')}
             data-testid="btn-lab-mode-creative"
           >
-            创意闭环
+            <span className="lab-mode-number">03</span>
+            <span className="lab-mode-label">创意闭环</span>
           </button>
           <button
             id="lab-tab-collab"
@@ -107,7 +146,8 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
             onClick={() => onModeChange('collab')}
             data-testid="btn-lab-mode-collab"
           >
-            协作平台
+            <span className="lab-mode-number">04</span>
+            <span className="lab-mode-label">协作平台</span>
           </button>
         </div>
       </div>
