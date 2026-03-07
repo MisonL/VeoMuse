@@ -17,6 +17,30 @@ import type {
   ProjectGovernanceTemplateApplyResult
 } from '../../types'
 
+const FALLBACK_TEXT = '-'
+
+const resolveGovernanceTone = (status: string) => {
+  if (status === 'resolved' || status === 'approved') return 'success'
+  if (status === 'changes_requested') return 'warning'
+  return 'accent'
+}
+
+const resolveCommentActor = (comment: ProjectGovernanceComment) => {
+  return (
+    (comment as ProjectGovernanceComment & { createdBy?: string }).actorName ||
+    (comment as ProjectGovernanceComment & { createdBy?: string }).createdBy ||
+    FALLBACK_TEXT
+  )
+}
+
+const resolveReviewActor = (review: ProjectGovernanceReview) => {
+  return (
+    (review as ProjectGovernanceReview & { createdBy?: string }).actorName ||
+    (review as ProjectGovernanceReview & { createdBy?: string }).createdBy ||
+    FALLBACK_TEXT
+  )
+}
+
 export interface ProjectGovernanceSectionProps {
   projectId: string
   isProjectGovernanceBusy: boolean
@@ -106,12 +130,80 @@ const ProjectGovernanceSection: React.FC<ProjectGovernanceSectionProps> = ({
   onProjectClipBatchOperationsChange,
   onBatchUpdateProjectClips
 }) => {
+  const openProjectComments = projectComments.filter((item) => item.status === 'open')
+  const resolvedProjectComments = projectComments.length - openProjectComments.length
+  const approvedReviews = projectReviews.filter((item) => item.decision === 'approved').length
+  const changesRequestedReviews = projectReviews.filter(
+    (item) => item.decision === 'changes_requested'
+  ).length
+  const latestProjectComment = projectComments[0] || null
+  const latestTemplate = projectTemplates[0] || null
+  const batchRequested = projectClipBatchResult?.requested ?? 0
+  const batchAccepted = projectClipBatchResult?.accepted ?? 0
+  const batchRejected = projectClipBatchResult?.rejected ?? 0
+
   return (
     <section className="collab-card" data-testid="area-project-governance-card">
       <h4>项目治理闭环</h4>
       <div className="collab-meta">
         <span>项目 ID：{projectId || '-'}</span>
         <span>状态：{getBusyStatusText(isProjectGovernanceBusy)}</span>
+      </div>
+      <div
+        className="lab-metric-grid collab-governance-summary-grid"
+        data-testid="project-governance-watchboard"
+      >
+        <div className="lab-metric-card lab-metric-card--accent">
+          <span>开放评论</span>
+          <strong>{openProjectComments.length}</strong>
+          <small>已解决 {resolvedProjectComments} 条</small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--warning">
+          <span>评审压力</span>
+          <strong>{changesRequestedReviews}</strong>
+          <small>已批准 {approvedReviews} 条</small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--success">
+          <span>模板库存</span>
+          <strong>{projectTemplates.length}</strong>
+          <small>最新模板：{latestTemplate?.name || FALLBACK_TEXT}</small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--neutral">
+          <span>批量更新</span>
+          <strong>{batchAccepted}</strong>
+          <small>
+            请求 {batchRequested} · 拒绝 {batchRejected}
+          </small>
+        </div>
+      </div>
+      <div className="collab-watch-spotlight">
+        <div className="collab-watch-spotlight-copy">
+          <span className="collab-advanced-group-kicker">governance watch</span>
+          <strong>{openProjectComments.length + changesRequestedReviews} 个待处理事项</strong>
+          <span>
+            {latestProjectComment
+              ? `最新评论锚点 ${latestProjectComment.anchor || '未设置'}，最近更新时间 ${formatLocalTime(
+                  latestProjectComment.updatedAt
+                )}。`
+              : '评论、评审、模板与批量更新会在这里收束为项目治理节奏。'}
+          </span>
+        </div>
+        <div className="collab-watch-inline">
+          <div>
+            <b>待 Resolve</b>
+            <span>{projectSelectedCommentId || FALLBACK_TEXT}</span>
+          </div>
+          <div>
+            <b>模板回执</b>
+            <span>{projectTemplateApplyResult?.templateName || FALLBACK_TEXT}</span>
+          </div>
+          <div>
+            <b>批量回执</b>
+            <span>
+              {projectClipBatchResult ? `${batchAccepted}/${batchRequested}` : FALLBACK_TEXT}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="lab-inline-actions">
@@ -203,11 +295,24 @@ const ProjectGovernanceSection: React.FC<ProjectGovernanceSectionProps> = ({
       </div>
       <div className="collab-list">
         {takePreviewItems(projectComments, 12).map((item) => (
-          <div key={item.id} className="collab-list-item">
-            <span>{item.content}</span>
-            <span>{item.status}</span>
-            <span>{formatMentions(item.mentions)}</span>
-            <span>{formatLocalTime(item.updatedAt)}</span>
+          <div key={item.id} className="collab-list-item collab-list-item--rich">
+            <div className="collab-list-item-head">
+              <strong>{item.content}</strong>
+              <span
+                className={`lab-status-badge lab-status-badge--${resolveGovernanceTone(item.status)}`}
+              >
+                {item.status}
+              </span>
+            </div>
+            <div className="collab-list-meta">
+              <span>锚点：{item.anchor || FALLBACK_TEXT}</span>
+              <span>{formatMentions(item.mentions)}</span>
+              <span>处理人：{item.resolvedBy || resolveCommentActor(item)}</span>
+            </div>
+            <div className="collab-list-meta">
+              <span>更新：{formatLocalTime(item.updatedAt)}</span>
+              <span>创建：{formatLocalTime(item.createdAt)}</span>
+            </div>
           </div>
         ))}
         {projectComments.length === 0 ? <div className="api-empty">暂无项目评论</div> : null}
@@ -276,11 +381,20 @@ const ProjectGovernanceSection: React.FC<ProjectGovernanceSectionProps> = ({
       </div>
       <div className="collab-list">
         {takePreviewItems(projectReviews, 12).map((item) => (
-          <div key={item.id} className="collab-list-item">
-            <span>{item.decision}</span>
-            <span>{item.summary}</span>
-            <span>{item.score ?? '-'}</span>
-            <span>{formatLocalTime(item.createdAt)}</span>
+          <div key={item.id} className="collab-list-item collab-list-item--rich">
+            <div className="collab-list-item-head">
+              <strong>{item.summary}</strong>
+              <span
+                className={`lab-status-badge lab-status-badge--${resolveGovernanceTone(item.decision)}`}
+              >
+                {item.decision}
+              </span>
+            </div>
+            <div className="collab-list-meta">
+              <span>评分：{item.score ?? FALLBACK_TEXT}</span>
+              <span>评审人：{resolveReviewActor(item)}</span>
+              <span>时间：{formatLocalTime(item.createdAt)}</span>
+            </div>
           </div>
         ))}
         {projectReviews.length === 0 ? <div className="api-empty">暂无项目评审</div> : null}
@@ -330,11 +444,16 @@ const ProjectGovernanceSection: React.FC<ProjectGovernanceSectionProps> = ({
       </div>
       <div className="collab-list">
         {takePreviewItems(projectTemplates, 10).map((item) => (
-          <div key={item.id} className="collab-list-item">
-            <span>{item.name}</span>
-            <span>{item.description}</span>
-            <span>{item.createdBy}</span>
-            <span>{formatLocalTime(item.updatedAt)}</span>
+          <div key={item.id} className="collab-list-item collab-list-item--rich">
+            <div className="collab-list-item-head">
+              <strong>{item.name}</strong>
+              <span className="lab-status-badge lab-status-badge--neutral">template</span>
+            </div>
+            <div className="collab-list-item-copy">{item.description || FALLBACK_TEXT}</div>
+            <div className="collab-list-meta">
+              <span>创建人：{item.createdBy || FALLBACK_TEXT}</span>
+              <span>更新时间：{formatLocalTime(item.updatedAt)}</span>
+            </div>
           </div>
         ))}
         {projectTemplates.length === 0 ? <div className="api-empty">暂无项目模板</div> : null}

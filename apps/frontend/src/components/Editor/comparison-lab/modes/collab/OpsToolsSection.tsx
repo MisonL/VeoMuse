@@ -13,6 +13,20 @@ import type {
   V4RollbackDrillResult
 } from '../../types'
 
+const FALLBACK_TEXT = '-'
+
+const clampPercent = (value: number | null | undefined) => {
+  if (!Number.isFinite(value as number)) return 0
+  return Math.max(0, Math.min(100, Math.round(Number(value) * 100)))
+}
+
+const resolveOpsTone = (status: string | null | undefined) => {
+  if (status === 'healthy' || status === 'completed' || status === 'acknowledged') return 'success'
+  if (status === 'warning' || status === 'running') return 'warning'
+  if (status === 'critical' || status === 'failed' || status === 'open') return 'critical'
+  return 'neutral'
+}
+
 export interface OpsToolsSectionProps {
   adminToken: string
   reliabilityAlertLevel: 'all' | V4ReliabilityAlertLevel
@@ -107,10 +121,76 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
   onQueryRollbackDrill
 }) => {
   const hasAdminToken = adminToken.trim().length > 0
+  const openReliabilityAlerts = reliabilityAlerts.filter((item) => item.status === 'open')
+  const acknowledgedReliabilityAlerts = reliabilityAlerts.filter(
+    (item) => item.status === 'acknowledged'
+  )
+  const criticalReliabilityAlerts = openReliabilityAlerts.filter(
+    (item) => item.level === 'critical'
+  )
+  const budgetRemainingPercent = clampPercent(errorBudget?.evaluation.budgetRemainingRatio)
+  const budgetStatus = errorBudget?.evaluation.status || FALLBACK_TEXT
+  const rollbackStatus = rollbackDrillResult?.status || FALLBACK_TEXT
+  const watchboardMessage = !hasAdminToken
+    ? '未填写管理员令牌，值班动作仍会展示但关键运维操作不可执行。'
+    : criticalReliabilityAlerts.length > 0
+      ? `存在 ${criticalReliabilityAlerts.length} 条 critical 告警，请优先处理 ACK、错误预算和回滚演练。`
+      : errorBudget?.evaluation.status === 'critical'
+        ? '错误预算已进入 critical 区间，建议冻结发布并执行演练复核。'
+        : '当前运维态势稳定，可继续使用值班层观察告警与预算变化。'
 
   return (
     <section className="collab-card">
       <h4>运维工具</h4>
+      <div className="lab-metric-grid ops-summary-grid" data-testid="ops-watchboard">
+        <div className="lab-metric-card lab-metric-card--critical">
+          <span>开放告警</span>
+          <strong>{openReliabilityAlerts.length}</strong>
+          <small>critical {criticalReliabilityAlerts.length} 条</small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--success">
+          <span>已 ACK</span>
+          <strong>{acknowledgedReliabilityAlerts.length}</strong>
+          <small>管理员令牌：{hasAdminToken ? '已保存' : '缺失'}</small>
+        </div>
+        <div
+          className={`lab-metric-card lab-metric-card--${resolveOpsTone(errorBudget?.evaluation.status)}`}
+        >
+          <span>错误预算</span>
+          <strong>{formatRatioPercent(errorBudget?.evaluation.budgetRemainingRatio)}</strong>
+          <small>状态：{budgetStatus}</small>
+        </div>
+        <div
+          className={`lab-metric-card lab-metric-card--${resolveOpsTone(rollbackDrillResult?.status)}`}
+        >
+          <span>回滚演练</span>
+          <strong>{rollbackStatus}</strong>
+          <small>{formatLocalDateTime(rollbackDrillResult?.completedAt)}</small>
+        </div>
+      </div>
+      <div className="collab-watch-spotlight">
+        <div className="collab-watch-spotlight-copy">
+          <span className="collab-advanced-group-kicker">on-call layer</span>
+          <strong>{watchboardMessage}</strong>
+          <span>告警、错误预算和演练结果会在这一层聚合，适合作为发布前最后一道值班视图。</span>
+        </div>
+        <div className="collab-watch-inline">
+          <div>
+            <b>告警筛选</b>
+            <span>
+              {reliabilityAlertLevel}/{reliabilityAlertStatus}
+            </span>
+          </div>
+          <div>
+            <b>预算余量</b>
+            <span>{formatRatioPercent(errorBudget?.evaluation.budgetRemainingRatio)}</span>
+          </div>
+          <div>
+            <b>演练状态</b>
+            <span>{rollbackStatus}</span>
+          </div>
+        </div>
+      </div>
       <div className="lab-inline-fields">
         <label className="lab-field">
           <span>管理员令牌</span>
@@ -181,18 +261,30 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
       </div>
       <div className="collab-list">
         {reliabilityAlerts.map((item) => (
-          <div key={item.id} className="collab-list-item">
-            <span>{item.level}</span>
-            <span>{item.status}</span>
-            <span>{item.title}</span>
-            <span>{formatLocalDateTime(item.triggeredAt)}</span>
-            <span>{formatLocalDateTime(item.acknowledgedAt)}</span>
-            <button
-              disabled={!hasAdminToken || isAlertAckDisabled(isOpsBusy, item.status)}
-              onClick={() => onAcknowledgeReliabilityAlert(item.id)}
-            >
-              {getAckLabel(item.status)}
-            </button>
+          <div key={item.id} className="collab-list-item collab-list-item--rich">
+            <div className="collab-list-item-head">
+              <strong>{item.title}</strong>
+              <span className={`lab-status-badge lab-status-badge--${resolveOpsTone(item.status)}`}>
+                {item.level} · {item.status}
+              </span>
+            </div>
+            <div className="collab-list-item-copy">
+              {(item as V4ReliabilityAlert & { description?: string }).message ||
+                (item as V4ReliabilityAlert & { description?: string }).description ||
+                FALLBACK_TEXT}
+            </div>
+            <div className="collab-list-meta">
+              <span>触发：{formatLocalDateTime(item.triggeredAt)}</span>
+              <span>ACK：{formatLocalDateTime(item.acknowledgedAt)}</span>
+            </div>
+            <div className="lab-inline-actions">
+              <button
+                disabled={!hasAdminToken || isAlertAckDisabled(isOpsBusy, item.status)}
+                onClick={() => onAcknowledgeReliabilityAlert(item.id)}
+              >
+                {getAckLabel(item.status)}
+              </button>
+            </div>
           </div>
         ))}
         {reliabilityAlerts.length === 0 ? <div className="api-empty">暂无可靠性告警</div> : null}
@@ -280,6 +372,22 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
           />
         </label>
       </div>
+      <div className="ops-budget-card">
+        <div className="ops-budget-card-head">
+          <strong>错误预算可视化</strong>
+          <span>{budgetRemainingPercent}%</span>
+        </div>
+        <div className="lab-mini-progress" aria-hidden="true">
+          <span style={{ width: `${budgetRemainingPercent}%` }} />
+        </div>
+        <div className="collab-meta">
+          <span>预算余量：{errorBudget?.evaluation.budgetRemaining ?? FALLBACK_TEXT}</span>
+          <span>预算比例：{formatRatioPercent(errorBudget?.evaluation.budgetRemainingRatio)}</span>
+          <span>BurnRate：{errorBudget?.evaluation.burnRate ?? FALLBACK_TEXT}</span>
+          <span>状态：{budgetStatus}</span>
+          <span>演练：{rollbackStatus}</span>
+        </div>
+      </div>
       <div className="lab-inline-fields">
         <label className="lab-field">
           <span>policyId</span>
@@ -356,22 +464,25 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
           查询演练结果
         </button>
       </div>
-      <div className="collab-meta">
-        <span>预算余量：{errorBudget?.evaluation.budgetRemaining ?? '-'}</span>
-        <span>
-          预算比例：
-          {formatRatioPercent(errorBudget?.evaluation.budgetRemainingRatio)}
-        </span>
-        <span>BurnRate：{errorBudget?.evaluation.burnRate ?? '-'}</span>
-        <span>状态：{errorBudget?.evaluation.status ?? '-'}</span>
-        <span>演练：{rollbackDrillResult?.status || '-'}</span>
-      </div>
       <div className="collab-list">
         {rollbackDrillResult ? (
-          <div className="collab-list-item">
-            <span>{rollbackDrillResult.id}</span>
-            <span>{rollbackDrillResult.status}</span>
-            <span>{formatLocalTime(rollbackDrillResult.completedAt)}</span>
+          <div className="collab-list-item collab-list-item--rich">
+            <div className="collab-list-item-head">
+              <strong>{rollbackDrillResult.id}</strong>
+              <span
+                className={`lab-status-badge lab-status-badge--${resolveOpsTone(rollbackDrillResult.status)}`}
+              >
+                {rollbackDrillResult.status}
+              </span>
+            </div>
+            <div className="collab-list-meta">
+              <span>环境：{rollbackDrillResult.environment}</span>
+              <span>触发：{rollbackDrillResult.triggerType}</span>
+              <span>完成：{formatLocalTime(rollbackDrillResult.completedAt)}</span>
+            </div>
+            <div className="collab-list-item-copy">
+              {rollbackDrillResult.summary || FALLBACK_TEXT}
+            </div>
           </div>
         ) : (
           <div className="api-empty">暂无回滚演练结果</div>

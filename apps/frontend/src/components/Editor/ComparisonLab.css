@@ -239,6 +239,145 @@
   color: var(--ap-text);
 }
 
+.lab-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 10px;
+}
+
+.lab-metric-card {
+  min-height: 96px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  background:
+    radial-gradient(circle at 88% 14%, rgba(255, 255, 255, 0.22), transparent 24%),
+    color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+
+.lab-metric-card span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-text-dim) 76%, var(--ap-accent) 24%);
+}
+
+.lab-metric-card strong {
+  font-family: var(--ap-font-display);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.lab-metric-card small {
+  color: var(--ap-text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.lab-metric-card--accent {
+  border-color: color-mix(in srgb, var(--ap-accent) 24%, var(--ap-border));
+  background:
+    radial-gradient(
+      circle at 88% 12%,
+      color-mix(in srgb, var(--ap-accent-soft) 30%, transparent),
+      transparent 28%
+    ),
+    color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+}
+
+.lab-metric-card--success {
+  border-color: rgba(34, 197, 94, 0.26);
+  background:
+    radial-gradient(circle at 88% 12%, rgba(34, 197, 94, 0.14), transparent 28%),
+    color-mix(in srgb, #ecfdf5 72%, var(--ap-surface) 28%);
+}
+
+.lab-metric-card--warning {
+  border-color: rgba(245, 158, 11, 0.3);
+  background:
+    radial-gradient(circle at 88% 12%, rgba(245, 158, 11, 0.16), transparent 28%),
+    color-mix(in srgb, #fffbeb 72%, var(--ap-surface) 28%);
+}
+
+.lab-metric-card--critical {
+  border-color: rgba(239, 68, 68, 0.3);
+  background:
+    radial-gradient(circle at 88% 12%, rgba(239, 68, 68, 0.16), transparent 28%),
+    color-mix(in srgb, #fef2f2 70%, var(--ap-surface) 30%);
+}
+
+.lab-metric-card--neutral {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(148, 163, 184, 0.18), transparent 28%),
+    color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%);
+}
+
+.lab-mini-progress {
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 84%, #ffffff 16%);
+  background: color-mix(in srgb, var(--ap-panel) 92%, #ffffff 8%);
+  overflow: hidden;
+}
+
+.lab-mini-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ap-accent) 92%, #1d4ed8 8%),
+    color-mix(in srgb, var(--ap-signal) 76%, #22c55e 24%)
+  );
+}
+
+.lab-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ap-border);
+  background: color-mix(in srgb, var(--ap-panel) 92%, #ffffff 8%);
+  color: var(--ap-text-dim);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.lab-status-badge--accent {
+  color: color-mix(in srgb, var(--ap-accent) 84%, #1d4ed8 16%);
+  border-color: color-mix(in srgb, var(--ap-accent) 34%, var(--ap-border));
+  background: color-mix(in srgb, var(--ap-accent-soft) 72%, #ffffff 28%);
+}
+
+.lab-status-badge--success {
+  color: #166534;
+  border-color: rgba(34, 197, 94, 0.4);
+  background: color-mix(in srgb, #22c55e 14%, #ecfdf5 86%);
+}
+
+.lab-status-badge--warning {
+  color: #92400e;
+  border-color: rgba(245, 158, 11, 0.4);
+  background: color-mix(in srgb, #f59e0b 16%, #fffbeb 84%);
+}
+
+.lab-status-badge--critical {
+  color: #991b1b;
+  border-color: rgba(239, 68, 68, 0.42);
+  background: color-mix(in srgb, #ef4444 14%, #fef2f2 86%);
+}
+
+.lab-status-badge--neutral {
+  color: #475569;
+}
+
 .lab-split-engine {
   flex: 1;
   min-height: 0;
@@ -780,6 +919,13 @@
   gap: 6px;
 }
 
+.creative-scene-item--rich,
+.collab-list-item--rich {
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
 .scene-headline {
   display: flex;
   align-items: center;
@@ -798,6 +944,36 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  font-size: 10px;
+  color: var(--ap-text-dim);
+}
+
+.collab-list-item--rich {
+  grid-template-columns: 1fr;
+}
+
+.collab-list-item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.collab-list-item-head strong {
+  font-size: 12px;
+  color: var(--ap-text);
+}
+
+.collab-list-item-copy {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+  line-height: 1.45;
+}
+
+.collab-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
   font-size: 10px;
   color: var(--ap-text-dim);
 }
@@ -1213,6 +1389,130 @@
 
 .video-generation-pagination-sep {
   color: color-mix(in srgb, var(--ap-border) 82%, var(--ap-text) 18%);
+}
+
+.video-generation-overview-grid {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.video-generation-focus-panel {
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 74%, var(--ap-accent) 26%);
+  background:
+    radial-gradient(
+      circle at 92% 12%,
+      color-mix(in srgb, var(--ap-accent-soft) 24%, transparent),
+      transparent 28%
+    ),
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+  display: grid;
+  gap: 10px;
+}
+
+.video-generation-focus-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.video-generation-focus-copy strong {
+  font-family: var(--ap-font-display);
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.video-generation-focus-copy span:last-child {
+  color: var(--ap-text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.video-generation-focus-copy--detail {
+  padding-top: 8px;
+  border-top: 1px dashed color-mix(in srgb, var(--ap-border) 72%, var(--ap-accent) 28%);
+}
+
+.video-generation-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.video-generation-focus-card {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 78%, #ffffff 22%);
+  background: color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%);
+  display: grid;
+  gap: 4px;
+}
+
+.video-generation-focus-card span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-text-dim) 76%, var(--ap-accent) 24%);
+}
+
+.video-generation-focus-card strong {
+  font-size: 12px;
+  color: var(--ap-text);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.video-generation-focus-card small {
+  color: var(--ap-text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.video-generation-job-progress {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.video-generation-job-progress-label,
+.video-generation-job-progress-value {
+  font-size: 10px;
+  color: var(--ap-text-dim);
+  white-space: nowrap;
+}
+
+.video-generation-job-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 84%, #ffffff 16%);
+  background: color-mix(in srgb, var(--ap-panel) 92%, #ffffff 8%);
+  overflow: hidden;
+}
+
+.video-generation-job-progress-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ap-accent) 88%, #1d4ed8 12%),
+    color-mix(in srgb, var(--ap-signal) 72%, #22c55e 28%)
+  );
+}
+
+.video-generation-output-link {
+  width: fit-content;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ap-accent);
+  text-decoration: none;
+}
+
+.video-generation-output-link:hover {
+  text-decoration: underline;
 }
 
 .collab-shell {
@@ -1637,9 +1937,21 @@
 .comparison-lab-pro {
   border-radius: 22px;
   background:
-    radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--ap-accent) 9%, transparent), transparent 26%),
-    radial-gradient(circle at 86% 12%, color-mix(in srgb, var(--ap-signal) 8%, transparent), transparent 22%),
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 92%, #ffffff 8%), color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%));
+    radial-gradient(
+      circle at 12% 10%,
+      color-mix(in srgb, var(--ap-accent) 9%, transparent),
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 86% 12%,
+      color-mix(in srgb, var(--ap-signal) 8%, transparent),
+      transparent 22%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%)
+    );
 }
 
 .lab-toolbar {
@@ -1648,12 +1960,11 @@
   padding: 12px 14px 14px;
   border-bottom-style: dashed;
   border-bottom-color: color-mix(in srgb, var(--ap-border) 72%, var(--ap-accent) 28%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
-      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
 }
 
 .lab-status {
@@ -1668,23 +1979,21 @@
 }
 
 .lab-btn:not(.lab-btn--secondary) {
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
-      color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
-    );
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
+    color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
+  );
   color: #fff8ef;
   box-shadow: 0 12px 20px var(--ap-accent-glow);
 }
 
 .lab-btn--secondary {
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--ap-signal) 16%, var(--ap-surface) 84%),
-      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-    );
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-signal) 16%, var(--ap-surface) 84%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
   color: color-mix(in srgb, var(--ap-text) 84%, var(--ap-signal) 16%);
 }
 
@@ -1705,12 +2014,11 @@
 
 .lab-mode-switch {
   padding: 4px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-card) 90%, #ffffff 10%),
-      color-mix(in srgb, var(--ap-panel) 82%, #ffffff 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-card) 90%, #ffffff 10%),
+    color-mix(in srgb, var(--ap-panel) 82%, #ffffff 18%)
+  );
 }
 
 .lab-mode-btn {
@@ -1722,12 +2030,11 @@
 }
 
 .lab-mode-btn.active {
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
-      color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
-    );
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
+    color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
+  );
   color: #fff8ef;
   box-shadow: 0 10px 16px var(--ap-accent-glow);
 }
@@ -1741,12 +2048,11 @@
 .channel-row-controls select {
   border-radius: 14px;
   padding: 9px 11px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
-      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
 }
 
 .marketplace-policy,
@@ -1758,12 +2064,11 @@
 .video-generation-card {
   border-radius: 18px;
   border-color: color-mix(in srgb, var(--ap-border) 82%, var(--ap-outline) 18%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
     0 14px 28px rgba(70, 46, 18, 0.1);
@@ -1794,12 +2099,11 @@
 .video-generation-polling-hint,
 .video-generation-terminal-collapsed {
   border-radius: 14px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-signal-soft) 42%, var(--ap-surface) 58%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-signal-soft) 42%, var(--ap-surface) 58%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
 }
 
 .policy-budget-guard,
@@ -1827,19 +2131,22 @@
 .market-metrics > div,
 .creative-summary > div {
   border-radius: 14px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%),
-      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
   border: 1px solid color-mix(in srgb, var(--ap-border) 76%, transparent);
   padding: 10px;
 }
 
 .video-generation-card {
   background:
-    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--ap-accent-soft) 40%, transparent), transparent 24%),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 40%, transparent),
+      transparent 24%
+    ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
@@ -1856,12 +2163,11 @@
 .channel-panel {
   border-radius: 24px;
   border-color: color-mix(in srgb, var(--ap-accent) 32%, var(--ap-outline) 68%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 97%, #ffffff 3%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 97%, #ffffff 3%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   box-shadow:
     0 28px 60px rgba(15, 23, 42, 0.34),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
@@ -1960,9 +2266,21 @@
 .comparison-lab-pro {
   padding: 12px;
   background:
-    radial-gradient(circle at 16% 12%, color-mix(in srgb, var(--ap-accent-soft) 42%, transparent), transparent 28%),
-    radial-gradient(circle at 90% 16%, color-mix(in srgb, var(--ap-signal-soft) 44%, transparent), transparent 22%),
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-panel) 86%, #ffffff 14%), color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%));
+    radial-gradient(
+      circle at 16% 12%,
+      color-mix(in srgb, var(--ap-accent-soft) 42%, transparent),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 90% 16%,
+      color-mix(in srgb, var(--ap-signal-soft) 44%, transparent),
+      transparent 22%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 86%, #ffffff 14%),
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%)
+    );
 }
 
 .lab-stage-shell {
@@ -1981,7 +2299,11 @@
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-outline) 28%);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%), color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    ),
     repeating-linear-gradient(180deg, transparent 0 20px, var(--ap-grid-line) 20px 21px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
@@ -2006,7 +2328,11 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   color: #fff8ef;
-  background: linear-gradient(165deg, color-mix(in srgb, var(--ap-accent) 88%, #ffffff 12%), color-mix(in srgb, var(--ap-accent-strong) 82%, #081736 18%));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 88%, #ffffff 12%),
+    color-mix(in srgb, var(--ap-accent-strong) 82%, #081736 18%)
+  );
   box-shadow: 0 12px 22px var(--ap-accent-glow);
 }
 
@@ -2064,7 +2390,11 @@
 .lab-stage-marker.active {
   border-color: color-mix(in srgb, var(--ap-accent) 54%, #ffffff 46%);
   color: var(--ap-text);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-accent-soft) 68%, #ffffff 32%), color-mix(in srgb, var(--ap-card) 84%, #ffffff 16%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-accent-soft) 68%, #ffffff 32%),
+    color-mix(in srgb, var(--ap-card) 84%, #ffffff 16%)
+  );
 }
 
 .lab-stage-marker-index {
@@ -2116,8 +2446,16 @@
   border-bottom: none;
   border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-outline) 28%);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%), color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)),
-    radial-gradient(circle at 16% 10%, color-mix(in srgb, var(--ap-accent-soft) 34%, transparent), transparent 28%);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    ),
+    radial-gradient(
+      circle at 16% 10%,
+      color-mix(in srgb, var(--ap-accent-soft) 34%, transparent),
+      transparent 28%
+    );
 }
 
 .lab-toolbar-main {
@@ -2162,7 +2500,11 @@
   padding: 12px 14px;
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 74%, #ffffff 26%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%), color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
 }
 
 .lab-mode-btn .lab-mode-label {
@@ -2202,7 +2544,11 @@
   height: 68px;
   border-radius: 22px;
   border: 1px solid color-mix(in srgb, var(--ap-signal) 48%, #ffffff 52%);
-  background: linear-gradient(165deg, color-mix(in srgb, var(--ap-signal) 86%, #ffffff 14%), color-mix(in srgb, var(--ap-signal) 72%, #7c2d12 28%));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-signal) 86%, #ffffff 14%),
+    color-mix(in srgb, var(--ap-signal) 72%, #7c2d12 28%)
+  );
   color: #fff8ef;
   box-shadow: 0 14px 24px var(--ap-signal-soft);
 }
@@ -2212,7 +2558,11 @@
 .comparison-lab-pro[data-lab-mode='marketplace'] .lab-panel-slot {
   border-radius: 22px;
   overflow: hidden;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%), color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-outline) 28%);
 }
 
@@ -2321,9 +2671,21 @@
   padding: 16px;
   border-radius: 24px;
   background:
-    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--ap-accent-soft) 34%, transparent), transparent 22%),
-    radial-gradient(circle at 12% 88%, color-mix(in srgb, var(--ap-signal-soft) 26%, transparent), transparent 28%),
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%), color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%));
+    radial-gradient(
+      circle at 82% 12%,
+      color-mix(in srgb, var(--ap-accent-soft) 34%, transparent),
+      transparent 22%
+    ),
+    radial-gradient(
+      circle at 12% 88%,
+      color-mix(in srgb, var(--ap-signal-soft) 26%, transparent),
+      transparent 28%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    );
   border-color: color-mix(in srgb, var(--ap-accent) 40%, var(--ap-border));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.82),
@@ -2343,7 +2705,11 @@
 
 .creative-ops-card--archive .creative-card {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%), color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%)
+    ),
     repeating-linear-gradient(180deg, transparent 0 18px, var(--ap-grid-line) 18px 19px);
 }
 
@@ -2466,6 +2832,63 @@
 .video-generation-job-list {
   min-height: 0;
   flex: 1;
+}
+
+.workflow-stage-layout,
+.batch-job-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(240px, 0.92fr);
+  gap: 12px;
+}
+
+.workflow-stage-compose,
+.workflow-stage-sidebar,
+.batch-job-compose,
+.batch-job-progress-panel {
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.workflow-focus-card,
+.asset-reuse-route-spotlight,
+.ops-budget-card {
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 74%, var(--ap-accent) 26%);
+  background:
+    radial-gradient(
+      circle at 92% 12%,
+      color-mix(in srgb, var(--ap-accent-soft) 22%, transparent),
+      transparent 28%
+    ),
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+  display: grid;
+  gap: 8px;
+}
+
+.workflow-focus-card strong,
+.asset-reuse-route-spotlight strong {
+  font-family: var(--ap-font-display);
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.workflow-focus-card span:last-child,
+.asset-reuse-route-spotlight span:last-child {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+  line-height: 1.45;
+}
+
+.batch-job-progress-panel {
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+  background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
 }
 
 .asset-reuse-panels {
@@ -2598,7 +3021,11 @@
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--ap-signal) 28%, var(--ap-border));
   background:
-    radial-gradient(circle at 90% 10%, color-mix(in srgb, var(--ap-signal-soft) 26%, transparent), transparent 26%),
+    radial-gradient(
+      circle at 90% 10%,
+      color-mix(in srgb, var(--ap-signal-soft) 26%, transparent),
+      transparent 26%
+    ),
     color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
 }
 
@@ -2618,6 +3045,99 @@
 .collab-governance-deck {
   display: grid;
   gap: 12px;
+}
+
+.collab-watch-spotlight {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+  background:
+    radial-gradient(
+      circle at 92% 12%,
+      color-mix(in srgb, var(--ap-accent-soft) 20%, transparent),
+      transparent 28%
+    ),
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+}
+
+.collab-watch-spotlight-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.collab-watch-spotlight-copy strong {
+  font-family: var(--ap-font-display);
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.collab-watch-spotlight-copy span:last-child {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+  line-height: 1.45;
+}
+
+.collab-watch-inline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.collab-watch-inline > div,
+.collab-conflict-item {
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 80%, #ffffff 20%);
+  background: color-mix(in srgb, var(--ap-panel) 90%, #ffffff 10%);
+  display: grid;
+  gap: 4px;
+}
+
+.collab-watch-inline b,
+.collab-conflict-item strong,
+.ops-budget-card-head strong {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-text-dim) 76%, var(--ap-accent) 24%);
+}
+
+.collab-watch-inline span,
+.collab-conflict-item span {
+  font-size: 11px;
+  color: var(--ap-text);
+  line-height: 1.45;
+}
+
+.collab-watch-callout {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-accent) 28%);
+  background: color-mix(in srgb, var(--ap-accent-soft) 34%, transparent);
+  display: grid;
+  gap: 4px;
+}
+
+.collab-watch-callout strong {
+  font-size: 11px;
+  color: var(--ap-text);
+}
+
+.collab-watch-callout span,
+.collab-advanced-group-copy {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+  line-height: 1.45;
+}
+
+.collab-conflict-list {
+  display: grid;
+  gap: 8px;
 }
 
 .collab-advanced-grid {
@@ -2649,10 +3169,27 @@
   border-style: dashed;
 }
 
+.ops-budget-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ops-budget-card-head span {
+  font-family: var(--ap-font-display);
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
 @container lab-frame (max-width: 1460px) {
   .creative-hero-stage,
   .creative-support-grid,
   .creative-ops-rail,
+  .workflow-stage-layout,
+  .batch-job-layout,
   .collab-command-stage,
   .collab-live-grid,
   .collab-advanced-grid,
@@ -2691,12 +3228,16 @@
 @media (max-width: 720px) {
   .video-generation-status-ribbon,
   .video-generation-command-bar,
+  .video-generation-focus-grid,
+  .workflow-stage-layout,
+  .batch-job-layout,
   .asset-reuse-panels,
   .collab-command-stage,
   .collab-live-grid,
   .comment-threads-desk-layout,
   .collab-split--live,
-  .collab-advanced-grid {
+  .collab-advanced-grid,
+  .collab-watch-inline {
     grid-template-columns: 1fr;
   }
 

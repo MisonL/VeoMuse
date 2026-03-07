@@ -19,6 +19,46 @@ import {
   resolveVideoGenerationStatusBadgeModifier
 } from '../creativeModePanel.logic'
 
+const FALLBACK_TEXT = '-'
+
+const formatLocalDateTime = (value: string | null | undefined) => {
+  const text = String(value || '').trim()
+  if (!text) return FALLBACK_TEXT
+  const date = new Date(text)
+  return Number.isNaN(date.getTime()) ? FALLBACK_TEXT : date.toLocaleString()
+}
+
+const formatDurationMs = (value: number | null | undefined) => {
+  if (!Number.isFinite(value as number)) return FALLBACK_TEXT
+  const durationMs = Number(value)
+  if (durationMs >= 60_000) {
+    return `${(durationMs / 60_000).toFixed(durationMs >= 600_000 ? 0 : 1)} 分钟`
+  }
+  if (durationMs >= 1_000) {
+    return `${(durationMs / 1_000).toFixed(durationMs >= 10_000 ? 0 : 1)} 秒`
+  }
+  return `${durationMs} ms`
+}
+
+const resolveVideoGenerationProgress = (status: VideoGenerationJobStatus) => {
+  switch (status) {
+    case 'queued':
+      return 16
+    case 'submitted':
+      return 38
+    case 'processing':
+      return 72
+    case 'cancel_requested':
+      return 84
+    case 'succeeded':
+    case 'failed':
+    case 'canceled':
+      return 100
+    default:
+      return 0
+  }
+}
+
 export interface VideoGenerationWorkbenchProps {
   geminiQuickCheck: GeminiQuickCheckState
   videoGenerationMode: VideoGenerationMode
@@ -148,6 +188,45 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
   })
   const selectedVideoGenerationJobId = videoGenerationSelectedJobId.trim()
   const hasSelectedVideoGenerationJob = selectedVideoGenerationJobId.length > 0
+  const selectedVideoGenerationJob =
+    sortedVideoGenerationJobs.find((job) => job.id === selectedVideoGenerationJobId) || null
+  const focusVideoGenerationJob =
+    selectedVideoGenerationJob ||
+    activeVideoGenerationJobs[0] ||
+    sortedVideoGenerationJobs[0] ||
+    null
+  const succeededVideoGenerationJobs = terminalVideoGenerationJobs.filter(
+    (job) => job.status === 'succeeded'
+  )
+  const failedVideoGenerationJobs = terminalVideoGenerationJobs.filter(
+    (job) => job.status === 'failed'
+  )
+  const canceledVideoGenerationJobs = terminalVideoGenerationJobs.filter(
+    (job) => job.status === 'canceled'
+  )
+  const averageSucceededDurationMs = succeededVideoGenerationJobs.reduce((sum, job) => {
+    return sum + (Number.isFinite(job.durationMs as number) ? Number(job.durationMs) : 0)
+  }, 0)
+  const averageSucceededDurationText =
+    succeededVideoGenerationJobs.length > 0
+      ? formatDurationMs(averageSucceededDurationMs / succeededVideoGenerationJobs.length)
+      : FALLBACK_TEXT
+  const latestSucceededJob = succeededVideoGenerationJobs[0] || null
+  const focusPromptValue = focusVideoGenerationJob?.request?.['prompt']
+  const focusTextValue = focusVideoGenerationJob?.request?.['text']
+  const focusPrompt = normalizeVideoGenerationDisplayText(
+    typeof focusPromptValue === 'string'
+      ? focusPromptValue
+      : typeof focusTextValue === 'string'
+        ? focusTextValue
+        : ''
+  )
+  const focusErrorText = normalizeVideoGenerationDisplayText(focusVideoGenerationJob?.errorMessage)
+  const focusOutputText = normalizeVideoGenerationDisplayText(focusVideoGenerationJob?.outputUrl)
+  const focusProgressValue = focusVideoGenerationJob
+    ? resolveVideoGenerationProgress(focusVideoGenerationJob.status)
+    : 0
+  const focusProviderStatus = focusVideoGenerationJob?.providerStatus || FALLBACK_TEXT
   const isVideoGenerationAdvancedInputsOpen =
     showVideoGenerationAdvancedInputs || requiredVideoInputs.length > 0
 
@@ -209,6 +288,36 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
             后端自动同步终态已启用，前端自动轮询仅刷新展示。
           </span>
           <span className="video-generation-polling-time">最近轮询：{latestAutoSyncText}</span>
+        </div>
+      </div>
+
+      <div
+        className="lab-metric-grid video-generation-overview-grid"
+        data-testid="video-generation-overview"
+      >
+        <div className="lab-metric-card lab-metric-card--accent">
+          <span>活跃任务</span>
+          <strong>{activeVideoGenerationJobs.length}</strong>
+          <small>
+            总任务 {sortedVideoGenerationJobs.length}，当前筛选 {videoGenerationStatusFilter}
+          </small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--success">
+          <span>成功交付</span>
+          <strong>{succeededVideoGenerationJobs.length}</strong>
+          <small>最近成功：{formatLocalDateTime(latestSucceededJob?.finishedAt)}</small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--warning">
+          <span>异常回收</span>
+          <strong>{failedVideoGenerationJobs.length + canceledVideoGenerationJobs.length}</strong>
+          <small>
+            失败 {failedVideoGenerationJobs.length} · 取消 {canceledVideoGenerationJobs.length}
+          </small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--neutral">
+          <span>平均耗时</span>
+          <strong>{averageSucceededDurationText}</strong>
+          <small>仅统计成功完成的任务</small>
         </div>
       </div>
 
@@ -345,9 +454,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
                 name="videoGenerationInputSourceType"
                 value={videoGenerationInputSourceType}
                 onChange={(event) =>
-                  onVideoGenerationInputSourceTypeChange(
-                    event.target.value as VideoInputSourceType
-                  )
+                  onVideoGenerationInputSourceTypeChange(event.target.value as VideoInputSourceType)
                 }
               >
                 <option value="url">url</option>
@@ -443,6 +550,75 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
               {showAllTerminalVideoJobs ? '折叠终态任务' : '展开终态任务'}
             </button>
           </div>
+
+          <div className="video-generation-focus-panel" data-testid="video-generation-focus-panel">
+            <div className="video-generation-focus-copy">
+              <span className="creative-section-kicker">result spotlight</span>
+              <strong>{focusVideoGenerationJob?.id || '暂无焦点任务'}</strong>
+              <span>
+                {focusVideoGenerationJob
+                  ? `${focusVideoGenerationJob.generationMode} · ${focusVideoGenerationJob.modelId} · ${resolveVideoGenerationStatusText(
+                      focusVideoGenerationJob.status
+                    )}`
+                  : '提交或选中一个任务后，这里会聚合输出、耗时与同步状态。'}
+              </span>
+            </div>
+            {focusVideoGenerationJob ? (
+              <>
+                <div className="video-generation-job-progress">
+                  <span
+                    className={`video-generation-status-badge ${resolveVideoGenerationStatusBadgeModifier(
+                      focusVideoGenerationJob.status
+                    )}`}
+                  >
+                    {resolveVideoGenerationStatusText(focusVideoGenerationJob.status)}
+                  </span>
+                  <div className="video-generation-job-progress-bar" aria-hidden="true">
+                    <span style={{ width: `${focusProgressValue}%` }} />
+                  </div>
+                  <span className="video-generation-job-progress-value">{focusProgressValue}%</span>
+                </div>
+                <div className="video-generation-focus-grid">
+                  <div className="video-generation-focus-card">
+                    <span>输出焦点</span>
+                    <strong>{focusOutputText}</strong>
+                    {focusVideoGenerationJob.outputUrl ? (
+                      <a
+                        className="video-generation-output-link"
+                        href={focusVideoGenerationJob.outputUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        打开输出
+                      </a>
+                    ) : (
+                      <small>当前尚未产出可访问链接</small>
+                    )}
+                  </div>
+                  <div className="video-generation-focus-card">
+                    <span>执行窗口</span>
+                    <strong>{formatDurationMs(focusVideoGenerationJob.durationMs)}</strong>
+                    <small>
+                      创建 {formatLocalDateTime(focusVideoGenerationJob.createdAt)} · 开始{' '}
+                      {formatLocalDateTime(focusVideoGenerationJob.startedAt)}
+                    </small>
+                  </div>
+                  <div className="video-generation-focus-card">
+                    <span>渠道同步</span>
+                    <strong>{focusProviderStatus}</strong>
+                    <small>
+                      完成 {formatLocalDateTime(focusVideoGenerationJob.finishedAt)} · 最近同步{' '}
+                      {formatLocalDateTime(focusVideoGenerationJob.lastSyncedAt)}
+                    </small>
+                  </div>
+                </div>
+                <div className="video-generation-focus-copy video-generation-focus-copy--detail">
+                  <span>Prompt：{focusPrompt}</span>
+                  <span>错误：{focusErrorText}</span>
+                </div>
+              </>
+            ) : null}
+          </div>
         </aside>
       </div>
 
@@ -515,6 +691,33 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
                     最近同步：{job.lastSyncedAt ? new Date(job.lastSyncedAt).toLocaleString() : '-'}
                   </span>
                 </div>
+                <div className="video-generation-job-progress">
+                  <span className="video-generation-job-progress-label">
+                    进度 {resolveVideoGenerationProgress(job.status)}%
+                  </span>
+                  <div className="video-generation-job-progress-bar" aria-hidden="true">
+                    <span style={{ width: `${resolveVideoGenerationProgress(job.status)}%` }} />
+                  </div>
+                  <span className="video-generation-job-progress-value">
+                    耗时 {formatDurationMs(job.durationMs)}
+                  </span>
+                </div>
+                <div className="video-generation-job-meta">
+                  <span>创建：{formatLocalDateTime(job.createdAt)}</span>
+                  <span>开始：{formatLocalDateTime(job.startedAt)}</span>
+                  <span>完成：{formatLocalDateTime(job.finishedAt)}</span>
+                  <span>操作者：{job.createdBy || FALLBACK_TEXT}</span>
+                </div>
+                {job.outputUrl ? (
+                  <a
+                    className="video-generation-output-link"
+                    href={job.outputUrl}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    打开输出
+                  </a>
+                ) : null}
                 <div className="video-generation-job-actions">
                   <button
                     disabled={
