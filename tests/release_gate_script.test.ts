@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { createSteps } from '../scripts/release-gate/config'
 import {
   buildRealE2EPrecheckMessage,
   buildReleaseGateFailureReport,
@@ -261,6 +262,20 @@ describe('发布门禁脚本策略', () => {
       })
       expect(result.failure?.domain).toBe(item.expected)
     }
+  })
+
+  it('release gate 应继续把 E2E Smoke 指向前端 smoke 主入口', () => {
+    const steps = createSteps({
+      sloMode: 'soft',
+      runRealE2E: false,
+      sloApiBase: 'http://127.0.0.1:33117',
+      sloCheckRetries: 1
+    })
+    const smokeStep = steps.find((step) => step.name === 'E2E Smoke')
+
+    expect(smokeStep?.command).toBe('bun run e2e:smoke -- --workers=1')
+    expect(smokeStep?.commandArgs).toEqual(['bun', 'run', 'e2e:smoke', '--', '--workers=1'])
+    expect(steps.some((step) => String(step.command).includes('docker_smoke_check'))).toBe(false)
   })
 
   it('resolveFailureDomain 应在无规则匹配时返回 unknown', () => {

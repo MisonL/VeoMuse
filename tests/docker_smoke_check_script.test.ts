@@ -13,8 +13,11 @@ import {
   TELEMETRY_ENTRY_MARKERS,
   resolveJavaScriptAssetUrl,
   resolveMissingLabEntryMarkers,
+  resolveMissingTelemetryEntryMarkers,
   resolveMissingSecurityHeaders
 } from '../scripts/docker_smoke_check'
+import { readFileSync } from 'fs'
+import path from 'path'
 
 describe('docker smoke 脚本辅助逻辑', () => {
   it('应解析参数并规范化 baseUrl', () => {
@@ -89,6 +92,24 @@ describe('docker smoke 脚本辅助逻辑', () => {
     expect(TELEMETRY_ENTRY_MARKERS).toContain('系统监控与当前创作工位并行值守')
   })
 
+  it('应识别系统监控入口标识缺失与 split bundle 拼接通过', () => {
+    const fullBundle = `
+      ${TELEMETRY_ENTRY_MARKERS.join('\n')}
+      data-active-tab="lab"
+    `
+    expect(resolveMissingTelemetryEntryMarkers(fullBundle)).toEqual([])
+
+    const splitBundles = [
+      '系统监控 系统监控正在值守',
+      '系统监控与当前创作工位并行值守 ops watch / live audit'
+    ]
+    expect(resolveMissingTelemetryEntryMarkers(splitBundles)).toEqual([])
+
+    const missing = resolveMissingTelemetryEntryMarkers('系统监控 ops watch / live audit')
+    expect(missing).toContain('系统监控正在值守')
+    expect(missing).toContain('系统监控与当前创作工位并行值守')
+  })
+
   it('应从入口脚本中递归识别拆包 JS 依赖', () => {
     const scriptContent = `
       import "./rolldown-runtime-COnpUsM8.js";
@@ -146,5 +167,14 @@ describe('docker smoke 脚本辅助逻辑', () => {
     expect(parseHttpStatusCode('HTTP/1.1 101 Switching Protocols\r\n\r\n')).toBe(101)
     expect(parseHttpStatusCode('HTTP/1.1 200 OK\r\n\r\n')).toBe(200)
     expect(parseHttpStatusCode('invalid')).toBeNull()
+  })
+
+  it('runSmokeCheck 应串入系统监控入口探测调用', () => {
+    const source = readFileSync(
+      path.resolve(process.cwd(), 'scripts/docker_smoke_check.ts'),
+      'utf8'
+    )
+    expect(source).toContain('await probeFrontendLabEntries(baseUrl, assetPaths)')
+    expect(source).toContain('await probeFrontendTelemetryEntries(baseUrl, assetPaths)')
   })
 })
