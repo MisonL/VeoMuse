@@ -3,6 +3,14 @@
 本文用于快速审阅当前项目已经接线完成、并已通过本地/Mock 回归验证的核心能力。
 涉及真实第三方 Provider 的链路，仍需在配置真实凭据后执行 `release:gate:real` 做最终确认。
 
+## 当前研发状态（2026-03-07）
+
+- 当前仓库已满足“研发结项”口径，详见 `docs/RD_CLOSURE_2026-03-07.md`。
+- 本地代码、质量门禁与 Docker Compose 正式复核均已完成。
+- 当前仍未完成的事项仅包括：
+  - 目标正式部署环境的 Docker 留痕复核
+  - 真实凭据就绪后的 `release:gate:real`
+
 ## 1. AI 创作引擎
 
 ### 1.1 视频生成与导演能力
@@ -84,6 +92,7 @@
 - 近期模块化收敛（2026-03）：
   - 后端 HTTP 入口已按领域拆分为 `appMetaRoutes`、`authRoutes`、`organizationRoutes`、`channelConfigRoutes`、`journeyTelemetryRoutes`、`modelRoutes`、`videoGenerationRoutes`、`aiRoutes`、`workspaceRoutes`、`projectGovernanceRoutes`、`storageRoutes`、`v4*Routes`。
   - 后端启动时调度迁入 `apps/backend/src/runtime/bootstrap.ts`，`index.ts` 仅保留 app 构造与启动骨架。
+  - 后端四个大服务已完成第一轮 façade 化拆分：`LocalDatabaseService`、`WorkspaceService`、`ModelMarketplaceService`、`VideoGenerationService`。
   - 前端 `ComparisonLab` 已拆出 `useAuthOrganizationChannelManager`、`useWorkspaceCollaborationManager`、`useV4OpsManager`、`useVideoGenerationManager`、`useCompareModeManager`、`useCreativeRunManager`。
   - 前端 `TelemetryDashboard` 已拆出概览、Provider 健康、治理预览、数据库摘要和 SLO 数据列表组件。
 - 关键测试：`tests/editor_store.test.ts`、`tests/player_sync.test.ts`、`tests/composition_api.test.ts`、`tests/layout_math.test.ts`。

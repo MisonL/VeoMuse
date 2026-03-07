@@ -2,6 +2,8 @@
 
 VeoMuse 是一个基于 Bun Monorepo 的 AI 视频创作与协作平台，面向团队化视频生产场景，覆盖素材编辑、模型路由、创意工作流、协作评审、可观测性与发布门禁。
 
+当前研发结项总览见 [docs/RD_CLOSURE_2026-03-07.md](docs/RD_CLOSURE_2026-03-07.md)。
+
 ## 项目范围
 
 - 创意生产：文本/图片转视频、导演分析、提示词增强、镜头建议、智能剪辑。
@@ -139,9 +141,9 @@ bun run release:gate:real
 
 ## 当前状态
 
-- 后端入口与前端实验室已持续模块化，核心 API、DOM 与回归测试链路已稳定。
-- Docker Compose、Nginx、质量门禁、数据库自愈与 SLO 面板均已接线完成。
-- 当前仍需补齐的事项见 [docs/REMAINING_TASKS.md](docs/REMAINING_TASKS.md)。
+- 当前仓库已达到“研发结项”状态，详见 [docs/RD_CLOSURE_2026-03-07.md](docs/RD_CLOSURE_2026-03-07.md)。
+- 本地代码、结构化收口、质量门禁与 Docker Compose 正式复核已完成。
+- 当前仍保留的事项仅为外部后置验收，见 [docs/REMAINING_TASKS.md](docs/REMAINING_TASKS.md)。
 
 ## 已知限制
 
@@ -151,6 +153,7 @@ bun run release:gate:real
 ## 文档导航
 
 - 部署说明：[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- 研发结项总览：[docs/RD_CLOSURE_2026-03-07.md](docs/RD_CLOSURE_2026-03-07.md)
 - 发布检查清单：[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
 - API 说明：[docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
 - 核心能力清单：[docs/CORE_FEATURES.md](docs/CORE_FEATURES.md)
