@@ -72,6 +72,7 @@ describe('前端表单可访问性回归', () => {
   it('TelemetryDashboard 数据库字段应具备 id/name 属性', () => {
     const content = [
       'apps/frontend/src/components/Editor/TelemetryDashboard.tsx',
+      'apps/frontend/src/components/Editor/PropertyInspector.tsx',
       'apps/frontend/src/components/Editor/telemetry-dashboard/DbOpsPanel.tsx',
       'apps/frontend/src/components/Editor/telemetry-dashboard/DbRepairHistorySection.tsx'
     ]
@@ -82,6 +83,8 @@ describe('前端表单可访问性回归', () => {
     expect(content).toContain('name="dbRepairRange"')
     expect(content).toContain('name="dbRepairStatus"')
     expect(content).toContain('name="dbRepairReason"')
+    expect(content).toContain('系统监控')
+    expect(content).toContain('切到系统监控')
   })
 
   it('App 关键按钮应具备 aria-label 语义', () => {
