@@ -105,7 +105,7 @@ Flags:
 Coverage:
   - GET /
   - /assets/* cache headers
-  - 前端实验室入口 bundle 标识
+  - 前端实验室/系统监控入口 bundle 标识
   - GET /api/health
   - GET /api/capabilities
   - /ws/generation websocket handshake
@@ -261,6 +261,14 @@ export const resolveJavaScriptAssetUrl = (
 export const resolveMissingLabEntryMarkers = (
   assetContents: string | string[],
   expectedMarkers: readonly string[] = LAB_ENTRY_MARKERS
+) => {
+  const combinedContent = Array.isArray(assetContents) ? assetContents.join('\n') : assetContents
+  return expectedMarkers.filter((marker) => !combinedContent.includes(marker))
+}
+
+export const resolveMissingTelemetryEntryMarkers = (
+  assetContents: string | string[],
+  expectedMarkers: readonly string[] = TELEMETRY_ENTRY_MARKERS
 ) => {
   const combinedContent = Array.isArray(assetContents) ? assetContents.join('\n') : assetContents
   return expectedMarkers.filter((marker) => !combinedContent.includes(marker))
@@ -498,6 +506,47 @@ const probeFrontendLabEntries = async (baseUrl: string, assetPaths: string[]) =>
 
   throw new Error(
     `前端实验室入口探测失败: missing=${resolveMissingLabEntryMarkers(assetContents).join(', ')}; checked=${checkedAssets.join(', ')}`
+  )
+}
+
+const probeFrontendTelemetryEntries = async (baseUrl: string, assetPaths: string[]) => {
+  const scriptAssetPaths = filterJavaScriptAssetPaths(assetPaths)
+  if (scriptAssetPaths.length === 0) {
+    throw new Error('首页未解析到任何 JS 静态资源路径，无法校验系统监控入口')
+  }
+
+  const baseReferrerUrl = `${normalizeBaseUrl(baseUrl)}/`
+  const pendingAssetUrls = scriptAssetPaths.map((assetPath) =>
+    resolveJavaScriptAssetUrl(baseUrl, baseReferrerUrl, assetPath)
+  )
+  const discoveredAssetUrls = new Set(pendingAssetUrls)
+  const checkedAssets: string[] = []
+  const assetContents: string[] = []
+
+  while (pendingAssetUrls.length > 0) {
+    const assetUrl = pendingAssetUrls.shift()!
+    const response = await fetchWithTimeout(assetUrl)
+    expectOkResponse(response, assetUrl)
+    const scriptContent = await response.text()
+    assetContents.push(scriptContent)
+    checkedAssets.push(assetUrl)
+
+    const missingMarkers = resolveMissingTelemetryEntryMarkers(assetContents)
+    if (missingMarkers.length === 0) {
+      console.log(`[docker-smoke] 系统监控入口探测通过: ${checkedAssets.join(', ')}`)
+      return
+    }
+
+    for (const dependencyPath of extractReferencedJavaScriptAssetPaths(scriptContent)) {
+      const dependencyUrl = resolveJavaScriptAssetUrl(baseUrl, assetUrl, dependencyPath)
+      if (discoveredAssetUrls.has(dependencyUrl)) continue
+      discoveredAssetUrls.add(dependencyUrl)
+      pendingAssetUrls.push(dependencyUrl)
+    }
+  }
+
+  throw new Error(
+    `前端系统监控入口探测失败: missing=${resolveMissingTelemetryEntryMarkers(assetContents).join(', ')}; checked=${checkedAssets.join(', ')}`
   )
 }
 
@@ -757,6 +806,7 @@ export const runSmokeCheck = async (options: CliOptions) => {
     await probeEndpoint(resolveAbsoluteUrl(baseUrl, '/api/capabilities'))
     await probeStaticAssetCache(baseUrl, assetPaths)
     await probeFrontendLabEntries(baseUrl, assetPaths)
+    await probeFrontendTelemetryEntries(baseUrl, assetPaths)
     await probeWebSocketHandshake(baseUrl)
     await probeUploadFlow(baseUrl)
 
