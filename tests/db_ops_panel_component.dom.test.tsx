@@ -8,29 +8,34 @@ const noop = () => {}
 
 const createProps = (overrides: Record<string, unknown> = {}) =>
   ({
-    adminTokenInput: 'admin-token',
-    isDbBusy: false,
-    dbRuntime: null,
-    repairRange: '24h',
-    repairStatusFilter: 'all',
-    repairReasonInput: '',
-    isRepairLoading: false,
-    dbHealth: null,
-    dbError: '',
-    dbRepairs: [],
-    repairTotal: 0,
-    repairHasMore: false,
-    onAdminTokenInputChange: noop,
-    onSaveToken: noop,
-    onFetchDbHealth: noop,
-    onFetchDbRuntime: noop,
-    onRepair: noop,
-    onRepairRangeChange: noop,
-    onRepairStatusFilterChange: noop,
-    onRepairReasonInputChange: noop,
-    onApplyReasonFilter: noop,
-    onClearReasonFilter: noop,
-    onLoadMoreRepairs: noop,
+    headerProps: {
+      adminTokenInput: 'admin-token',
+      isDbBusy: false,
+      dbRuntime: null,
+      dbHealth: null,
+      dbError: '',
+      onAdminTokenInputChange: noop,
+      onSaveToken: noop,
+      onFetchDbHealth: noop,
+      onFetchDbRuntime: noop,
+      onRepair: noop
+    },
+    repairHistorySectionProps: {
+      repairRange: '24h',
+      repairStatusFilter: 'all',
+      repairReasonInput: '',
+      isRepairLoading: false,
+      isDbBusy: false,
+      dbRepairs: [],
+      repairTotal: 0,
+      repairHasMore: false,
+      onRepairRangeChange: noop,
+      onRepairStatusFilterChange: noop,
+      onRepairReasonInputChange: noop,
+      onApplyReasonFilter: noop,
+      onClearReasonFilter: noop,
+      onLoadMoreRepairs: noop
+    },
     ...overrides
   }) as any
 
@@ -64,39 +69,45 @@ describe('DbOpsPanel DOM 回归', () => {
     const view = render(
       <DbOpsPanel
         {...createProps({
-          dbRuntime: {
-            autoRepairEnabled: true,
-            runtimeHealthcheckEnabled: true,
-            runtimeHealthcheckIntervalMs: 5000,
-            dbPath: '/tmp/test.sqlite'
+          headerProps: {
+            ...createProps().headerProps,
+            dbRuntime: {
+              autoRepairEnabled: true,
+              runtimeHealthcheckEnabled: true,
+              runtimeHealthcheckIntervalMs: 5000,
+              dbPath: '/tmp/test.sqlite'
+            },
+            dbHealth: {
+              status: 'ok',
+              mode: 'quick',
+              checkedAt: '2026-03-06T10:00:00.000Z',
+              messages: ['all good']
+            },
+            onSaveToken,
+            onFetchDbHealth,
+            onFetchDbRuntime,
+            onRepair
           },
-          dbHealth: {
-            status: 'ok',
-            mode: 'quick',
-            checkedAt: '2026-03-06T10:00:00.000Z',
-            messages: ['all good']
-          },
-          dbRepairs: [
-            {
-              status: 'repaired',
-              reason: 'sqlite lock',
-              timestamp: '2026-03-06T10:00:00.000Z',
-              salvage: { copiedRows: 3 },
-              actions: [{ type: 'reindex' }]
-            }
-          ],
-          repairTotal: 3,
-          repairHasMore: true,
-          onSaveToken,
-          onFetchDbHealth,
-          onFetchDbRuntime,
-          onRepair,
-          onRepairRangeChange,
-          onRepairStatusFilterChange,
-          onRepairReasonInputChange,
-          onApplyReasonFilter,
-          onClearReasonFilter,
-          onLoadMoreRepairs
+          repairHistorySectionProps: {
+            ...createProps().repairHistorySectionProps,
+            dbRepairs: [
+              {
+                status: 'repaired',
+                reason: 'sqlite lock',
+                timestamp: '2026-03-06T10:00:00.000Z',
+                salvage: { copiedRows: 3 },
+                actions: [{ type: 'reindex' }]
+              }
+            ],
+            repairTotal: 3,
+            repairHasMore: true,
+            onRepairRangeChange,
+            onRepairStatusFilterChange,
+            onRepairReasonInputChange,
+            onApplyReasonFilter,
+            onClearReasonFilter,
+            onLoadMoreRepairs
+          }
         })}
       />
     )

@@ -8,49 +8,60 @@ const noop = () => {}
 
 const createProps = (overrides: Record<string, unknown> = {}) =>
   ({
-    governanceProjectId: 'project_telemetry_1',
-    governanceBusy: false,
-    governanceCommentLimit: '20',
-    governanceCommentCursor: '',
-    governanceCommentHasMore: false,
-    governanceComments: [],
-    governanceCommentAnchor: '',
-    governanceCommentContent: '',
-    governanceCommentMentions: '',
-    governanceSelectedCommentId: '',
-    governanceReviewLimit: '20',
-    governanceReviews: [],
-    governanceReviewDecision: 'approved',
-    governanceReviewSummary: '',
-    governanceReviewScore: '',
-    governanceTemplates: [],
-    governanceSelectedTemplateId: '',
-    governanceTemplateOptions: '{}',
-    governanceTemplateResult: null,
-    governanceBatchOperations: '[]',
-    governanceBatchResult: null,
-    governanceError: '',
-    onGovernanceProjectIdChange: noop,
-    onGovernanceCommentLimitChange: noop,
-    onLoadGovernanceComments: noop,
-    onGovernanceCommentAnchorChange: noop,
-    onGovernanceCommentContentChange: noop,
-    onGovernanceCommentMentionsChange: noop,
-    onCreateGovernanceComment: noop,
-    onGovernanceSelectedCommentIdChange: noop,
-    onResolveGovernanceComment: noop,
-    onLoadGovernanceReviews: noop,
-    onGovernanceReviewLimitChange: noop,
-    onGovernanceReviewDecisionChange: noop,
-    onGovernanceReviewSummaryChange: noop,
-    onGovernanceReviewScoreChange: noop,
-    onCreateGovernanceReview: noop,
-    onLoadGovernanceTemplates: noop,
-    onGovernanceSelectedTemplateIdChange: noop,
-    onApplyGovernanceTemplate: noop,
-    onGovernanceTemplateOptionsChange: noop,
-    onGovernanceBatchOperationsChange: noop,
-    onGovernanceBatchUpdateClips: noop,
+    headerProps: {
+      governanceProjectId: 'project_telemetry_1',
+      governanceBusy: false,
+      governanceError: '',
+      onGovernanceProjectIdChange: noop
+    },
+    commentsSectionProps: {
+      governanceBusy: false,
+      governanceCommentLimit: '20',
+      governanceCommentCursor: '',
+      governanceCommentHasMore: false,
+      governanceComments: [],
+      governanceCommentAnchor: '',
+      governanceCommentContent: '',
+      governanceCommentMentions: '',
+      governanceSelectedCommentId: '',
+      onGovernanceCommentLimitChange: noop,
+      onLoadGovernanceComments: noop,
+      onGovernanceCommentAnchorChange: noop,
+      onGovernanceCommentContentChange: noop,
+      onGovernanceCommentMentionsChange: noop,
+      onCreateGovernanceComment: noop,
+      onGovernanceSelectedCommentIdChange: noop,
+      onResolveGovernanceComment: noop
+    },
+    reviewsSectionProps: {
+      governanceBusy: false,
+      governanceReviewLimit: '20',
+      governanceReviews: [],
+      governanceReviewDecision: 'approved',
+      governanceReviewSummary: '',
+      governanceReviewScore: '',
+      onLoadGovernanceReviews: noop,
+      onGovernanceReviewLimitChange: noop,
+      onGovernanceReviewDecisionChange: noop,
+      onGovernanceReviewSummaryChange: noop,
+      onGovernanceReviewScoreChange: noop,
+      onCreateGovernanceReview: noop
+    },
+    templateBatchSectionProps: {
+      governanceBusy: false,
+      governanceTemplates: [],
+      governanceSelectedTemplateId: '',
+      governanceTemplateOptions: '{}',
+      governanceTemplateResult: null,
+      governanceBatchOperations: '[]',
+      governanceBatchResult: null,
+      onLoadGovernanceTemplates: noop,
+      onGovernanceSelectedTemplateIdChange: noop,
+      onApplyGovernanceTemplate: noop,
+      onGovernanceTemplateOptionsChange: noop,
+      onGovernanceBatchOperationsChange: noop,
+      onGovernanceBatchUpdateClips: noop
+    },
     ...overrides
   }) as any
 
@@ -83,36 +94,45 @@ describe('ProjectGovernancePanel DOM 回归', () => {
     const view = render(
       <ProjectGovernancePanel
         {...createProps({
-          governanceCommentHasMore: true,
-          governanceComments: [
-            {
-              id: 'cmt_1',
-              content: '评论 A',
-              status: 'open',
-              mentions: ['owner']
-            }
-          ],
-          governanceSelectedCommentId: 'cmt_1',
-          governanceReviews: [
-            {
-              id: 'rev_1',
-              decision: 'approved',
-              summary: '通过',
-              score: 9
-            }
-          ],
-          governanceTemplates: [{ id: 'tpl_1', name: '模板 A' }],
-          governanceSelectedTemplateId: 'tpl_1',
-          governanceTemplateResult: { traceId: 'trace_1', templateName: '模板 A' },
-          governanceBatchResult: { requested: 2, accepted: 2, updated: 2 },
-          onLoadGovernanceComments,
-          onCreateGovernanceComment,
-          onResolveGovernanceComment,
-          onLoadGovernanceReviews,
-          onCreateGovernanceReview,
-          onLoadGovernanceTemplates,
-          onApplyGovernanceTemplate,
-          onGovernanceBatchUpdateClips
+          commentsSectionProps: {
+            ...createProps().commentsSectionProps,
+            governanceCommentHasMore: true,
+            governanceComments: [
+              {
+                id: 'cmt_1',
+                content: '评论 A',
+                status: 'open',
+                mentions: ['owner']
+              }
+            ],
+            governanceSelectedCommentId: 'cmt_1',
+            onLoadGovernanceComments,
+            onCreateGovernanceComment,
+            onResolveGovernanceComment
+          },
+          reviewsSectionProps: {
+            ...createProps().reviewsSectionProps,
+            governanceReviews: [
+              {
+                id: 'rev_1',
+                decision: 'approved',
+                summary: '通过',
+                score: 9
+              }
+            ],
+            onLoadGovernanceReviews,
+            onCreateGovernanceReview
+          },
+          templateBatchSectionProps: {
+            ...createProps().templateBatchSectionProps,
+            governanceTemplates: [{ id: 'tpl_1', name: '模板 A' }],
+            governanceSelectedTemplateId: 'tpl_1',
+            governanceTemplateResult: { traceId: 'trace_1', templateName: '模板 A' },
+            governanceBatchResult: { requested: 2, accepted: 2, updated: 2 },
+            onLoadGovernanceTemplates,
+            onApplyGovernanceTemplate,
+            onGovernanceBatchUpdateClips
+          }
         })}
       />
     )

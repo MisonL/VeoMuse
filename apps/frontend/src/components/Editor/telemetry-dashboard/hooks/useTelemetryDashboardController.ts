@@ -9,6 +9,10 @@ import type { ProjectGovernancePanelProps } from '../ProjectGovernancePanel'
 import type { ProviderHealthPanelProps } from '../ProviderHealthPanel'
 import type { SloSectionProps } from '../SloSection'
 import type { TelemetryOverviewSectionProps } from '../TelemetryOverviewSection'
+import type { GovernanceCommentsSectionProps } from '../GovernanceCommentsSection'
+import type { GovernanceReviewsSectionProps } from '../GovernanceReviewsSection'
+import type { GovernanceTemplateBatchSectionProps } from '../GovernanceTemplateBatchSection'
+import type { DbRepairHistorySectionProps } from '../DbRepairHistorySection'
 import { useTelemetryDashboardPolling } from './useTelemetryDashboardPolling'
 import { useTelemetryDbOpsController } from './useTelemetryDbOpsController'
 import { useTelemetryFpsMonitor } from './useTelemetryFpsMonitor'
@@ -81,79 +85,95 @@ export const buildTelemetryProviderHealthPanelProps = (
 export const buildTelemetryProjectGovernancePanelProps = (
   governanceController: TelemetryGovernanceController
 ): ProjectGovernancePanelProps => ({
-  governanceProjectId: governanceController.governanceProjectId,
-  governanceBusy: governanceController.governanceBusy,
-  governanceCommentLimit: governanceController.governanceCommentLimit,
-  governanceCommentCursor: governanceController.governanceCommentCursor,
-  governanceCommentHasMore: governanceController.governanceCommentHasMore,
-  governanceComments: governanceController.governanceComments,
-  governanceCommentAnchor: governanceController.governanceCommentAnchor,
-  governanceCommentContent: governanceController.governanceCommentContent,
-  governanceCommentMentions: governanceController.governanceCommentMentions,
-  governanceSelectedCommentId: governanceController.governanceSelectedCommentId,
-  governanceReviewLimit: governanceController.governanceReviewLimit,
-  governanceReviews: governanceController.governanceReviews,
-  governanceReviewDecision: governanceController.governanceReviewDecision,
-  governanceReviewSummary: governanceController.governanceReviewSummary,
-  governanceReviewScore: governanceController.governanceReviewScore,
-  governanceTemplates: governanceController.governanceTemplates,
-  governanceSelectedTemplateId: governanceController.governanceSelectedTemplateId,
-  governanceTemplateOptions: governanceController.governanceTemplateOptions,
-  governanceTemplateResult: governanceController.governanceTemplateResult,
-  governanceBatchOperations: governanceController.governanceBatchOperations,
-  governanceBatchResult: governanceController.governanceBatchResult,
-  governanceError: governanceController.governanceError,
-  onGovernanceProjectIdChange: governanceController.setGovernanceProjectId,
-  onGovernanceCommentLimitChange: governanceController.setGovernanceCommentLimit,
-  onLoadGovernanceComments: (append?: boolean) =>
-    void governanceController.handleLoadGovernanceComments(Boolean(append)),
-  onGovernanceCommentAnchorChange: governanceController.setGovernanceCommentAnchor,
-  onGovernanceCommentContentChange: governanceController.setGovernanceCommentContent,
-  onGovernanceCommentMentionsChange: governanceController.setGovernanceCommentMentions,
-  onCreateGovernanceComment: () => void governanceController.handleCreateGovernanceComment(),
-  onGovernanceSelectedCommentIdChange: governanceController.setGovernanceSelectedCommentId,
-  onResolveGovernanceComment: () => void governanceController.handleResolveGovernanceComment(),
-  onLoadGovernanceReviews: () => void governanceController.handleLoadGovernanceReviews(),
-  onGovernanceReviewLimitChange: governanceController.setGovernanceReviewLimit,
-  onGovernanceReviewDecisionChange: governanceController.setGovernanceReviewDecision,
-  onGovernanceReviewSummaryChange: governanceController.setGovernanceReviewSummary,
-  onGovernanceReviewScoreChange: governanceController.setGovernanceReviewScore,
-  onCreateGovernanceReview: () => void governanceController.handleCreateGovernanceReview(),
-  onLoadGovernanceTemplates: () => void governanceController.handleLoadGovernanceTemplates(),
-  onGovernanceSelectedTemplateIdChange: governanceController.setGovernanceSelectedTemplateId,
-  onApplyGovernanceTemplate: () => void governanceController.handleApplyGovernanceTemplate(),
-  onGovernanceTemplateOptionsChange: governanceController.setGovernanceTemplateOptions,
-  onGovernanceBatchOperationsChange: governanceController.setGovernanceBatchOperations,
-  onGovernanceBatchUpdateClips: () =>
-    void governanceController.handleGovernanceBatchUpdateClips()
+  headerProps: {
+    governanceProjectId: governanceController.governanceProjectId,
+    governanceBusy: governanceController.governanceBusy,
+    governanceError: governanceController.governanceError,
+    onGovernanceProjectIdChange: governanceController.setGovernanceProjectId
+  },
+  commentsSectionProps: {
+    governanceBusy: governanceController.governanceBusy,
+    governanceCommentLimit: governanceController.governanceCommentLimit,
+    governanceCommentCursor: governanceController.governanceCommentCursor,
+    governanceCommentHasMore: governanceController.governanceCommentHasMore,
+    governanceComments: governanceController.governanceComments,
+    governanceCommentAnchor: governanceController.governanceCommentAnchor,
+    governanceCommentContent: governanceController.governanceCommentContent,
+    governanceCommentMentions: governanceController.governanceCommentMentions,
+    governanceSelectedCommentId: governanceController.governanceSelectedCommentId,
+    onGovernanceCommentLimitChange: governanceController.setGovernanceCommentLimit,
+    onLoadGovernanceComments: (append?: boolean) =>
+      void governanceController.handleLoadGovernanceComments(Boolean(append)),
+    onGovernanceCommentAnchorChange: governanceController.setGovernanceCommentAnchor,
+    onGovernanceCommentContentChange: governanceController.setGovernanceCommentContent,
+    onGovernanceCommentMentionsChange: governanceController.setGovernanceCommentMentions,
+    onCreateGovernanceComment: () => void governanceController.handleCreateGovernanceComment(),
+    onGovernanceSelectedCommentIdChange: governanceController.setGovernanceSelectedCommentId,
+    onResolveGovernanceComment: () => void governanceController.handleResolveGovernanceComment()
+  } satisfies GovernanceCommentsSectionProps,
+  reviewsSectionProps: {
+    governanceBusy: governanceController.governanceBusy,
+    governanceReviewLimit: governanceController.governanceReviewLimit,
+    governanceReviews: governanceController.governanceReviews,
+    governanceReviewDecision: governanceController.governanceReviewDecision,
+    governanceReviewSummary: governanceController.governanceReviewSummary,
+    governanceReviewScore: governanceController.governanceReviewScore,
+    onLoadGovernanceReviews: () => void governanceController.handleLoadGovernanceReviews(),
+    onGovernanceReviewLimitChange: governanceController.setGovernanceReviewLimit,
+    onGovernanceReviewDecisionChange: governanceController.setGovernanceReviewDecision,
+    onGovernanceReviewSummaryChange: governanceController.setGovernanceReviewSummary,
+    onGovernanceReviewScoreChange: governanceController.setGovernanceReviewScore,
+    onCreateGovernanceReview: () => void governanceController.handleCreateGovernanceReview()
+  } satisfies GovernanceReviewsSectionProps,
+  templateBatchSectionProps: {
+    governanceBusy: governanceController.governanceBusy,
+    governanceTemplates: governanceController.governanceTemplates,
+    governanceSelectedTemplateId: governanceController.governanceSelectedTemplateId,
+    governanceTemplateOptions: governanceController.governanceTemplateOptions,
+    governanceTemplateResult: governanceController.governanceTemplateResult,
+    governanceBatchOperations: governanceController.governanceBatchOperations,
+    governanceBatchResult: governanceController.governanceBatchResult,
+    onLoadGovernanceTemplates: () => void governanceController.handleLoadGovernanceTemplates(),
+    onGovernanceSelectedTemplateIdChange: governanceController.setGovernanceSelectedTemplateId,
+    onApplyGovernanceTemplate: () => void governanceController.handleApplyGovernanceTemplate(),
+    onGovernanceTemplateOptionsChange: governanceController.setGovernanceTemplateOptions,
+    onGovernanceBatchOperationsChange: governanceController.setGovernanceBatchOperations,
+    onGovernanceBatchUpdateClips: () =>
+      void governanceController.handleGovernanceBatchUpdateClips()
+  } satisfies GovernanceTemplateBatchSectionProps
 })
 
 export const buildTelemetryDbOpsPanelProps = (
   dbOpsController: TelemetryDbOpsController
 ): DbOpsPanelProps => ({
-  adminTokenInput: dbOpsController.adminTokenInput,
-  isDbBusy: dbOpsController.isDbBusy,
-  dbRuntime: dbOpsController.dbRuntime,
-  repairRange: dbOpsController.repairRange,
-  repairStatusFilter: dbOpsController.repairStatusFilter,
-  repairReasonInput: dbOpsController.repairReasonInput,
-  isRepairLoading: dbOpsController.isRepairLoading,
-  dbHealth: dbOpsController.dbHealth,
-  dbError: dbOpsController.dbError,
-  dbRepairs: dbOpsController.dbRepairs,
-  repairTotal: dbOpsController.repairTotal,
-  repairHasMore: dbOpsController.repairHasMore,
-  onAdminTokenInputChange: dbOpsController.setAdminTokenInput,
-  onSaveToken: () => void dbOpsController.handleSaveToken(),
-  onFetchDbHealth: () => void dbOpsController.fetchDbHealth('full'),
-  onFetchDbRuntime: () => void dbOpsController.fetchDbRuntime(),
-  onRepair: (force: boolean) => void dbOpsController.handleRepair(force),
-  onRepairRangeChange: dbOpsController.setRepairRange,
-  onRepairStatusFilterChange: dbOpsController.setRepairStatusFilter,
-  onRepairReasonInputChange: dbOpsController.setRepairReasonInput,
-  onApplyReasonFilter: () => void dbOpsController.handleApplyReasonFilter(),
-  onClearReasonFilter: () => void dbOpsController.handleClearReasonFilter(),
-  onLoadMoreRepairs: () => void dbOpsController.fetchRepairHistory(true)
+  headerProps: {
+    adminTokenInput: dbOpsController.adminTokenInput,
+    isDbBusy: dbOpsController.isDbBusy,
+    dbRuntime: dbOpsController.dbRuntime,
+    dbHealth: dbOpsController.dbHealth,
+    dbError: dbOpsController.dbError,
+    onAdminTokenInputChange: dbOpsController.setAdminTokenInput,
+    onSaveToken: () => void dbOpsController.handleSaveToken(),
+    onFetchDbHealth: () => void dbOpsController.fetchDbHealth('full'),
+    onFetchDbRuntime: () => void dbOpsController.fetchDbRuntime(),
+    onRepair: (force: boolean) => void dbOpsController.handleRepair(force)
+  },
+  repairHistorySectionProps: {
+    repairRange: dbOpsController.repairRange,
+    repairStatusFilter: dbOpsController.repairStatusFilter,
+    repairReasonInput: dbOpsController.repairReasonInput,
+    isRepairLoading: dbOpsController.isRepairLoading,
+    isDbBusy: dbOpsController.isDbBusy,
+    dbRepairs: dbOpsController.dbRepairs,
+    repairTotal: dbOpsController.repairTotal,
+    repairHasMore: dbOpsController.repairHasMore,
+    onRepairRangeChange: dbOpsController.setRepairRange,
+    onRepairStatusFilterChange: dbOpsController.setRepairStatusFilter,
+    onRepairReasonInputChange: dbOpsController.setRepairReasonInput,
+    onApplyReasonFilter: () => void dbOpsController.handleApplyReasonFilter(),
+    onClearReasonFilter: () => void dbOpsController.handleClearReasonFilter(),
+    onLoadMoreRepairs: () => void dbOpsController.fetchRepairHistory(true)
+  } satisfies DbRepairHistorySectionProps
 })
 
 export const useTelemetryDashboardController = (): TelemetryDashboardControllerResult => {
