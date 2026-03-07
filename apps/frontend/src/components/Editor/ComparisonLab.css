@@ -2285,7 +2285,7 @@
 
 .lab-stage-shell {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: 144px minmax(0, 1fr);
   gap: 12px;
   min-height: 0;
   flex: 1;
@@ -2294,8 +2294,8 @@
 .lab-stage-spine {
   display: grid;
   align-content: start;
-  gap: 14px;
-  padding: 16px 14px;
+  gap: 10px;
+  padding: 12px 10px;
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-outline) 28%);
   background:
@@ -2308,6 +2308,29 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
     0 16px 32px rgba(70, 48, 20, 0.08);
+}
+
+.lab-stage-rail-head {
+  display: grid;
+  gap: 4px;
+  padding: 4px 4px 2px;
+}
+
+.lab-stage-rail-kicker {
+  font-family: var(--ap-font-mono);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-text-dim) 76%, var(--ap-accent) 24%);
+}
+
+.lab-stage-rail-head strong {
+  font-family: var(--ap-font-display);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ap-text);
 }
 
 .lab-stage-ledger {
@@ -2376,6 +2399,8 @@
 }
 
 .lab-stage-marker {
+  appearance: none;
+  width: 100%;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -2385,6 +2410,8 @@
   border: 1px solid color-mix(in srgb, var(--ap-border) 74%, #ffffff 26%);
   background: color-mix(in srgb, var(--ap-surface) 86%, #ffffff 14%);
   color: var(--ap-text-dim);
+  cursor: pointer;
+  text-align: left;
 }
 
 .lab-stage-marker.active {
@@ -2409,6 +2436,17 @@
   font-size: 15px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.lab-stage-marker-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.lab-stage-marker-state {
+  font-size: 10px;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--ap-text) 64%, var(--ap-text-dim) 36%);
 }
 
 .lab-stage-main,
@@ -2440,9 +2478,9 @@
 }
 
 .lab-toolbar {
-  gap: 10px;
-  padding: 14px;
-  border-radius: 22px;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 20px;
   border-bottom: none;
   border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-outline) 28%);
   background:
@@ -2459,13 +2497,18 @@
 }
 
 .lab-toolbar-main {
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  flex-wrap: wrap;
 }
 
 .lab-toolbar-left {
   flex: 1;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
+  gap: 10px 14px;
+  flex-wrap: wrap;
 }
 
 .lab-mode-deck {
@@ -2604,15 +2647,19 @@
   }
 }
 
-@container lab-frame (max-width: 760px) {
+@container lab-frame (max-width: 920px) {
   .lab-stage-shell {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr);
   }
 
   .lab-stage-spine {
-    gap: 10px;
-    padding: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
   }
 
   .lab-stage-markers {
@@ -2620,35 +2667,35 @@
     gap: 6px;
   }
 
-  .lab-stage-ledger {
+  .lab-stage-rail-head {
     display: none;
   }
 
   .lab-stage-marker {
     padding: 8px 10px;
+    min-height: 78px;
   }
 
   .lab-stage-marker-label {
     font-size: 13px;
     letter-spacing: 0.04em;
   }
-
-  .lab-toolbar-left {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .lab-toolbar-main {
-    align-items: center;
-  }
-
-  .lab-toolbar-cta {
-    justify-content: flex-end;
-  }
 }
 
 @container lab-frame (max-width: 620px) {
+  .lab-stage-markers {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .lab-stage-marker {
+    flex: 0 0 144px;
+    min-width: 144px;
+    min-height: auto;
+  }
+
   .lab-mode-deck {
     grid-template-columns: 1fr;
   }
@@ -2660,31 +2707,28 @@
 }
 
 @container lab-frame (max-width: 480px) {
-  .lab-stage-markers {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .lab-stage-marker {
+    flex-basis: 122px;
+    min-width: 122px;
   }
 
-  .lab-mode-switch {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 8px;
-    padding-bottom: 4px;
-  }
-
-  .lab-toolbar-left {
-    align-items: flex-start;
-  }
-
-  .lab-mode-btn {
-    flex: 0 0 128px;
-    min-width: 128px;
-    gap: 4px;
-    padding: 10px 12px;
-  }
-
-  .lab-mode-number {
+  .lab-stage-marker-state {
     display: none;
+  }
+
+  .lab-toolbar-main,
+  .lab-toolbar-left {
+    align-items: stretch;
+  }
+
+  .lab-toolbar-cta {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .lab-toolbar-cta .lab-btn {
+    flex: 1 1 144px;
   }
 }
 
@@ -3342,6 +3386,7 @@
 
 .comparison-lab-pro .lab-stage-marker {
   position: relative;
+  overflow: hidden;
   border-style: dashed;
   background: transparent;
   color: color-mix(in srgb, var(--ap-text-dim) 84%, var(--ap-text) 16%);
@@ -3361,7 +3406,7 @@
 
 .comparison-lab-pro .lab-stage-marker.active {
   opacity: 1;
-  transform: translateX(4px);
+  transform: translateX(2px);
   border-style: solid;
   border-color: color-mix(in srgb, var(--ap-accent) 60%, #ffffff 40%);
   background: linear-gradient(
@@ -3378,6 +3423,35 @@
     color-mix(in srgb, var(--ap-accent) 90%, #ffffff 10%),
     color-mix(in srgb, var(--ap-signal) 66%, #22c55e 34%)
   );
+}
+
+.comparison-lab-pro .lab-stage-marker.is-completed {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--ap-signal) 28%, var(--ap-border) 72%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-signal-soft) 34%, #ffffff 66%),
+    color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%)
+  );
+}
+
+.comparison-lab-pro .lab-stage-marker.is-completed::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-signal) 86%, #ffffff 14%),
+    color-mix(in srgb, var(--ap-signal) 58%, transparent)
+  );
+}
+
+.comparison-lab-pro .lab-stage-marker.is-available:hover {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--ap-accent) 34%, var(--ap-border) 66%);
+  transform: translateY(-1px);
+}
+
+.comparison-lab-pro .lab-stage-marker:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ap-accent) 52%, #ffffff 48%);
+  outline-offset: 2px;
 }
 
 .comparison-lab-pro .creative-shell,
