@@ -41,6 +41,12 @@ const LAB_STAGE_STATUS_LABEL = {
   available: '可进入阶段'
 } as const
 
+const resolveStageStatus = (stageIndex: number, currentStageIndex: number) => {
+  if (stageIndex === currentStageIndex) return 'current'
+  if (stageIndex < currentStageIndex) return 'completed'
+  return 'available'
+}
+
 const ComparisonLab: React.FC<ComparisonLabProps> = ({
   onOpenAssets,
   channelPanelRequestNonce
@@ -65,50 +71,33 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
             <strong>实验阶段</strong>
           </div>
           <div className="lab-stage-markers" role="tablist" aria-label="实验室阶段切换">
-            {LAB_STAGE_ORDER.map((stage) => (
-              <button
-                key={stage.mode}
-                id={`lab-tab-${stage.mode}`}
-                role="tab"
-                type="button"
-                aria-controls={`lab-panel-${stage.mode}`}
-                aria-selected={stage.mode === labMode}
-                tabIndex={stage.mode === labMode ? 0 : -1}
-                data-testid={`btn-lab-mode-${stage.mode}`}
-                data-stage-status={
-                  stage.mode === labMode
-                    ? 'current'
-                    : LAB_STAGE_ORDER.findIndex((entry) => entry.mode === stage.mode) <
-                        currentStageIndex
-                      ? 'completed'
-                      : 'available'
-                }
-                className={`lab-stage-marker ${
-                  LAB_STAGE_ORDER.findIndex((entry) => entry.mode === stage.mode) <
-                  currentStageIndex
-                    ? 'is-completed'
-                    : ''
-                } ${stage.mode === labMode ? 'active is-current' : 'is-available'}`}
-                onClick={() => toolbarProps.onModeChange(stage.mode)}
-              >
-                <span className="lab-stage-marker-index">{LAB_STAGE_META[stage.mode].index}</span>
-                <span className="lab-stage-marker-copy">
-                  <span className="lab-stage-marker-label">{stage.short}</span>
-                  <span className="lab-stage-marker-state">
-                    {
-                      LAB_STAGE_STATUS_LABEL[
-                        stage.mode === labMode
-                          ? 'current'
-                          : LAB_STAGE_ORDER.findIndex((entry) => entry.mode === stage.mode) <
-                              currentStageIndex
-                            ? 'completed'
-                            : 'available'
-                      ]
-                    }
+            {LAB_STAGE_ORDER.map((stage, stageIndex) => {
+              const status = resolveStageStatus(stageIndex, currentStageIndex)
+              return (
+                <button
+                  key={stage.mode}
+                  id={`lab-tab-${stage.mode}`}
+                  role="tab"
+                  type="button"
+                  aria-controls={`lab-panel-${stage.mode}`}
+                  aria-selected={stage.mode === labMode}
+                  aria-current={status === 'current' ? 'step' : undefined}
+                  tabIndex={stage.mode === labMode ? 0 : -1}
+                  data-testid={`btn-lab-mode-${stage.mode}`}
+                  data-stage-status={status}
+                  className={`lab-stage-marker ${status === 'current' ? 'active is-current' : ''} ${
+                    status === 'completed' ? 'is-completed' : 'is-available'
+                  }`}
+                  onClick={() => toolbarProps.onModeChange(stage.mode)}
+                >
+                  <span className="lab-stage-marker-index">{LAB_STAGE_META[stage.mode].index}</span>
+                  <span className="lab-stage-marker-copy">
+                    <span className="lab-stage-marker-label">{stage.short}</span>
+                    <span className="lab-stage-marker-state">{LAB_STAGE_STATUS_LABEL[status]}</span>
                   </span>
-                </span>
-              </button>
-            ))}
+                </button>
+              )
+            })}
           </div>
         </aside>
         <div className="lab-stage-main">

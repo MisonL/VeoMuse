@@ -2447,6 +2447,8 @@
   font-size: 10px;
   font-weight: 700;
   color: color-mix(in srgb, var(--ap-text) 64%, var(--ap-text-dim) 36%);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .lab-stage-main,
@@ -3404,6 +3406,15 @@
   background: transparent;
 }
 
+.comparison-lab-pro .lab-stage-marker::after {
+  content: '';
+  position: absolute;
+  inset: auto 12px 10px 12px;
+  height: 1px;
+  background: color-mix(in srgb, var(--ap-border) 74%, transparent);
+  opacity: 0.72;
+}
+
 .comparison-lab-pro .lab-stage-marker.active {
   opacity: 1;
   transform: translateX(2px);
@@ -3425,6 +3436,10 @@
   );
 }
 
+.comparison-lab-pro .lab-stage-marker.is-current .lab-stage-marker-state {
+  color: color-mix(in srgb, var(--ap-accent-strong) 82%, var(--ap-accent) 18%);
+}
+
 .comparison-lab-pro .lab-stage-marker.is-completed {
   border-style: solid;
   border-color: color-mix(in srgb, var(--ap-signal) 28%, var(--ap-border) 72%);
@@ -3441,6 +3456,18 @@
     color-mix(in srgb, var(--ap-signal) 86%, #ffffff 14%),
     color-mix(in srgb, var(--ap-signal) 58%, transparent)
   );
+}
+
+.comparison-lab-pro .lab-stage-marker.is-completed .lab-stage-marker-index {
+  color: color-mix(in srgb, var(--ap-signal) 86%, #166534 14%);
+}
+
+.comparison-lab-pro .lab-stage-marker.is-completed .lab-stage-marker-state {
+  color: color-mix(in srgb, var(--ap-signal) 74%, #166534 26%);
+}
+
+.comparison-lab-pro .lab-stage-marker.is-available .lab-stage-marker-state {
+  color: color-mix(in srgb, var(--ap-text-dim) 82%, var(--ap-text) 18%);
 }
 
 .comparison-lab-pro .lab-stage-marker.is-available:hover {
@@ -3489,6 +3516,10 @@
   .video-generation-command-bar {
     grid-template-columns: 1fr;
   }
+
+  .creative-hero-main .video-generation-card {
+    min-height: 460px;
+  }
 }
 
 @container lab-frame (max-width: 1180px) {
@@ -3499,6 +3530,10 @@
 
   .collab-command-summary {
     grid-template-columns: 1fr;
+  }
+
+  .creative-hero-main .video-generation-card {
+    min-height: 380px;
   }
 }
 
@@ -3535,5 +3570,9 @@
   .video-generation-section-head {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .creative-hero-main .video-generation-card {
+    min-height: 320px;
   }
 }

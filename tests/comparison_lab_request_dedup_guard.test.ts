@@ -237,4 +237,36 @@ describe('ComparisonLab 请求去重守卫', () => {
       expect(postCalls.length).toBe(1)
     })
   })
+
+  it('阶段 rail 应稳定暴露 current/completed/available 状态', async () => {
+    const view = render(React.createElement(ComparisonLab, { onOpenAssets: () => {} }))
+
+    await waitFor(() => {
+      expect(view.getByTestId('btn-lab-mode-compare')).toHaveAttribute(
+        'data-stage-status',
+        'current'
+      )
+      expect(view.getByTestId('btn-lab-mode-marketplace')).toHaveAttribute(
+        'data-stage-status',
+        'available'
+      )
+    })
+
+    fireEvent.click(view.getByTestId('btn-lab-mode-collab'))
+
+    await waitFor(() => {
+      expect(view.getByTestId('btn-lab-mode-compare')).toHaveAttribute(
+        'data-stage-status',
+        'completed'
+      )
+      expect(view.getByTestId('btn-lab-mode-creative')).toHaveAttribute(
+        'data-stage-status',
+        'completed'
+      )
+      expect(view.getByTestId('btn-lab-mode-collab')).toHaveAttribute(
+        'data-stage-status',
+        'current'
+      )
+    })
+  })
 })
