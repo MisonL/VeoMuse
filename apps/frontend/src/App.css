@@ -2401,7 +2401,7 @@ body.resizing-y {
   background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
 }
 
-@media (max-width: 1320px) {
+@media (max-width: 1440px) {
   .os-header {
     grid-template-columns: 1fr;
   }

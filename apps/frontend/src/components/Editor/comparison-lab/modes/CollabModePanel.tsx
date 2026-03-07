@@ -447,72 +447,86 @@ const CollabModePanel: React.FC<CollabModePanelProps> = ({
   }
 
   return (
-    <div className="collab-shell" data-testid="area-collab-shell">
-      <WorkspaceSection
-        isAuthenticated={isAuthenticated}
-        workspaceName={workspaceName}
-        workspaceOwner={workspaceOwner}
-        workspaceId={workspaceId}
-        projectId={projectId}
-        onWorkspaceNameChange={onWorkspaceNameChange}
-        onWorkspaceOwnerChange={onWorkspaceOwnerChange}
-        onCreateWorkspace={onCreateWorkspace}
-        onRefreshWorkspaceState={onRefreshWorkspaceState}
-      />
+    <div className="collab-shell collab-command-room" data-testid="area-collab-shell">
+      <section className="collab-command-stage">
+        <div className="collab-command-card collab-command-card--workspace">
+          <WorkspaceSection
+            isAuthenticated={isAuthenticated}
+            workspaceName={workspaceName}
+            workspaceOwner={workspaceOwner}
+            workspaceId={workspaceId}
+            projectId={projectId}
+            onWorkspaceNameChange={onWorkspaceNameChange}
+            onWorkspaceOwnerChange={onWorkspaceOwnerChange}
+            onCreateWorkspace={onCreateWorkspace}
+            onRefreshWorkspaceState={onRefreshWorkspaceState}
+          />
+        </div>
 
-      <InviteJoinSection
-        workspaceId={workspaceId}
-        inviteRole={inviteRole}
-        memberName={memberName}
-        collabRole={collabRole}
-        inviteCode={inviteCode}
-        invites={invites}
-        onInviteRoleChange={onInviteRoleChange}
-        onMemberNameChange={onMemberNameChange}
-        onCollabRoleChange={onCollabRoleChange}
-        onInviteCodeChange={onInviteCodeChange}
-        onCreateInvite={onCreateInvite}
-        onAcceptInvite={onAcceptInvite}
-      />
+        <div className="collab-command-card collab-command-card--invite">
+          <InviteJoinSection
+            workspaceId={workspaceId}
+            inviteRole={inviteRole}
+            memberName={memberName}
+            collabRole={collabRole}
+            inviteCode={inviteCode}
+            invites={invites}
+            onInviteRoleChange={onInviteRoleChange}
+            onMemberNameChange={onMemberNameChange}
+            onCollabRoleChange={onCollabRoleChange}
+            onInviteCodeChange={onInviteCodeChange}
+            onCreateInvite={onCreateInvite}
+            onAcceptInvite={onAcceptInvite}
+          />
+        </div>
+      </section>
 
-      <RealtimeChannelSection
-        workspaceId={workspaceId}
-        isWsConnected={isWsConnected}
-        presence={presence}
-        collabEvents={collabEvents}
-        onConnectWs={onConnectWs}
-        onDisconnectWs={onDisconnectWs}
-        onSendCollabEvent={onSendCollabEvent}
-      />
+      <section className="collab-live-grid" data-testid="area-collab-live-grid">
+        <div className="collab-live-primary">
+          <RealtimeChannelSection
+            workspaceId={workspaceId}
+            isWsConnected={isWsConnected}
+            presence={presence}
+            collabEvents={collabEvents}
+            onConnectWs={onConnectWs}
+            onDisconnectWs={onDisconnectWs}
+            onSendCollabEvent={onSendCollabEvent}
+          />
+        </div>
 
-      <CommentThreadsSection
-        projectId={projectId}
-        commentThreads={commentThreads}
-        commentThreadCursor={commentThreadCursor}
-        commentThreadLimit={commentThreadLimit}
-        commentThreadHasMore={commentThreadHasMore}
-        commentAnchor={commentAnchor}
-        commentContent={commentContent}
-        commentMentions={commentMentions}
-        selectedThreadId={selectedThreadId}
-        commentReplyContent={commentReplyContent}
-        commentReplyMentions={commentReplyMentions}
-        isV4Busy={isV4Busy}
-        onRefreshCommentThreads={onRefreshCommentThreads}
-        onLoadMoreCommentThreads={onLoadMoreCommentThreads}
-        onCommentThreadLimitChange={onCommentThreadLimitChange}
-        onCommentAnchorChange={onCommentAnchorChange}
-        onCommentContentChange={onCommentContentChange}
-        onCommentMentionsChange={onCommentMentionsChange}
-        onSelectedThreadIdChange={onSelectedThreadIdChange}
-        onCommentReplyContentChange={onCommentReplyContentChange}
-        onCommentReplyMentionsChange={onCommentReplyMentionsChange}
-        onCreateCommentThread={onCreateCommentThread}
-        onReplyCommentThread={onReplyCommentThread}
-        onResolveCommentThread={onResolveCommentThread}
-      />
+        <div className="collab-live-secondary">
+          <CommentThreadsSection
+            projectId={projectId}
+            commentThreads={commentThreads}
+            commentThreadCursor={commentThreadCursor}
+            commentThreadLimit={commentThreadLimit}
+            commentThreadHasMore={commentThreadHasMore}
+            commentAnchor={commentAnchor}
+            commentContent={commentContent}
+            commentMentions={commentMentions}
+            selectedThreadId={selectedThreadId}
+            commentReplyContent={commentReplyContent}
+            commentReplyMentions={commentReplyMentions}
+            isV4Busy={isV4Busy}
+            onRefreshCommentThreads={onRefreshCommentThreads}
+            onLoadMoreCommentThreads={onLoadMoreCommentThreads}
+            onCommentThreadLimitChange={onCommentThreadLimitChange}
+            onCommentAnchorChange={onCommentAnchorChange}
+            onCommentContentChange={onCommentContentChange}
+            onCommentMentionsChange={onCommentMentionsChange}
+            onSelectedThreadIdChange={onSelectedThreadIdChange}
+            onCommentReplyContentChange={onCommentReplyContentChange}
+            onCommentReplyMentionsChange={onCommentReplyMentionsChange}
+            onCreateCommentThread={onCreateCommentThread}
+            onReplyCommentThread={onReplyCommentThread}
+            onResolveCommentThread={onResolveCommentThread}
+          />
+        </div>
+      </section>
 
-      <CollabAdvancedSections {...advancedSectionsProps} />
+      <section className="collab-governance-deck">
+        <CollabAdvancedSections {...advancedSectionsProps} />
+      </section>
     </div>
   )
 }

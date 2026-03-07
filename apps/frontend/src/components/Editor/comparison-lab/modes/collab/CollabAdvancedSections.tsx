@@ -39,7 +39,7 @@ const CollabAdvancedSections: React.FC<CollabAdvancedSectionsProps> = ({
 
   return (
     <>
-      <section className="collab-card collab-card--compact">
+      <section className="collab-card collab-card--compact collab-card--advanced-control">
         <h4>高级功能</h4>
         <div className="collab-meta">
           <span>项目治理 / 权限 / 运维 / 快照已收纳为高级区，按需展开。</span>
@@ -88,18 +88,44 @@ const CollabAdvancedSections: React.FC<CollabAdvancedSectionsProps> = ({
       </section>
 
       {showAdvancedSections ? (
-        <>
+        <div className="collab-advanced-grid">
           {showAdvancedGovernance ? (
-            <ProjectGovernanceSection {...projectGovernanceProps} />
+            <div className="collab-advanced-group collab-advanced-group--governance">
+              <div className="collab-advanced-group-head">
+                <span className="collab-advanced-group-kicker">governance deck</span>
+                <strong>项目治理</strong>
+              </div>
+              <ProjectGovernanceSection {...projectGovernanceProps} />
+            </div>
           ) : null}
-          {showAdvancedPermissionMerge ? (
-            <PermissionMergeSection {...permissionMergeProps} />
+
+          {showAdvancedOps ? (
+            <div className="collab-advanced-group collab-advanced-group--reliability">
+              <div className="collab-advanced-group-head">
+                <span className="collab-advanced-group-kicker">reliability deck</span>
+                <strong>告警、错误预算与回滚演练</strong>
+              </div>
+              <OpsToolsSection {...opsToolsProps} />
+            </div>
           ) : null}
-          {showAdvancedOps ? <OpsToolsSection {...opsToolsProps} /> : null}
-          {showAdvancedStorage ? (
-            <StorageSnapshotsSection {...storageSnapshotsProps} />
+
+          {showAdvancedPermissionMerge || showAdvancedStorage ? (
+            <div className="collab-advanced-group collab-advanced-group--storage">
+              <div className="collab-advanced-group-head">
+                <span className="collab-advanced-group-kicker">access and archive</span>
+                <strong>权限、合并与云存储</strong>
+              </div>
+              <div className="collab-advanced-stack">
+                {showAdvancedPermissionMerge ? (
+                  <PermissionMergeSection {...permissionMergeProps} />
+                ) : null}
+                {showAdvancedStorage ? (
+                  <StorageSnapshotsSection {...storageSnapshotsProps} />
+                ) : null}
+              </div>
+            </div>
           ) : null}
-        </>
+        </div>
       ) : null}
     </>
   )

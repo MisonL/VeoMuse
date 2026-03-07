@@ -25,10 +25,22 @@ const RealtimeChannelSection: React.FC<RealtimeChannelSectionProps> = ({
   onDisconnectWs,
   onSendCollabEvent
 }) => {
+  const previewEvents = takePreviewItems(collabEvents, 20)
+
   return (
-    <section className="collab-card">
-      <h4>多人协同通道</h4>
-      <div className="lab-inline-actions">
+    <section className="collab-card realtime-channel-hero" data-testid="area-realtime-channel-hero">
+      <div className="realtime-channel-head">
+        <div className="collab-section-copy">
+          <span className="collab-section-kicker">live relay</span>
+          <h4>多人协同通道</h4>
+        </div>
+        <div className="realtime-channel-status-band">
+          <span>连接状态：{getConnectionStatusText(isWsConnected)}</span>
+          <span>在线人数：{presence.length}</span>
+          <span>Workspace：{workspaceId || '-'}</span>
+        </div>
+      </div>
+      <div className="lab-inline-actions collab-live-actions">
         <button
           aria-label="连接协作通道"
           disabled={isWsConnected || !workspaceId}
@@ -54,12 +66,20 @@ const RealtimeChannelSection: React.FC<RealtimeChannelSectionProps> = ({
           发送 Cursor 更新
         </button>
       </div>
-      <div className="collab-meta">
-        <span>连接状态：{getConnectionStatusText(isWsConnected)}</span>
-        <span>在线人数：{presence.length}</span>
+      <div className="collab-command-summary">
+        <div className="collab-command-summary-card">
+          <span>presence rail</span>
+          <strong>{presence.length}</strong>
+          <small>当前在线成员</small>
+        </div>
+        <div className="collab-command-summary-card">
+          <span>event spine</span>
+          <strong>{previewEvents.length}</strong>
+          <small>已载入协作事件</small>
+        </div>
       </div>
-      <div className="collab-split">
-        <div className="collab-column">
+      <div className="collab-split collab-split--live">
+        <div className="collab-column presence-rail">
           <h5>在线成员</h5>
           <div className="collab-list">
             {presence.map((item) => (
@@ -72,10 +92,10 @@ const RealtimeChannelSection: React.FC<RealtimeChannelSectionProps> = ({
             {presence.length === 0 ? <div className="api-empty">暂无在线成员</div> : null}
           </div>
         </div>
-        <div className="collab-column">
+        <div className="collab-column event-spine">
           <h5>协作事件</h5>
           <div className="collab-list">
-            {takePreviewItems(collabEvents, 20).map((item) => (
+            {previewEvents.map((item) => (
               <div key={item.id} className="collab-list-item">
                 <span>{item.eventType}</span>
                 <span>{item.actorName}</span>

@@ -2253,3 +2253,458 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Creative and Collab stage overrides */
+
+.creative-broadcast-shell,
+.collab-command-room {
+  grid-template-columns: 1fr;
+  grid-auto-rows: auto;
+  gap: 12px;
+}
+
+.creative-broadcast-shell > *,
+.collab-command-room > * {
+  min-height: 0;
+}
+
+.creative-hero-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+  gap: 12px;
+  min-height: 0;
+}
+
+.creative-hero-main,
+.creative-hero-side,
+.creative-support-grid,
+.creative-support-card,
+.creative-ops-rail,
+.creative-ops-card,
+.collab-command-stage,
+.collab-command-card,
+.collab-live-grid,
+.collab-live-primary,
+.collab-live-secondary,
+.collab-governance-deck {
+  min-height: 0;
+}
+
+.creative-hero-side {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.creative-support-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
+  gap: 12px;
+}
+
+.creative-ops-rail {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+  gap: 12px;
+}
+
+.creative-hero-main .creative-card,
+.creative-side-stack .creative-card,
+.creative-support-card .creative-card,
+.creative-ops-card .creative-card {
+  height: 100%;
+}
+
+.creative-hero-main .video-generation-card {
+  grid-column: auto;
+  min-height: 560px;
+  padding: 16px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--ap-accent-soft) 34%, transparent), transparent 22%),
+    radial-gradient(circle at 12% 88%, color-mix(in srgb, var(--ap-signal-soft) 26%, transparent), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%), color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%));
+  border-color: color-mix(in srgb, var(--ap-accent) 40%, var(--ap-border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 18px 34px rgba(15, 76, 173, 0.12),
+    0 10px 20px rgba(70, 48, 20, 0.08);
+}
+
+.creative-side-stack .creative-card,
+.creative-support-card .creative-card,
+.creative-ops-card .creative-card {
+  border-radius: 22px;
+}
+
+.creative-support-card--versions .creative-card {
+  border-style: dashed;
+}
+
+.creative-ops-card--archive .creative-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%), color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%)),
+    repeating-linear-gradient(180deg, transparent 0 18px, var(--ap-grid-line) 18px 19px);
+}
+
+.creative-section-head,
+.video-generation-section-head,
+.collab-section-copy,
+.creative-section-copy {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+
+.creative-section-copy,
+.collab-section-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.creative-section-kicker,
+.collab-section-kicker,
+.creative-subhead strong,
+.comment-thread-spotlight-kicker,
+.collab-advanced-group-kicker {
+  font-family: var(--ap-font-mono);
+}
+
+.creative-section-kicker,
+.collab-section-kicker,
+.comment-thread-spotlight-kicker,
+.collab-advanced-group-kicker {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-text-dim) 76%, var(--ap-accent) 24%);
+}
+
+.creative-section-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--ap-accent) 28%, var(--ap-border));
+  background: color-mix(in srgb, var(--ap-accent-soft) 68%, #ffffff 32%);
+  color: var(--ap-accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.creative-subhead {
+  display: grid;
+  gap: 4px;
+}
+
+.creative-subhead strong {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.creative-subhead span {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+  line-height: 1.45;
+}
+
+.video-generation-hero-head {
+  display: grid;
+  gap: 10px;
+}
+
+.video-generation-status-ribbon {
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(280px, 1.14fr);
+  gap: 10px;
+}
+
+.video-generation-command-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(280px, 0.82fr);
+  gap: 12px;
+  min-height: 0;
+}
+
+.video-generation-prompt-stage,
+.video-generation-ops-sidebar,
+.video-generation-jobs-deck {
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.video-generation-ops-sidebar {
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+  background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+}
+
+.video-generation-ops-fields {
+  grid-template-columns: 1fr;
+}
+
+.video-generation-polling-hint--hero {
+  height: 100%;
+  align-content: center;
+}
+
+.video-generation-jobs-deck {
+  flex: 1;
+}
+
+.video-generation-job-list {
+  min-height: 0;
+  flex: 1;
+}
+
+.asset-reuse-panels {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
+  gap: 12px;
+  min-height: 0;
+}
+
+.asset-reuse-panel {
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+}
+
+.collab-command-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(320px, 1.08fr);
+  gap: 12px;
+}
+
+.collab-live-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
+  gap: 12px;
+}
+
+.collab-live-primary .collab-card,
+.collab-live-secondary .collab-card,
+.collab-command-card .collab-card {
+  height: 100%;
+}
+
+.collab-command-card .collab-card,
+.collab-live-grid .collab-card,
+.collab-governance-deck .collab-card {
+  border-radius: 22px;
+}
+
+.realtime-channel-head,
+.comment-threads-desk-head,
+.collab-advanced-group-head {
+  display: grid;
+  gap: 6px;
+}
+
+.realtime-channel-status-band {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--ap-text-dim);
+}
+
+.collab-live-actions {
+  padding-bottom: 2px;
+  border-bottom: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+}
+
+.collab-command-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.collab-command-summary-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+}
+
+.collab-command-summary-card span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-text-dim) 76%, var(--ap-accent) 24%);
+}
+
+.collab-command-summary-card strong {
+  font-family: var(--ap-font-display);
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.collab-command-summary-card small {
+  color: var(--ap-text-dim);
+}
+
+.collab-split--live {
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
+}
+
+.presence-rail .collab-list-item {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.event-spine .collab-list-item {
+  grid-template-columns: minmax(0, 1.2fr) auto auto;
+}
+
+.comment-threads-desk-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.96fr) minmax(260px, 1.04fr);
+  gap: 12px;
+  min-height: 0;
+}
+
+.comment-threads-compose,
+.comment-threads-review-column {
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.comment-thread-spotlight {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ap-signal) 28%, var(--ap-border));
+  background:
+    radial-gradient(circle at 90% 10%, color-mix(in srgb, var(--ap-signal-soft) 26%, transparent), transparent 26%),
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+}
+
+.comment-thread-spotlight strong {
+  font-family: var(--ap-font-display);
+  font-size: 18px;
+  line-height: 1.1;
+  color: var(--ap-text);
+}
+
+.comment-thread-spotlight span:last-child {
+  color: var(--ap-text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.collab-governance-deck {
+  display: grid;
+  gap: 12px;
+}
+
+.collab-advanced-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+  gap: 12px;
+}
+
+.collab-advanced-group {
+  display: grid;
+  gap: 10px;
+  min-height: 0;
+}
+
+.collab-advanced-group-head strong {
+  font-family: var(--ap-font-display);
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.collab-advanced-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.collab-card--advanced-control {
+  border-style: dashed;
+}
+
+@container lab-frame (max-width: 1460px) {
+  .creative-hero-stage,
+  .creative-support-grid,
+  .creative-ops-rail,
+  .collab-command-stage,
+  .collab-live-grid,
+  .collab-advanced-grid,
+  .asset-reuse-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .video-generation-status-ribbon,
+  .video-generation-command-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+@container lab-frame (max-width: 1180px) {
+  .comment-threads-desk-layout,
+  .collab-split--live {
+    grid-template-columns: 1fr;
+  }
+
+  .collab-command-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .creative-broadcast-shell,
+  .collab-command-room {
+    padding: 8px;
+  }
+
+  .creative-hero-main .video-generation-card {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .video-generation-status-ribbon,
+  .video-generation-command-bar,
+  .asset-reuse-panels,
+  .collab-command-stage,
+  .collab-live-grid,
+  .comment-threads-desk-layout,
+  .collab-split--live,
+  .collab-advanced-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .realtime-channel-status-band,
+  .collab-live-actions,
+  .creative-section-head,
+  .video-generation-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -27,8 +27,14 @@ const BatchJobSection: React.FC<BatchJobSectionProps> = ({
   onQueryBatchJob
 }) => {
   return (
-    <section className="creative-card">
-      <h4>v4 Batch Job</h4>
+    <section className="creative-card creative-card--batch">
+      <div className="creative-section-head">
+        <div className="creative-section-copy">
+          <span className="creative-section-kicker">batch engine</span>
+          <h4>v4 Batch Job</h4>
+        </div>
+        <div className="creative-section-chip">后台执行器</div>
+      </div>
       <div className="lab-inline-fields">
         <label className="lab-field">
           <span>Job 类型</span>

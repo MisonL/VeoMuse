@@ -49,9 +49,20 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
   onQueryAssetReuseHistory
 }) => {
   return (
-    <>
-      <section className="creative-card">
-        <h4>v4 Asset Reuse</h4>
+    <section className="creative-card creative-card--archive">
+      <div className="creative-section-head">
+        <div className="creative-section-copy">
+          <span className="creative-section-kicker">asset archive</span>
+          <h4>v4 Asset Reuse</h4>
+        </div>
+        <div className="creative-section-chip">资源回路</div>
+      </div>
+      <div className="asset-reuse-panels">
+        <div className="asset-reuse-panel">
+          <div className="creative-subhead">
+            <strong>发起复用</strong>
+            <span>把关键资产转运到目标项目，保持风格与制作链路一致。</span>
+          </div>
         <div className="lab-inline-fields">
           <label className="lab-field">
             <span>来源 Asset</span>
@@ -94,10 +105,13 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
           <div>Asset: {assetReuseResult?.assetId || '-'}</div>
           <div>目标项目: {assetReuseResult?.targetProjectId || '-'}</div>
         </div>
-      </section>
+        </div>
 
-      <section className="creative-card">
-        <h4>v4 资产复用历史</h4>
+        <div className="asset-reuse-panel">
+          <div className="creative-subhead">
+            <strong>复用历史</strong>
+            <span>用资产、来源项目和目标项目回看整个复用轨迹。</span>
+          </div>
         <div className="lab-inline-fields">
           <label className="lab-field">
             <span>资产 ID</span>
@@ -177,8 +191,9 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
             <div className="api-empty">暂无资产复用历史</div>
           ) : null}
         </div>
-      </section>
-    </>
+        </div>
+      </div>
+    </section>
   )
 }
 

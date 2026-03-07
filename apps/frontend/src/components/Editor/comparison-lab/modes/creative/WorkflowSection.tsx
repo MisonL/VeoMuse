@@ -47,8 +47,14 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
   onLoadMoreWorkflowRuns
 }) => {
   return (
-    <section className="creative-card">
-      <h4>v4 Workflow</h4>
+    <section className="creative-card creative-card--workflow">
+      <div className="creative-section-head">
+        <div className="creative-section-copy">
+          <span className="creative-section-kicker">workflow deck</span>
+          <h4>v4 Workflow</h4>
+        </div>
+        <div className="creative-section-chip">编排器</div>
+      </div>
       <div className="lab-inline-actions">
         <button disabled={isV4Busy} onClick={onRefreshWorkflows}>
           刷新列表

@@ -65,6 +65,7 @@ describe('编辑器聚合面板 SSR 覆盖补强', () => {
       )
     )
     expect(html).toContain('创意闭环引擎')
+    expect(html).toContain('area-creative-hero-stage')
     expect(html).toContain('统一视频生成工作台')
     expect(html).toContain('v4 Workflow')
     expect(html).toContain('v4 Asset Reuse')

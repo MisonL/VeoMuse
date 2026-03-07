@@ -146,6 +146,9 @@ describe('CreativeModePanel DOM / SSR 护栏', () => {
   it('空态应渲染关键卡片与默认提示', () => {
     const view = render(<CreativeModePanel {...createProps()} />)
 
+    expect(view.getByTestId('area-creative-shell')).toBeInTheDocument()
+    expect(view.getByTestId('area-creative-hero-stage')).toBeInTheDocument()
+    expect(view.getByTestId('area-video-generation-hero')).toBeInTheDocument()
     expect(view.getByText('创意闭环引擎')).toBeInTheDocument()
     expect(view.getByText('统一视频生成工作台')).toBeInTheDocument()
     expect(view.getByText('v4 Workflow')).toBeInTheDocument()
@@ -210,6 +213,7 @@ describe('CreativeModePanel DOM / SSR 护栏', () => {
   it('SSR 应输出创意模式核心区块', () => {
     const html = renderToString(<CreativeModePanel {...createProps()} />)
 
+    expect(html).toContain('area-creative-hero-stage')
     expect(html).toContain('创意闭环引擎')
     expect(html).toContain('统一视频生成工作台')
     expect(html).toContain('v4 Workflow')

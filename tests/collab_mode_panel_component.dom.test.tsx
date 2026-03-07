@@ -168,6 +168,10 @@ describe('CollabModePanel DOM 组件回归', () => {
   it('空态应渲染关键卡片与默认提示', () => {
     const view = render(<CollabModePanel {...createProps()} />)
 
+    expect(view.getByTestId('area-collab-shell')).toBeInTheDocument()
+    expect(view.getByTestId('area-collab-live-grid')).toBeInTheDocument()
+    expect(view.getByTestId('area-realtime-channel-hero')).toBeInTheDocument()
+    expect(view.getByTestId('area-comment-threads-desk')).toBeInTheDocument()
     expect(view.getByText('团队空间')).toBeInTheDocument()
     expect(view.getByText('邀请与加入')).toBeInTheDocument()
     expect(view.getByText('多人协同通道')).toBeInTheDocument()
