@@ -2,11 +2,14 @@ import { describe, expect, it } from 'bun:test'
 import {
   buildWebSocketUpgradeRequest,
   extractStaticAssetPaths,
+  filterJavaScriptAssetPaths,
   hasImmutableCacheControl,
+  LAB_ENTRY_MARKERS,
   normalizeBaseUrl,
   parseArgs,
   parseHttpStatusCode,
   REQUIRED_SECURITY_HEADERS,
+  resolveMissingLabEntryMarkers,
   resolveMissingSecurityHeaders
 } from '../scripts/docker_smoke_check'
 
@@ -50,6 +53,31 @@ describe('docker smoke 脚本辅助逻辑', () => {
       'cache-control': 'public, immutable, max-age=31536000'
     })
     expect(hasImmutableCacheControl(headers)).toBe(true)
+  })
+
+  it('应过滤 JS 资源并识别实验室入口标识', () => {
+    const assetPaths = [
+      '/assets/index-abc123.css',
+      '/assets/index-main.js',
+      '/assets/lab-chunk.js?import'
+    ]
+    expect(filterJavaScriptAssetPaths(assetPaths)).toEqual([
+      '/assets/index-main.js',
+      '/assets/lab-chunk.js?import'
+    ])
+
+    const fullBundle = `
+      ${LAB_ENTRY_MARKERS.join('\n')}
+      data-testid="area-comparison-lab"
+    `
+    expect(resolveMissingLabEntryMarkers(fullBundle)).toEqual([])
+
+    const splitBundles = [
+      'lab-tab-compare lab-tab-marketplace 双通道比对 策略治理',
+      'lab-tab-creative lab-tab-collab 创意闭环 协作平台'
+    ]
+    expect(resolveMissingLabEntryMarkers(splitBundles)).toEqual([])
+    expect(resolveMissingLabEntryMarkers('lab-tab-compare 双通道比对')).toContain('lab-tab-collab')
   })
 
   it('应识别缺失安全头并构造 WebSocket 升级请求', () => {

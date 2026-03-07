@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import {
   buildRealE2EPrecheckMessage,
+  buildReleaseGateFailureReport,
   buildSloGateCommand,
   buildQualitySummaryStep,
   classifyRealE2EFailure,
@@ -478,6 +479,50 @@ Running 2 tests using 1 worker
         item.includes('优先单独复现失败步骤「E2E Regression (Real) Precheck」')
       )
     ).toBe(false)
+  })
+
+  it('失败摘要应包含工件路径、失败步骤与建议', () => {
+    const base = createQualitySummary({
+      branch: 'feature/failure-summary',
+      ci: false,
+      sloMode: 'soft',
+      sloApiBase: 'http://127.0.0.1:33117',
+      runRealE2E: false,
+      sloBootstrapEnabled: true,
+      generatedAt: '2026-03-02T00:00:00.000Z'
+    })
+
+    const buildFailure = buildQualitySummaryStep({
+      step: {
+        name: 'Build',
+        command: 'bun run build'
+      },
+      status: 'failed',
+      startedAtMs: 2_300,
+      endedAtMs: 2_900,
+      attempts: [],
+      failureMessage: 'Build failed with exit code 1',
+      failureExitCode: 1
+    })
+
+    const failed = finalizeQualitySummary(
+      {
+        ...base,
+        steps: [buildFailure]
+      },
+      {
+        status: 'failed',
+        failureMessage: 'Build failed with exit code 1',
+        generatedAt: '2026-03-02T00:01:00.000Z'
+      }
+    )
+
+    const report = buildReleaseGateFailureReport(failed)
+    expect(report).toContain('[release-gate] failure summary:')
+    expect(report).toContain('artifacts/quality-summary.json')
+    expect(report).toContain('Build (domain=build, attempts=1, exit=1)')
+    expect(report).toContain('video loop: step=E2E Regression, status=not-run')
+    expect(report).toContain('修复完成后执行 `bun run release:gate` 做一次全链路复验。')
   })
 
   it('real 回归失败时应输出按失败类型分类的建议', () => {

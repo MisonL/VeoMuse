@@ -15,7 +15,7 @@ import {
   resolveSloCheckRetries,
   resolveSloMode
 } from './release-gate/config'
-import type { QualitySummary } from './release-gate/contracts'
+import { QUALITY_SUMMARY_RELATIVE_PATH, type QualitySummary } from './release-gate/contracts'
 import {
   buildQualitySummaryStep,
   classifyRealE2EFailure,
@@ -58,6 +58,96 @@ export {
   resolveSloBootstrapEnabled,
   resolveSloMode,
   validateRealE2EExecution
+}
+
+const formatFailureAttemptLabel = (attempts: QualitySummary['steps'][number]['attempts']) => {
+  if (attempts.length <= 1) return `attempts=${attempts.length || 1}`
+  const failedAttempts = attempts.filter((attempt) => attempt.status === 'failed').length
+  return `attempts=${attempts.length} (failed=${failedAttempts}, passed=${attempts.length - failedAttempts})`
+}
+
+const formatFailureLine = (step: QualitySummary['steps'][number]) => {
+  const failure = step.failure
+  const failureBits = [
+    failure?.domain ? `domain=${failure.domain}` : '',
+    formatFailureAttemptLabel(step.attempts),
+    failure?.exitCode === null || failure?.exitCode === undefined
+      ? 'exit=n/a'
+      : `exit=${failure.exitCode}`
+  ].filter(Boolean)
+  const failureMessage = String(failure?.message || '').trim()
+  return `- ${step.name} (${failureBits.join(', ')})${failureMessage ? `: ${failureMessage}` : ''}`
+}
+
+const formatLoopLine = (
+  label: string,
+  trackedStepName: string,
+  status: string,
+  attempts: number,
+  detail: string,
+  failureType?: string | null
+) => {
+  const detailText = String(detail || '').trim()
+  const suffix = failureType ? `, failureType=${failureType}` : ''
+  return `- ${label}: step=${trackedStepName}, status=${status}, attempts=${attempts}${suffix}${
+    detailText ? `, detail=${detailText}` : ''
+  }`
+}
+
+export const buildReleaseGateFailureReport = (
+  summary: QualitySummary,
+  qualitySummaryPath = QUALITY_SUMMARY_RELATIVE_PATH
+) => {
+  const failedSteps = summary.steps.filter((step) => step.status === 'failed')
+  const lines = [
+    '[release-gate] failure summary:',
+    `- overall: ${String(summary.failure?.message || 'release gate failed').trim()}`,
+    `- quality summary: ${qualitySummaryPath}`
+  ]
+
+  if (failedSteps.length > 0) {
+    lines.push('- failed steps:')
+    lines.push(...failedSteps.map(formatFailureLine))
+  } else {
+    lines.push('- failed steps: none recorded')
+  }
+
+  lines.push(
+    formatLoopLine(
+      'video loop',
+      summary.videoGenerateLoop.trackedStepName,
+      summary.videoGenerateLoop.status,
+      summary.videoGenerateLoop.attempts,
+      summary.videoGenerateLoop.detail,
+      summary.videoGenerateLoop.failureType
+    )
+  )
+
+  if (summary.runRealE2E || summary.realE2E.status !== 'not-run') {
+    lines.push(
+      formatLoopLine(
+        'real e2e',
+        summary.realE2E.trackedStepName,
+        summary.realE2E.status,
+        summary.realE2E.attempts,
+        summary.realE2E.detail,
+        summary.realE2E.failureType
+      )
+    )
+  }
+
+  if (summary.sloBootstrap.status !== 'not-needed') {
+    lines.push(
+      `- slo bootstrap: status=${summary.sloBootstrap.status}, detail=${summary.sloBootstrap.detail}`
+    )
+  }
+
+  if (summary.recommendations.length > 0) {
+    lines.push('- recommendations:')
+    lines.push(...summary.recommendations.slice(0, 5).map((item, index) => `${index + 1}. ${item}`))
+  }
+
+  return lines.join('\n')
 }
 
 export const runReleaseGate = async (argv = process.argv.slice(2), env = process.env) => {
@@ -255,6 +345,10 @@ export const runReleaseGate = async (argv = process.argv.slice(2), env = process
       console.error(
         `[release-gate] failed to write quality summary: ${toRuntimeErrorMessage(error)}`
       )
+    }
+
+    if (gateError) {
+      console.error(`\n${buildReleaseGateFailureReport(summary)}`)
     }
   }
 

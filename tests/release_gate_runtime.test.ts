@@ -254,6 +254,29 @@ describe('发布门禁运行时路径（mock）', () => {
     expect(summary.recommendations.length).toBeGreaterThan(0)
   })
 
+  it('失败路径应输出增强失败摘要，便于快速分流', async () => {
+    let callCount = 0
+    spyOn(Bun, 'spawn').mockImplementation((_cmd: any) => {
+      callCount += 1
+      return createSubprocess(callCount === 2 ? 1 : 0)
+    })
+    const errorSpy = spyOn(console, 'error').mockImplementation(() => {})
+
+    await expect(
+      runReleaseGate([], {
+        GITHUB_REF_NAME: 'feature/release-gate-failure-report'
+      } as NodeJS.ProcessEnv)
+    ).rejects.toThrow('Build failed with exit code 1')
+
+    const combinedErrorLog = errorSpy.mock.calls
+      .flatMap((call) => call.map((item) => String(item)))
+      .join('\n')
+    expect(combinedErrorLog).toContain('[release-gate] failure summary:')
+    expect(combinedErrorLog).toContain('artifacts/quality-summary.json')
+    expect(combinedErrorLog).toContain('Build (domain=build, attempts=1, exit=1)')
+    expect(combinedErrorLog).toContain('video loop: step=E2E Regression, status=not-run')
+  })
+
   it('SLO 健康不可达且自举关闭时应标记 skipped 并继续执行', async () => {
     const spawnSpy = spyOn(Bun, 'spawn').mockImplementation((_cmd: any) => createSubprocess(0))
     globalThis.fetch = mock(async () => {

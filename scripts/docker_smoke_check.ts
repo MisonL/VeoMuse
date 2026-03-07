@@ -68,6 +68,16 @@ export const REQUIRED_SECURITY_HEADERS = [
   'cross-origin-resource-policy'
 ] as const
 export const STATIC_ASSET_PATH_PATTERN = /(?:src|href)=["'](\/assets\/[^"'?#]+\.(?:js|css))["']/gi
+export const LAB_ENTRY_MARKERS = [
+  'lab-tab-compare',
+  'lab-tab-marketplace',
+  'lab-tab-creative',
+  'lab-tab-collab',
+  '双通道比对',
+  '策略治理',
+  '创意闭环',
+  '协作平台'
+] as const
 
 const HELP_TEXT = `
 Docker Smoke Check
@@ -86,6 +96,7 @@ Flags:
 Coverage:
   - GET /
   - /assets/* cache headers
+  - 前端实验室入口 bundle 标识
   - GET /api/health
   - GET /api/capabilities
   - /ws/generation websocket handshake
@@ -198,6 +209,20 @@ export const extractStaticAssetPaths = (html: string) => {
     paths.push(assetPath)
   }
   return paths
+}
+
+export const filterJavaScriptAssetPaths = (assetPaths: string[]) =>
+  assetPaths.filter((assetPath) => {
+    const normalized = assetPath.split('#')[0]?.split('?')[0] || assetPath
+    return normalized.endsWith('.js')
+  })
+
+export const resolveMissingLabEntryMarkers = (
+  assetContents: string | string[],
+  expectedMarkers: readonly string[] = LAB_ENTRY_MARKERS
+) => {
+  const combinedContent = Array.isArray(assetContents) ? assetContents.join('\n') : assetContents
+  return expectedMarkers.filter((marker) => !combinedContent.includes(marker))
 }
 
 export const resolveMissingSecurityHeaders = (
@@ -379,8 +404,7 @@ const probeSecurityHeaders = (response: Response) => {
   console.log(`[docker-smoke] 安全响应头通过: ${REQUIRED_SECURITY_HEADERS.join(', ')}`)
 }
 
-const probeStaticAssetCache = async (baseUrl: string, indexHtml: string) => {
-  const assetPaths = extractStaticAssetPaths(indexHtml)
+const probeStaticAssetCache = async (baseUrl: string, assetPaths: string[]) => {
   if (assetPaths.length === 0) {
     throw new Error('首页未解析到任何 /assets/ 静态资源路径')
   }
@@ -393,6 +417,34 @@ const probeStaticAssetCache = async (baseUrl: string, indexHtml: string) => {
     )
   }
   console.log(`[docker-smoke] 静态缓存通过: ${assetUrl}`)
+}
+
+const probeFrontendLabEntries = async (baseUrl: string, assetPaths: string[]) => {
+  const scriptAssetPaths = filterJavaScriptAssetPaths(assetPaths)
+  if (scriptAssetPaths.length === 0) {
+    throw new Error('首页未解析到任何 JS 静态资源路径，无法校验实验室入口')
+  }
+
+  const checkedAssets: string[] = []
+  const assetContents: string[] = []
+
+  for (const assetPath of scriptAssetPaths) {
+    const assetUrl = resolveAbsoluteUrl(baseUrl, assetPath)
+    const response = await fetchWithTimeout(assetUrl)
+    expectOkResponse(response, assetUrl)
+    assetContents.push(await response.text())
+    checkedAssets.push(assetUrl)
+
+    const missingMarkers = resolveMissingLabEntryMarkers(assetContents)
+    if (missingMarkers.length === 0) {
+      console.log(`[docker-smoke] 实验室入口探测通过: ${checkedAssets.join(', ')}`)
+      return
+    }
+  }
+
+  throw new Error(
+    `前端实验室入口探测失败: missing=${resolveMissingLabEntryMarkers(assetContents).join(', ')}; checked=${checkedAssets.join(', ')}`
+  )
 }
 
 const createSmokePassword = (seed: string) => {
@@ -645,10 +697,12 @@ export const runSmokeCheck = async (options: CliOptions) => {
     }
 
     const { response: rootResponse, html } = await probeRootDocument(baseUrl)
+    const assetPaths = extractStaticAssetPaths(html)
     probeSecurityHeaders(rootResponse)
     await probeEndpoint(resolveAbsoluteUrl(baseUrl, '/api/health'))
     await probeEndpoint(resolveAbsoluteUrl(baseUrl, '/api/capabilities'))
-    await probeStaticAssetCache(baseUrl, html)
+    await probeStaticAssetCache(baseUrl, assetPaths)
+    await probeFrontendLabEntries(baseUrl, assetPaths)
     await probeWebSocketHandshake(baseUrl)
     await probeUploadFlow(baseUrl)
 
