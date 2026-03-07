@@ -1,7 +1,7 @@
 import React from 'react'
 import type { ProviderHealthItem } from '../telemetryDashboard.logic'
 
-interface ProviderHealthPanelProps {
+export interface ProviderHealthPanelProps {
   isLoading: boolean
   rows: ProviderHealthItem[]
   error: string

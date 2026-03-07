@@ -11,7 +11,7 @@ import { SloBreakdownList, SloFailureList } from './SloDataLists'
 
 const SLO_JOURNEY_FAILURE_LIMIT = 10
 
-interface SloSectionProps {
+export interface SloSectionProps {
   sloSummary: SloSummary | null
   sloBreakdown: SloBreakdownItem[]
   sloJourneyFailures: SloJourneyFailureItem[]

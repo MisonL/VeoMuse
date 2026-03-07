@@ -1,12 +1,12 @@
 import React from 'react'
 
-interface ApiMetricRow {
+export interface ApiMetricRow {
   name: string
   successText: string
   avgText: string
 }
 
-interface TelemetryOverviewSectionProps {
+export interface TelemetryOverviewSectionProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>
   fpsSummary: string
   metricsError: string
