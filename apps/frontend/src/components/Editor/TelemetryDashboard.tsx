@@ -7,70 +7,15 @@ import SloSection from './telemetry-dashboard/SloSection'
 import { useTelemetryDashboardController } from './telemetry-dashboard/hooks/useTelemetryDashboardController'
 import './TelemetryDashboard.css'
 
-export interface TelemetryCommandBarModel {
-  tone: 'stable' | 'degraded'
-  headline: string
-  subtitle: string
-  stats: {
-    incidentCount: number
-    providerCount: number
-    sloStatusText: 'Ready' | 'Pending'
-  }
-}
-
-interface BuildTelemetryCommandBarModelOptions {
-  metricsError: string
-  sloError: string
-  providerRows: Array<{ status: string }>
-  hasSloSummary: boolean
-}
-
-export const buildTelemetryCommandBarModel = ({
-  metricsError,
-  sloError,
-  providerRows,
-  hasSloSummary
-}: BuildTelemetryCommandBarModelOptions): TelemetryCommandBarModel => {
-  const providerAlertCount = providerRows.filter((row) => {
-    const normalized = row.status.toLowerCase()
-    return (
-      !normalized.includes('ok') &&
-      !normalized.includes('healthy') &&
-      !normalized.includes('pass')
-    )
-  }).length
-  const incidentCount = Number(Boolean(metricsError)) + Number(Boolean(sloError)) + providerAlertCount
-  const tone = incidentCount > 0 ? 'degraded' : 'stable'
-
-  return {
-    tone,
-    headline: tone === 'stable' ? '总控链路稳定' : '总控链路存在异常待复核',
-    subtitle:
-      tone === 'stable'
-        ? '关键指标、Provider 链路与 SLO 判定处于可播出状态。'
-        : `当前已捕获 ${incidentCount} 处异常信号，建议先查看告警与 Provider 健康状态。`,
-    stats: {
-      incidentCount,
-      providerCount: providerRows.length,
-      sloStatusText: hasSloSummary ? 'Ready' : 'Pending'
-    }
-  }
-}
-
 const TelemetryDashboard: React.FC = () => {
   const {
-    overviewSectionProps,
-    sloSectionProps,
-    providerHealthPanelProps,
+    commandBarModel,
+    overviewModel,
+    sloModel,
+    providerHealthModel,
     projectGovernancePanelProps,
     dbOpsPanelProps
   } = useTelemetryDashboardController()
-  const commandBarModel = buildTelemetryCommandBarModel({
-    metricsError: overviewSectionProps.metricsError,
-    sloError: sloSectionProps.sloError,
-    providerRows: providerHealthPanelProps.rows,
-    hasSloSummary: Boolean(sloSectionProps.sloSummary)
-  })
 
   return (
     <div className="telemetry-dashboard" data-tone={commandBarModel.tone}>
@@ -96,11 +41,11 @@ const TelemetryDashboard: React.FC = () => {
         </div>
       </header>
 
-      <TelemetryOverviewSection {...overviewSectionProps} />
+      <TelemetryOverviewSection {...overviewModel.sectionProps} />
 
-      <SloSection {...sloSectionProps} />
+      <SloSection {...sloModel.sectionProps} />
 
-      <ProviderHealthPanel {...providerHealthPanelProps} />
+      <ProviderHealthPanel {...providerHealthModel.panelProps} />
 
       <ProjectGovernancePanel {...projectGovernancePanelProps} />
 
