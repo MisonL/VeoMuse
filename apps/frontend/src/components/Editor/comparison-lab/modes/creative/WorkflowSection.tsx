@@ -97,25 +97,6 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
           刷新列表
         </button>
       </div>
-      <div className="lab-metric-grid workflow-summary-grid" data-testid="workflow-summary-grid">
-        <div className="lab-metric-card lab-metric-card--accent">
-          <span>工作流库</span>
-          <strong>{workflows.length}</strong>
-          <small>当前选择：{selectedWorkflow?.name || '未选择'}</small>
-        </div>
-        <div className="lab-metric-card lab-metric-card--success">
-          <span>运行完成</span>
-          <strong>{completedWorkflowRuns.length}</strong>
-          <small>
-            失败 {failedWorkflowRuns.length} · 可继续翻页 {workflowRunsHasMore ? '是' : '否'}
-          </small>
-        </div>
-        <div className="lab-metric-card lab-metric-card--neutral">
-          <span>最近触发</span>
-          <strong>{focusWorkflowRun?.triggerType || FALLBACK_TEXT}</strong>
-          <small>{formatLocalDateTime(focusWorkflowRun?.createdAt)}</small>
-        </div>
-      </div>
       <div className="workflow-stage-layout">
         <div className="workflow-stage-compose">
           <div className="creative-stage-callout">
@@ -214,6 +195,25 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
             <div>最近更新: {formatLocalDateTime(selectedWorkflow?.updatedAt)}</div>
           </div>
         </aside>
+      </div>
+      <div className="lab-metric-grid workflow-summary-grid" data-testid="workflow-summary-grid">
+        <div className="lab-metric-card lab-metric-card--accent">
+          <span>工作流库</span>
+          <strong>{workflows.length}</strong>
+          <small>当前选择：{selectedWorkflow?.name || '未选择'}</small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--success">
+          <span>运行完成</span>
+          <strong>{completedWorkflowRuns.length}</strong>
+          <small>
+            失败 {failedWorkflowRuns.length} · 可继续翻页 {workflowRunsHasMore ? '是' : '否'}
+          </small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--neutral">
+          <span>最近触发</span>
+          <strong>{focusWorkflowRun?.triggerType || FALLBACK_TEXT}</strong>
+          <small>{formatLocalDateTime(focusWorkflowRun?.createdAt)}</small>
+        </div>
       </div>
       <div className="creative-scene-list">
         {workflowRuns.map((item) => (

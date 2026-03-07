@@ -91,26 +91,6 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
         </div>
         <div className="creative-section-chip">资源回路</div>
       </div>
-      <div
-        className="lab-metric-grid asset-reuse-summary-grid"
-        data-testid="asset-reuse-summary-grid"
-      >
-        <div className="lab-metric-card lab-metric-card--accent">
-          <span>历史记录</span>
-          <strong>{orderedHistoryRecords.length}</strong>
-          <small>最近复用：{formatLocalDateTime(latestHistoryRecord?.createdAt)}</small>
-        </div>
-        <div className="lab-metric-card lab-metric-card--neutral">
-          <span>来源项目</span>
-          <strong>{sourceProjectCount}</strong>
-          <small>目标项目 {targetProjectCount} 个</small>
-        </div>
-        <div className="lab-metric-card lab-metric-card--success">
-          <span>复用人</span>
-          <strong>{operatorCount}</strong>
-          <small>最新操作人：{latestHistoryRecord?.reusedBy || FALLBACK_TEXT}</small>
-        </div>
-      </div>
       <div className="asset-reuse-panels">
         <div className="asset-reuse-panel asset-reuse-panel--compose">
           <div className="creative-stage-callout">
@@ -273,6 +253,26 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
               <div className="api-empty">暂无资产复用历史</div>
             ) : null}
           </div>
+        </div>
+      </div>
+      <div
+        className="lab-metric-grid asset-reuse-summary-grid"
+        data-testid="asset-reuse-summary-grid"
+      >
+        <div className="lab-metric-card lab-metric-card--accent">
+          <span>历史记录</span>
+          <strong>{orderedHistoryRecords.length}</strong>
+          <small>最近复用：{formatLocalDateTime(latestHistoryRecord?.createdAt)}</small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--neutral">
+          <span>来源项目</span>
+          <strong>{sourceProjectCount}</strong>
+          <small>目标项目 {targetProjectCount} 个</small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--success">
+          <span>复用人</span>
+          <strong>{operatorCount}</strong>
+          <small>最新操作人：{latestHistoryRecord?.reusedBy || FALLBACK_TEXT}</small>
         </div>
       </div>
     </section>

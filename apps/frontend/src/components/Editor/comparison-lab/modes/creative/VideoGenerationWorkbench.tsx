@@ -236,6 +236,76 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
   const operationsLeadText = hasVideoGenerationJobs
     ? '模型、查询和分页设置作为值班层保留在这里，避免打断主创作路径。'
     : '先确认模式与模型，批量查询、翻页和选中任务等次级动作都收在这一侧。'
+  const videoGenerationFocusPanel = (
+    <div className="video-generation-focus-panel" data-testid="video-generation-focus-panel">
+      <div className="video-generation-focus-copy">
+        <span className="creative-section-kicker">result spotlight</span>
+        <strong>{focusVideoGenerationJob?.id || '暂无焦点任务'}</strong>
+        <span>
+          {focusVideoGenerationJob
+            ? `${focusVideoGenerationJob.generationMode} · ${focusVideoGenerationJob.modelId} · ${resolveVideoGenerationStatusText(
+                focusVideoGenerationJob.status
+              )}`
+            : '提交或选中一个任务后，这里会聚合输出、耗时与同步状态。'}
+        </span>
+      </div>
+      {focusVideoGenerationJob ? (
+        <>
+          <div className="video-generation-job-progress">
+            <span
+              className={`video-generation-status-badge ${resolveVideoGenerationStatusBadgeModifier(
+                focusVideoGenerationJob.status
+              )}`}
+            >
+              {resolveVideoGenerationStatusText(focusVideoGenerationJob.status)}
+            </span>
+            <div className="video-generation-job-progress-bar" aria-hidden="true">
+              <span style={{ width: `${focusProgressValue}%` }} />
+            </div>
+            <span className="video-generation-job-progress-value">{focusProgressValue}%</span>
+          </div>
+          <div className="video-generation-focus-grid">
+            <div className="video-generation-focus-card">
+              <span>输出焦点</span>
+              <strong>{focusOutputText}</strong>
+              {focusVideoGenerationJob.outputUrl ? (
+                <a
+                  className="video-generation-output-link"
+                  href={focusVideoGenerationJob.outputUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  打开输出
+                </a>
+              ) : (
+                <small>当前尚未产出可访问链接</small>
+              )}
+            </div>
+            <div className="video-generation-focus-card">
+              <span>执行窗口</span>
+              <strong>{formatDurationMs(focusVideoGenerationJob.durationMs)}</strong>
+              <small>
+                创建 {formatLocalDateTime(focusVideoGenerationJob.createdAt)} · 开始{' '}
+                {formatLocalDateTime(focusVideoGenerationJob.startedAt)}
+              </small>
+            </div>
+            <div className="video-generation-focus-card">
+              <span>渠道同步</span>
+              <strong>{focusProviderStatus}</strong>
+              <small>
+                完成 {formatLocalDateTime(focusVideoGenerationJob.finishedAt)} · 最近同步{' '}
+                {formatLocalDateTime(focusVideoGenerationJob.lastSyncedAt)}
+              </small>
+            </div>
+          </div>
+          <div className="video-generation-focus-copy video-generation-focus-copy--detail">
+            <span>Prompt：{focusPrompt}</span>
+            <span>错误：{focusErrorText}</span>
+          </div>
+        </>
+      ) : null}
+    </div>
+  )
 
   return (
     <section
@@ -374,6 +444,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
               查询选中任务
             </button>
           </div>
+          {videoGenerationFocusPanel}
         </div>
 
         <aside className="video-generation-ops-sidebar">
@@ -488,97 +559,6 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
             </div>
           </details>
 
-          <div className="video-generation-list-head">
-            <span className="video-generation-count-chip active">
-              活跃任务：{activeVideoGenerationJobs.length}
-            </span>
-            <span className="video-generation-count-chip terminal">
-              终态任务：{terminalVideoGenerationJobs.length}
-            </span>
-            <span
-              className="video-generation-selected-chip"
-              title={selectedVideoGenerationJobId || '-'}
-            >
-              选中：{selectedVideoGenerationJobId || '-'}
-            </span>
-            <button
-              type="button"
-              className="video-generation-terminal-toggle"
-              onClick={() => setShowAllTerminalVideoJobs((prev) => !prev)}
-              disabled={terminalVideoGenerationJobs.length === 0}
-            >
-              {showAllTerminalVideoJobs ? '折叠终态任务' : '展开终态任务'}
-            </button>
-          </div>
-
-          <div className="video-generation-focus-panel" data-testid="video-generation-focus-panel">
-            <div className="video-generation-focus-copy">
-              <span className="creative-section-kicker">result spotlight</span>
-              <strong>{focusVideoGenerationJob?.id || '暂无焦点任务'}</strong>
-              <span>
-                {focusVideoGenerationJob
-                  ? `${focusVideoGenerationJob.generationMode} · ${focusVideoGenerationJob.modelId} · ${resolveVideoGenerationStatusText(
-                      focusVideoGenerationJob.status
-                    )}`
-                  : '提交或选中一个任务后，这里会聚合输出、耗时与同步状态。'}
-              </span>
-            </div>
-            {focusVideoGenerationJob ? (
-              <>
-                <div className="video-generation-job-progress">
-                  <span
-                    className={`video-generation-status-badge ${resolveVideoGenerationStatusBadgeModifier(
-                      focusVideoGenerationJob.status
-                    )}`}
-                  >
-                    {resolveVideoGenerationStatusText(focusVideoGenerationJob.status)}
-                  </span>
-                  <div className="video-generation-job-progress-bar" aria-hidden="true">
-                    <span style={{ width: `${focusProgressValue}%` }} />
-                  </div>
-                  <span className="video-generation-job-progress-value">{focusProgressValue}%</span>
-                </div>
-                <div className="video-generation-focus-grid">
-                  <div className="video-generation-focus-card">
-                    <span>输出焦点</span>
-                    <strong>{focusOutputText}</strong>
-                    {focusVideoGenerationJob.outputUrl ? (
-                      <a
-                        className="video-generation-output-link"
-                        href={focusVideoGenerationJob.outputUrl}
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        打开输出
-                      </a>
-                    ) : (
-                      <small>当前尚未产出可访问链接</small>
-                    )}
-                  </div>
-                  <div className="video-generation-focus-card">
-                    <span>执行窗口</span>
-                    <strong>{formatDurationMs(focusVideoGenerationJob.durationMs)}</strong>
-                    <small>
-                      创建 {formatLocalDateTime(focusVideoGenerationJob.createdAt)} · 开始{' '}
-                      {formatLocalDateTime(focusVideoGenerationJob.startedAt)}
-                    </small>
-                  </div>
-                  <div className="video-generation-focus-card">
-                    <span>渠道同步</span>
-                    <strong>{focusProviderStatus}</strong>
-                    <small>
-                      完成 {formatLocalDateTime(focusVideoGenerationJob.finishedAt)} · 最近同步{' '}
-                      {formatLocalDateTime(focusVideoGenerationJob.lastSyncedAt)}
-                    </small>
-                  </div>
-                </div>
-                <div className="video-generation-focus-copy video-generation-focus-copy--detail">
-                  <span>Prompt：{focusPrompt}</span>
-                  <span>错误：{focusErrorText}</span>
-                </div>
-              </>
-            ) : null}
-          </div>
         </aside>
       </div>
 
@@ -642,6 +622,28 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
       </div>
 
       <div className="video-generation-jobs-deck">
+        <div className="video-generation-list-head">
+          <span className="video-generation-count-chip active">
+            活跃任务：{activeVideoGenerationJobs.length}
+          </span>
+          <span className="video-generation-count-chip terminal">
+            终态任务：{terminalVideoGenerationJobs.length}
+          </span>
+          <span
+            className="video-generation-selected-chip"
+            title={selectedVideoGenerationJobId || '-'}
+          >
+            选中：{selectedVideoGenerationJobId || '-'}
+          </span>
+          <button
+            type="button"
+            className="video-generation-terminal-toggle"
+            onClick={() => setShowAllTerminalVideoJobs((prev) => !prev)}
+            disabled={terminalVideoGenerationJobs.length === 0}
+          >
+            {showAllTerminalVideoJobs ? '折叠终态任务' : '展开终态任务'}
+          </button>
+        </div>
         <div className="video-generation-job-list" data-testid="area-video-generation-job-list">
           {renderedVideoGenerationJobs.map((job) => {
             const requestPromptValue = job.request?.['prompt']

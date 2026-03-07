@@ -71,27 +71,6 @@ const BatchJobSection: React.FC<BatchJobSectionProps> = ({
         </div>
         <div className="creative-section-chip">后台执行器</div>
       </div>
-      <div className="lab-metric-grid batch-job-summary-grid" data-testid="batch-job-summary-grid">
-        <div className="lab-metric-card lab-metric-card--accent">
-          <span>任务状态</span>
-          <strong>{batchJobStatus?.status || 'idle'}</strong>
-          <small>Job ID：{batchJobStatus?.id || batchJobId || FALLBACK_TEXT}</small>
-        </div>
-        <div className="lab-metric-card lab-metric-card--success">
-          <span>已处理项</span>
-          <strong>
-            {handledItems}/{totalItems || 0}
-          </strong>
-          <small>
-            完成 {completedItems} · 失败 {failedItems}
-          </small>
-        </div>
-        <div className="lab-metric-card lab-metric-card--neutral">
-          <span>待处理项</span>
-          <strong>{pendingItems}</strong>
-          <small>最近刷新：{formatLocalDateTime(batchJobStatus?.updatedAt)}</small>
-        </div>
-      </div>
       <div className="batch-job-layout">
         <div className="batch-job-compose">
           <div className="creative-stage-callout">
@@ -158,6 +137,27 @@ const BatchJobSection: React.FC<BatchJobSectionProps> = ({
             <div>创建时间: {formatLocalDateTime(batchJobStatus?.createdAt)}</div>
           </div>
         </aside>
+      </div>
+      <div className="lab-metric-grid batch-job-summary-grid" data-testid="batch-job-summary-grid">
+        <div className="lab-metric-card lab-metric-card--accent">
+          <span>任务状态</span>
+          <strong>{batchJobStatus?.status || 'idle'}</strong>
+          <small>Job ID：{batchJobStatus?.id || batchJobId || FALLBACK_TEXT}</small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--success">
+          <span>已处理项</span>
+          <strong>
+            {handledItems}/{totalItems || 0}
+          </strong>
+          <small>
+            完成 {completedItems} · 失败 {failedItems}
+          </small>
+        </div>
+        <div className="lab-metric-card lab-metric-card--neutral">
+          <span>待处理项</span>
+          <strong>{pendingItems}</strong>
+          <small>最近刷新：{formatLocalDateTime(batchJobStatus?.updatedAt)}</small>
+        </div>
       </div>
       <div className="creative-scene-list">
         {(batchJobStatus?.items || []).map((item) => (

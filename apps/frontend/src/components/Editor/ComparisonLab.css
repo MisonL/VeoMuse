@@ -3067,6 +3067,15 @@
 .video-generation-telemetry-strip {
   display: grid;
   gap: 10px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+    );
 }
 
 .video-generation-command-bar {
@@ -3102,6 +3111,13 @@
     );
 }
 
+.video-generation-prompt-stage .video-generation-focus-panel {
+  border-color: color-mix(in srgb, var(--ap-accent) 40%, var(--ap-border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 14px 24px rgba(15, 76, 173, 0.08);
+}
+
 .video-generation-ops-sidebar {
   padding: 12px;
   border-radius: 20px;
@@ -3125,6 +3141,44 @@
 
 .video-generation-jobs-deck {
   flex: 1;
+}
+
+.video-generation-jobs-deck .video-generation-list-head {
+  padding: 0 2px;
+}
+
+.video-generation-telemetry-strip .video-generation-status-ribbon {
+  grid-template-columns: minmax(0, 1.04fr) minmax(220px, 0.96fr);
+  gap: 10px;
+}
+
+.video-generation-telemetry-strip .video-generation-quick-check,
+.video-generation-telemetry-strip .video-generation-polling-hint {
+  padding: 7px 8px;
+  border-style: dashed;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+    );
+}
+
+.video-generation-telemetry-strip .video-generation-quick-check-title,
+.video-generation-telemetry-strip .video-generation-overview-grid .lab-metric-card strong {
+  font-size: 16px;
+}
+
+.video-generation-telemetry-strip .video-generation-quick-check-desc,
+.video-generation-telemetry-strip .video-generation-polling-desc,
+.video-generation-telemetry-strip .video-generation-overview-grid .lab-metric-card small {
+  font-size: 10px;
+}
+
+.video-generation-telemetry-strip .video-generation-overview-grid .lab-metric-card {
+  min-height: 0;
+  padding: 10px;
+  border-radius: 14px;
 }
 
 .video-generation-job-list {
@@ -3256,6 +3310,15 @@
 .creative-card--archive .lab-metric-card,
 .video-generation-overview-grid .lab-metric-card {
   min-width: 132px;
+}
+
+.creative-card--workflow.is-idle .creative-scene-list,
+.creative-card--batch.is-idle .creative-scene-list,
+.creative-card--archive.is-idle .creative-scene-list {
+  border-radius: 16px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 74%, var(--ap-outline) 26%);
+  background: color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%);
+  padding: 10px;
 }
 
 .creative-card--workflow .workflow-focus-card {
