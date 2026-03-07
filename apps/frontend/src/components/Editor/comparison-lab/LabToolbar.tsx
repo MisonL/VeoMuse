@@ -44,6 +44,18 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
   onOpenChannelPanel
 }) => {
   const currentModeMeta = MODE_META[labMode]
+  const primaryAction =
+    labMode === 'compare'
+      ? {
+          label: '导出对比报告',
+          onClick: onExportReport
+        }
+      : labMode === 'marketplace'
+        ? {
+            label: '刷新超市',
+            onClick: onRefreshMarketplace
+          }
+        : null
 
   return (
     <div className="lab-toolbar" data-guide="lab-toolbar" data-testid="area-lab-toolbar">
@@ -77,15 +89,15 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
           </div>
         </div>
         <div className="lab-toolbar-cta">
-          {labMode === 'compare' ? (
-            <button id="btn-export-compare-report" className="lab-btn" onClick={onExportReport}>
-              导出对比报告
+          {primaryAction ? (
+            <button
+              id={labMode === 'compare' ? 'btn-export-compare-report' : undefined}
+              className="lab-btn"
+              onClick={primaryAction.onClick}
+            >
+              {primaryAction.label}
             </button>
-          ) : (
-            <button className="lab-btn" onClick={onRefreshMarketplace}>
-              刷新超市
-            </button>
-          )}
+          ) : null}
           <button
             className="lab-btn lab-btn--secondary"
             onClick={onOpenChannelPanel}

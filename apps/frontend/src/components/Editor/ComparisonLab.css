@@ -2604,6 +2604,90 @@
   }
 }
 
+@container lab-frame (max-width: 760px) {
+  .lab-stage-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .lab-stage-spine {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .lab-stage-markers {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .lab-stage-ledger {
+    display: none;
+  }
+
+  .lab-stage-marker {
+    padding: 8px 10px;
+  }
+
+  .lab-stage-marker-label {
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
+  .lab-toolbar-left {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .lab-toolbar-main {
+    align-items: center;
+  }
+
+  .lab-toolbar-cta {
+    justify-content: flex-end;
+  }
+}
+
+@container lab-frame (max-width: 620px) {
+  .lab-mode-deck {
+    grid-template-columns: 1fr;
+  }
+
+  .lab-mode-summary,
+  .lab-kicker {
+    display: none;
+  }
+}
+
+@container lab-frame (max-width: 480px) {
+  .lab-stage-markers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lab-mode-switch {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+
+  .lab-toolbar-left {
+    align-items: flex-start;
+  }
+
+  .lab-mode-btn {
+    flex: 0 0 128px;
+    min-width: 128px;
+    gap: 4px;
+    padding: 10px 12px;
+  }
+
+  .lab-mode-number {
+    display: none;
+  }
+}
+
 /* Creative and Collab stage overrides */
 
 .creative-broadcast-shell,
