@@ -82,8 +82,11 @@ describe('PropertyInspector DOM 交互', () => {
 
   it('未选中片段时应展示空态', () => {
     const view = render(<PropertyInspector />)
-    expect(view.getByText('未选中片段')).toBeInTheDocument()
-    expect(view.getByText('点击时间轴片段开始炼金，或切换到系统监控查看运行状态。')).toBeInTheDocument()
+    expect(view.getByText('等待片段进入工位')).toBeInTheDocument()
+    expect(view.getByText('属性工位待命')).toBeInTheDocument()
+    expect(
+      view.getByText('时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。')
+    ).toBeInTheDocument()
   })
 
   it('应支持在属性页与监控页之间切换', () => {
@@ -94,7 +97,7 @@ describe('PropertyInspector DOM 交互', () => {
 
   it('空态下应可直接切换到系统监控', () => {
     const view = render(<PropertyInspector />)
-    fireEvent.click(view.getByRole('button', { name: '查看系统监控' }))
+    fireEvent.click(view.getByRole('button', { name: '切到系统监控' }))
     expect(view.getByText('播放 FPS 稳定性')).toBeInTheDocument()
   })
 

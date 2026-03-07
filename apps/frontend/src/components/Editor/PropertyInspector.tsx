@@ -208,11 +208,7 @@ const PropertyInspector: React.FC = () => {
             {activeTab === 'lab' ? 'ops watch / live audit' : 'clip forge / active context'}
           </span>
           <strong className="inspector-context-title">
-            {current
-              ? current.name
-              : activeTab === 'lab'
-                ? '系统监控正在值守'
-                : '等待片段进入工位'}
+            {current ? current.name : activeTab === 'lab' ? '系统监控正在值守' : '等待片段进入工位'}
           </strong>
           <span className="inspector-context-subtitle">
             {activeTab === 'lab'
@@ -246,10 +242,10 @@ const PropertyInspector: React.FC = () => {
           </div>
         ) : !current ? (
           <div className="inspector-empty">
-            <p>未选中片段</p>
-            <small>点击时间轴片段开始炼金，或切换到系统监控查看运行状态。</small>
+            <p>属性工位待命</p>
+            <small>时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。</small>
             <button type="button" className="pro-master-btn" onClick={() => setActiveTab('lab')}>
-              查看系统监控
+              切到系统监控
             </button>
           </div>
         ) : (

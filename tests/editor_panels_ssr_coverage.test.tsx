@@ -36,8 +36,8 @@ describe('编辑器聚合面板 SSR 覆盖补强', () => {
 
   it('PropertyInspector 默认应渲染空态', () => {
     const html = renderToString(createElement(PropertyInspector))
-    expect(html).toContain('未选中片段')
-    expect(html).toContain('点击时间轴片段开始炼金')
+    expect(html).toContain('等待片段进入工位')
+    expect(html).toContain('时间轴选中片段后，可在这里查看参数')
   })
 
   it('TelemetryDashboard 默认应渲染治理与数据库区块', () => {

@@ -100,9 +100,9 @@ const MultiVideoPlayer: React.FC<MultiVideoPlayerProps> = ({ onOpenAssets, onOpe
         )}
         {!hasPlayableVideo ? (
           <div className="player-empty-state">
-            <div className="player-empty-title">预览区已就绪</div>
+            <div className="player-empty-title">主工作台已待命</div>
             <div className="player-empty-subtitle">
-              从左侧导入视频素材，或使用 AI 导演自动生成分镜
+              导入素材或交给 AI 导演生成首批分镜后，节目画面会在这里自动接管并进入预览。
             </div>
             <div className="player-empty-actions">
               <button type="button" className="player-empty-btn primary" onClick={onOpenAssets}>

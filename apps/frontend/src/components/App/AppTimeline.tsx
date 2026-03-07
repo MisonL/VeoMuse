@@ -3,9 +3,11 @@ import type { ReactNode } from 'react'
 type AppTool = 'select' | 'cut' | 'hand'
 
 interface AppTimelineProps {
+  assetCount: number
   canUndo: boolean
   canRedo: boolean
   activeTool: AppTool
+  hasTimelineClips: boolean
   currentMetrics: {
     gpu: number
     ram: string
@@ -20,9 +22,11 @@ interface AppTimelineProps {
 }
 
 const AppTimeline = ({
+  assetCount,
   canUndo,
   canRedo,
   activeTool,
+  hasTimelineClips,
   currentMetrics,
   telemetryHistory,
   timelineContent,
@@ -42,7 +46,9 @@ const AppTimeline = ({
         <div className="timeline-command-copy">
           <span className="timeline-eyebrow">节目编排</span>
           <span className="timeline-section-title">编辑工具</span>
-          <span className="timeline-running-order">Run of Show / Prime Cut</span>
+          <span className="timeline-running-order">
+            {hasTimelineClips ? 'Run of Show / Prime Cut' : '节目待命 / Waiting For First Clip'}
+          </span>
         </div>
         <div className="timeline-tools" data-guide="timeline-tools">
           <div className="undo-group">
@@ -100,7 +106,11 @@ const AppTimeline = ({
       <div className="system-telemetry">
         <div className="telemetry-dock-head">
           <span className="timeline-section-title telemetry-label">系统状态</span>
-          <span className="telemetry-dock-copy">播出总线稳定 / 节目轨热更新中</span>
+          <span className="telemetry-dock-copy">
+            {hasTimelineClips
+              ? '播出总线稳定 / 节目轨热更新中'
+              : `时间轴待命 / 素材库 ${assetCount} 项，等待首个片段入轨`}
+          </span>
         </div>
         <div className="telemetry-item">
           <span>
@@ -124,7 +134,32 @@ const AppTimeline = ({
         </div>
       </div>
     </div>
-    <div className="timeline-body">{timelineContent}</div>
+    <div className="timeline-body">
+      {!hasTimelineClips ? (
+        <div className="timeline-empty-state" role="status">
+          <div className="timeline-empty-copy">
+            <span className="timeline-section-title">轨道待命</span>
+            <strong>中心工作区负责给出第一步，时间轴负责承接编排。</strong>
+            <span>素材入轨后，这里会接管节奏、剪切、分段与导出前编排。</span>
+          </div>
+          <div className="timeline-empty-readout">
+            <div>
+              <b>素材库</b>
+              <span>{assetCount}</span>
+            </div>
+            <div>
+              <b>轨道状态</b>
+              <span>空轨待命</span>
+            </div>
+            <div>
+              <b>当前焦点</b>
+              <span>首批入轨</span>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {timelineContent}
+    </div>
   </footer>
 )
 

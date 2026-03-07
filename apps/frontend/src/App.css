@@ -1181,9 +1181,77 @@ body.resizing-y {
 
 .timeline-body {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   padding: 12px;
   background: linear-gradient(180deg, rgba(17, 24, 39, 0.03), rgba(17, 24, 39, 0.02));
+}
+
+.timeline-empty-state {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+  background:
+    radial-gradient(
+      circle at 90% 18%,
+      color-mix(in srgb, var(--ap-accent-soft) 18%, transparent),
+      transparent 24%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+}
+
+.timeline-empty-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.timeline-empty-copy strong {
+  font-family: var(--ap-font-display);
+  font-size: 18px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.timeline-empty-copy span:last-child {
+  font-size: 12px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--ap-text) 72%, var(--ap-text-dim) 28%);
+}
+
+.timeline-empty-readout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.timeline-empty-readout > div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  background: color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+}
+
+.timeline-empty-readout b {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-text-dim) 72%, var(--ap-accent) 28%);
+}
+
+.timeline-empty-readout span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ap-text);
 }
 
 .inspector-title {
@@ -1635,8 +1703,16 @@ body.resizing-y {
   gap: 12px;
   padding: 12px;
   background:
-    radial-gradient(circle at 14% 10%, color-mix(in srgb, var(--ap-accent) 11%, transparent), transparent 26%),
-    radial-gradient(circle at 86% 9%, color-mix(in srgb, var(--ap-signal) 11%, transparent), transparent 22%),
+    radial-gradient(
+      circle at 14% 10%,
+      color-mix(in srgb, var(--ap-accent) 11%, transparent),
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 86% 9%,
+      color-mix(in srgb, var(--ap-signal) 11%, transparent),
+      transparent 22%
+    ),
     linear-gradient(180deg, color-mix(in srgb, var(--ap-bg) 78%, #ffffff 22%), var(--ap-bg)),
     repeating-linear-gradient(
       90deg,
@@ -1650,12 +1726,11 @@ body.resizing-y {
 .pro-panel {
   border-radius: 22px;
   border-color: color-mix(in srgb, var(--ap-border) 86%, var(--ap-outline) 14%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 93%, #ffffff 7%),
-      color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 93%, #ffffff 7%),
+    color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%)
+  );
   box-shadow: var(--ap-shadow-panel);
 }
 
@@ -1675,8 +1750,11 @@ body.resizing-y {
   height: 38px;
   border-radius: 16px;
   clip-path: polygon(16% 0, 100% 0, 100% 84%, 84% 100%, 0 100%, 0 16%);
-  background:
-    linear-gradient(155deg, var(--ap-accent), color-mix(in srgb, var(--ap-accent-strong) 82%, #0a1b35 18%));
+  background: linear-gradient(
+    155deg,
+    var(--ap-accent),
+    color-mix(in srgb, var(--ap-accent-strong) 82%, #0a1b35 18%)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     0 14px 26px var(--ap-accent-glow);
@@ -1691,12 +1769,11 @@ body.resizing-y {
 .mode-selector {
   padding: 5px;
   border-radius: 999px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-card) 90%, #ffffff 10%),
-      color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-card) 90%, #ffffff 10%),
+    color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
@@ -1710,12 +1787,11 @@ body.resizing-y {
 }
 
 .mode-tab.active {
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--ap-accent) 88%, #ffffff 12%),
-      color-mix(in srgb, var(--ap-accent-strong) 78%, #0b2e61 22%)
-    );
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 88%, #ffffff 12%),
+    color-mix(in srgb, var(--ap-accent-strong) 78%, #0b2e61 22%)
+  );
   color: #fff8ee;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
@@ -1725,12 +1801,11 @@ body.resizing-y {
 .header-actions-group,
 .header-segment {
   border-radius: 999px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
 }
 
 .header-segment-btn,
@@ -1743,12 +1818,11 @@ body.resizing-y {
 }
 
 .channel-entry-btn {
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--ap-signal) 82%, #ffffff 18%),
-      color-mix(in srgb, var(--ap-signal) 72%, #8b2f04 28%)
-    );
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-signal) 82%, #ffffff 18%),
+    color-mix(in srgb, var(--ap-signal) 72%, #8b2f04 28%)
+  );
   color: #fff6ef;
   border-color: color-mix(in srgb, var(--ap-signal) 72%, rgba(255, 255, 255, 0.28));
 }
@@ -1784,18 +1858,21 @@ body.resizing-y {
 
 .sidebar-content {
   padding: 14px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-panel) 80%, #ffffff 20%),
-      color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 80%, #ffffff 20%),
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%)
+  );
 }
 
 .monitor-content {
   background:
     radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08), transparent 24%),
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 78%, var(--ap-panel) 22%), color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 78%, var(--ap-panel) 22%),
+      color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%)
+    );
 }
 
 .preview-frame {
@@ -1813,7 +1890,12 @@ body.resizing-y {
   pointer-events: none;
   background:
     linear-gradient(rgba(255, 255, 255, 0.08), transparent 16%),
-    linear-gradient(transparent 0, transparent 97%, rgba(255, 255, 255, 0.03) 97%, rgba(255, 255, 255, 0.03) 100%);
+    linear-gradient(
+      transparent 0,
+      transparent 97%,
+      rgba(255, 255, 255, 0.03) 97%,
+      rgba(255, 255, 255, 0.03) 100%
+    );
 }
 
 .live-badge {
@@ -1842,8 +1924,16 @@ body.resizing-y {
   border-top-width: 1px;
   border-top-color: color-mix(in srgb, var(--ap-border) 74%, var(--ap-accent) 26%);
   background:
-    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--ap-accent-soft) 38%, transparent), transparent 46%),
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 86%, var(--ap-panel) 14%), color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%));
+    radial-gradient(
+      circle at 50% 18%,
+      color-mix(in srgb, var(--ap-accent-soft) 38%, transparent),
+      transparent 46%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 86%, var(--ap-panel) 14%),
+      color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%)
+    );
 }
 
 .transport-btn {
@@ -1852,34 +1942,31 @@ body.resizing-y {
 
 .transport-btn.play {
   border-radius: 20px;
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--ap-accent) 82%, #ffffff 18%),
-      color-mix(in srgb, var(--ap-signal) 20%, var(--ap-accent-strong) 80%)
-    );
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 82%, #ffffff 18%),
+    color-mix(in srgb, var(--ap-signal) 20%, var(--ap-accent-strong) 80%)
+  );
 }
 
 .timeline-container {
   border-radius: 26px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%)
+  );
 }
 
 .timeline-actions {
   border-bottom-style: dashed;
   border-bottom-width: 1px;
   border-bottom-color: color-mix(in srgb, var(--ap-border) 76%, var(--ap-accent) 24%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 84%, #ffffff 16%),
-      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 84%, #ffffff 16%),
+    color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+  );
 }
 
 .timeline-section-title {
@@ -1904,12 +1991,11 @@ body.resizing-y {
   width: min(360px, 92vw);
   border-radius: 20px;
   border-color: color-mix(in srgb, var(--ap-accent) 34%, var(--ap-outline) 66%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
-      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+    color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+  );
 }
 
 .guide-card-head {
@@ -1926,12 +2012,11 @@ body.resizing-y {
 }
 
 .guide-nav.primary {
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
-      color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
-    );
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
+    color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
+  );
   color: #fff7ef;
   border-color: transparent;
 }
@@ -2117,7 +2202,11 @@ body.resizing-y {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: #fff8ef;
-  background: linear-gradient(165deg, var(--ap-signal), color-mix(in srgb, var(--ap-signal) 76%, #7c2d12));
+  background: linear-gradient(
+    165deg,
+    var(--ap-signal),
+    color-mix(in srgb, var(--ap-signal) 76%, #7c2d12)
+  );
   box-shadow: 0 10px 18px var(--ap-signal-soft);
 }
 
@@ -2148,7 +2237,11 @@ body.resizing-y {
 
 .brand-status-pill {
   color: #fff8ef;
-  background: linear-gradient(165deg, color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%), color-mix(in srgb, var(--ap-accent-strong) 80%, #081736 20%));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
+    color-mix(in srgb, var(--ap-accent-strong) 80%, #081736 20%)
+  );
 }
 
 .brand-status-copy,
@@ -2242,7 +2335,11 @@ body.resizing-y {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(255, 247, 237, 0.96);
-  background: linear-gradient(165deg, color-mix(in srgb, var(--ap-signal) 86%, #ffffff 14%), color-mix(in srgb, var(--ap-signal) 70%, #7c2d12 30%));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-signal) 86%, #ffffff 14%),
+    color-mix(in srgb, var(--ap-signal) 70%, #7c2d12 30%)
+  );
 }
 
 .monitor-cue-copy {
@@ -2256,6 +2353,60 @@ body.resizing-y {
   display: grid;
   gap: 10px;
   padding: 0 14px 14px;
+}
+
+.monitor-launchpad {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 66%, var(--ap-accent) 34%);
+  background:
+    radial-gradient(
+      circle at 92% 16%,
+      color-mix(in srgb, var(--ap-accent-soft) 22%, transparent),
+      transparent 26%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 14px 24px rgba(72, 49, 22, 0.08);
+}
+
+.monitor-launchpad-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.monitor-launchpad-copy strong {
+  font-family: var(--ap-font-display);
+  font-size: 22px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ap-text);
+}
+
+.monitor-launchpad-copy small {
+  color: color-mix(in srgb, var(--ap-text) 74%, var(--ap-text-dim) 26%);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.monitor-launchpad-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.monitor-launchpad-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .monitor-ledger {
@@ -2272,7 +2423,11 @@ body.resizing-y {
   padding: 12px 14px;
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%), color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
 }
 
@@ -2320,7 +2475,11 @@ body.resizing-y {
 
 .monitor-action-btn {
   border: 1px solid color-mix(in srgb, var(--ap-border) 62%, var(--ap-accent) 38%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%), color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
   color: var(--ap-text);
   border-radius: 999px;
   padding: 10px 14px;
@@ -2339,7 +2498,11 @@ body.resizing-y {
 .monitor-action-btn--signal {
   color: #fff8ef;
   border-color: transparent;
-  background: linear-gradient(165deg, color-mix(in srgb, var(--ap-signal) 84%, #ffffff 16%), color-mix(in srgb, var(--ap-signal) 72%, #7c2d12 28%));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-signal) 84%, #ffffff 16%),
+    color-mix(in srgb, var(--ap-signal) 72%, #7c2d12 28%)
+  );
   box-shadow: 0 10px 18px var(--ap-signal-soft);
 }
 
@@ -2379,7 +2542,11 @@ body.resizing-y {
   padding: 10px 12px;
   border-radius: 18px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%), color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
 }
 
 .system-telemetry {
@@ -2416,9 +2583,15 @@ body.resizing-y {
   }
 
   .monitor-control-band,
+  .monitor-launchpad-actions,
   .timeline-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .monitor-launchpad-stats,
+  .timeline-empty-readout {
+    grid-template-columns: 1fr;
   }
 
   .system-telemetry {
@@ -2446,6 +2619,7 @@ body.resizing-y {
   }
 
   .monitor-ledger,
+  .monitor-launchpad-stats,
   .monitor-readout-cluster {
     grid-template-columns: 1fr;
   }
@@ -2478,5 +2652,10 @@ body.resizing-y {
   .timeline-tools {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .monitor-launchpad-copy strong,
+  .timeline-empty-copy strong {
+    font-size: 16px;
   }
 }

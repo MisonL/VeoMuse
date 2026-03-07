@@ -128,8 +128,9 @@ function App() {
   const metrics = useAdminMetricsStore((state) => state.metrics)
   const renderLoadHistory = useAdminMetricsStore((state) => state.renderLoadHistory)
 
-  const { isPlaying, togglePlay, setCurrentTime, tracks, setTracks } = useEditorStore(
+  const { assets, isPlaying, togglePlay, setCurrentTime, tracks, setTracks } = useEditorStore(
     useShallow((state) => ({
+      assets: state.assets,
       isPlaying: state.isPlaying,
       togglePlay: state.togglePlay,
       setCurrentTime: state.setCurrentTime,
@@ -880,6 +881,7 @@ function App() {
   const shellLayoutVars = useMemo(
     () =>
       buildShellLayoutVars({
+        activeMode,
         centerMode,
         centerPanelFitWidth,
         centerPanelMinWidth,
@@ -887,13 +889,27 @@ function App() {
         rightPanelPx,
         timelinePx
       }),
-    [centerMode, centerPanelFitWidth, centerPanelMinWidth, leftPanelPx, rightPanelPx, timelinePx]
+    [
+      activeMode,
+      centerMode,
+      centerPanelFitWidth,
+      centerPanelMinWidth,
+      leftPanelPx,
+      rightPanelPx,
+      timelinePx
+    ]
   )
 
   const previewFrameStyle = useMemo(
     () => buildPreviewFrameStyle(previewFrameSize),
     [previewFrameSize]
   )
+  const assetCount = assets.length
+  const timelineClipCount = useMemo(
+    () => tracks.reduce((total, track) => total + track.clips.length, 0),
+    [tracks]
+  )
+  const hasTimelineClips = timelineClipCount > 0
 
   const closeGuide = useCallback((completed: boolean) => {
     setIsGuideOpen(false)
@@ -1037,6 +1053,8 @@ function App() {
 
         <AppCenterPanel
           activeMode={activeMode}
+          assetCount={assetCount}
+          hasTimelineClips={hasTimelineClips}
           previewAspect={previewAspect}
           previewFrameStyle={previewFrameStyle}
           previewHostRef={previewHostRef}
@@ -1064,6 +1082,7 @@ function App() {
           onTogglePlay={togglePlay}
           onSeekToNextClip={() => setCurrentTime(getNextClipTime())}
           onOpenAssets={openImportFromAnywhere}
+          onOpenDirector={openDirectorFromAnywhere}
           onSwitchToLab={() => setActiveMode('color')}
         />
 
@@ -1106,9 +1125,11 @@ function App() {
       ) : null}
 
       <AppTimeline
+        assetCount={assetCount}
         canUndo={pastStates.length > 0}
         canRedo={futureStates.length > 0}
         activeTool={activeTool}
+        hasTimelineClips={hasTimelineClips}
         currentMetrics={currentMetrics}
         telemetryHistory={telemetryHistory}
         timelineContent={

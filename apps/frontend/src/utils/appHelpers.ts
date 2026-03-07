@@ -215,12 +215,12 @@ export const computeCenterPanelMinWidth = (
 ) => {
   if (!isDesktopLayout) return MAIN_PANEL_MIN_WIDTH
   if (centerMode === 'fit') {
-    if (activeMode === 'color') return CENTER_PANEL_FIT_LAB_MIN_WIDTH
+    if (activeMode === 'color') return Math.max(CENTER_PANEL_FIT_LAB_MIN_WIDTH, 420)
     if (activeMode === 'audio') return CENTER_PANEL_FIT_AUDIO_MIN_WIDTH
     return CENTER_PANEL_FIT_EDIT_MIN_WIDTH
   }
   const boost = CENTER_MODE_WIDTH_BOOST[centerMode]
-  if (activeMode === 'color') return 340 + boost
+  if (activeMode === 'color') return Math.max(CENTER_PANEL_FIT_LAB_MIN_WIDTH, 420 + boost)
   if (activeMode === 'audio') return 320 + boost
   return MAIN_PANEL_MIN_WIDTH + boost
 }
@@ -236,7 +236,7 @@ export const computeCenterPanelFitWidth = (params: {
   const maxBoost = params.centerMode === 'focus' ? 96 : 0
   if (params.activeMode === 'color') {
     return clamp(
-      CENTER_PANEL_LAB_WIDTH + maxBoost,
+      CENTER_PANEL_LAB_WIDTH + 96 + maxBoost,
       params.centerPanelMinWidth,
       CENTER_PANEL_LAB_MAX_WIDTH + maxBoost
     )
@@ -260,6 +260,7 @@ export const computeCenterPanelFitWidth = (params: {
 }
 
 export const buildShellLayoutVars = (params: {
+  activeMode: string
   centerMode: CenterPanelMode
   centerPanelFitWidth: number
   centerPanelMinWidth: number
@@ -268,12 +269,30 @@ export const buildShellLayoutVars = (params: {
   timelinePx: number
 }) =>
   ({
-    '--left-panel-w': `${params.leftPanelPx}px`,
-    '--right-panel-w': `${params.rightPanelPx}px`,
+    '--left-panel-w': `${params.activeMode === 'color' ? Math.min(params.leftPanelPx, 344) : params.leftPanelPx}px`,
+    '--right-panel-w': `${params.activeMode === 'color' ? Math.min(params.rightPanelPx, 304) : params.rightPanelPx}px`,
     '--center-panel-min-w': `${params.centerPanelMinWidth}px`,
-    '--center-panel-fit-w': `${Math.round(params.centerPanelFitWidth)}px`,
-    '--left-panel-flex': params.centerMode === 'focus' ? '1.36fr' : '1.68fr',
-    '--right-panel-flex': params.centerMode === 'focus' ? '1.24fr' : '1.58fr',
+    '--center-panel-fit-w': `${Math.round(
+      params.activeMode === 'color'
+        ? Math.max(params.centerPanelFitWidth, 816)
+        : params.centerPanelFitWidth
+    )}px`,
+    '--left-panel-flex':
+      params.activeMode === 'color'
+        ? params.centerMode === 'focus'
+          ? '1.08fr'
+          : '1.18fr'
+        : params.centerMode === 'focus'
+          ? '1.36fr'
+          : '1.68fr',
+    '--right-panel-flex':
+      params.activeMode === 'color'
+        ? params.centerMode === 'focus'
+          ? '0.94fr'
+          : '1.06fr'
+        : params.centerMode === 'focus'
+          ? '1.24fr'
+          : '1.58fr',
     '--timeline-h': `${params.timelinePx}px`
   }) as CSSProperties
 

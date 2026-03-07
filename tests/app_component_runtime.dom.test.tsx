@@ -87,7 +87,7 @@ describe('App 运行态关键分支（DOM/SSR）', () => {
 
   it('模式切换相关尺寸计算应覆盖 edit/color/audio 分支', () => {
     expect(computeCenterPanelMinWidth(true, 'fit', 'edit')).toBe(360)
-    expect(computeCenterPanelMinWidth(true, 'fit', 'color')).toBe(378)
+    expect(computeCenterPanelMinWidth(true, 'fit', 'color')).toBe(420)
     expect(computeCenterPanelMinWidth(true, 'focus', 'audio')).toBe(376)
 
     expect(
@@ -98,7 +98,7 @@ describe('App 运行态关键分支（DOM/SSR）', () => {
         isDesktopLayout: true,
         previewFrameWidth: 0
       })
-    ).toBe(816)
+    ).toBe(912)
     expect(
       computeCenterPanelFitWidth({
         activeMode: 'audio',

@@ -439,7 +439,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               >
                 <div className="empty-icon">📁</div>
                 <p>暂无媒体素材</p>
-                <span>点击此处或拖拽文件进行导入</span>
+                <span>点击此处或拖拽文件完成首批入库，中心工作台会自动承接后续编排。</span>
               </div>
             )}
           </div>
