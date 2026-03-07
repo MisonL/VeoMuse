@@ -51,6 +51,11 @@ test('主布局三区域在常见桌面分辨率不重叠且关键操作可达',
     await expect(page.getByTestId('handle-right-panel')).toBeVisible()
     await expect(page.getByTestId('handle-timeline')).toBeVisible()
 
+    const timelineBody = page.locator('.timeline-body')
+    await expect(timelineBody).toBeVisible()
+    const timelineBodyBox = await timelineBody.boundingBox()
+    expect(timelineBodyBox?.height ?? 0).toBeGreaterThan(80)
+
     await page.getByTestId('btn-mode-color').click()
     await expect(page.getByTestId('area-comparison-lab')).toBeVisible()
     await page.getByTestId('btn-lab-mode-creative').click()
@@ -77,11 +82,73 @@ test('主布局三区域在常见桌面分辨率不重叠且关键操作可达',
     expect(creativeOverflow.scrollWidth).toBeLessThanOrEqual(creativeOverflow.clientWidth + 2)
     const creativeBox = await creativeShell.boundingBox()
     expect(creativeBox?.height ?? 0).toBeGreaterThan(120)
+    const creativeHero = creativeShell.locator('.creative-hero-stage')
+    const creativeHeroMain = creativeShell.locator('.creative-hero-main')
+    const creativeHeroSide = creativeShell.locator('.creative-hero-side')
+    await expect(creativeHeroMain).toBeVisible()
+    await expect(creativeHeroSide).toBeVisible()
+    const creativeHeroMetrics = await creativeHero.evaluate((node) => ({
+      offsetHeight: (node as HTMLElement).offsetHeight,
+      scrollHeight: (node as HTMLElement).scrollHeight
+    }))
+    expect(creativeHeroMetrics.offsetHeight).toBeGreaterThan(200)
+    const creativeHeroMainBox = await creativeHeroMain.boundingBox()
+    const creativeHeroSideBox = await creativeHeroSide.boundingBox()
+    if (!creativeHeroMainBox || !creativeHeroSideBox) {
+      throw new Error(`creative hero boundingBox 为空，无法验证: ${viewport.width}x${viewport.height}`)
+    }
+    expect(creativeHeroMainBox.width).toBeGreaterThan(320)
+    expect(creativeHeroSideBox.width).toBeGreaterThan(280)
+    const creativeHeroIsStacked = Math.abs(creativeHeroMainBox.x - creativeHeroSideBox.x) < 4
+    if (creativeHeroIsStacked) {
+      expect(creativeHeroMainBox.y + creativeHeroMainBox.height).toBeLessThanOrEqual(
+        creativeHeroSideBox.y + 2
+      )
+    } else {
+      expect(creativeHeroMainBox.x + creativeHeroMainBox.width).toBeLessThanOrEqual(
+        creativeHeroSideBox.x + 2
+      )
+    }
 
     await page.getByTestId('btn-lab-mode-collab').click()
     const collabShell = page.getByTestId('area-collab-shell')
     await expect(collabShell).toBeVisible()
     const collabBox = await collabShell.boundingBox()
     expect(collabBox?.height ?? 0).toBeGreaterThan(120)
+
+    await page.getByTestId('btn-toggle-advanced-sections').click()
+    const advancedGrid = collabShell.locator('.collab-advanced-grid')
+    await expect(advancedGrid).toBeVisible()
+    const advancedOverflow = await advancedGrid.evaluate((node) => ({
+      scrollWidth: node.scrollWidth,
+      clientWidth: node.clientWidth
+    }))
+    expect(advancedOverflow.scrollWidth).toBeLessThanOrEqual(advancedOverflow.clientWidth + 2)
+
+    const commentDeskLayout = collabShell.locator('.comment-threads-desk-layout')
+    const commentDeskOverflow = await commentDeskLayout.evaluate((node) => ({
+      scrollWidth: node.scrollWidth,
+      clientWidth: node.clientWidth
+    }))
+    expect(commentDeskOverflow.scrollWidth).toBeLessThanOrEqual(commentDeskOverflow.clientWidth + 2)
+
+    const advancedStorageStack = collabShell.locator('.collab-advanced-group--storage .collab-advanced-stack')
+    await expect(advancedStorageStack).toBeVisible()
+    const advancedStorageCards = advancedStorageStack.locator('.collab-card')
+    const permissionCardBox = await advancedStorageCards.nth(0).boundingBox()
+    const snapshotCardBox = await advancedStorageCards.nth(1).boundingBox()
+    if (!permissionCardBox || !snapshotCardBox) {
+      throw new Error(`collab storage stack boundingBox 为空，无法验证: ${viewport.width}x${viewport.height}`)
+    }
+    const storageCardsAreStacked = Math.abs(permissionCardBox.x - snapshotCardBox.x) < 4
+    if (storageCardsAreStacked) {
+      expect(permissionCardBox.y + permissionCardBox.height).toBeLessThanOrEqual(
+        snapshotCardBox.y + 2
+      )
+    } else {
+      expect(permissionCardBox.x + permissionCardBox.width).toBeLessThanOrEqual(
+        snapshotCardBox.x + 2
+      )
+    }
   }
 })

@@ -1,11 +1,15 @@
 import './helpers/dom-test-setup'
 import React, { createRef } from 'react'
-import { describe, expect, it, mock } from 'bun:test'
-import { render } from '@testing-library/react'
+import { afterEach, describe, expect, it, mock } from 'bun:test'
+import { cleanup, render } from '@testing-library/react'
 import AppCenterPanel from '../apps/frontend/src/components/App/AppCenterPanel'
 import AppTimeline from '../apps/frontend/src/components/App/AppTimeline'
 
 describe('编辑器壳层空态回归', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it('中心工作区在无片段时应渲染唯一主入口 launchpad', () => {
     const view = render(
       <AppCenterPanel
@@ -53,6 +57,9 @@ describe('编辑器壳层空态回归', () => {
       />
     )
 
+    expect(view.getByTestId('area-timeline')).toHaveClass(/is-idle/)
+    expect(view.container.querySelector('.timeline-priority-band')).toHaveClass('is-idle')
+    expect(view.container.querySelector('.system-telemetry')).toHaveClass('is-idle')
     expect(view.getByText('中心工作区负责给出第一步，时间轴负责承接编排。')).toBeInTheDocument()
     expect(view.getByText('空轨待命')).toBeInTheDocument()
     expect(view.getByText('节目待命 / Waiting For First Clip')).toBeInTheDocument()
@@ -60,5 +67,31 @@ describe('编辑器壳层空态回归', () => {
     expect(
       view.getByText('先把第一批片段送入这里，后续的剪切、编排和导出前整理都会在这里完成。')
     ).toBeInTheDocument()
+  })
+
+  it('底部时间轴在有片段时应切换到 armed 状态并隐藏空态', () => {
+    const view = render(
+      <AppTimeline
+        assetCount={4}
+        canUndo
+        canRedo
+        activeTool="cut"
+        hasTimelineClips
+        currentMetrics={{ gpu: 42, ram: '12GB', cache: '58%' }}
+        telemetryHistory={[18, 32, 44, 38]}
+        timelineContent={<div>timeline</div>}
+        onActivate={mock(() => {})}
+        onUndo={mock(() => {})}
+        onRedo={mock(() => {})}
+        onActiveToolChange={mock(() => {})}
+      />
+    )
+
+    expect(view.getByTestId('area-timeline')).toHaveClass(/is-armed/)
+    expect(view.container.querySelector('.timeline-priority-band')).toHaveClass('is-armed')
+    expect(view.container.querySelector('.system-telemetry')).toHaveClass('is-armed')
+    expect(view.getByText('Run of Show / Prime Cut')).toBeInTheDocument()
+    expect(view.getByText('播出总线稳定 / 节目轨热更新中')).toBeInTheDocument()
+    expect(view.queryByText('空轨待命')).toBeNull()
   })
 })
