@@ -168,7 +168,7 @@ describe('useCollabModeController contract', () => {
     window.confirm = originalConfirm
   })
 
-  it('应保持 flat props contract 与关键 wrapper 接线', async () => {
+  it('应保持 grouped props contract 与关键 wrapper 接线', async () => {
     let controller: ReturnType<typeof useCollabModeController> | null = null
 
     const Harness = () => {
@@ -205,21 +205,30 @@ describe('useCollabModeController contract', () => {
 
     render(<Harness />)
 
-    expect(controller?.workspaceId).toBe('ws_1')
-    expect(controller?.projectId).toBe('project_1')
-    expect(controller?.uploadToken).toBe('upload-token')
-    expect(controller?.commentThreadCursor).toBe('cursor-thread')
-    expect(controller?.projectCommentCursor).toBe('cursor-comment')
-    expect(controller?.permissionSubjectId).toBe('timeline.merge=true')
-    expect(controller?.isV4Busy).toBe(true)
-    expect(controller?.isOpsBusy).toBe(false)
-    expect(controller?.isProjectGovernanceBusy).toBe(true)
+    expect(controller?.workspaceSectionProps.workspaceId).toBe('ws_1')
+    expect(controller?.workspaceSectionProps.projectId).toBe('project_1')
+    expect(controller?.inviteJoinSectionProps.inviteCode).toBe('INVITE-1')
+    expect(controller?.realtimeChannelSectionProps.isWsConnected).toBe(true)
+    expect(controller?.commentThreadsSectionProps.commentThreadCursor).toBe('cursor-thread')
+    expect(controller?.commentThreadsSectionProps.isV4Busy).toBe(true)
+    expect(controller?.advancedSectionsProps.projectGovernanceProps.projectCommentCursor).toBe(
+      'cursor-comment'
+    )
+    expect(
+      controller?.advancedSectionsProps.permissionMergeProps.permissionSubjectId
+    ).toBe('timeline.merge=true')
+    expect(controller?.advancedSectionsProps.opsToolsProps.adminToken).toBe('token')
+    expect(controller?.advancedSectionsProps.opsToolsProps.isOpsBusy).toBe(false)
+    expect(
+      controller?.advancedSectionsProps.projectGovernanceProps.isProjectGovernanceBusy
+    ).toBe(true)
+    expect(controller?.advancedSectionsProps.storageSnapshotsProps.uploadToken).toBe('upload-token')
 
     await act(async () => {
-      controller?.onLoadMoreProjectComments()
-      controller?.onAcknowledgeReliabilityAlert('alert_1')
-      controller?.onCreateWorkspace()
-      controller?.onRequestUploadToken()
+      controller?.advancedSectionsProps.projectGovernanceProps.onLoadMoreProjectComments()
+      controller?.advancedSectionsProps.opsToolsProps.onAcknowledgeReliabilityAlert('alert_1')
+      controller?.workspaceSectionProps.onCreateWorkspace()
+      controller?.advancedSectionsProps.storageSnapshotsProps.onRequestUploadToken()
     })
 
     const governanceReturn = governanceSpy.mock.results[0]?.value as any

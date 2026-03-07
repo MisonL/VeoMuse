@@ -8,155 +8,183 @@ const noop = () => {}
 
 const createProps = (overrides: Record<string, unknown> = {}) =>
   ({
-    isAuthenticated: true,
-    workspaceName: 'VeoMuse 协作空间',
-    workspaceOwner: 'Owner',
-    workspaceId: '',
-    projectId: '',
-    inviteRole: 'editor',
-    memberName: 'Editor A',
-    collabRole: 'editor',
-    inviteCode: '',
-    invites: [],
-    isWsConnected: false,
-    presence: [],
-    collabEvents: [],
-    snapshots: [],
-    uploadFileName: 'demo.mp4',
-    uploadToken: '',
-    commentThreads: [],
-    commentThreadCursor: '',
-    commentThreadLimit: '20',
-    commentThreadHasMore: false,
-    commentAnchor: '',
-    commentContent: '',
-    commentMentions: '',
-    selectedThreadId: '',
-    commentReplyContent: '',
-    commentReplyMentions: '',
-    projectComments: [],
-    projectCommentCursor: '',
-    projectCommentLimit: '20',
-    projectCommentHasMore: false,
-    projectCommentAnchor: '',
-    projectCommentContent: '',
-    projectCommentMentions: '',
-    projectSelectedCommentId: '',
-    projectReviews: [],
-    projectReviewLimit: '20',
-    projectReviewDecision: 'approved',
-    projectReviewSummary: '',
-    projectReviewScore: '',
-    projectTemplates: [],
-    projectSelectedTemplateId: '',
-    projectTemplateApplyOptions: '{}',
-    projectTemplateApplyResult: null,
-    projectClipBatchOperations: '[]',
-    projectClipBatchResult: null,
-    permissions: [],
-    permissionSubjectId: '',
-    permissionRole: 'viewer',
-    timelineMergeResult: null,
-    errorBudget: null,
-    errorBudgetScope: 'global',
-    errorBudgetTargetSlo: '0.99',
-    errorBudgetWindowDays: '30',
-    errorBudgetWarningThresholdRatio: '0.7',
-    errorBudgetAlertThresholdRatio: '0.9',
-    errorBudgetFreezeDeployOnBreach: false,
-    adminToken: '',
-    reliabilityAlertLevel: 'all',
-    reliabilityAlertStatus: 'all',
-    reliabilityAlertLimit: '20',
-    reliabilityAlerts: [],
-    rollbackPolicyId: '',
-    rollbackEnvironment: 'staging',
-    rollbackTriggerType: 'manual',
-    rollbackSummary: 'Triggered from comparison-lab',
-    rollbackPlan: '{"steps":[]}',
-    rollbackResult: '{}',
-    rollbackDrillId: '',
-    rollbackDrillResult: null,
-    isV4Busy: false,
-    isOpsBusy: false,
-    isProjectGovernanceBusy: false,
-    onWorkspaceNameChange: noop,
-    onWorkspaceOwnerChange: noop,
-    onCreateWorkspace: noop,
-    onRefreshWorkspaceState: noop,
-    onInviteRoleChange: noop,
-    onMemberNameChange: noop,
-    onCollabRoleChange: noop,
-    onInviteCodeChange: noop,
-    onCreateInvite: noop,
-    onAcceptInvite: noop,
-    onConnectWs: noop,
-    onDisconnectWs: noop,
-    onSendCollabEvent: noop,
-    onCreateSnapshot: noop,
-    onUploadFileNameChange: noop,
-    onRequestUploadToken: noop,
-    onRefreshCommentThreads: noop,
-    onLoadMoreCommentThreads: noop,
-    onCommentThreadLimitChange: noop,
-    onCommentAnchorChange: noop,
-    onCommentContentChange: noop,
-    onCommentMentionsChange: noop,
-    onSelectedThreadIdChange: noop,
-    onCommentReplyContentChange: noop,
-    onCommentReplyMentionsChange: noop,
-    onCreateCommentThread: noop,
-    onReplyCommentThread: noop,
-    onResolveCommentThread: noop,
-    onRefreshProjectComments: noop,
-    onLoadMoreProjectComments: noop,
-    onProjectCommentLimitChange: noop,
-    onProjectCommentAnchorChange: noop,
-    onProjectCommentContentChange: noop,
-    onProjectCommentMentionsChange: noop,
-    onProjectSelectedCommentIdChange: noop,
-    onCreateProjectComment: noop,
-    onResolveProjectComment: noop,
-    onRefreshProjectReviews: noop,
-    onProjectReviewLimitChange: noop,
-    onProjectReviewDecisionChange: noop,
-    onProjectReviewSummaryChange: noop,
-    onProjectReviewScoreChange: noop,
-    onCreateProjectReview: noop,
-    onRefreshProjectTemplates: noop,
-    onProjectSelectedTemplateIdChange: noop,
-    onProjectTemplateApplyOptionsChange: noop,
-    onApplyProjectTemplate: noop,
-    onProjectClipBatchOperationsChange: noop,
-    onBatchUpdateProjectClips: noop,
-    onRefreshPermissions: noop,
-    onPermissionSubjectIdChange: noop,
-    onPermissionRoleChange: noop,
-    onUpdatePermission: noop,
-    onMergeTimeline: noop,
-    onAdminTokenChange: noop,
-    onReliabilityAlertLevelChange: noop,
-    onReliabilityAlertStatusChange: noop,
-    onReliabilityAlertLimitChange: noop,
-    onLoadReliabilityAlerts: noop,
-    onAcknowledgeReliabilityAlert: noop,
-    onLoadErrorBudget: noop,
-    onErrorBudgetScopeChange: noop,
-    onErrorBudgetTargetSloChange: noop,
-    onErrorBudgetWindowDaysChange: noop,
-    onErrorBudgetWarningThresholdRatioChange: noop,
-    onErrorBudgetAlertThresholdRatioChange: noop,
-    onErrorBudgetFreezeDeployOnBreachChange: noop,
-    onRollbackPolicyIdChange: noop,
-    onRollbackEnvironmentChange: noop,
-    onRollbackTriggerTypeChange: noop,
-    onRollbackSummaryChange: noop,
-    onRollbackPlanChange: noop,
-    onRollbackResultChange: noop,
-    onUpdateErrorBudget: noop,
-    onTriggerRollbackDrill: noop,
-    onRollbackDrillIdChange: noop,
-    onQueryRollbackDrill: noop,
+    workspaceSectionProps: {
+      isAuthenticated: true,
+      workspaceName: 'VeoMuse 协作空间',
+      workspaceOwner: 'Owner',
+      workspaceId: '',
+      projectId: '',
+      onWorkspaceNameChange: noop,
+      onWorkspaceOwnerChange: noop,
+      onCreateWorkspace: noop,
+      onRefreshWorkspaceState: noop
+    },
+    inviteJoinSectionProps: {
+      workspaceId: '',
+      inviteRole: 'editor',
+      memberName: 'Editor A',
+      collabRole: 'editor',
+      inviteCode: '',
+      invites: [],
+      onInviteRoleChange: noop,
+      onMemberNameChange: noop,
+      onCollabRoleChange: noop,
+      onInviteCodeChange: noop,
+      onCreateInvite: noop,
+      onAcceptInvite: noop
+    },
+    realtimeChannelSectionProps: {
+      workspaceId: '',
+      isWsConnected: false,
+      presence: [],
+      collabEvents: [],
+      onConnectWs: noop,
+      onDisconnectWs: noop,
+      onSendCollabEvent: noop
+    },
+    commentThreadsSectionProps: {
+      projectId: '',
+      commentThreads: [],
+      commentThreadCursor: '',
+      commentThreadLimit: '20',
+      commentThreadHasMore: false,
+      commentAnchor: '',
+      commentContent: '',
+      commentMentions: '',
+      selectedThreadId: '',
+      commentReplyContent: '',
+      commentReplyMentions: '',
+      isV4Busy: false,
+      onRefreshCommentThreads: noop,
+      onLoadMoreCommentThreads: noop,
+      onCommentThreadLimitChange: noop,
+      onCommentAnchorChange: noop,
+      onCommentContentChange: noop,
+      onCommentMentionsChange: noop,
+      onSelectedThreadIdChange: noop,
+      onCommentReplyContentChange: noop,
+      onCommentReplyMentionsChange: noop,
+      onCreateCommentThread: noop,
+      onReplyCommentThread: noop,
+      onResolveCommentThread: noop
+    },
+    advancedSectionsProps: {
+      projectGovernanceProps: {
+        projectId: '',
+        isProjectGovernanceBusy: false,
+        projectComments: [],
+        projectCommentCursor: '',
+        projectCommentLimit: '20',
+        projectCommentHasMore: false,
+        projectCommentAnchor: '',
+        projectCommentContent: '',
+        projectCommentMentions: '',
+        projectSelectedCommentId: '',
+        projectReviews: [],
+        projectReviewLimit: '20',
+        projectReviewDecision: 'approved',
+        projectReviewSummary: '',
+        projectReviewScore: '',
+        projectTemplates: [],
+        projectSelectedTemplateId: '',
+        projectTemplateApplyOptions: '{}',
+        projectTemplateApplyResult: null,
+        projectClipBatchOperations: '[]',
+        projectClipBatchResult: null,
+        onRefreshProjectComments: noop,
+        onLoadMoreProjectComments: noop,
+        onProjectCommentLimitChange: noop,
+        onProjectCommentAnchorChange: noop,
+        onProjectCommentContentChange: noop,
+        onProjectCommentMentionsChange: noop,
+        onProjectSelectedCommentIdChange: noop,
+        onCreateProjectComment: noop,
+        onResolveProjectComment: noop,
+        onRefreshProjectReviews: noop,
+        onProjectReviewLimitChange: noop,
+        onProjectReviewDecisionChange: noop,
+        onProjectReviewSummaryChange: noop,
+        onProjectReviewScoreChange: noop,
+        onCreateProjectReview: noop,
+        onRefreshProjectTemplates: noop,
+        onProjectSelectedTemplateIdChange: noop,
+        onProjectTemplateApplyOptionsChange: noop,
+        onApplyProjectTemplate: noop,
+        onProjectClipBatchOperationsChange: noop,
+        onBatchUpdateProjectClips: noop
+      },
+      permissionMergeProps: {
+        workspaceId: '',
+        projectId: '',
+        permissionSubjectId: '',
+        permissionRole: 'viewer',
+        permissions: [],
+        timelineMergeResult: null,
+        isV4Busy: false,
+        onRefreshPermissions: noop,
+        onPermissionSubjectIdChange: noop,
+        onPermissionRoleChange: noop,
+        onUpdatePermission: noop,
+        onMergeTimeline: noop
+      },
+      opsToolsProps: {
+        adminToken: '',
+        reliabilityAlertLevel: 'all',
+        reliabilityAlertStatus: 'all',
+        reliabilityAlertLimit: '20',
+        reliabilityAlerts: [],
+        errorBudget: null,
+        errorBudgetScope: 'global',
+        errorBudgetTargetSlo: '0.99',
+        errorBudgetWindowDays: '30',
+        errorBudgetWarningThresholdRatio: '0.7',
+        errorBudgetAlertThresholdRatio: '0.9',
+        errorBudgetFreezeDeployOnBreach: false,
+        rollbackPolicyId: '',
+        rollbackEnvironment: 'staging',
+        rollbackTriggerType: 'manual',
+        rollbackSummary: 'Triggered from comparison-lab',
+        rollbackPlan: '{"steps":[]}',
+        rollbackResult: '{}',
+        rollbackDrillId: '',
+        rollbackDrillResult: null,
+        isOpsBusy: false,
+        onAdminTokenChange: noop,
+        onReliabilityAlertLevelChange: noop,
+        onReliabilityAlertStatusChange: noop,
+        onReliabilityAlertLimitChange: noop,
+        onLoadReliabilityAlerts: noop,
+        onAcknowledgeReliabilityAlert: noop,
+        onLoadErrorBudget: noop,
+        onErrorBudgetScopeChange: noop,
+        onErrorBudgetTargetSloChange: noop,
+        onErrorBudgetWindowDaysChange: noop,
+        onErrorBudgetWarningThresholdRatioChange: noop,
+        onErrorBudgetAlertThresholdRatioChange: noop,
+        onErrorBudgetFreezeDeployOnBreachChange: noop,
+        onRollbackPolicyIdChange: noop,
+        onRollbackEnvironmentChange: noop,
+        onRollbackTriggerTypeChange: noop,
+        onRollbackSummaryChange: noop,
+        onRollbackPlanChange: noop,
+        onRollbackResultChange: noop,
+        onUpdateErrorBudget: noop,
+        onTriggerRollbackDrill: noop,
+        onRollbackDrillIdChange: noop,
+        onQueryRollbackDrill: noop
+      },
+      storageSnapshotsProps: {
+        projectId: '',
+        workspaceId: '',
+        uploadFileName: 'demo.mp4',
+        uploadToken: '',
+        snapshots: [],
+        onCreateSnapshot: noop,
+        onRefreshWorkspaceState: noop,
+        onUploadFileNameChange: noop,
+        onRequestUploadToken: noop
+      }
+    },
     ...overrides
   }) as any
 
@@ -241,18 +269,31 @@ describe('CollabModePanel DOM 组件回归', () => {
     const onAcknowledgeReliabilityAlert = mock((_alertId: string) => {})
     const onUpdatePermission = mock(() => {})
     const onBatchUpdateProjectClips = mock(() => {})
+    const baseProps = createProps()
 
     const view = render(
       <CollabModePanel
         {...createProps({
-          isAuthenticated: true,
-          workspaceId: 'ws_1',
-          projectId: 'project_1',
-          collabRole: 'owner',
-          inviteCode: 'INVITE-1',
-          invites: [{ id: 'i1', code: 'INVITE-1', role: 'editor', status: 'active' }],
-          isWsConnected: true,
-          presence: [
+          workspaceSectionProps: {
+            ...baseProps.workspaceSectionProps,
+            isAuthenticated: true,
+            workspaceId: 'ws_1',
+            projectId: 'project_1',
+            onCreateWorkspace
+          },
+          inviteJoinSectionProps: {
+            ...baseProps.inviteJoinSectionProps,
+            workspaceId: 'ws_1',
+            collabRole: 'owner',
+            inviteCode: 'INVITE-1',
+            invites: [{ id: 'i1', code: 'INVITE-1', role: 'editor', status: 'active' }],
+            onCreateInvite
+          },
+          realtimeChannelSectionProps: {
+            ...baseProps.realtimeChannelSectionProps,
+            workspaceId: 'ws_1',
+            isWsConnected: true,
+            presence: [
             {
               workspaceId: 'ws_1',
               sessionId: 'sess_1',
@@ -263,7 +304,7 @@ describe('CollabModePanel DOM 组件回归', () => {
               lastSeenAt: new Date().toISOString()
             }
           ],
-          collabEvents: [
+            collabEvents: [
             {
               id: 'evt_1',
               workspaceId: 'ws_1',
@@ -274,8 +315,12 @@ describe('CollabModePanel DOM 组件回归', () => {
               payload: { clips: 1 },
               createdAt: new Date().toISOString()
             }
-          ],
-          commentThreads: [
+          ]
+          },
+          commentThreadsSectionProps: {
+            ...baseProps.commentThreadsSectionProps,
+            projectId: 'project_1',
+            commentThreads: [
             {
               id: 'pc_1',
               projectId: 'project_1',
@@ -288,8 +333,14 @@ describe('CollabModePanel DOM 组件回归', () => {
               updatedAt: new Date().toISOString(),
               replyCount: 0
             }
-          ],
-          projectComments: [
+          ]
+          },
+          advancedSectionsProps: {
+            ...baseProps.advancedSectionsProps,
+            projectGovernanceProps: {
+              ...baseProps.advancedSectionsProps.projectGovernanceProps,
+              projectId: 'project_1',
+              projectComments: [
             {
               id: 'c_1',
               projectId: 'project_1',
@@ -303,7 +354,7 @@ describe('CollabModePanel DOM 组件回归', () => {
               replyCount: 0
             }
           ],
-          projectReviews: [
+              projectReviews: [
             {
               id: 'r_1',
               projectId: 'project_1',
@@ -314,7 +365,7 @@ describe('CollabModePanel DOM 组件回归', () => {
               createdAt: new Date().toISOString()
             }
           ],
-          projectTemplates: [
+              projectTemplates: [
             {
               id: 'tpl_1',
               projectId: 'project_1',
@@ -326,14 +377,20 @@ describe('CollabModePanel DOM 组件回归', () => {
               updatedAt: new Date().toISOString()
             }
           ],
-          projectClipBatchResult: {
+              projectClipBatchResult: {
             requested: 2,
             accepted: 2,
             skipped: 0,
             rejected: 0,
             updated: 2
           },
-          permissions: [
+              onBatchUpdateProjectClips
+            },
+            permissionMergeProps: {
+              ...baseProps.advancedSectionsProps.permissionMergeProps,
+              workspaceId: 'ws_1',
+              projectId: 'project_1',
+              permissions: [
             {
               workspaceId: 'ws_1',
               role: 'viewer',
@@ -342,8 +399,8 @@ describe('CollabModePanel DOM 组件回归', () => {
               updatedAt: new Date().toISOString()
             }
           ],
-          permissionSubjectId: 'timeline.merge',
-          timelineMergeResult: {
+              permissionSubjectId: 'timeline.merge',
+              timelineMergeResult: {
             id: 'merge_1',
             projectId: 'project_1',
             sourceRevision: 'rev-a',
@@ -354,7 +411,11 @@ describe('CollabModePanel DOM 组件回归', () => {
             createdBy: 'owner_1',
             createdAt: new Date().toISOString()
           },
-          errorBudget: {
+              onUpdatePermission
+            },
+            opsToolsProps: {
+              ...baseProps.advancedSectionsProps.opsToolsProps,
+              errorBudget: {
             policy: {
               id: 'policy_1',
               scope: 'global',
@@ -377,7 +438,7 @@ describe('CollabModePanel DOM 组件回归', () => {
               status: 'healthy'
             }
           },
-          reliabilityAlerts: [
+              reliabilityAlerts: [
             {
               id: 'rel_alert_1',
               level: 'critical',
@@ -389,8 +450,8 @@ describe('CollabModePanel DOM 组件回归', () => {
               acknowledgedAt: null
             }
           ],
-          adminToken: 'admin-token-demo',
-          rollbackDrillResult: {
+              adminToken: 'admin-token-demo',
+              rollbackDrillResult: {
             id: 'drill_1',
             policyId: 'policy_1',
             environment: 'staging',
@@ -403,13 +464,16 @@ describe('CollabModePanel DOM 组件回归', () => {
             startedAt: new Date().toISOString(),
             completedAt: new Date().toISOString()
           },
-          snapshots: [{ id: 'snap_1', actorName: 'owner_1', createdAt: new Date().toISOString() }],
-          onCreateWorkspace,
-          onCreateInvite,
-          onLoadReliabilityAlerts,
-          onAcknowledgeReliabilityAlert,
-          onUpdatePermission,
-          onBatchUpdateProjectClips
+              onLoadReliabilityAlerts,
+              onAcknowledgeReliabilityAlert
+            },
+            storageSnapshotsProps: {
+              ...baseProps.advancedSectionsProps.storageSnapshotsProps,
+              projectId: 'project_1',
+              workspaceId: 'ws_1',
+              snapshots: [{ id: 'snap_1', actorName: 'owner_1', createdAt: new Date().toISOString() }]
+            }
+          }
         })}
       />
     )
@@ -446,10 +510,14 @@ describe('CollabModePanel DOM 组件回归', () => {
   })
 
   it('未登录态应禁用创建工作区按钮并展示提示', () => {
+    const baseProps = createProps()
     const view = render(
       <CollabModePanel
         {...createProps({
-          isAuthenticated: false
+          workspaceSectionProps: {
+            ...baseProps.workspaceSectionProps,
+            isAuthenticated: false
+          }
         })}
       />
     )
