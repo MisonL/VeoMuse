@@ -3184,6 +3184,136 @@
   color: var(--ap-text);
 }
 
+.comparison-lab-pro .lab-status,
+.comparison-lab-pro .sync-toggle,
+.comparison-lab-pro .lab-field,
+.comparison-lab-pro .lab-stage-copy p,
+.comparison-lab-pro .lab-stage-kicker,
+.comparison-lab-pro .creative-subhead span,
+.comparison-lab-pro .creative-summary,
+.comparison-lab-pro .realtime-channel-status-band,
+.comparison-lab-pro .collab-command-summary-card small,
+.comparison-lab-pro .collab-watch-spotlight-copy span:last-child,
+.comparison-lab-pro .collab-watch-callout span,
+.comparison-lab-pro .collab-advanced-group-copy,
+.comparison-lab-pro .execution-reason {
+  color: color-mix(in srgb, var(--ap-text) 72%, var(--ap-text-dim) 28%);
+}
+
+.comparison-lab-pro .lab-metric-card span,
+.comparison-lab-pro .lab-metric-card small,
+.comparison-lab-pro .collab-watch-inline b,
+.comparison-lab-pro .collab-conflict-item strong,
+.comparison-lab-pro .ops-budget-card-head strong,
+.comparison-lab-pro .collab-command-summary-card span {
+  color: color-mix(in srgb, var(--ap-text) 34%, var(--ap-accent) 66%);
+}
+
+.comparison-lab-pro .lab-inline-actions button,
+.comparison-lab-pro .video-generation-head-actions button,
+.comparison-lab-pro .inline-fill-btn,
+.comparison-lab-pro .execution-head button,
+.comparison-lab-pro .execution-load-more {
+  border-color: color-mix(in srgb, var(--ap-border) 58%, var(--ap-accent) 42%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
+  color: color-mix(in srgb, var(--ap-text) 88%, var(--ap-accent) 12%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+.comparison-lab-pro .lab-inline-actions button:first-child,
+.comparison-lab-pro .video-generation-head-actions button:first-child,
+.comparison-lab-pro .execution-head button:first-child,
+.comparison-lab-pro .inline-fill-btn {
+  border-color: color-mix(in srgb, var(--ap-accent) 60%, var(--ap-accent-strong) 40%);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 86%, #ffffff 14%),
+    color-mix(in srgb, var(--ap-accent-strong) 82%, #0b2e61 18%)
+  );
+  color: #fff8ef;
+  box-shadow: 0 12px 20px var(--ap-accent-glow);
+}
+
+.comparison-lab-pro .lab-inline-actions button:hover,
+.comparison-lab-pro .video-generation-head-actions button:hover,
+.comparison-lab-pro .inline-fill-btn:hover,
+.comparison-lab-pro .execution-head button:hover,
+.comparison-lab-pro .execution-load-more:hover {
+  transform: translateY(-1px);
+}
+
+.comparison-lab-pro .lab-inline-actions button:disabled,
+.comparison-lab-pro .video-generation-head-actions button:disabled,
+.comparison-lab-pro .inline-fill-btn:disabled,
+.comparison-lab-pro .execution-head button:disabled,
+.comparison-lab-pro .execution-load-more:disabled {
+  opacity: 0.58;
+  transform: none;
+  box-shadow: none;
+}
+
+.comparison-lab-pro .lab-stage-marker {
+  position: relative;
+  border-style: dashed;
+  background: transparent;
+  color: color-mix(in srgb, var(--ap-text-dim) 84%, var(--ap-text) 16%);
+  opacity: 0.78;
+}
+
+.comparison-lab-pro .lab-stage-marker::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.comparison-lab-pro .lab-stage-marker.active {
+  opacity: 1;
+  transform: translateX(4px);
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--ap-accent) 60%, #ffffff 40%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-accent-soft) 74%, #ffffff 26%),
+    color-mix(in srgb, var(--ap-card) 84%, #ffffff 16%)
+  );
+  box-shadow: 0 14px 22px rgba(10, 50, 116, 0.14);
+}
+
+.comparison-lab-pro .lab-stage-marker.active::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-accent) 90%, #ffffff 10%),
+    color-mix(in srgb, var(--ap-signal) 66%, #22c55e 34%)
+  );
+}
+
+.comparison-lab-pro .creative-shell,
+.comparison-lab-pro .marketplace-shell,
+.comparison-lab-pro .collab-shell {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ap-accent) 34%, var(--ap-border) 66%) transparent;
+  box-shadow:
+    inset 0 16px 18px -18px rgba(48, 32, 12, 0.32),
+    inset 0 -20px 22px -22px rgba(48, 32, 12, 0.44);
+}
+
+.comparison-lab-pro .creative-card,
+.comparison-lab-pro .collab-card,
+.comparison-lab-pro .marketplace-policy {
+  box-shadow:
+    var(--ap-shadow-subtle),
+    inset 0 -14px 18px -18px rgba(48, 32, 12, 0.28);
+}
+
 @container lab-frame (max-width: 1460px) {
   .creative-hero-stage,
   .creative-support-grid,
