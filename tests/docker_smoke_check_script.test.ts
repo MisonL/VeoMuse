@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import {
   buildWebSocketUpgradeRequest,
+  extractReferencedJavaScriptAssetPaths,
   extractStaticAssetPaths,
   filterJavaScriptAssetPaths,
   hasImmutableCacheControl,
@@ -9,6 +10,7 @@ import {
   parseArgs,
   parseHttpStatusCode,
   REQUIRED_SECURITY_HEADERS,
+  resolveJavaScriptAssetUrl,
   resolveMissingLabEntryMarkers,
   resolveMissingSecurityHeaders
 } from '../scripts/docker_smoke_check'
@@ -78,6 +80,37 @@ describe('docker smoke 脚本辅助逻辑', () => {
     ]
     expect(resolveMissingLabEntryMarkers(splitBundles)).toEqual([])
     expect(resolveMissingLabEntryMarkers('lab-tab-compare 双通道比对')).toContain('lab-tab-collab')
+  })
+
+  it('应从入口脚本中递归识别拆包 JS 依赖', () => {
+    const scriptContent = `
+      import "./rolldown-runtime-COnpUsM8.js";
+      const deps = ["assets/ComparisonLab-CsDQSHwk.js", "assets/motion-BCuQe_zR.js"];
+      void import("./VideoEditor-BaxlPraU.js");
+    `
+
+    expect(extractReferencedJavaScriptAssetPaths(scriptContent)).toEqual([
+      './rolldown-runtime-COnpUsM8.js',
+      'assets/ComparisonLab-CsDQSHwk.js',
+      'assets/motion-BCuQe_zR.js',
+      './VideoEditor-BaxlPraU.js'
+    ])
+
+    expect(
+      resolveJavaScriptAssetUrl(
+        'http://127.0.0.1:18081',
+        'http://127.0.0.1:18081/assets/index-main.js',
+        'assets/ComparisonLab-CsDQSHwk.js'
+      )
+    ).toBe('http://127.0.0.1:18081/assets/ComparisonLab-CsDQSHwk.js')
+
+    expect(
+      resolveJavaScriptAssetUrl(
+        'http://127.0.0.1:18081',
+        'http://127.0.0.1:18081/assets/index-main.js',
+        './VideoEditor-BaxlPraU.js'
+      )
+    ).toBe('http://127.0.0.1:18081/assets/VideoEditor-BaxlPraU.js')
   })
 
   it('应识别缺失安全头并构造 WebSocket 升级请求', () => {

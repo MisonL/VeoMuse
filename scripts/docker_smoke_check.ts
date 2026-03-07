@@ -68,6 +68,8 @@ export const REQUIRED_SECURITY_HEADERS = [
   'cross-origin-resource-policy'
 ] as const
 export const STATIC_ASSET_PATH_PATTERN = /(?:src|href)=["'](\/assets\/[^"'?#]+\.(?:js|css))["']/gi
+export const JS_ASSET_REFERENCE_PATTERN =
+  /(?:\/assets\/|assets\/|\.\.\/|\.\/)[^"'`\s)\\]+\.js(?:\?[^"'`\s)\\]*)?/g
 export const LAB_ENTRY_MARKERS = [
   'lab-tab-compare',
   'lab-tab-marketplace',
@@ -216,6 +218,38 @@ export const filterJavaScriptAssetPaths = (assetPaths: string[]) =>
     const normalized = assetPath.split('#')[0]?.split('?')[0] || assetPath
     return normalized.endsWith('.js')
   })
+
+export const extractReferencedJavaScriptAssetPaths = (scriptContent: string) => {
+  const paths: string[] = []
+  JS_ASSET_REFERENCE_PATTERN.lastIndex = 0
+  let match: RegExpExecArray | null = null
+  while ((match = JS_ASSET_REFERENCE_PATTERN.exec(scriptContent))) {
+    const assetPath = String(match[0] || '').trim()
+    if (!assetPath || paths.includes(assetPath)) continue
+    paths.push(assetPath)
+  }
+  return paths
+}
+
+export const resolveJavaScriptAssetUrl = (
+  baseUrl: string,
+  referrerAssetUrl: string,
+  assetPathOrUrl: string
+) => {
+  if (/^https?:\/\//i.test(assetPathOrUrl)) {
+    return assetPathOrUrl
+  }
+
+  if (assetPathOrUrl.startsWith('/')) {
+    return resolveAbsoluteUrl(baseUrl, assetPathOrUrl)
+  }
+
+  if (assetPathOrUrl.startsWith('assets/')) {
+    return resolveAbsoluteUrl(baseUrl, `/${assetPathOrUrl}`)
+  }
+
+  return new URL(assetPathOrUrl, referrerAssetUrl).toString()
+}
 
 export const resolveMissingLabEntryMarkers = (
   assetContents: string | string[],
@@ -425,20 +459,33 @@ const probeFrontendLabEntries = async (baseUrl: string, assetPaths: string[]) =>
     throw new Error('首页未解析到任何 JS 静态资源路径，无法校验实验室入口')
   }
 
+  const baseReferrerUrl = `${normalizeBaseUrl(baseUrl)}/`
+  const pendingAssetUrls = scriptAssetPaths.map((assetPath) =>
+    resolveJavaScriptAssetUrl(baseUrl, baseReferrerUrl, assetPath)
+  )
+  const discoveredAssetUrls = new Set(pendingAssetUrls)
   const checkedAssets: string[] = []
   const assetContents: string[] = []
 
-  for (const assetPath of scriptAssetPaths) {
-    const assetUrl = resolveAbsoluteUrl(baseUrl, assetPath)
+  while (pendingAssetUrls.length > 0) {
+    const assetUrl = pendingAssetUrls.shift()!
     const response = await fetchWithTimeout(assetUrl)
     expectOkResponse(response, assetUrl)
-    assetContents.push(await response.text())
+    const scriptContent = await response.text()
+    assetContents.push(scriptContent)
     checkedAssets.push(assetUrl)
 
     const missingMarkers = resolveMissingLabEntryMarkers(assetContents)
     if (missingMarkers.length === 0) {
       console.log(`[docker-smoke] 实验室入口探测通过: ${checkedAssets.join(', ')}`)
       return
+    }
+
+    for (const dependencyPath of extractReferencedJavaScriptAssetPaths(scriptContent)) {
+      const dependencyUrl = resolveJavaScriptAssetUrl(baseUrl, assetUrl, dependencyPath)
+      if (discoveredAssetUrls.has(dependencyUrl)) continue
+      discoveredAssetUrls.add(dependencyUrl)
+      pendingAssetUrls.push(dependencyUrl)
     }
   }
 
