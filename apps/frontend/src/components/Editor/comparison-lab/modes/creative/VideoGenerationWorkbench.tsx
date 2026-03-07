@@ -231,7 +231,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
     showVideoGenerationAdvancedInputs || requiredVideoInputs.length > 0
   const hasVideoGenerationJobs = sortedVideoGenerationJobs.length > 0
   const dispatchLeadText = hasVideoGenerationJobs
-    ? '继续补充 prompt 与输入条件，右侧会同步给出焦点结果与队列状态。'
+    ? '继续补充 prompt 与输入条件，主工位会同步给出焦点结果与队列状态。'
     : '先写 Prompt 并提交任务，任务队列和结果聚焦会在这里接管后续流程。'
   const operationsLeadText = hasVideoGenerationJobs
     ? '模型、查询和分页设置作为值班层保留在这里，避免打断主创作路径。'

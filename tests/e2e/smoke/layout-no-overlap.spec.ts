@@ -8,6 +8,12 @@ const VIEWPORTS = [
   { width: 1920, height: 1080 }
 ]
 
+const COMPACT_CREATIVE_VIEWPORTS = [
+  { width: 420, height: 900 },
+  { width: 520, height: 900 },
+  { width: 600, height: 900 }
+]
+
 test('主布局三区域在常见桌面分辨率不重叠且关键操作可达', async ({ page }) => {
   for (const viewport of VIEWPORTS) {
     await page.setViewportSize(viewport)
@@ -152,5 +158,51 @@ test('主布局三区域在常见桌面分辨率不重叠且关键操作可达',
         snapshotCardBox.x + 2
       )
     }
+  }
+})
+
+test('creative telemetry strip 在紧凑宽度下应切回单列且不横向溢出', async ({ page }) => {
+  for (const viewport of COMPACT_CREATIVE_VIEWPORTS) {
+    await page.setViewportSize(viewport)
+    attachPageDebug(page, `creative-compact-${viewport.width}x${viewport.height}`)
+    await page.goto('/')
+    await dismissGuideIfPresent(page)
+
+    await page.getByTestId('btn-reset-layout').click()
+    await page.getByTestId('btn-center-mode-fit').click()
+    await page.getByTestId('btn-mode-color').click()
+    await page.getByTestId('btn-lab-mode-creative').click()
+
+    const creativeShell = page.getByTestId('area-creative-shell')
+    const telemetryStrip = creativeShell.locator('.video-generation-telemetry-strip')
+    const statusRibbon = telemetryStrip.locator('.video-generation-status-ribbon')
+    const quickCheck = telemetryStrip.locator('.video-generation-quick-check')
+    const pollingHint = telemetryStrip.getByTestId('video-generation-polling-hint')
+
+    await expect(creativeShell).toBeVisible()
+    await expect(statusRibbon).toBeVisible()
+    await expect(quickCheck).toBeVisible()
+    await expect(pollingHint).toBeVisible()
+
+    const telemetryOverflow = await telemetryStrip.evaluate((node) => ({
+      scrollWidth: node.scrollWidth,
+      clientWidth: node.clientWidth
+    }))
+    expect(telemetryOverflow.scrollWidth).toBeLessThanOrEqual(telemetryOverflow.clientWidth + 2)
+
+    const statusRibbonGrid = await statusRibbon.evaluate(
+      (node) => getComputedStyle(node as HTMLElement).gridTemplateColumns
+    )
+    expect(statusRibbonGrid.trim()).not.toContain(' ')
+
+    const quickCheckBox = await quickCheck.boundingBox()
+    const pollingHintBox = await pollingHint.boundingBox()
+    if (!quickCheckBox || !pollingHintBox) {
+      throw new Error(`creative telemetry strip boundingBox 为空，无法验证: ${viewport.width}x${viewport.height}`)
+    }
+
+    const stacked = Math.abs(quickCheckBox.x - pollingHintBox.x) < 4
+    expect(stacked).toBe(true)
+    expect(quickCheckBox.y + quickCheckBox.height).toBeLessThanOrEqual(pollingHintBox.y + 2)
   }
 })

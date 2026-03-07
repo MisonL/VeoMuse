@@ -3152,6 +3152,10 @@
   gap: 10px;
 }
 
+.video-generation-telemetry-strip .video-generation-status-ribbon > * {
+  min-width: 0;
+}
+
 .video-generation-telemetry-strip .video-generation-quick-check,
 .video-generation-telemetry-strip .video-generation-polling-hint {
   padding: 7px 8px;
@@ -4085,6 +4089,7 @@
   }
 
   .video-generation-status-ribbon,
+  .video-generation-telemetry-strip .video-generation-status-ribbon,
   .video-generation-command-bar {
     grid-template-columns: 1fr;
   }
@@ -4136,6 +4141,7 @@
 
 @media (max-width: 720px) {
   .video-generation-status-ribbon,
+  .video-generation-telemetry-strip .video-generation-status-ribbon,
   .video-generation-command-bar,
   .video-generation-focus-grid,
   .workflow-stage-layout,
