@@ -6,6 +6,15 @@ import {
 } from '../helpers'
 import type { JourneyErrorKind, JourneyFailedStage, JourneyStep } from '../../../../store/journeyTelemetryStore'
 import type { AuthProfile, LabMode, WorkspaceRole } from '../types'
+import type { CollabAdvancedSectionsProps } from '../modes/collab/CollabAdvancedSections'
+import type { CommentThreadsSectionProps } from '../modes/collab/CommentThreadsSection'
+import type { InviteJoinSectionProps } from '../modes/collab/InviteJoinSection'
+import type { OpsToolsSectionProps } from '../modes/collab/OpsToolsSection'
+import type { PermissionMergeSectionProps } from '../modes/collab/PermissionMergeSection'
+import type { ProjectGovernanceSectionProps } from '../modes/collab/ProjectGovernanceSection'
+import type { RealtimeChannelSectionProps } from '../modes/collab/RealtimeChannelSection'
+import type { StorageSnapshotsSectionProps } from '../modes/collab/StorageSnapshotsSection'
+import type { WorkspaceSectionProps } from '../modes/collab/WorkspaceSection'
 import { useProjectGovernance } from './useProjectGovernance'
 import { useV4CommentThreads } from './useV4CommentThreads'
 import { useV4OpsManager } from './useV4OpsManager'
@@ -17,173 +26,14 @@ type WorkspaceCollaborationController = ReturnType<typeof useWorkspaceCollaborat
 type V4OpsController = ReturnType<typeof useV4OpsManager>
 type V4CommentThreadsController = ReturnType<typeof useV4CommentThreads>
 type ProjectGovernanceController = ReturnType<typeof useProjectGovernance>
-
-type CollabWorkspaceProps = Pick<
-  CollabModePanelProps,
-  | 'isAuthenticated'
-  | 'workspaceName'
-  | 'workspaceOwner'
-  | 'workspaceId'
-  | 'projectId'
-  | 'inviteRole'
-  | 'memberName'
-  | 'collabRole'
-  | 'inviteCode'
-  | 'invites'
-  | 'isWsConnected'
-  | 'presence'
-  | 'collabEvents'
-  | 'snapshots'
-  | 'uploadFileName'
-  | 'uploadToken'
-  | 'onWorkspaceNameChange'
-  | 'onWorkspaceOwnerChange'
-  | 'onCreateWorkspace'
-  | 'onRefreshWorkspaceState'
-  | 'onInviteRoleChange'
-  | 'onMemberNameChange'
-  | 'onCollabRoleChange'
-  | 'onInviteCodeChange'
-  | 'onCreateInvite'
-  | 'onAcceptInvite'
-  | 'onConnectWs'
-  | 'onDisconnectWs'
-  | 'onSendCollabEvent'
-  | 'onCreateSnapshot'
-  | 'onUploadFileNameChange'
-  | 'onRequestUploadToken'
->
-
-type CollabCommentThreadProps = Pick<
-  CollabModePanelProps,
-  | 'commentThreads'
-  | 'commentThreadCursor'
-  | 'commentThreadLimit'
-  | 'commentThreadHasMore'
-  | 'commentAnchor'
-  | 'commentContent'
-  | 'commentMentions'
-  | 'selectedThreadId'
-  | 'commentReplyContent'
-  | 'commentReplyMentions'
-  | 'onRefreshCommentThreads'
-  | 'onLoadMoreCommentThreads'
-  | 'onCommentThreadLimitChange'
-  | 'onCommentAnchorChange'
-  | 'onCommentContentChange'
-  | 'onCommentMentionsChange'
-  | 'onSelectedThreadIdChange'
-  | 'onCommentReplyContentChange'
-  | 'onCommentReplyMentionsChange'
-  | 'onCreateCommentThread'
-  | 'onReplyCommentThread'
-  | 'onResolveCommentThread'
->
-
-type CollabGovernanceProps = Pick<
-  CollabModePanelProps,
-  | 'projectComments'
-  | 'projectCommentCursor'
-  | 'projectCommentLimit'
-  | 'projectCommentHasMore'
-  | 'projectCommentAnchor'
-  | 'projectCommentContent'
-  | 'projectCommentMentions'
-  | 'projectSelectedCommentId'
-  | 'projectReviews'
-  | 'projectReviewLimit'
-  | 'projectReviewDecision'
-  | 'projectReviewSummary'
-  | 'projectReviewScore'
-  | 'projectTemplates'
-  | 'projectSelectedTemplateId'
-  | 'projectTemplateApplyOptions'
-  | 'projectTemplateApplyResult'
-  | 'projectClipBatchOperations'
-  | 'projectClipBatchResult'
-  | 'onRefreshProjectComments'
-  | 'onLoadMoreProjectComments'
-  | 'onProjectCommentLimitChange'
-  | 'onProjectCommentAnchorChange'
-  | 'onProjectCommentContentChange'
-  | 'onProjectCommentMentionsChange'
-  | 'onProjectSelectedCommentIdChange'
-  | 'onCreateProjectComment'
-  | 'onResolveProjectComment'
-  | 'onRefreshProjectReviews'
-  | 'onProjectReviewLimitChange'
-  | 'onProjectReviewDecisionChange'
-  | 'onProjectReviewSummaryChange'
-  | 'onProjectReviewScoreChange'
-  | 'onCreateProjectReview'
-  | 'onRefreshProjectTemplates'
-  | 'onProjectSelectedTemplateIdChange'
-  | 'onProjectTemplateApplyOptionsChange'
-  | 'onApplyProjectTemplate'
-  | 'onProjectClipBatchOperationsChange'
-  | 'onBatchUpdateProjectClips'
->
-
-type CollabOpsProps = Pick<
-  CollabModePanelProps,
-  | 'permissions'
-  | 'permissionSubjectId'
-  | 'permissionRole'
-  | 'timelineMergeResult'
-  | 'errorBudget'
-  | 'errorBudgetScope'
-  | 'errorBudgetTargetSlo'
-  | 'errorBudgetWindowDays'
-  | 'errorBudgetWarningThresholdRatio'
-  | 'errorBudgetAlertThresholdRatio'
-  | 'errorBudgetFreezeDeployOnBreach'
-  | 'adminToken'
-  | 'reliabilityAlertLevel'
-  | 'reliabilityAlertStatus'
-  | 'reliabilityAlertLimit'
-  | 'reliabilityAlerts'
-  | 'rollbackPolicyId'
-  | 'rollbackEnvironment'
-  | 'rollbackTriggerType'
-  | 'rollbackSummary'
-  | 'rollbackPlan'
-  | 'rollbackResult'
-  | 'rollbackDrillId'
-  | 'rollbackDrillResult'
-  | 'onRefreshPermissions'
-  | 'onPermissionSubjectIdChange'
-  | 'onPermissionRoleChange'
-  | 'onUpdatePermission'
-  | 'onMergeTimeline'
-  | 'onAdminTokenChange'
-  | 'onReliabilityAlertLevelChange'
-  | 'onReliabilityAlertStatusChange'
-  | 'onReliabilityAlertLimitChange'
-  | 'onLoadReliabilityAlerts'
-  | 'onAcknowledgeReliabilityAlert'
-  | 'onLoadErrorBudget'
-  | 'onErrorBudgetScopeChange'
-  | 'onErrorBudgetTargetSloChange'
-  | 'onErrorBudgetWindowDaysChange'
-  | 'onErrorBudgetWarningThresholdRatioChange'
-  | 'onErrorBudgetAlertThresholdRatioChange'
-  | 'onErrorBudgetFreezeDeployOnBreachChange'
-  | 'onRollbackPolicyIdChange'
-  | 'onRollbackEnvironmentChange'
-  | 'onRollbackTriggerTypeChange'
-  | 'onRollbackSummaryChange'
-  | 'onRollbackPlanChange'
-  | 'onRollbackResultChange'
-  | 'onUpdateErrorBudget'
-  | 'onTriggerRollbackDrill'
-  | 'onRollbackDrillIdChange'
-  | 'onQueryRollbackDrill'
->
-
-type CollabBusyStateProps = Pick<
-  CollabModePanelProps,
-  'isV4Busy' | 'isOpsBusy' | 'isProjectGovernanceBusy'
->
+type CollabWorkspaceProps = WorkspaceSectionProps
+type CollabInviteJoinProps = InviteJoinSectionProps
+type CollabRealtimeChannelProps = RealtimeChannelSectionProps
+type CollabCommentThreadProps = CommentThreadsSectionProps
+type CollabGovernanceProps = ProjectGovernanceSectionProps
+type CollabPermissionMergeProps = PermissionMergeSectionProps
+type CollabOpsProps = OpsToolsSectionProps
+type CollabStorageSnapshotsProps = StorageSnapshotsSectionProps
 
 interface BuildCollabWorkspacePropsOptions {
   authProfile: AuthProfile | null
@@ -214,6 +64,21 @@ export const buildCollabWorkspaceProps = ({
   setWorkspaceOwner,
   workspaceId,
   projectId,
+  workspaceCollaborationController
+}: BuildCollabWorkspacePropsOptions): CollabWorkspaceProps => ({
+  isAuthenticated: Boolean(authProfile),
+  workspaceName,
+  workspaceOwner,
+  workspaceId,
+  projectId,
+  onWorkspaceNameChange: setWorkspaceName,
+  onWorkspaceOwnerChange: setWorkspaceOwner,
+  onCreateWorkspace: () => void workspaceCollaborationController.createWorkspace(),
+  onRefreshWorkspaceState: () => void workspaceCollaborationController.refreshWorkspaceState()
+})
+
+export const buildCollabInviteJoinSectionProps = ({
+  workspaceId,
   inviteRole,
   setInviteRole,
   memberName,
@@ -222,47 +87,54 @@ export const buildCollabWorkspaceProps = ({
   setCollabRole,
   inviteCode,
   setInviteCode,
-  uploadFileName,
-  setUploadFileName,
   workspaceCollaborationController
-}: BuildCollabWorkspacePropsOptions): CollabWorkspaceProps => ({
-  isAuthenticated: Boolean(authProfile),
-  workspaceName,
-  workspaceOwner,
+}: Pick<
+  BuildCollabWorkspacePropsOptions,
+  | 'workspaceId'
+  | 'inviteRole'
+  | 'setInviteRole'
+  | 'memberName'
+  | 'setMemberName'
+  | 'collabRole'
+  | 'setCollabRole'
+  | 'inviteCode'
+  | 'setInviteCode'
+  | 'workspaceCollaborationController'
+>): CollabInviteJoinProps => ({
   workspaceId,
-  projectId,
+  onInviteRoleChange: setInviteRole,
   inviteRole,
+  onMemberNameChange: setMemberName,
   memberName,
+  onCollabRoleChange: setCollabRole,
   collabRole,
+  onInviteCodeChange: setInviteCode,
   inviteCode,
   invites: workspaceCollaborationController.invites,
+  onCreateInvite: () => void workspaceCollaborationController.createInvite(),
+  onAcceptInvite: () => void workspaceCollaborationController.acceptInvite()
+})
+
+export const buildCollabRealtimeChannelSectionProps = ({
+  workspaceId,
+  workspaceCollaborationController
+}: Pick<BuildCollabWorkspacePropsOptions, 'workspaceId' | 'workspaceCollaborationController'>): CollabRealtimeChannelProps => ({
+  workspaceId,
   isWsConnected: workspaceCollaborationController.isWsConnected,
   presence: workspaceCollaborationController.presence,
   collabEvents: workspaceCollaborationController.collabEvents,
-  snapshots: workspaceCollaborationController.snapshots,
-  uploadFileName,
-  uploadToken: workspaceCollaborationController.uploadToken,
-  onWorkspaceNameChange: setWorkspaceName,
-  onWorkspaceOwnerChange: setWorkspaceOwner,
-  onCreateWorkspace: () => void workspaceCollaborationController.createWorkspace(),
-  onRefreshWorkspaceState: () => void workspaceCollaborationController.refreshWorkspaceState(),
-  onInviteRoleChange: setInviteRole,
-  onMemberNameChange: setMemberName,
-  onCollabRoleChange: setCollabRole,
-  onInviteCodeChange: setInviteCode,
-  onCreateInvite: () => void workspaceCollaborationController.createInvite(),
-  onAcceptInvite: () => void workspaceCollaborationController.acceptInvite(),
   onConnectWs: workspaceCollaborationController.connectWs,
   onDisconnectWs: workspaceCollaborationController.disconnectWs,
-  onSendCollabEvent: workspaceCollaborationController.sendCollabEvent,
-  onCreateSnapshot: () => void workspaceCollaborationController.createSnapshot(),
-  onUploadFileNameChange: setUploadFileName,
-  onRequestUploadToken: () => void workspaceCollaborationController.requestUploadToken()
+  onSendCollabEvent: workspaceCollaborationController.sendCollabEvent
 })
 
 export const buildCollabCommentThreadProps = (
-  commentThreadsController: V4CommentThreadsController
+  commentThreadsController: V4CommentThreadsController,
+  options: Pick<BuildCollabWorkspacePropsOptions, 'projectId'> & {
+    isV4Busy: boolean
+  }
 ): CollabCommentThreadProps => ({
+  projectId: options.projectId,
   commentThreads: commentThreadsController.v4CommentThreads,
   commentThreadCursor: commentThreadsController.v4CommentThreadCursor,
   commentThreadLimit: commentThreadsController.v4CommentThreadLimit,
@@ -273,6 +145,7 @@ export const buildCollabCommentThreadProps = (
   selectedThreadId: commentThreadsController.v4SelectedThreadId,
   commentReplyContent: commentThreadsController.v4CommentReplyContent,
   commentReplyMentions: commentThreadsController.v4CommentReplyMentions,
+  isV4Busy: options.isV4Busy,
   onRefreshCommentThreads: () => void commentThreadsController.refreshV4CommentThreads(),
   onLoadMoreCommentThreads: () => void commentThreadsController.loadMoreV4CommentThreads(),
   onCommentThreadLimitChange: commentThreadsController.setV4CommentThreadLimit,
@@ -288,8 +161,11 @@ export const buildCollabCommentThreadProps = (
 })
 
 export const buildCollabGovernanceProps = (
-  projectGovernanceController: ProjectGovernanceController
+  projectGovernanceController: ProjectGovernanceController,
+  options: { projectId: string }
 ): CollabGovernanceProps => ({
+  projectId: options.projectId,
+  isProjectGovernanceBusy: projectGovernanceController.isProjectGovernanceBusy,
   projectComments: projectGovernanceController.projectComments,
   projectCommentCursor: projectGovernanceController.projectCommentCursor,
   projectCommentLimit: projectGovernanceController.projectCommentLimit,
@@ -335,10 +211,12 @@ export const buildCollabGovernanceProps = (
 export const buildCollabOpsProps = (
   v4OpsController: V4OpsController
 ): CollabOpsProps => ({
-  permissions: v4OpsController.v4Permissions,
-  permissionSubjectId: v4OpsController.v4PermissionSubjectId,
-  permissionRole: v4OpsController.v4PermissionRole,
-  timelineMergeResult: v4OpsController.v4TimelineMergeResult,
+  isOpsBusy: v4OpsController.isV4OpsBusy,
+  adminToken: v4OpsController.v4AdminToken,
+  reliabilityAlertLevel: v4OpsController.v4ReliabilityAlertLevel,
+  reliabilityAlertStatus: v4OpsController.v4ReliabilityAlertStatus,
+  reliabilityAlertLimit: v4OpsController.v4ReliabilityAlertLimit,
+  reliabilityAlerts: v4OpsController.v4ReliabilityAlerts,
   errorBudget: v4OpsController.v4ErrorBudget,
   errorBudgetScope: v4OpsController.v4ErrorBudgetScope,
   errorBudgetTargetSlo: v4OpsController.v4ErrorBudgetTargetSlo,
@@ -346,11 +224,6 @@ export const buildCollabOpsProps = (
   errorBudgetWarningThresholdRatio: v4OpsController.v4ErrorBudgetWarningThresholdRatio,
   errorBudgetAlertThresholdRatio: v4OpsController.v4ErrorBudgetAlertThresholdRatio,
   errorBudgetFreezeDeployOnBreach: v4OpsController.v4ErrorBudgetFreezeDeployOnBreach,
-  adminToken: v4OpsController.v4AdminToken,
-  reliabilityAlertLevel: v4OpsController.v4ReliabilityAlertLevel,
-  reliabilityAlertStatus: v4OpsController.v4ReliabilityAlertStatus,
-  reliabilityAlertLimit: v4OpsController.v4ReliabilityAlertLimit,
-  reliabilityAlerts: v4OpsController.v4ReliabilityAlerts,
   rollbackPolicyId: v4OpsController.v4RollbackPolicyId,
   rollbackEnvironment: v4OpsController.v4RollbackEnvironment,
   rollbackTriggerType: v4OpsController.v4RollbackTriggerType,
@@ -359,11 +232,6 @@ export const buildCollabOpsProps = (
   rollbackResult: v4OpsController.v4RollbackResult,
   rollbackDrillId: v4OpsController.v4RollbackDrillId,
   rollbackDrillResult: v4OpsController.v4RollbackDrillResult,
-  onRefreshPermissions: () => void v4OpsController.refreshV4Permissions(),
-  onPermissionSubjectIdChange: v4OpsController.setV4PermissionSubjectId,
-  onPermissionRoleChange: v4OpsController.setV4PermissionRole,
-  onUpdatePermission: () => void v4OpsController.updateV4Permission(),
-  onMergeTimeline: () => void v4OpsController.mergeV4Timeline(),
   onAdminTokenChange: v4OpsController.setV4AdminToken,
   onReliabilityAlertLevelChange: v4OpsController.setV4ReliabilityAlertLevel,
   onReliabilityAlertStatusChange: v4OpsController.setV4ReliabilityAlertStatus,
@@ -390,14 +258,69 @@ export const buildCollabOpsProps = (
   onQueryRollbackDrill: () => void v4OpsController.queryV4RollbackDrill()
 })
 
-export const buildCollabBusyStateProps = ({
-  isV4Busy,
-  isOpsBusy,
-  isProjectGovernanceBusy
-}: CollabBusyStateProps): CollabBusyStateProps => ({
-  isV4Busy,
-  isOpsBusy,
-  isProjectGovernanceBusy
+export const buildCollabPermissionMergeProps = (
+  v4OpsController: V4OpsController,
+  options: { workspaceId: string; projectId: string }
+): CollabPermissionMergeProps => ({
+  workspaceId: options.workspaceId,
+  projectId: options.projectId,
+  permissionSubjectId: v4OpsController.v4PermissionSubjectId,
+  permissionRole: v4OpsController.v4PermissionRole,
+  permissions: v4OpsController.v4Permissions,
+  timelineMergeResult: v4OpsController.v4TimelineMergeResult,
+  isV4Busy: v4OpsController.isV4CollabBusy,
+  onRefreshPermissions: () => void v4OpsController.refreshV4Permissions(),
+  onPermissionSubjectIdChange: v4OpsController.setV4PermissionSubjectId,
+  onPermissionRoleChange: v4OpsController.setV4PermissionRole,
+  onUpdatePermission: () => void v4OpsController.updateV4Permission(),
+  onMergeTimeline: () => void v4OpsController.mergeV4Timeline()
+})
+
+export const buildCollabStorageSnapshotsProps = (
+  workspaceCollaborationController: WorkspaceCollaborationController,
+  options: Pick<
+    BuildCollabWorkspacePropsOptions,
+    'projectId' | 'workspaceId' | 'uploadFileName' | 'setUploadFileName'
+  >
+): CollabStorageSnapshotsProps => ({
+  projectId: options.projectId,
+  workspaceId: options.workspaceId,
+  uploadFileName: options.uploadFileName,
+  uploadToken: workspaceCollaborationController.uploadToken,
+  snapshots: workspaceCollaborationController.snapshots,
+  onCreateSnapshot: () => void workspaceCollaborationController.createSnapshot(),
+  onRefreshWorkspaceState: () => void workspaceCollaborationController.refreshWorkspaceState(),
+  onUploadFileNameChange: options.setUploadFileName,
+  onRequestUploadToken: () => void workspaceCollaborationController.requestUploadToken()
+})
+
+export const buildCollabAdvancedSectionsProps = ({
+  projectId,
+  workspaceId,
+  uploadFileName,
+  setUploadFileName,
+  workspaceCollaborationController,
+  projectGovernanceController,
+  v4OpsController
+}: Pick<
+  BuildCollabWorkspacePropsOptions,
+  'projectId' | 'workspaceId' | 'uploadFileName' | 'setUploadFileName' | 'workspaceCollaborationController'
+> & {
+  projectGovernanceController: ProjectGovernanceController
+  v4OpsController: V4OpsController
+}): CollabAdvancedSectionsProps => ({
+  projectGovernanceProps: buildCollabGovernanceProps(projectGovernanceController, { projectId }),
+  permissionMergeProps: buildCollabPermissionMergeProps(v4OpsController, {
+    workspaceId,
+    projectId
+  }),
+  opsToolsProps: buildCollabOpsProps(v4OpsController),
+  storageSnapshotsProps: buildCollabStorageSnapshotsProps(workspaceCollaborationController, {
+    projectId,
+    workspaceId,
+    uploadFileName,
+    setUploadFileName
+  })
 })
 
 interface UseCollabModeControllerOptions {
@@ -534,7 +457,7 @@ export const useCollabModeController = ({
   })
 
   return {
-    ...buildCollabWorkspaceProps({
+    workspaceSectionProps: buildCollabWorkspaceProps({
       authProfile,
       workspaceName,
       setWorkspaceName,
@@ -554,13 +477,34 @@ export const useCollabModeController = ({
       setUploadFileName,
       workspaceCollaborationController
     }),
-    ...buildCollabCommentThreadProps(commentThreadsController),
-    ...buildCollabGovernanceProps(projectGovernanceController),
-    ...buildCollabOpsProps(v4OpsController),
-    ...buildCollabBusyStateProps({
-      isV4Busy: v4OpsController.isV4CollabBusy,
-      isOpsBusy: v4OpsController.isV4OpsBusy,
-      isProjectGovernanceBusy: projectGovernanceController.isProjectGovernanceBusy
+    inviteJoinSectionProps: buildCollabInviteJoinSectionProps({
+      workspaceId,
+      inviteRole,
+      setInviteRole,
+      memberName,
+      setMemberName,
+      collabRole,
+      setCollabRole,
+      inviteCode,
+      setInviteCode,
+      workspaceCollaborationController
+    }),
+    realtimeChannelSectionProps: buildCollabRealtimeChannelSectionProps({
+      workspaceId,
+      workspaceCollaborationController
+    }),
+    commentThreadsSectionProps: buildCollabCommentThreadProps(commentThreadsController, {
+      projectId,
+      isV4Busy: v4OpsController.isV4CollabBusy
+    }),
+    advancedSectionsProps: buildCollabAdvancedSectionsProps({
+      projectId,
+      workspaceId,
+      uploadFileName,
+      setUploadFileName,
+      workspaceCollaborationController,
+      projectGovernanceController,
+      v4OpsController
     })
   }
 }
