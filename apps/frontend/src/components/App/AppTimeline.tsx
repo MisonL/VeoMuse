@@ -50,6 +50,14 @@ const AppTimeline = ({
             {hasTimelineClips ? 'Run of Show / Prime Cut' : '节目待命 / Waiting For First Clip'}
           </span>
         </div>
+        <div className="timeline-priority-band">
+          <span className="timeline-priority-pill">主操作区</span>
+          <span className="timeline-priority-copy">
+            {hasTimelineClips
+              ? '继续在这里剪切、拖拽、对齐和回退，节目轨会优先承接你的操作。'
+              : '先把第一批片段送入这里，后续的剪切、编排和导出前整理都会在这里完成。'}
+          </span>
+        </div>
         <div className="timeline-tools" data-guide="timeline-tools">
           <div className="undo-group">
             <button

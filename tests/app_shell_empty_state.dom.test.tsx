@@ -56,5 +56,8 @@ describe('编辑器壳层空态回归', () => {
     expect(view.getByText('中心工作区负责给出第一步，时间轴负责承接编排。')).toBeInTheDocument()
     expect(view.getByText('空轨待命')).toBeInTheDocument()
     expect(view.getByText('节目待命 / Waiting For First Clip')).toBeInTheDocument()
+    expect(
+      view.getByText('先把第一批片段送入这里，后续的剪切、编排和导出前整理都会在这里完成。')
+    ).toBeInTheDocument()
   })
 })
