@@ -85,8 +85,10 @@ test('主布局三区域在常见桌面分辨率不重叠且关键操作可达',
     const creativeHero = creativeShell.locator('.creative-hero-stage')
     const creativeHeroMain = creativeShell.locator('.creative-hero-main')
     const creativeHeroSide = creativeShell.locator('.creative-hero-side')
+    const promptStage = creativeShell.locator('.video-generation-prompt-stage')
     await expect(creativeHeroMain).toBeVisible()
     await expect(creativeHeroSide).toBeVisible()
+    await expect(promptStage.getByTestId('video-generation-focus-panel')).toBeVisible()
     const creativeHeroMetrics = await creativeHero.evaluate((node) => ({
       offsetHeight: (node as HTMLElement).offsetHeight,
       scrollHeight: (node as HTMLElement).scrollHeight

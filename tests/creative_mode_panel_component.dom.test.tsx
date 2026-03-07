@@ -164,6 +164,11 @@ describe('CreativeModePanel DOM / SSR 护栏', () => {
     expect(view.getByText('暂无 Workflow Runs 记录')).toBeInTheDocument()
     expect(view.getByText('暂无 Batch Job Items')).toBeInTheDocument()
     expect(view.getByText('暂无资产复用历史')).toBeInTheDocument()
+    expect(view.getByText('先完成主描述，再进入队列与结果调度。')).toBeInTheDocument()
+    expect(view.getByText('次级控制集中在这一侧。')).toBeInTheDocument()
+    expect(view.getByText('Workflow 先承担编排入口，再承接运行回放。')).toBeInTheDocument()
+    expect(view.getByText('Batch 先定义任务，再把执行进度交给右侧塔台。')).toBeInTheDocument()
+    expect(view.getByText('发起复用是主动作，档案追踪放到另一侧。')).toBeInTheDocument()
   })
 
   it('应渲染关键表单并触发关键动作回调', async () => {
@@ -296,6 +301,12 @@ describe('CreativeModePanel DOM / SSR 护栏', () => {
     expect(commitScoreInput.value).toBe('0.8')
     expect(promptInput).toBeInTheDocument()
     expect(promptInput.value).toBe('')
+    expect(
+      view.container.querySelector('.video-generation-prompt-stage [data-testid="video-generation-focus-panel"]')
+    ).not.toBeNull()
+    expect(
+      view.container.querySelector('.video-generation-ops-sidebar [data-testid="video-generation-focus-panel"]')
+    ).toBeNull()
     expect(view.getAllByText('job_1').length).toBeGreaterThan(0)
     expect(view.getByText('城市夜景编排')).toBeInTheDocument()
     expect(view.getByText('clip-a')).toBeInTheDocument()
