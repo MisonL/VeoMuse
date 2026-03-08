@@ -70,6 +70,19 @@ interface OrganizationQuotaPayload {
   usage: OrganizationUsage
 }
 
+interface ParsedOrganizationQuotaForm {
+  requestLimit: number
+  storageLimitMb: number
+  concurrencyLimit: number
+}
+
+interface ResolvedChannelConfigRequest {
+  form: ChannelFormState
+  extra: Record<string, unknown>
+  path: string
+  workspaceId?: string
+}
+
 const resolveResponseError = (payload: unknown, status: number) => {
   if (!payload || typeof payload !== 'object') return `HTTP ${status}`
   const candidate = payload as { error?: unknown }
@@ -148,6 +161,29 @@ export const useAuthOrganizationChannelManager = ({
     setSelectedOrganizationId(organizationId)
     setOrganizationId(organizationId)
   }, [])
+  const applyAuthProfilePayload = useCallback(
+    (payload: { user: AuthProfile; organizations?: Organization[] }) => {
+      setAuthProfile(payload.user)
+      const rows = payload.organizations || []
+      setOrganizations(rows)
+      const storedOrgId = getOrganizationId()
+      const preferredOrgId = rows.some((item) => item.id === storedOrgId)
+        ? storedOrgId
+        : rows[0]?.id || ''
+      if (preferredOrgId) {
+        selectOrganization(preferredOrgId)
+      }
+    },
+    [selectOrganization]
+  )
+  const applyCreatedOrganization = useCallback(
+    (organization: Organization) => {
+      setOrganizations((prev) => [...prev, organization])
+      setNewOrgName('')
+      selectOrganization(organization.id)
+    },
+    [selectOrganization]
+  )
 
   const applySession = useCallback(
     (payload: AuthSessionPayload) => {
@@ -247,6 +283,62 @@ export const useAuthOrganizationChannelManager = ({
     },
     [applySession, loadPolicies, markJourneyStep, showToast]
   )
+  const resolveCapabilitiesPath = useCallback(() => {
+    if (activeChannelScope === 'workspace' && workspaceId) {
+      return `/api/capabilities?workspaceId=${encodeURIComponent(workspaceId)}`
+    }
+    return '/api/capabilities'
+  }, [activeChannelScope, workspaceId])
+  const parseOrganizationQuotaForm = useCallback((): ParsedOrganizationQuotaForm | null => {
+    const requestLimit = Number.parseInt(quotaForm.requestLimit.trim() || '0', 10)
+    if (!Number.isFinite(requestLimit) || requestLimit < 0) {
+      showToast('请求配额必须是大于等于 0 的整数', 'warning')
+      return null
+    }
+    const storageLimitMb = Number.parseInt(quotaForm.storageLimitMb.trim() || '0', 10)
+    if (!Number.isFinite(storageLimitMb) || storageLimitMb < 0) {
+      showToast('存储配额（MB）必须是大于等于 0 的整数', 'warning')
+      return null
+    }
+    const concurrencyLimit = Number.parseInt(quotaForm.concurrencyLimit.trim() || '0', 10)
+    if (!Number.isFinite(concurrencyLimit) || concurrencyLimit < 0) {
+      showToast('并发配额必须是大于等于 0 的整数', 'warning')
+      return null
+    }
+    return {
+      requestLimit,
+      storageLimitMb,
+      concurrencyLimit
+    }
+  }, [quotaForm, showToast])
+  const resolveChannelConfigRequest = useCallback(
+    (providerId: string): ResolvedChannelConfigRequest | null => {
+      const form = channelForms[providerId]
+      if (!form) return null
+      if (!validateChannelForm(providerId, form, (message) => showToast(message, 'warning'))) {
+        return null
+      }
+      return {
+        form,
+        extra: buildChannelExtra(providerId, form),
+        path:
+          activeChannelScope === 'workspace' && workspaceId
+            ? `/api/workspaces/${workspaceId}/channels/${providerId}`
+            : `/api/organizations/${effectiveOrganizationId}/channels/${providerId}`,
+        workspaceId: activeChannelScope === 'workspace' && workspaceId ? workspaceId : undefined
+      }
+    },
+    [activeChannelScope, channelForms, effectiveOrganizationId, showToast, workspaceId]
+  )
+  const clearChannelApiKey = useCallback((providerId: string) => {
+    setChannelForms((prev) => ({
+      ...prev,
+      [providerId]: {
+        ...prev[providerId],
+        apiKey: ''
+      }
+    }))
+  }, [])
 
   const loadAuthProfile = useCallback(async () => {
     const accessToken = getAccessToken().trim()
@@ -260,21 +352,13 @@ export const useAuthOrganizationChannelManager = ({
         user: AuthProfile
         organizations: Organization[]
       }>('/api/auth/me')
-      setAuthProfile(payload.user)
-      setOrganizations(payload.organizations || [])
-      const storedOrgId = getOrganizationId()
-      const preferredOrgId = payload.organizations?.some((item) => item.id === storedOrgId)
-        ? storedOrgId
-        : payload.organizations?.[0]?.id || ''
-      if (preferredOrgId) {
-        selectOrganization(preferredOrgId)
-      }
+      applyAuthProfilePayload(payload)
       void loadPolicies(false)
     } catch {
       clearAuthSession()
       resetAuthResources()
     }
-  }, [loadPolicies, resetAuthResources, selectOrganization])
+  }, [applyAuthProfilePayload, loadPolicies, resetAuthResources])
 
   const submitAuth = useCallback(async () => {
     if (!loginEmail.trim() || !loginPassword.trim()) {
@@ -376,16 +460,13 @@ export const useAuthOrganizationChannelManager = ({
           body: JSON.stringify({ name: newOrgName.trim() })
         }
       )
-      setOrganizations((prev) => [...prev, payload.organization])
-      setNewOrgName('')
-      setSelectedOrganizationId(payload.organization.id)
-      setOrganizationId(payload.organization.id)
+      applyCreatedOrganization(payload.organization)
       markJourneyStep('organization_ready', { organizationId: payload.organization.id })
       showToast('组织创建成功', 'success')
     } catch (error: unknown) {
       showRequestError(error, '创建组织失败')
     }
-  }, [markJourneyStep, newOrgName, showRequestError])
+  }, [applyCreatedOrganization, markJourneyStep, newOrgName, showRequestError])
 
   const refreshOrganizationMembers = useCallback(async () => {
     if (!effectiveOrganizationId) {
@@ -457,21 +538,8 @@ export const useAuthOrganizationChannelManager = ({
       showToast('请先选择组织', 'info')
       return
     }
-    const requestLimit = Number.parseInt(quotaForm.requestLimit.trim() || '0', 10)
-    const storageLimitMb = Number.parseInt(quotaForm.storageLimitMb.trim() || '0', 10)
-    const concurrencyLimit = Number.parseInt(quotaForm.concurrencyLimit.trim() || '0', 10)
-    if (!Number.isFinite(requestLimit) || requestLimit < 0) {
-      showToast('请求配额必须是大于等于 0 的整数', 'warning')
-      return
-    }
-    if (!Number.isFinite(storageLimitMb) || storageLimitMb < 0) {
-      showToast('存储配额（MB）必须是大于等于 0 的整数', 'warning')
-      return
-    }
-    if (!Number.isFinite(concurrencyLimit) || concurrencyLimit < 0) {
-      showToast('并发配额必须是大于等于 0 的整数', 'warning')
-      return
-    }
+    const parsedQuotaForm = parseOrganizationQuotaForm()
+    if (!parsedQuotaForm) return
     try {
       const payload = await requestJson<{
         success: boolean
@@ -480,9 +548,9 @@ export const useAuthOrganizationChannelManager = ({
       }>(`/api/organizations/${effectiveOrganizationId}/quota`, {
         method: 'PUT',
         body: JSON.stringify({
-          requestLimit,
-          storageLimitBytes: storageLimitMb * 1024 * 1024,
-          concurrencyLimit
+          requestLimit: parsedQuotaForm.requestLimit,
+          storageLimitBytes: parsedQuotaForm.storageLimitMb * 1024 * 1024,
+          concurrencyLimit: parsedQuotaForm.concurrencyLimit
         })
       })
       applyOrganizationQuotaPayload(payload)
@@ -493,7 +561,7 @@ export const useAuthOrganizationChannelManager = ({
   }, [
     applyOrganizationQuotaPayload,
     effectiveOrganizationId,
-    quotaForm,
+    parseOrganizationQuotaForm,
     showRequestError,
     showToast
   ])
@@ -573,18 +641,24 @@ export const useAuthOrganizationChannelManager = ({
   const loadCapabilities = useCallback(async () => {
     setIsCapabilitiesLoading(true)
     try {
-      const query =
-        activeChannelScope === 'workspace' && workspaceId
-          ? `?workspaceId=${encodeURIComponent(workspaceId)}`
-          : ''
-      const payload = await requestJson<CapabilityPayload>(`/api/capabilities${query}`)
+      const payload = await requestJson<CapabilityPayload>(resolveCapabilitiesPath())
       setCapabilities(payload)
     } catch (error: unknown) {
       showRequestError(error, '加载渠道接入状态失败')
     } finally {
       setIsCapabilitiesLoading(false)
     }
-  }, [activeChannelScope, showRequestError, workspaceId])
+  }, [resolveCapabilitiesPath, showRequestError])
+  const refreshChannelAccessResources = useCallback(
+    async (options?: { includeQuota?: boolean }) => {
+      await refreshChannelConfigs()
+      await loadCapabilities()
+      if (options?.includeQuota) {
+        await refreshOrganizationQuota()
+      }
+    },
+    [loadCapabilities, refreshChannelConfigs, refreshOrganizationQuota]
+  )
 
   const saveChannelConfig = useCallback(
     async (providerId: string) => {
@@ -592,60 +666,39 @@ export const useAuthOrganizationChannelManager = ({
         showToast('请先选择组织', 'info')
         return
       }
-      const form = channelForms[providerId]
-      if (!form) return
-      if (!validateChannelForm(providerId, form, (message) => showToast(message, 'warning'))) {
-        return
-      }
-      const path =
-        activeChannelScope === 'workspace' && workspaceId
-          ? `/api/workspaces/${workspaceId}/channels/${providerId}`
-          : `/api/organizations/${effectiveOrganizationId}/channels/${providerId}`
-      const extra = buildChannelExtra(providerId, form)
+      const resolvedRequest = resolveChannelConfigRequest(providerId)
+      if (!resolvedRequest) return
       try {
-        await requestJson(path, {
+        await requestJson(resolvedRequest.path, {
           method: 'PUT',
           body: JSON.stringify({
-            baseUrl: form.baseUrl.trim() || undefined,
-            apiKey: form.apiKey.trim() || undefined,
-            enabled: form.enabled,
-            extra
+            baseUrl: resolvedRequest.form.baseUrl.trim() || undefined,
+            apiKey: resolvedRequest.form.apiKey.trim() || undefined,
+            enabled: resolvedRequest.form.enabled,
+            extra: resolvedRequest.extra
           })
         })
-        setChannelForms((prev) => ({
-          ...prev,
-          [providerId]: {
-            ...prev[providerId],
-            apiKey: ''
-          }
-        }))
+        clearChannelApiKey(providerId)
         showToast('渠道配置已保存', 'success')
-        await refreshChannelConfigs()
-        await loadCapabilities()
+        await refreshChannelAccessResources()
       } catch (error: unknown) {
         showRequestError(error, '保存渠道配置失败')
       }
     },
     [
-      activeChannelScope,
-      channelForms,
+      clearChannelApiKey,
       effectiveOrganizationId,
-      loadCapabilities,
-      refreshChannelConfigs,
+      refreshChannelAccessResources,
+      resolveChannelConfigRequest,
       showRequestError,
-      showToast,
-      workspaceId
+      showToast
     ]
   )
 
   const testChannelConfig = useCallback(
     async (providerId: string) => {
-      const form = channelForms[providerId]
-      if (!form) return
-      if (!validateChannelForm(providerId, form, (message) => showToast(message, 'warning'))) {
-        return
-      }
-      const extra = buildChannelExtra(providerId, form)
+      const resolvedRequest = resolveChannelConfigRequest(providerId)
+      if (!resolvedRequest) return
       try {
         const payload = await requestJson<{ success: boolean; message: string }>(
           '/api/channels/test',
@@ -653,11 +706,10 @@ export const useAuthOrganizationChannelManager = ({
             method: 'POST',
             body: JSON.stringify({
               providerId,
-              baseUrl: form.baseUrl.trim() || undefined,
-              apiKey: form.apiKey.trim() || undefined,
-              workspaceId:
-                activeChannelScope === 'workspace' && workspaceId ? workspaceId : undefined,
-              extra
+              baseUrl: resolvedRequest.form.baseUrl.trim() || undefined,
+              apiKey: resolvedRequest.form.apiKey.trim() || undefined,
+              workspaceId: resolvedRequest.workspaceId,
+              extra: resolvedRequest.extra
             })
           }
         )
@@ -670,9 +722,8 @@ export const useAuthOrganizationChannelManager = ({
         showRequestError(error, '初始化失败')
       }
     },
-    [activeChannelScope, channelForms, showRequestError, showToast, workspaceId]
+    [resolveChannelConfigRequest, showRequestError, showToast]
   )
-
   useEffect(() => {
     void loadAuthProfile()
   }, [loadAuthProfile])
@@ -691,16 +742,12 @@ export const useAuthOrganizationChannelManager = ({
 
   useEffect(() => {
     if (!showChannelPanel || !authProfile) return
-    void refreshChannelConfigs()
-    void loadCapabilities()
-    void refreshOrganizationQuota()
+    void refreshChannelAccessResources({ includeQuota: true })
   }, [
     activeChannelScope,
     authProfile,
     effectiveOrganizationId,
-    loadCapabilities,
-    refreshChannelConfigs,
-    refreshOrganizationQuota,
+    refreshChannelAccessResources,
     showChannelPanel,
     workspaceId
   ])
