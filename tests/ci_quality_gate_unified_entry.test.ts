@@ -7,6 +7,7 @@ describe('CI 统一入口守卫', () => {
     path.resolve(process.cwd(), '.github/workflows/ci-quality-gate.yml'),
     'utf8'
   )
+  const playwrightConfig = readFileSync(path.resolve(process.cwd(), 'playwright.config.ts'), 'utf8')
 
   it('应保留必要安装步骤', () => {
     expect(workflow).toContain('bun install --frozen-lockfile')
@@ -18,6 +19,7 @@ describe('CI 统一入口守卫', () => {
     expect(workflow).toContain('PORT=33118 bun run --cwd apps/backend dev')
     expect(workflow).toContain('PLAYWRIGHT_API_BASE_URL: http://127.0.0.1:33118')
     expect(workflow).toContain("PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true'")
+    expect(playwrightConfig).toContain('VITE_API_BASE_URL=${BACKEND_URL}')
   })
 
   it('应上传完整质量门禁工件，并在缺失时报错', () => {

@@ -5,6 +5,7 @@ const FRONTEND_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:42873'
 const BACKEND_URL = process.env.PLAYWRIGHT_API_BASE_URL || 'http://127.0.0.1:33117'
 const REUSE_EXISTING_SERVER =
   process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === 'true' || !process.env.CI
+const FRONTEND_WEB_SERVER_COMMAND = `env -u NO_COLOR PLAYWRIGHT_TEST=true VITE_API_BASE_URL=${BACKEND_URL} bun run --cwd apps/frontend dev --host 127.0.0.1 --port 42873`
 const REGRESSION_STORAGE_STATE = {
   cookies: [],
   origins: [
@@ -67,8 +68,7 @@ export default defineConfig({
       stderr: 'pipe'
     },
     {
-      command:
-        'env -u NO_COLOR PLAYWRIGHT_TEST=true bun run --cwd apps/frontend dev --host 127.0.0.1 --port 42873',
+      command: FRONTEND_WEB_SERVER_COMMAND,
       url: FRONTEND_URL,
       name: 'frontend',
       reuseExistingServer: REUSE_EXISTING_SERVER,
