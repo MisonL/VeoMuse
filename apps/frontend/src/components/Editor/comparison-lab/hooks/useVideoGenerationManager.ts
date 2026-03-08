@@ -232,6 +232,7 @@ export const useVideoGenerationManager = ({
       'success'
     )
   }, [
+    isVideoGenerationBusy,
     runVideoGenerationTask,
     selectAndUpsertVideoGenerationJob,
     showToast,

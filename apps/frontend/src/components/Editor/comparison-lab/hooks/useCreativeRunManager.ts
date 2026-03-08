@@ -167,6 +167,7 @@ export const useCreativeRunManager = ({
   }, [
     creativeRun?.id,
     creativeRunFeedback,
+    isCreativeBusy,
     refreshCreativeVersions,
     resetCreativeFeedbackInputs,
     runCreativeTask,

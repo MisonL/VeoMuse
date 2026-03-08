@@ -353,7 +353,7 @@ export const useWorkspaceCollaborationManager = ({
     openChannelPanel,
     applyWorkspaceJoinState,
     refreshWorkspaceState,
-    reportJourney,
+    reportWorkspaceFailure,
     showToast,
     workspaceName,
     workspaceOwner
@@ -384,7 +384,7 @@ export const useWorkspaceCollaborationManager = ({
     } catch (error: unknown) {
       showRequestError(error, '创建邀请失败')
     }
-  }, [appendInvite, collabRole, inviteRole, showRequestError, workspaceId])
+  }, [appendInvite, collabRole, inviteRole, showRequestError, showToast, workspaceId])
 
   const acceptInvite = useCallback(async () => {
     if (!inviteCode.trim()) {
@@ -464,7 +464,7 @@ export const useWorkspaceCollaborationManager = ({
     } catch (error: unknown) {
       showRequestError(error, '创建快照失败')
     }
-  }, [labMode, projectId, refreshWorkspaceState, showRequestError])
+  }, [labMode, projectId, refreshWorkspaceState, showRequestError, showToast])
 
   const requestUploadToken = useCallback(async () => {
     if (!workspaceId) {
@@ -503,7 +503,14 @@ export const useWorkspaceCollaborationManager = ({
       if (requestSeq !== uploadTokenRequestSeqRef.current) return
       showRequestError(error, '生成上传令牌失败')
     }
-  }, [buildUploadTokenContextKey, projectId, showRequestError, uploadFileName, workspaceId])
+  }, [
+    buildUploadTokenContextKey,
+    projectId,
+    showRequestError,
+    showToast,
+    uploadFileName,
+    workspaceId
+  ])
 
   const connectWs = useCallback(
     (options?: { force?: boolean }) => {

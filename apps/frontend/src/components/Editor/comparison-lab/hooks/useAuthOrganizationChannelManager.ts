@@ -416,6 +416,7 @@ export const useAuthOrganizationChannelManager = ({
     handleAuthSuccess,
     loginEmail,
     loginPassword,
+    markJourneyStep,
     registerMode,
     registerOrgName,
     reportAuthFailure,
@@ -466,7 +467,7 @@ export const useAuthOrganizationChannelManager = ({
     } catch (error: unknown) {
       showRequestError(error, '创建组织失败')
     }
-  }, [applyCreatedOrganization, markJourneyStep, newOrgName, showRequestError])
+  }, [applyCreatedOrganization, markJourneyStep, newOrgName, showRequestError, showToast])
 
   const refreshOrganizationMembers = useCallback(async () => {
     if (!effectiveOrganizationId) {
@@ -634,8 +635,7 @@ export const useAuthOrganizationChannelManager = ({
     applyChannelConfigPayload,
     effectiveOrganizationId,
     resolveScopedChannelConfigPath,
-    showRequestError,
-    workspaceId
+    showRequestError
   ])
 
   const loadCapabilities = useCallback(async () => {

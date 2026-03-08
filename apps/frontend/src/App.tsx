@@ -421,6 +421,7 @@ function App() {
   }, [])
 
   const openChannelAccess = useCallback(() => {
+    setIsGuideOpen(false)
     setActiveMode('color')
     setChannelPanelRequestNonce((prev) => prev + 1)
     if (IS_TEST_ENV) {
