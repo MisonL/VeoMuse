@@ -21,6 +21,19 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])'
 ].join(', ')
 
+const focusLater = (target?: HTMLElement | null) => {
+  window.requestAnimationFrame(() => {
+    target?.focus()
+  })
+}
+
+const getFocusableElements = (container: HTMLElement | null) => {
+  if (!container) return [] as HTMLElement[]
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) => !element.hasAttribute('disabled') && element.tabIndex !== -1
+  )
+}
+
 const AppGuideOverlay = ({
   currentGuideStep,
   guideStepIndex,
@@ -39,14 +52,10 @@ const AppGuideOverlay = ({
     const activeElement = document.activeElement
     previousFocusedElementRef.current = activeElement instanceof HTMLElement ? activeElement : null
 
-    window.requestAnimationFrame(() => {
-      primaryActionRef.current?.focus()
-    })
+    focusLater(primaryActionRef.current)
 
     return () => {
-      window.requestAnimationFrame(() => {
-        previousFocusedElementRef.current?.focus()
-      })
+      focusLater(previousFocusedElementRef.current)
     }
   }, [])
 
@@ -58,11 +67,7 @@ const AppGuideOverlay = ({
     }
 
     if (event.key !== 'Tab') return
-    const container = dialogRef.current
-    if (!container) return
-    const focusableElements = Array.from(
-      container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
-    ).filter((element) => !element.hasAttribute('disabled') && element.tabIndex !== -1)
+    const focusableElements = getFocusableElements(dialogRef.current)
     if (focusableElements.length === 0) return
 
     const firstElement = focusableElements[0]

@@ -51,6 +51,8 @@ interface RealAcceptanceCommand {
   env: NodeJS.ProcessEnv
 }
 
+const REAL_ACCEPTANCE_LOGGER_PREFIX = '[real-acceptance]'
+
 export const DEFAULT_OUTPUT_ROOT = path.join('artifacts', 'real-acceptance')
 export const DEFAULT_TIMEOUT_SEC = 240
 export const DEFAULT_REAL_ACCEPTANCE_BASE_URL = DEFAULT_DEPLOY_ACCEPTANCE_BASE_URL
@@ -233,6 +235,44 @@ export const buildRealAcceptanceMarkdown = (summary: RealAcceptanceSummary) => {
   return lines.join('\n')
 }
 
+const createStep = (status: RealAcceptanceStep['status'], message: string): RealAcceptanceStep => ({
+  status,
+  message
+})
+
+const createInitialSummary = (
+  outputDir: string,
+  baseUrl: string,
+  apiBaseUrl: string
+): RealAcceptanceSummary => ({
+  schemaVersion: '1.0',
+  startedAt: new Date().toISOString(),
+  outputDir,
+  baseUrl,
+  apiBaseUrl,
+  status: 'failed',
+  precheck: {
+    ...createStep('failed', 'not-run'),
+    missingEnv: []
+  },
+  readiness: createStep('not-run', 'not-run'),
+  realE2E: {
+    ...createStep('not-run', 'not-run'),
+    command: 'not-run'
+  },
+  failedSteps: []
+})
+
+const writeSummaryArtifacts = async (
+  outputPaths: ReturnType<typeof buildOutputPaths>,
+  summary: RealAcceptanceSummary
+) => {
+  await Bun.write(outputPaths.json, JSON.stringify(summary, null, 2))
+  await Bun.write(outputPaths.markdown, buildRealAcceptanceMarkdown(summary))
+  console.log(`${REAL_ACCEPTANCE_LOGGER_PREFIX} summary: ${outputPaths.json}`)
+  console.log(`${REAL_ACCEPTANCE_LOGGER_PREFIX} markdown: ${outputPaths.markdown}`)
+}
+
 const readStreamText = async (stream?: ReadableStream<Uint8Array> | null) => {
   if (!stream) return ''
   return await new Response(stream).text()
@@ -268,29 +308,7 @@ export const runRealAcceptance = async (options: CliOptions) => {
   const apiHealthUrl = resolveAbsoluteUrl(apiBaseUrl, '/api/health')
   await mkdir(outputDir, { recursive: true })
 
-  const summary: RealAcceptanceSummary = {
-    schemaVersion: '1.0',
-    startedAt: new Date().toISOString(),
-    outputDir,
-    baseUrl,
-    apiBaseUrl,
-    status: 'failed',
-    precheck: {
-      status: 'failed',
-      message: 'not-run',
-      missingEnv: []
-    },
-    readiness: {
-      status: 'not-run',
-      message: 'not-run'
-    },
-    realE2E: {
-      status: 'not-run',
-      message: 'not-run',
-      command: 'not-run'
-    },
-    failedSteps: []
-  }
+  const summary = createInitialSummary(outputDir, baseUrl, apiBaseUrl)
 
   const command = buildRealAcceptanceCommand({
     baseUrl,
@@ -302,8 +320,7 @@ export const runRealAcceptance = async (options: CliOptions) => {
   try {
     const precheck = runRealE2EPrecheck(command.env)
     summary.precheck = {
-      status: precheck.ok ? 'passed' : 'failed',
-      message: precheck.message,
+      ...createStep(precheck.ok ? 'passed' : 'failed', precheck.message),
       missingEnv: [...precheck.missingEnv]
     }
     if (!precheck.ok) {
@@ -311,12 +328,13 @@ export const runRealAcceptance = async (options: CliOptions) => {
       throw new Error(precheck.message)
     }
 
-    await waitForEndpoint(resolveAbsoluteUrl(baseUrl, '/'), timeoutMs, '[real-acceptance]')
-    await waitForEndpoint(apiHealthUrl, timeoutMs, '[real-acceptance]')
-    summary.readiness = {
-      status: 'passed',
-      message: `已确认 ${baseUrl} 与 ${apiHealthUrl} 可访问`
-    }
+    await waitForEndpoint(
+      resolveAbsoluteUrl(baseUrl, '/'),
+      timeoutMs,
+      REAL_ACCEPTANCE_LOGGER_PREFIX
+    )
+    await waitForEndpoint(apiHealthUrl, timeoutMs, REAL_ACCEPTANCE_LOGGER_PREFIX)
+    summary.readiness = createStep('passed', `已确认 ${baseUrl} 与 ${apiHealthUrl} 可访问`)
 
     const result = await runExternalRealAcceptance(command)
     await Bun.write(outputPaths.stdout, result.stdout)
@@ -327,8 +345,7 @@ export const runRealAcceptance = async (options: CliOptions) => {
     if (result.exitCode !== 0) {
       summary.realE2E = {
         ...summary.realE2E,
-        status: 'failed',
-        message: `外部 @real 回归失败，exitCode=${result.exitCode}`
+        ...createStep('failed', `外部 @real 回归失败，exitCode=${result.exitCode}`)
       }
       summary.failedSteps.push('external-playwright-real')
       throw new Error(summary.realE2E.message)
@@ -336,32 +353,25 @@ export const runRealAcceptance = async (options: CliOptions) => {
 
     summary.realE2E = {
       ...summary.realE2E,
-      status: 'passed',
-      message: '外部 @real 回归已通过'
+      ...createStep('passed', '外部 @real 回归已通过')
     }
     summary.status = 'passed'
   } catch (error: unknown) {
+    const message = toErrorMessage(error)
     if (summary.readiness.status === 'not-run' && summary.precheck.status === 'passed') {
-      summary.readiness = {
-        status: 'failed',
-        message: toErrorMessage(error)
-      }
+      summary.readiness = createStep('failed', message)
       if (!summary.failedSteps.includes('deployed-readiness')) {
         summary.failedSteps.push('deployed-readiness')
       }
     } else if (summary.realE2E.status === 'not-run') {
       summary.realE2E = {
         ...summary.realE2E,
-        status: 'failed',
-        message: toErrorMessage(error)
+        ...createStep('failed', message)
       }
     }
   } finally {
     summary.finishedAt = new Date().toISOString()
-    await Bun.write(outputPaths.json, JSON.stringify(summary, null, 2))
-    await Bun.write(outputPaths.markdown, buildRealAcceptanceMarkdown(summary))
-    console.log(`[real-acceptance] summary: ${outputPaths.json}`)
-    console.log(`[real-acceptance] markdown: ${outputPaths.markdown}`)
+    await writeSummaryArtifacts(outputPaths, summary)
   }
 
   return summary

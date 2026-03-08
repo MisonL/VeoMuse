@@ -97,6 +97,33 @@ export const useWorkspaceCollaborationManager = ({
   const workspaceCreateIdempotencyKeyRef = useRef('')
 
   const currentActorName = memberName.trim() || workspaceOwner.trim() || 'Owner'
+  const normalizeError = useCallback((error: unknown, fallbackMessage: string) => {
+    if (error instanceof Error) {
+      return error.message ? error : new Error(fallbackMessage)
+    }
+    const message = String(error || '').trim()
+    return new Error(message || fallbackMessage)
+  }, [])
+  const showRequestError = useCallback(
+    (error: unknown, fallbackMessage: string) => {
+      showToast(normalizeError(error, fallbackMessage).message, 'error')
+    },
+    [normalizeError, showToast]
+  )
+  const reportWorkspaceFailure = useCallback(
+    (error: unknown, reason: string) => {
+      const normalizedError = normalizeError(error, reason)
+      const { errorKind, httpStatus } = classifyRequestError(normalizedError)
+      void reportJourney(false, {
+        reason,
+        failedStage: 'workspace',
+        errorKind,
+        httpStatus
+      })
+      return normalizedError
+    },
+    [normalizeError, reportJourney]
+  )
 
   const refreshWorkspaceState = useCallback(
     async (nextWorkspaceId?: string, nextProjectId?: string) => {
@@ -116,8 +143,7 @@ export const useWorkspaceCollaborationManager = ({
         setPresence(presencePayload.members || [])
         setCollabEvents(eventsPayload.events || [])
       } catch (error: unknown) {
-        const normalizedError = error instanceof Error ? error : new Error(String(error))
-        showToast(normalizedError.message || '刷新协作状态失败', 'error')
+        showRequestError(error, '刷新协作状态失败')
       }
 
       if (targetProjectId) {
@@ -198,15 +224,7 @@ export const useWorkspaceCollaborationManager = ({
       showToast('协作空间创建成功', 'success')
       await refreshWorkspaceState(payload.workspace.id, payload.defaultProject.id)
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      const { errorKind, httpStatus } = classifyRequestError(normalizedError)
-      void reportJourney(false, {
-        reason: 'workspace-create-failed',
-        failedStage: 'workspace',
-        errorKind,
-        httpStatus
-      })
-      showToast(normalizedError.message || '创建协作空间失败', 'error')
+      showToast(reportWorkspaceFailure(error, 'workspace-create-failed').message, 'error')
     } finally {
       setIsWorkspaceCreating(false)
       workspaceCreateIdempotencyKeyRef.current = ''
@@ -253,10 +271,9 @@ export const useWorkspaceCollaborationManager = ({
       setInvites((prev) => [payload.invite, ...prev])
       showToast(`邀请已生成：${payload.invite.code}`, 'success')
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      showToast(normalizedError.message || '创建邀请失败', 'error')
+      showRequestError(error, '创建邀请失败')
     }
-  }, [collabRole, inviteRole, setInviteCode, showToast, workspaceId])
+  }, [collabRole, inviteRole, setInviteCode, showRequestError, workspaceId])
 
   const acceptInvite = useCallback(async () => {
     if (!inviteCode.trim()) {
@@ -299,15 +316,7 @@ export const useWorkspaceCollaborationManager = ({
         payload.defaultProject?.id || undefined
       )
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      const { errorKind, httpStatus } = classifyRequestError(normalizedError)
-      void reportJourney(false, {
-        reason: 'workspace-accept-invite-failed',
-        failedStage: 'workspace',
-        errorKind,
-        httpStatus
-      })
-      showToast(normalizedError.message || '接受邀请失败', 'error')
+      showToast(reportWorkspaceFailure(error, 'workspace-accept-invite-failed').message, 'error')
     }
   }, [
     currentActorName,
@@ -315,7 +324,7 @@ export const useWorkspaceCollaborationManager = ({
     inviteCode,
     markJourneyStep,
     refreshWorkspaceState,
-    reportJourney,
+    reportWorkspaceFailure,
     selectOrganization,
     setCollabRole,
     setProjectId,
@@ -342,10 +351,9 @@ export const useWorkspaceCollaborationManager = ({
       showToast('项目快照已创建', 'success')
       await refreshWorkspaceState()
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      showToast(normalizedError.message || '创建快照失败', 'error')
+      showRequestError(error, '创建快照失败')
     }
-  }, [labMode, projectId, refreshWorkspaceState, showToast])
+  }, [labMode, projectId, refreshWorkspaceState, showRequestError])
 
   const requestUploadToken = useCallback(async () => {
     if (!workspaceId) {
@@ -372,10 +380,9 @@ export const useWorkspaceCollaborationManager = ({
       setUploadToken(payload.token.objectKey)
       showToast('上传令牌已生成', 'success')
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      showToast(normalizedError.message || '生成上传令牌失败', 'error')
+      showRequestError(error, '生成上传令牌失败')
     }
-  }, [projectId, showToast, uploadFileName, workspaceId])
+  }, [projectId, showRequestError, uploadFileName, workspaceId])
 
   const disconnectWs = useCallback(() => {
     if (heartbeatRef.current) {
@@ -449,7 +456,7 @@ export const useWorkspaceCollaborationManager = ({
           setCollabEvents((prev) => [eventRow, ...prev].slice(0, 100))
         }
       } catch (error: unknown) {
-        const normalizedError = error instanceof Error ? error : new Error(String(error))
+        const normalizedError = normalizeError(error, 'parse-failed')
         void reportJourney(false, {
           reason: `collab-ws-message-parse-failed:${normalizedError.message || 'parse-failed'}`,
           failedStage: 'workspace',
@@ -477,6 +484,7 @@ export const useWorkspaceCollaborationManager = ({
     isWsConnected,
     isWsConnecting,
     memberName,
+    normalizeError,
     reportJourney,
     showToast,
     workspaceId
