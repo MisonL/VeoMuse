@@ -1,7 +1,7 @@
 # VeoMuse 发布检查清单（2026-03-05）
 
 本清单用于发布前“短流程收口 + 实网回归”执行，不包含 24h 长测。
-最近一次本地 Docker 正式复核记录见：`docs/DOCKER_ACCEPTANCE_2026-03-07.md`。
+最近一次本地 Docker 正式复核记录见：`docs/DOCKER_ACCEPTANCE_2026-03-08.md`。
 当前研发结项总览见：`docs/RD_CLOSURE_2026-03-07.md`。
 
 说明：
@@ -27,7 +27,7 @@ bun run release:gate
 - `docker:smoke` 全绿，并覆盖首页/API/WebSocket/上传/安全头/静态缓存
 - `docker:ui-smoke` 全绿，并覆盖真实 Docker 浏览器链路
 - Docker 服务 `frontend/backend/redis` 为 `healthy`
-- 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-07.md`
+- 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-08.md`
 - Docker 交付与清理说明已更新到 `docs/DOCKER_DELIVERY_RUNBOOK.md`
 - 研发结项总览与当前交付状态已更新到 `docs/RD_CLOSURE_2026-03-07.md`
 

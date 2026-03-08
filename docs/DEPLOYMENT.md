@@ -1,7 +1,8 @@
 # VeoMuse 生产部署指南（V3.2）
 
 当前研发结项总览见：`docs/RD_CLOSURE_2026-03-07.md`。
-Docker 交付验收与清理手册见：`docs/DOCKER_RUNBOOK.md`。
+Docker 交付验收与清理手册见：`docs/DOCKER_DELIVERY_RUNBOOK.md`。
+最新一次本地 Docker 正式复核记录见：`docs/DOCKER_ACCEPTANCE_2026-03-08.md`。
 
 ## 一键部署
 
@@ -107,7 +108,7 @@ docker compose -f config/docker/docker-compose.yml ps
 
 本地可通过统一脚本执行 Docker 烟测（自动 `up --wait`、探测、失败诊断、清理）：
 
-交付/验收口径的完整运行手册见：`docs/DOCKER_RUNBOOK.md`。
+交付/验收口径的完整运行手册见：`docs/DOCKER_DELIVERY_RUNBOOK.md`。
 
 ```bash
 # 默认 smoke（包含 --build）
