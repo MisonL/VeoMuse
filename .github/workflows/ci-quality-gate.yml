@@ -70,19 +70,21 @@ jobs:
 
       - name: Generate quality summary artifact
         if: ${{ always() }}
+        env:
+          RELEASE_SLO_MODE_FALLBACK: ${{ github.ref == 'refs/heads/main' && 'hard' || 'soft' }}
+          JOB_STATUS_FALLBACK: ${{ job.status }}
         run: |
           mkdir -p artifacts
           if [ ! -f artifacts/quality-summary.json ]; then
-            printf '%s\n' \
-              '{' \
-              '  "workflow": "CI Quality Gate",' \
-              '  "entry": "bun run release:gate",' \
-              '  "releaseSloMode": "${{ github.ref == '\''refs/heads/main'\'' && '\''hard'\'' || '\''soft'\'' }}",' \
-              '  "jobStatus": "${{ job.status }}",' \
-              '  "ref": "${{ github.ref }}",' \
-              '  "sha": "${{ github.sha }}",' \
-              '  "fallback": true' \
-              '}' > artifacts/quality-summary.json
+            bun -e 'await Bun.write("artifacts/quality-summary.json", JSON.stringify({
+              workflow: "CI Quality Gate",
+              entry: "bun run release:gate",
+              releaseSloMode: process.env.RELEASE_SLO_MODE_FALLBACK,
+              jobStatus: process.env.JOB_STATUS_FALLBACK || "failure",
+              ref: process.env.GITHUB_REF,
+              sha: process.env.GITHUB_SHA,
+              fallback: true
+            }, null, 2))'
           fi
 
       - name: Upload Playwright report
