@@ -38,6 +38,38 @@ type CollabGovernanceProps = ProjectGovernanceSectionProps
 type CollabPermissionMergeProps = PermissionMergeSectionProps
 type CollabOpsProps = OpsToolsSectionProps
 type CollabStorageSnapshotsProps = StorageSnapshotsSectionProps
+type JsonObjectParser = (raw: string, fieldName: string) => Record<string, unknown> | null
+type JsonArrayParser = (raw: string, fieldName: string) => unknown[] | null
+
+interface BuildCollabControllersOptions extends UseCollabModeControllerOptions {
+  currentActorName: string
+  parseJsonObjectInput: JsonObjectParser
+  parseJsonArrayInput: JsonArrayParser
+}
+
+interface BuildCollabModePanelSectionsOptions {
+  authProfile: AuthProfile | null
+  workspaceName: string
+  setWorkspaceName: (value: string) => void
+  workspaceOwner: string
+  setWorkspaceOwner: (value: string) => void
+  workspaceId: string
+  projectId: string
+  inviteRole: WorkspaceRole
+  setInviteRole: (value: WorkspaceRole) => void
+  memberName: string
+  setMemberName: (value: string) => void
+  collabRole: WorkspaceRole
+  setCollabRole: (value: WorkspaceRole) => void
+  inviteCode: string
+  setInviteCode: (value: string) => void
+  uploadFileName: string
+  setUploadFileName: (value: string) => void
+  workspaceCollaborationController: WorkspaceCollaborationController
+  commentThreadsController: V4CommentThreadsController
+  projectGovernanceController: ProjectGovernanceController
+  v4OpsController: V4OpsController
+}
 
 interface BuildCollabWorkspacePropsOptions {
   authProfile: AuthProfile | null
@@ -334,6 +366,165 @@ export const buildCollabAdvancedSectionsProps = ({
   })
 })
 
+const useCollabControllers = ({
+  authProfile,
+  workspaceName,
+  workspaceOwner,
+  workspaceId,
+  setWorkspaceId,
+  projectId,
+  setProjectId,
+  memberName,
+  setMemberName,
+  collabRole,
+  setCollabRole,
+  inviteRole,
+  inviteCode,
+  setInviteCode,
+  uploadFileName,
+  effectiveOrganizationId,
+  selectOrganization,
+  labMode,
+  openChannelPanel,
+  showToast,
+  markJourneyStep,
+  reportJourney,
+  currentActorName,
+  parseJsonObjectInput,
+  parseJsonArrayInput
+}: BuildCollabControllersOptions) => {
+  const workspaceCollaborationController = useWorkspaceCollaborationManager({
+    authProfile,
+    workspaceName,
+    workspaceOwner,
+    workspaceId,
+    setWorkspaceId,
+    projectId,
+    setProjectId,
+    memberName,
+    setMemberName,
+    collabRole,
+    setCollabRole,
+    inviteRole,
+    inviteCode,
+    setInviteCode,
+    uploadFileName,
+    effectiveOrganizationId,
+    selectOrganization,
+    labMode,
+    openChannelPanel,
+    showToast,
+    markJourneyStep,
+    reportJourney
+  })
+
+  const v4OpsController = useV4OpsManager({
+    workspaceId,
+    projectId,
+    currentActorName,
+    parseJsonObjectInput,
+    showToast
+  })
+
+  const commentThreadsController = useV4CommentThreads({
+    projectId,
+    isV4CollabBusy: v4OpsController.isV4CollabBusy,
+    setIsV4CollabBusy: v4OpsController.setIsV4CollabBusy,
+    parseMentionsInput,
+    showToast
+  })
+
+  const projectGovernanceController = useProjectGovernance({
+    projectId,
+    labMode,
+    showToast,
+    parseMentionsInput,
+    parseJsonObjectInput,
+    parseJsonArrayInput
+  })
+
+  return {
+    workspaceCollaborationController,
+    v4OpsController,
+    commentThreadsController,
+    projectGovernanceController
+  }
+}
+
+const buildCollabModePanelSections = ({
+  authProfile,
+  workspaceName,
+  setWorkspaceName,
+  workspaceOwner,
+  setWorkspaceOwner,
+  workspaceId,
+  projectId,
+  inviteRole,
+  setInviteRole,
+  memberName,
+  setMemberName,
+  collabRole,
+  setCollabRole,
+  inviteCode,
+  setInviteCode,
+  uploadFileName,
+  setUploadFileName,
+  workspaceCollaborationController,
+  commentThreadsController,
+  projectGovernanceController,
+  v4OpsController
+}: BuildCollabModePanelSectionsOptions): CollabModePanelProps => ({
+  workspaceSectionProps: buildCollabWorkspaceProps({
+    authProfile,
+    workspaceName,
+    setWorkspaceName,
+    workspaceOwner,
+    setWorkspaceOwner,
+    workspaceId,
+    projectId,
+    inviteRole,
+    setInviteRole,
+    memberName,
+    setMemberName,
+    collabRole,
+    setCollabRole,
+    inviteCode,
+    setInviteCode,
+    uploadFileName,
+    setUploadFileName,
+    workspaceCollaborationController
+  }),
+  inviteJoinSectionProps: buildCollabInviteJoinSectionProps({
+    workspaceId,
+    inviteRole,
+    setInviteRole,
+    memberName,
+    setMemberName,
+    collabRole,
+    setCollabRole,
+    inviteCode,
+    setInviteCode,
+    workspaceCollaborationController
+  }),
+  realtimeChannelSectionProps: buildCollabRealtimeChannelSectionProps({
+    workspaceId,
+    workspaceCollaborationController
+  }),
+  commentThreadsSectionProps: buildCollabCommentThreadProps(commentThreadsController, {
+    projectId,
+    isV4Busy: v4OpsController.isV4CollabBusy
+  }),
+  advancedSectionsProps: buildCollabAdvancedSectionsProps({
+    projectId,
+    workspaceId,
+    uploadFileName,
+    setUploadFileName,
+    workspaceCollaborationController,
+    projectGovernanceController,
+    v4OpsController
+  })
+})
+
 interface UseCollabModeControllerOptions {
   authProfile: AuthProfile | null
   workspaceName: string
@@ -416,11 +607,17 @@ export const useCollabModeController = ({
       parseJsonArrayInputHelper(raw, fieldName, (message) => showToast(message, 'warning')),
     [showToast]
   )
-
-  const workspaceCollaborationController = useWorkspaceCollaborationManager({
+  const {
+    workspaceCollaborationController,
+    v4OpsController,
+    commentThreadsController,
+    projectGovernanceController
+  } = useCollabControllers({
     authProfile,
     workspaceName,
+    setWorkspaceName,
     workspaceOwner,
+    setWorkspaceOwner,
     workspaceId,
     setWorkspaceId,
     projectId,
@@ -430,92 +627,44 @@ export const useCollabModeController = ({
     collabRole,
     setCollabRole,
     inviteRole,
+    setInviteRole,
     inviteCode,
     setInviteCode,
     uploadFileName,
+    setUploadFileName,
     effectiveOrganizationId,
     selectOrganization,
     labMode,
     openChannelPanel,
     showToast,
     markJourneyStep,
-    reportJourney
-  })
-
-  const v4OpsController = useV4OpsManager({
-    workspaceId,
-    projectId,
+    reportJourney,
     currentActorName,
-    parseJsonObjectInput,
-    showToast
-  })
-
-  const commentThreadsController = useV4CommentThreads({
-    projectId,
-    isV4CollabBusy: v4OpsController.isV4CollabBusy,
-    setIsV4CollabBusy: v4OpsController.setIsV4CollabBusy,
-    parseMentionsInput,
-    showToast
-  })
-
-  const projectGovernanceController = useProjectGovernance({
-    projectId,
-    labMode,
-    showToast,
-    parseMentionsInput,
     parseJsonObjectInput,
     parseJsonArrayInput
   })
 
-  return {
-    workspaceSectionProps: buildCollabWorkspaceProps({
-      authProfile,
-      workspaceName,
-      setWorkspaceName,
-      workspaceOwner,
-      setWorkspaceOwner,
-      workspaceId,
-      projectId,
-      inviteRole,
-      setInviteRole,
-      memberName,
-      setMemberName,
-      collabRole,
-      setCollabRole,
-      inviteCode,
-      setInviteCode,
-      uploadFileName,
-      setUploadFileName,
-      workspaceCollaborationController
-    }),
-    inviteJoinSectionProps: buildCollabInviteJoinSectionProps({
-      workspaceId,
-      inviteRole,
-      setInviteRole,
-      memberName,
-      setMemberName,
-      collabRole,
-      setCollabRole,
-      inviteCode,
-      setInviteCode,
-      workspaceCollaborationController
-    }),
-    realtimeChannelSectionProps: buildCollabRealtimeChannelSectionProps({
-      workspaceId,
-      workspaceCollaborationController
-    }),
-    commentThreadsSectionProps: buildCollabCommentThreadProps(commentThreadsController, {
-      projectId,
-      isV4Busy: v4OpsController.isV4CollabBusy
-    }),
-    advancedSectionsProps: buildCollabAdvancedSectionsProps({
-      projectId,
-      workspaceId,
-      uploadFileName,
-      setUploadFileName,
-      workspaceCollaborationController,
-      projectGovernanceController,
-      v4OpsController
-    })
-  }
+  return buildCollabModePanelSections({
+    authProfile,
+    workspaceName,
+    setWorkspaceName,
+    workspaceOwner,
+    setWorkspaceOwner,
+    workspaceId,
+    projectId,
+    inviteRole,
+    setInviteRole,
+    memberName,
+    setMemberName,
+    collabRole,
+    setCollabRole,
+    inviteCode,
+    setInviteCode,
+    uploadFileName,
+    setUploadFileName,
+    workspaceCollaborationController,
+    commentThreadsController,
+    projectGovernanceController,
+    v4OpsController
+  })
 }
