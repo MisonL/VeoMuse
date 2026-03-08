@@ -91,7 +91,17 @@ describe('PropertyInspector DOM 交互', () => {
 
   it('应支持在属性页与监控页之间切换', () => {
     const view = render(<PropertyInspector />)
+    expect(view.container.querySelector('.pro-inspector-inner')).toHaveAttribute(
+      'data-active-tab',
+      'properties'
+    )
     fireEvent.click(view.getByRole('button', { name: '系统监控' }))
+    expect(view.container.querySelector('.pro-inspector-inner')).toHaveAttribute(
+      'data-active-tab',
+      'lab'
+    )
+    expect(view.container.querySelector('.inspector-lab-banner')).toBeInTheDocument()
+    expect(view.container.querySelectorAll('.telemetry-command-stat')).toHaveLength(3)
     expect(view.getByText('播放 FPS 稳定性')).toBeInTheDocument()
   })
 

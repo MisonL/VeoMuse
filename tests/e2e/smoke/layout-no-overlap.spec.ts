@@ -64,6 +64,8 @@ test('主布局三区域在常见桌面分辨率不重叠且关键操作可达',
 
     await page.getByTestId('btn-mode-color').click()
     await expect(page.getByTestId('area-comparison-lab')).toBeVisible()
+    await expect(page.locator('.lab-stage-marker')).toHaveCount(4)
+    await expect(page.locator('.lab-stage-marker.active')).toHaveCount(1)
     await page.getByTestId('btn-lab-mode-creative').click()
     const creativeShell = page.getByTestId('area-creative-shell')
     const videoGenerationCard = creativeShell.locator('.video-generation-card')
@@ -217,6 +219,8 @@ test('右侧系统监控面板应展示关键区块与值守动作', async ({ pa
 
   const telemetryDashboard = page.locator('.telemetry-dashboard')
   await expect(telemetryDashboard).toBeVisible()
+  await expect(page.locator('.telemetry-command-bar')).toBeVisible()
+  await expect(page.locator('.telemetry-command-stat')).toHaveCount(3)
   await expect(page.getByText('播放 FPS 稳定性')).toBeVisible()
   await expect(page.getByText('Provider 健康检查')).toBeVisible()
   await expect(page.getByText('北极星 SLO（24h）')).toBeVisible()
