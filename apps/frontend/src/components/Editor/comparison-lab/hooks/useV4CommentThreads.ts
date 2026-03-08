@@ -30,13 +30,75 @@ export const useV4CommentThreads = ({
   const [v4CommentReplyContent, setV4CommentReplyContent] = useState('')
   const [v4CommentReplyMentions, setV4CommentReplyMentions] = useState('')
 
+  const showV4CommentThreadError = useCallback(
+    (error: unknown, fallbackMessage: string) => {
+      const message = error instanceof Error ? error.message : fallbackMessage
+      showToast(message || fallbackMessage, 'error')
+    },
+    [showToast]
+  )
+  const resetV4CommentThreadState = useCallback(() => {
+    setV4CommentThreads([])
+    setV4SelectedThreadId('')
+    setV4CommentThreadCursor('')
+    setV4CommentThreadHasMore(false)
+  }, [])
+  const runV4CommentThreadTask = useCallback(
+    async <T>(task: () => Promise<T>, fallbackMessage: string) => {
+      if (isV4CollabBusy) return null
+      setIsV4CollabBusy(true)
+      try {
+        return await task()
+      } catch (error: unknown) {
+        showV4CommentThreadError(error, fallbackMessage)
+        return null
+      } finally {
+        setIsV4CollabBusy(false)
+      }
+    },
+    [isV4CollabBusy, setIsV4CollabBusy, showV4CommentThreadError]
+  )
+  const applyV4CommentThreadPage = useCallback(
+    (
+      rows: V4CommentThread[],
+      append: boolean,
+      limit: number,
+      page?: {
+        cursor?: string | null
+        nextCursor?: string | null
+        limit?: number
+        hasMore?: boolean
+      }
+    ) => {
+      setV4CommentThreads((prev) => {
+        const merged = append
+          ? [...prev, ...rows.filter((item) => prev.every((prevItem) => prevItem.id !== item.id))]
+          : rows
+        setV4SelectedThreadId((current) =>
+          current && merged.some((item) => item.id === current) ? current : merged[0]?.id || ''
+        )
+        return merged
+      })
+
+      const inferredCursor = rows.length > 0 ? rows[rows.length - 1]?.createdAt || '' : ''
+      const cursorFromPage =
+        typeof page?.nextCursor === 'string'
+          ? page.nextCursor
+          : typeof page?.cursor === 'string'
+            ? page.cursor
+            : inferredCursor
+      const hasMore =
+        typeof page?.hasMore === 'boolean' ? page.hasMore : rows.length >= Math.min(limit, 100)
+      setV4CommentThreadCursor(cursorFromPage || '')
+      setV4CommentThreadHasMore(Boolean(cursorFromPage) && hasMore)
+    },
+    []
+  )
+
   const loadV4CommentThreads = useCallback(
     async (append = false) => {
       if (!projectId) {
-        setV4CommentThreads([])
-        setV4SelectedThreadId('')
-        setV4CommentThreadCursor('')
-        setV4CommentThreadHasMore(false)
+        resetV4CommentThreadState()
         return
       }
       const limitRaw = v4CommentThreadLimit.trim() || '20'
@@ -50,62 +112,35 @@ export const useV4CommentThreads = ({
         setV4CommentThreadHasMore(false)
         return
       }
-      if (isV4CollabBusy) return
-      setIsV4CollabBusy(true)
-      try {
-        const query = new URLSearchParams({
-          limit: String(Math.min(limit, 100))
-        })
-        if (nextCursor) query.set('cursor', nextCursor)
-        const payload = await requestV4<{
-          success: boolean
-          threads: V4CommentThread[]
-          page?: {
-            cursor?: string | null
-            nextCursor?: string | null
-            limit?: number
-            hasMore?: boolean
-          }
-        }>(`/projects/${projectId}/comment-threads?${query.toString()}`)
-        const rows = payload.threads || []
-        setV4CommentThreads((prev) => {
-          const merged = append
-            ? [...prev, ...rows.filter((item) => prev.every((prevItem) => prevItem.id !== item.id))]
-            : rows
-          if (!v4SelectedThreadId || merged.every((item) => item.id !== v4SelectedThreadId)) {
-            setV4SelectedThreadId(merged[0]?.id || '')
-          }
-          return merged
-        })
-
-        const inferredCursor = rows.length > 0 ? rows[rows.length - 1]?.createdAt || '' : ''
-        const cursorFromPage =
-          typeof payload.page?.nextCursor === 'string'
-            ? payload.page.nextCursor
-            : typeof payload.page?.cursor === 'string'
-              ? payload.page.cursor
-              : inferredCursor
-        const hasMore =
-          typeof payload.page?.hasMore === 'boolean'
-            ? payload.page.hasMore
-            : rows.length >= Math.min(limit, 100)
-        setV4CommentThreadCursor(cursorFromPage || '')
-        setV4CommentThreadHasMore(Boolean(cursorFromPage) && hasMore)
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : '加载评论线程失败'
-        showToast(message || '加载评论线程失败', 'error')
-      } finally {
-        setIsV4CollabBusy(false)
-      }
+      const query = new URLSearchParams({
+        limit: String(Math.min(limit, 100))
+      })
+      if (nextCursor) query.set('cursor', nextCursor)
+      const payload = await runV4CommentThreadTask(
+        () =>
+          requestV4<{
+            success: boolean
+            threads: V4CommentThread[]
+            page?: {
+              cursor?: string | null
+              nextCursor?: string | null
+              limit?: number
+              hasMore?: boolean
+            }
+          }>(`/projects/${projectId}/comment-threads?${query.toString()}`),
+        '加载评论线程失败'
+      )
+      if (!payload) return
+      applyV4CommentThreadPage(payload.threads || [], append, limit, payload.page)
     },
     [
+      applyV4CommentThreadPage,
       projectId,
+      resetV4CommentThreadState,
+      runV4CommentThreadTask,
       v4CommentThreadLimit,
       v4CommentThreadCursor,
-      isV4CollabBusy,
-      setIsV4CollabBusy,
-      showToast,
-      v4SelectedThreadId
+      showToast
     ]
   )
 
@@ -126,45 +161,40 @@ export const useV4CommentThreads = ({
       showToast('请输入评论内容', 'info')
       return
     }
-    if (isV4CollabBusy) return
-    setIsV4CollabBusy(true)
-    try {
-      const mentions = parseMentionsInput(v4CommentMentions)
-      const payload = await requestV4<{ success: boolean; thread: V4CommentThread }>(
-        `/projects/${projectId}/comment-threads`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            anchor: v4CommentAnchor.trim() || undefined,
-            content: v4CommentContent.trim(),
-            mentions: mentions.length > 0 ? mentions : undefined
-          })
-        }
-      )
-      if (payload.thread) {
-        setV4CommentThreads((prev) => [
-          payload.thread,
-          ...prev.filter((item) => item.id !== payload.thread.id)
-        ])
-        setV4SelectedThreadId(payload.thread.id)
-      }
-      setV4CommentContent('')
-      setV4CommentMentions('')
-      showToast('评论线程已创建', 'success')
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '创建评论线程失败'
-      showToast(message || '创建评论线程失败', 'error')
-    } finally {
-      setIsV4CollabBusy(false)
+    const mentions = parseMentionsInput(v4CommentMentions)
+    const payload = await runV4CommentThreadTask(
+      () =>
+        requestV4<{ success: boolean; thread: V4CommentThread }>(
+          `/projects/${projectId}/comment-threads`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              anchor: v4CommentAnchor.trim() || undefined,
+              content: v4CommentContent.trim(),
+              mentions: mentions.length > 0 ? mentions : undefined
+            })
+          }
+        ),
+      '创建评论线程失败'
+    )
+    if (!payload) return
+    if (payload.thread) {
+      setV4CommentThreads((prev) => [
+        payload.thread,
+        ...prev.filter((item) => item.id !== payload.thread.id)
+      ])
+      setV4SelectedThreadId(payload.thread.id)
     }
+    setV4CommentContent('')
+    setV4CommentMentions('')
+    showToast('评论线程已创建', 'success')
   }, [
     projectId,
     v4CommentContent,
-    isV4CollabBusy,
-    setIsV4CollabBusy,
     parseMentionsInput,
     v4CommentMentions,
     v4CommentAnchor,
+    runV4CommentThreadTask,
     showToast
   ])
 
@@ -177,45 +207,40 @@ export const useV4CommentThreads = ({
       showToast('请输入回复内容', 'info')
       return
     }
-    if (isV4CollabBusy) return
-    setIsV4CollabBusy(true)
-    try {
-      const mentions = parseMentionsInput(v4CommentReplyMentions)
-      const payload = await requestV4<{
-        success: boolean
-        thread?: V4CommentThread
-      }>(`/projects/${projectId}/comment-threads/${v4SelectedThreadId}/replies`, {
-        method: 'POST',
-        body: JSON.stringify({
-          content: v4CommentReplyContent.trim(),
-          mentions: mentions.length > 0 ? mentions : undefined
-        })
-      })
-      if (payload.thread) {
-        setV4CommentThreads((prev) =>
-          prev.map((item) => (item.id === payload.thread?.id ? payload.thread : item))
-        )
-      } else {
-        await refreshV4CommentThreads()
-      }
-      setV4CommentReplyContent('')
-      setV4CommentReplyMentions('')
-      showToast('线程回复成功', 'success')
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '回复线程失败'
-      showToast(message || '回复线程失败', 'error')
-    } finally {
-      setIsV4CollabBusy(false)
+    const mentions = parseMentionsInput(v4CommentReplyMentions)
+    const payload = await runV4CommentThreadTask(
+      () =>
+        requestV4<{
+          success: boolean
+          thread?: V4CommentThread
+        }>(`/projects/${projectId}/comment-threads/${v4SelectedThreadId}/replies`, {
+          method: 'POST',
+          body: JSON.stringify({
+            content: v4CommentReplyContent.trim(),
+            mentions: mentions.length > 0 ? mentions : undefined
+          })
+        }),
+      '回复线程失败'
+    )
+    if (!payload) return
+    if (payload.thread) {
+      setV4CommentThreads((prev) =>
+        prev.map((item) => (item.id === payload.thread?.id ? payload.thread : item))
+      )
+    } else {
+      await refreshV4CommentThreads()
     }
+    setV4CommentReplyContent('')
+    setV4CommentReplyMentions('')
+    showToast('线程回复成功', 'success')
   }, [
     projectId,
     v4SelectedThreadId,
     v4CommentReplyContent,
-    isV4CollabBusy,
-    setIsV4CollabBusy,
     parseMentionsInput,
     v4CommentReplyMentions,
     refreshV4CommentThreads,
+    runV4CommentThreadTask,
     showToast
   ])
 
@@ -224,28 +249,24 @@ export const useV4CommentThreads = ({
       showToast('请先选择线程', 'info')
       return
     }
-    if (isV4CollabBusy) return
-    setIsV4CollabBusy(true)
-    try {
-      const payload = await requestV4<{ success: boolean; thread: V4CommentThread }>(
-        `/projects/${projectId}/comment-threads/${v4SelectedThreadId}/resolve`,
-        {
-          method: 'POST'
-        }
+    const payload = await runV4CommentThreadTask(
+      () =>
+        requestV4<{ success: boolean; thread: V4CommentThread }>(
+          `/projects/${projectId}/comment-threads/${v4SelectedThreadId}/resolve`,
+          {
+            method: 'POST'
+          }
+        ),
+      'Resolve 线程失败'
+    )
+    if (!payload) return
+    if (payload.thread) {
+      setV4CommentThreads((prev) =>
+        prev.map((item) => (item.id === payload.thread.id ? payload.thread : item))
       )
-      if (payload.thread) {
-        setV4CommentThreads((prev) =>
-          prev.map((item) => (item.id === payload.thread.id ? payload.thread : item))
-        )
-      }
-      showToast('线程已标记为 Resolve', 'success')
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Resolve 线程失败'
-      showToast(message || 'Resolve 线程失败', 'error')
-    } finally {
-      setIsV4CollabBusy(false)
     }
-  }, [projectId, v4SelectedThreadId, isV4CollabBusy, setIsV4CollabBusy, showToast])
+    showToast('线程已标记为 Resolve', 'success')
+  }, [projectId, runV4CommentThreadTask, showToast, v4SelectedThreadId])
 
   useEffect(() => {
     setV4CommentThreadCursor('')

@@ -15,6 +15,12 @@ interface UseCompareModeManagerParams {
   showToast: ShowToast
 }
 
+const resolveCompareModeErrorMessage = (error: unknown, fallbackMessage: string) => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  const message = String(error || '').trim()
+  return message || fallbackMessage
+}
+
 export const useCompareModeManager = ({
   allAssets,
   labMode,
@@ -51,6 +57,12 @@ export const useCompareModeManager = ({
     () => assets.find((asset) => asset.id === resolvedRightAssetId),
     [assets, resolvedRightAssetId]
   )
+  const showCompareModeError = useCallback(
+    (error: unknown, fallbackMessage: string) => {
+      showToast(resolveCompareModeErrorMessage(error, fallbackMessage), 'error')
+    },
+    [showToast]
+  )
 
   const exportReport = useCallback(async () => {
     try {
@@ -80,8 +92,7 @@ export const useCompareModeManager = ({
       URL.revokeObjectURL(url)
       showToast('对比报告已导出', 'success')
     } catch (error: unknown) {
-      const normalized = error instanceof Error ? error : new Error(String(error))
-      showToast(normalized.message || '导出视频失败', 'error')
+      showCompareModeError(error, '导出视频失败')
     }
   }, [
     availableModels,
@@ -90,6 +101,7 @@ export const useCompareModeManager = ({
     leftModel,
     rightAsset,
     rightModel,
+    showCompareModeError,
     showToast,
     syncPlayback
   ])
@@ -109,8 +121,7 @@ export const useCompareModeManager = ({
           body: JSON.stringify({ prompt })
         })
       } catch (error: unknown) {
-        const normalized = error instanceof Error ? error : new Error(String(error))
-        showToast(normalized.message || '推荐模型失败', 'error')
+        showCompareModeError(error, '推荐模型失败')
         return
       }
 
@@ -122,7 +133,7 @@ export const useCompareModeManager = ({
         'success'
       )
     },
-    [leftAsset, rightAsset, showToast]
+    [leftAsset, rightAsset, showCompareModeError, showToast]
   )
 
   return {
