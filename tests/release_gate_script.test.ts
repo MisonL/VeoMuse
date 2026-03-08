@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'bun:test'
+import { readFileSync } from 'fs'
+import path from 'path'
 import { createSteps } from '../scripts/release-gate/config'
 import {
   buildRealE2EPrecheckMessage,
@@ -276,6 +278,14 @@ describe('发布门禁脚本策略', () => {
     expect(smokeStep?.command).toBe('bun run e2e:smoke -- --workers=1')
     expect(smokeStep?.commandArgs).toEqual(['bun', 'run', 'e2e:smoke', '--', '--workers=1'])
     expect(steps.some((step) => String(step.command).includes('docker_smoke_check'))).toBe(false)
+  })
+
+  it('根脚本应提供独立的 release:gate:delivery 命令，同时不改写 quality:full 主链路', () => {
+    const pkg = JSON.parse(readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8'))
+
+    expect(pkg?.scripts?.['release:gate:delivery']).toBe('bun run release:gate && bun run docker:smoke')
+    expect(String(pkg?.scripts?.['quality:full'] || '')).not.toContain('docker:smoke')
+    expect(String(pkg?.scripts?.['quality:full'] || '')).toContain('bun run release:gate')
   })
 
   it('resolveFailureDomain 应在无规则匹配时返回 unknown', () => {

@@ -88,7 +88,7 @@ export const TELEMETRY_ENTRY_MARKERS = [
   'ops watch / live audit'
 ] as const
 
-const HELP_TEXT = `
+export const HELP_TEXT = `
 Docker Smoke Check
 
 Usage:
@@ -115,6 +115,22 @@ Coverage:
 export const normalizeBaseUrl = (input: string) => {
   if (!input.endsWith('/')) return input
   return input.slice(0, -1)
+}
+
+export const validateBaseUrl = (input: string) => {
+  const normalized = normalizeBaseUrl(input.trim())
+  let url: URL
+  try {
+    url = new URL(normalized)
+  } catch {
+    throw new Error(`--base-url 需要合法的 http/https URL，收到: ${input}`)
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error(`--base-url 仅支持 http/https，收到: ${input}`)
+  }
+
+  return normalized
 }
 
 const toErrorMessage = (error: unknown) => {
@@ -190,7 +206,7 @@ export const parseArgs = (args: string[]): ParseResult => {
 
     if (arg === '--base-url' || arg.startsWith('--base-url=')) {
       const parsed = readFlagValue(args, index, '--base-url')
-      options.baseUrl = normalizeBaseUrl(parsed.value)
+      options.baseUrl = validateBaseUrl(parsed.value)
       index = parsed.nextIndex
       continue
     }
@@ -309,6 +325,28 @@ export const buildWebSocketUpgradeRequest = (url: URL) => {
     ''
   ].join('\r\n')
 }
+
+export const buildComposeUpCommand = (
+  composePrefix: string[],
+  options: Pick<CliOptions, 'noBuild' | 'waitTimeoutSec'>,
+  supportsWait: boolean
+) => {
+  const upCommand = [...composePrefix, 'up', '-d']
+  if (!options.noBuild) {
+    upCommand.push('--build')
+  }
+  if (supportsWait) {
+    upCommand.push('--wait', '--wait-timeout', String(options.waitTimeoutSec))
+  }
+  return upCommand
+}
+
+export const buildComposeDownCommand = (composePrefix: string[]) => [
+  ...composePrefix,
+  'down',
+  '--volumes',
+  '--remove-orphans'
+]
 
 const runCommand = async (command: string[], allowFailure = false) => {
   console.log(`[docker-smoke] $ ${command.join(' ')}`)
@@ -468,16 +506,42 @@ const probeStaticAssetCache = async (baseUrl: string, assetPaths: string[]) => {
   console.log(`[docker-smoke] 静态缓存通过: ${assetUrl}`)
 }
 
-const probeFrontendLabEntries = async (baseUrl: string, assetPaths: string[]) => {
+const buildEntryProbeFailureMessage = (
+  label: string,
+  missingMarkers: string[],
+  checkedAssets: string[],
+  entryAssetUrls: string[]
+) => {
+  const failureHints = [
+    `missing=${missingMarkers.join(', ') || '(none)'}`,
+    `entryAssets=${entryAssetUrls.join(', ') || '(none)'}`,
+    `checked=${checkedAssets.join(', ') || '(none)'}`,
+    checkedAssets.length === 0 ? 'hint=首页已引用入口资源，但递归探测尚未拉取到任何 JS 资源' : ''
+  ].filter(Boolean)
+  return `前端${label}入口探测失败: ${failureHints.join('; ')}`
+}
+
+const probeFrontendEntryMarkers = async ({
+  label,
+  baseUrl,
+  assetPaths,
+  resolveMissingMarkers
+}: {
+  label: '实验室' | '系统监控'
+  baseUrl: string
+  assetPaths: string[]
+  resolveMissingMarkers: (assetContents: string[]) => string[]
+}) => {
   const scriptAssetPaths = filterJavaScriptAssetPaths(assetPaths)
   if (scriptAssetPaths.length === 0) {
-    throw new Error('首页未解析到任何 JS 静态资源路径，无法校验实验室入口')
+    throw new Error(`首页未解析到任何 JS 静态资源路径，无法校验${label}入口`)
   }
 
   const baseReferrerUrl = `${normalizeBaseUrl(baseUrl)}/`
-  const pendingAssetUrls = scriptAssetPaths.map((assetPath) =>
+  const entryAssetUrls = scriptAssetPaths.map((assetPath) =>
     resolveJavaScriptAssetUrl(baseUrl, baseReferrerUrl, assetPath)
   )
+  const pendingAssetUrls = [...entryAssetUrls]
   const discoveredAssetUrls = new Set(pendingAssetUrls)
   const checkedAssets: string[] = []
   const assetContents: string[] = []
@@ -490,9 +554,9 @@ const probeFrontendLabEntries = async (baseUrl: string, assetPaths: string[]) =>
     assetContents.push(scriptContent)
     checkedAssets.push(assetUrl)
 
-    const missingMarkers = resolveMissingLabEntryMarkers(assetContents)
+    const missingMarkers = resolveMissingMarkers(assetContents)
     if (missingMarkers.length === 0) {
-      console.log(`[docker-smoke] 实验室入口探测通过: ${checkedAssets.join(', ')}`)
+      console.log(`[docker-smoke] ${label}入口探测通过: ${checkedAssets.join(', ')}`)
       return
     }
 
@@ -505,49 +569,31 @@ const probeFrontendLabEntries = async (baseUrl: string, assetPaths: string[]) =>
   }
 
   throw new Error(
-    `前端实验室入口探测失败: missing=${resolveMissingLabEntryMarkers(assetContents).join(', ')}; checked=${checkedAssets.join(', ')}`
+    buildEntryProbeFailureMessage(
+      label,
+      resolveMissingMarkers(assetContents),
+      checkedAssets,
+      entryAssetUrls
+    )
   )
 }
 
+const probeFrontendLabEntries = async (baseUrl: string, assetPaths: string[]) => {
+  await probeFrontendEntryMarkers({
+    label: '实验室',
+    baseUrl,
+    assetPaths,
+    resolveMissingMarkers: resolveMissingLabEntryMarkers
+  })
+}
+
 const probeFrontendTelemetryEntries = async (baseUrl: string, assetPaths: string[]) => {
-  const scriptAssetPaths = filterJavaScriptAssetPaths(assetPaths)
-  if (scriptAssetPaths.length === 0) {
-    throw new Error('首页未解析到任何 JS 静态资源路径，无法校验系统监控入口')
-  }
-
-  const baseReferrerUrl = `${normalizeBaseUrl(baseUrl)}/`
-  const pendingAssetUrls = scriptAssetPaths.map((assetPath) =>
-    resolveJavaScriptAssetUrl(baseUrl, baseReferrerUrl, assetPath)
-  )
-  const discoveredAssetUrls = new Set(pendingAssetUrls)
-  const checkedAssets: string[] = []
-  const assetContents: string[] = []
-
-  while (pendingAssetUrls.length > 0) {
-    const assetUrl = pendingAssetUrls.shift()!
-    const response = await fetchWithTimeout(assetUrl)
-    expectOkResponse(response, assetUrl)
-    const scriptContent = await response.text()
-    assetContents.push(scriptContent)
-    checkedAssets.push(assetUrl)
-
-    const missingMarkers = resolveMissingTelemetryEntryMarkers(assetContents)
-    if (missingMarkers.length === 0) {
-      console.log(`[docker-smoke] 系统监控入口探测通过: ${checkedAssets.join(', ')}`)
-      return
-    }
-
-    for (const dependencyPath of extractReferencedJavaScriptAssetPaths(scriptContent)) {
-      const dependencyUrl = resolveJavaScriptAssetUrl(baseUrl, assetUrl, dependencyPath)
-      if (discoveredAssetUrls.has(dependencyUrl)) continue
-      discoveredAssetUrls.add(dependencyUrl)
-      pendingAssetUrls.push(dependencyUrl)
-    }
-  }
-
-  throw new Error(
-    `前端系统监控入口探测失败: missing=${resolveMissingTelemetryEntryMarkers(assetContents).join(', ')}; checked=${checkedAssets.join(', ')}`
-  )
+  await probeFrontendEntryMarkers({
+    label: '系统监控',
+    baseUrl,
+    assetPaths,
+    resolveMissingMarkers: resolveMissingTelemetryEntryMarkers
+  })
 }
 
 const createSmokePassword = (seed: string) => {
@@ -778,13 +824,7 @@ export const runSmokeCheck = async (options: CliOptions) => {
   let needDiagnostics = false
 
   try {
-    const upCommand = [...composePrefix, 'up', '-d']
-    if (!options.noBuild) {
-      upCommand.push('--build')
-    }
-    if (composeRuntime.supportsWait) {
-      upCommand.push('--wait', '--wait-timeout', String(options.waitTimeoutSec))
-    }
+    const upCommand = buildComposeUpCommand(composePrefix, options, composeRuntime.supportsWait)
     await runCommand(upCommand)
 
     for (const service of REQUIRED_COMPOSE_SERVICES) {
@@ -824,10 +864,7 @@ export const runSmokeCheck = async (options: CliOptions) => {
   if (options.keepUp) {
     console.log('[docker-smoke] --keep-up 已启用，跳过 down 清理。')
   } else {
-    const downExitCode = await runCommand(
-      [...composePrefix, 'down', '--volumes', '--remove-orphans'],
-      true
-    )
+    const downExitCode = await runCommand(buildComposeDownCommand(composePrefix), true)
     if (downExitCode !== 0) {
       hasFailure = true
       console.error(`[docker-smoke] 清理失败，退出码: ${downExitCode}`)

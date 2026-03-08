@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'bun:test'
 import {
+  buildComposeDownCommand,
+  buildComposeUpCommand,
   buildWebSocketUpgradeRequest,
   extractReferencedJavaScriptAssetPaths,
   extractStaticAssetPaths,
   filterJavaScriptAssetPaths,
   hasImmutableCacheControl,
+  HELP_TEXT,
   LAB_ENTRY_MARKERS,
   normalizeBaseUrl,
   parseArgs,
   parseHttpStatusCode,
   REQUIRED_SECURITY_HEADERS,
   TELEMETRY_ENTRY_MARKERS,
+  validateBaseUrl,
   resolveJavaScriptAssetUrl,
   resolveMissingLabEntryMarkers,
   resolveMissingTelemetryEntryMarkers,
@@ -38,6 +42,62 @@ describe('docker smoke 脚本辅助逻辑', () => {
     expect(parsed.options.keepUp).toBe(true)
     expect(parsed.options.noBuild).toBe(true)
     expect(normalizeBaseUrl('http://127.0.0.1:18081/')).toBe('http://127.0.0.1:18081')
+    expect(validateBaseUrl('https://veomuse.test/')).toBe('https://veomuse.test')
+  })
+
+  it('应拒绝非法 baseUrl、未知参数与非法等待时间', () => {
+    expect(() => parseArgs(['--unknown-flag'])).toThrow('未知参数')
+    expect(() => parseArgs(['--wait-timeout', '0'])).toThrow('--wait-timeout 需要正整数')
+    expect(() => parseArgs(['--compose-file'])).toThrow('--compose-file 缺少参数值')
+    expect(() => parseArgs(['--base-url', 'veomuse.test'])).toThrow(
+      '--base-url 需要合法的 http/https URL'
+    )
+    expect(() => parseArgs(['--base-url', 'ftp://veomuse.test'])).toThrow(
+      '--base-url 仅支持 http/https'
+    )
+  })
+
+  it('应暴露稳定的帮助文案与 compose 命令构造', () => {
+    expect(HELP_TEXT).toContain('Docker Smoke Check')
+    expect(HELP_TEXT).toContain('--keep-up')
+    expect(HELP_TEXT).toContain('前端实验室/系统监控入口 bundle 标识')
+
+    expect(
+      buildComposeUpCommand(['docker', 'compose', '-f', 'config/docker/docker-compose.yml'], {
+        noBuild: false,
+        waitTimeoutSec: 180
+      }, true)
+    ).toEqual([
+      'docker',
+      'compose',
+      '-f',
+      'config/docker/docker-compose.yml',
+      'up',
+      '-d',
+      '--build',
+      '--wait',
+      '--wait-timeout',
+      '180'
+    ])
+
+    expect(
+      buildComposeUpCommand(['docker-compose', '-f', 'config/docker/docker-compose.yml'], {
+        noBuild: true,
+        waitTimeoutSec: 240
+      }, false)
+    ).toEqual(['docker-compose', '-f', 'config/docker/docker-compose.yml', 'up', '-d'])
+
+    expect(
+      buildComposeDownCommand(['docker', 'compose', '-f', 'config/docker/docker-compose.yml'])
+    ).toEqual([
+      'docker',
+      'compose',
+      '-f',
+      'config/docker/docker-compose.yml',
+      'down',
+      '--volumes',
+      '--remove-orphans'
+    ])
   })
 
   it('应从首页 HTML 提取静态资源路径并识别缓存头', () => {
