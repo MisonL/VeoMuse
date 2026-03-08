@@ -80,8 +80,6 @@ const createTimestampLabel = (now = new Date()) => now.toISOString().replace(/[:
 export const resolveDefaultOutputDir = (now = new Date()) =>
   path.resolve(process.cwd(), DEFAULT_OUTPUT_ROOT, createTimestampLabel(now))
 
-export const createDefaultOutputDir = resolveDefaultOutputDir
-
 const parsePositiveInt = (value: string, flagName: string) => {
   const parsed = Number.parseInt(value, 10)
   if (!Number.isFinite(parsed) || parsed <= 0) {
@@ -266,6 +264,8 @@ export const runRealAcceptance = async (options: CliOptions) => {
   const baseUrl = validateBaseUrl(options.baseUrl)
   const apiBaseUrl = validateBaseUrl(options.apiBaseUrl || options.baseUrl)
   const timeoutMs = options.timeoutSec * 1_000
+  const outputPaths = buildOutputPaths(outputDir)
+  const apiHealthUrl = resolveAbsoluteUrl(apiBaseUrl, '/api/health')
   await mkdir(outputDir, { recursive: true })
 
   const summary: RealAcceptanceSummary = {
@@ -312,21 +312,17 @@ export const runRealAcceptance = async (options: CliOptions) => {
     }
 
     await waitForEndpoint(resolveAbsoluteUrl(baseUrl, '/'), timeoutMs, '[real-acceptance]')
-    await waitForEndpoint(
-      resolveAbsoluteUrl(apiBaseUrl, '/api/health'),
-      timeoutMs,
-      '[real-acceptance]'
-    )
+    await waitForEndpoint(apiHealthUrl, timeoutMs, '[real-acceptance]')
     summary.readiness = {
       status: 'passed',
-      message: `已确认 ${baseUrl} 与 ${resolveAbsoluteUrl(apiBaseUrl, '/api/health')} 可访问`
+      message: `已确认 ${baseUrl} 与 ${apiHealthUrl} 可访问`
     }
 
     const result = await runExternalRealAcceptance(command)
-    await Bun.write(buildOutputPaths(outputDir).stdout, result.stdout)
-    await Bun.write(buildOutputPaths(outputDir).stderr, result.stderr)
-    summary.realE2E.stdoutPath = buildOutputPaths(outputDir).stdout
-    summary.realE2E.stderrPath = buildOutputPaths(outputDir).stderr
+    await Bun.write(outputPaths.stdout, result.stdout)
+    await Bun.write(outputPaths.stderr, result.stderr)
+    summary.realE2E.stdoutPath = outputPaths.stdout
+    summary.realE2E.stderrPath = outputPaths.stderr
 
     if (result.exitCode !== 0) {
       summary.realE2E = {
@@ -362,10 +358,10 @@ export const runRealAcceptance = async (options: CliOptions) => {
     }
   } finally {
     summary.finishedAt = new Date().toISOString()
-    await Bun.write(buildOutputPaths(outputDir).json, JSON.stringify(summary, null, 2))
-    await Bun.write(buildOutputPaths(outputDir).markdown, buildRealAcceptanceMarkdown(summary))
-    console.log(`[real-acceptance] summary: ${buildOutputPaths(outputDir).json}`)
-    console.log(`[real-acceptance] markdown: ${buildOutputPaths(outputDir).markdown}`)
+    await Bun.write(outputPaths.json, JSON.stringify(summary, null, 2))
+    await Bun.write(outputPaths.markdown, buildRealAcceptanceMarkdown(summary))
+    console.log(`[real-acceptance] summary: ${outputPaths.json}`)
+    console.log(`[real-acceptance] markdown: ${outputPaths.markdown}`)
   }
 
   return summary

@@ -83,8 +83,6 @@ const createTimestampLabel = (now = new Date()) => now.toISOString().replace(/[:
 export const resolveDefaultOutputDir = (now = new Date()) =>
   path.resolve(process.cwd(), DEFAULT_OUTPUT_ROOT, createTimestampLabel(now))
 
-export const createDefaultOutputDir = resolveDefaultOutputDir
-
 export const parseArgs = (args: string[], now = new Date()): ParseResult => {
   const options: CliOptions = {
     baseUrl: DEFAULT_DEPLOY_ACCEPTANCE_BASE_URL,

@@ -60,6 +60,9 @@ describe('P2 实验室前端对齐验证', () => {
     expect(content).toContain('role="tablist"')
     expect(content).toContain('role="tab"')
     expect(content).toContain('aria-selected={stage.mode === labMode}')
+    expect(content).toContain("event.key === 'ArrowRight'")
+    expect(content).toContain("event.key === 'Home'")
+    expect(content).toContain('focusStageButton(nextMode)')
   })
 
   it('应接入模型策略治理接口与执行记录分页', () => {
