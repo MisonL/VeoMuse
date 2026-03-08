@@ -302,10 +302,14 @@ describe('CreativeModePanel DOM / SSR 护栏', () => {
     expect(promptInput).toBeInTheDocument()
     expect(promptInput.value).toBe('')
     expect(
-      view.container.querySelector('.video-generation-prompt-stage [data-testid="video-generation-focus-panel"]')
+      view.container.querySelector(
+        '.video-generation-prompt-stage [data-testid="video-generation-focus-panel"]'
+      )
     ).not.toBeNull()
     expect(
-      view.container.querySelector('.video-generation-ops-sidebar [data-testid="video-generation-focus-panel"]')
+      view.container.querySelector(
+        '.video-generation-ops-sidebar [data-testid="video-generation-focus-panel"]'
+      )
     ).toBeNull()
     expect(view.getAllByText('job_1').length).toBeGreaterThan(0)
     expect(view.getByText('城市夜景编排')).toBeInTheDocument()

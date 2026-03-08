@@ -186,7 +186,9 @@ const CommentThreadsSection: React.FC<CommentThreadsSectionProps> = ({
           </div>
         </div>
         <div className="comment-threads-review-column">
-          <div className={`comment-thread-spotlight comment-thread-spotlight--${selectedThreadTone}`}>
+          <div
+            className={`comment-thread-spotlight comment-thread-spotlight--${selectedThreadTone}`}
+          >
             <div className="comment-thread-spotlight-head">
               <span className="comment-thread-spotlight-kicker">当前焦点</span>
               <span className={`lab-status-badge lab-status-badge--${selectedThreadTone}`}>
@@ -196,7 +198,9 @@ const CommentThreadsSection: React.FC<CommentThreadsSectionProps> = ({
             <strong>{selectedThread ? selectedThread.content : '尚未选中评论线程'}</strong>
             <div className="comment-thread-spotlight-meta">
               <span>锚点：{selectedThread?.anchor || '-'}</span>
-              <span>{selectedThread ? formatMentions(selectedThread.mentions) : '暂无 mentions'}</span>
+              <span>
+                {selectedThread ? formatMentions(selectedThread.mentions) : '暂无 mentions'}
+              </span>
             </div>
             <span>
               {selectedThread
@@ -214,7 +218,9 @@ const CommentThreadsSection: React.FC<CommentThreadsSectionProps> = ({
               >
                 <div className="collab-list-item-head">
                   <strong>{item.content}</strong>
-                  <span className={`lab-status-badge lab-status-badge--${resolveThreadTone(item.status)}`}>
+                  <span
+                    className={`lab-status-badge lab-status-badge--${resolveThreadTone(item.status)}`}
+                  >
                     {item.status}
                   </span>
                 </div>

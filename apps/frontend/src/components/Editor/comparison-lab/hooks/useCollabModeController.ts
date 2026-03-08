@@ -4,7 +4,11 @@ import {
   parseJsonObjectInput as parseJsonObjectInputHelper,
   parseMentionsInput
 } from '../helpers'
-import type { JourneyErrorKind, JourneyFailedStage, JourneyStep } from '../../../../store/journeyTelemetryStore'
+import type {
+  JourneyErrorKind,
+  JourneyFailedStage,
+  JourneyStep
+} from '../../../../store/journeyTelemetryStore'
 import type { AuthProfile, LabMode, WorkspaceRole } from '../types'
 import type { CollabAdvancedSectionsProps } from '../modes/collab/CollabAdvancedSections'
 import type { CommentThreadsSectionProps } from '../modes/collab/CommentThreadsSection'
@@ -118,7 +122,10 @@ export const buildCollabInviteJoinSectionProps = ({
 export const buildCollabRealtimeChannelSectionProps = ({
   workspaceId,
   workspaceCollaborationController
-}: Pick<BuildCollabWorkspacePropsOptions, 'workspaceId' | 'workspaceCollaborationController'>): CollabRealtimeChannelProps => ({
+}: Pick<
+  BuildCollabWorkspacePropsOptions,
+  'workspaceId' | 'workspaceCollaborationController'
+>): CollabRealtimeChannelProps => ({
   workspaceId,
   isWsConnected: workspaceCollaborationController.isWsConnected,
   presence: workspaceCollaborationController.presence,
@@ -208,9 +215,7 @@ export const buildCollabGovernanceProps = (
   onBatchUpdateProjectClips: () => void projectGovernanceController.batchUpdateProjectClipsEntry()
 })
 
-export const buildCollabOpsProps = (
-  v4OpsController: V4OpsController
-): CollabOpsProps => ({
+export const buildCollabOpsProps = (v4OpsController: V4OpsController): CollabOpsProps => ({
   isOpsBusy: v4OpsController.isV4OpsBusy,
   adminToken: v4OpsController.v4AdminToken,
   reliabilityAlertLevel: v4OpsController.v4ReliabilityAlertLevel,
@@ -304,7 +309,11 @@ export const buildCollabAdvancedSectionsProps = ({
   v4OpsController
 }: Pick<
   BuildCollabWorkspacePropsOptions,
-  'projectId' | 'workspaceId' | 'uploadFileName' | 'setUploadFileName' | 'workspaceCollaborationController'
+  | 'projectId'
+  | 'workspaceId'
+  | 'uploadFileName'
+  | 'setUploadFileName'
+  | 'workspaceCollaborationController'
 > & {
   projectGovernanceController: ProjectGovernanceController
   v4OpsController: V4OpsController

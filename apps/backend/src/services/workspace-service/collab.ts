@@ -1,10 +1,6 @@
 import type { AuditLog, CollabEvent } from '@veomuse/shared'
 import { getLocalDb } from '../LocalDatabaseService'
-import {
-  resolveOrganizationIdByWorkspace,
-  toAudit,
-  toCollabEvent
-} from '../workspaceShared'
+import { resolveOrganizationIdByWorkspace, toAudit, toCollabEvent } from '../workspaceShared'
 import { nowIso } from './contracts'
 
 export const logWorkspaceCollabEvent = (

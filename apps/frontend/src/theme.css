@@ -38,8 +38,7 @@
   --ap-spring-button: all 0.24s cubic-bezier(0.22, 1.05, 0.35, 1);
   --ap-shadow-subtle: 0 10px 24px rgba(80, 54, 24, 0.08);
   --ap-shadow-panel:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 18px 48px rgba(80, 54, 24, 0.14),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 48px rgba(80, 54, 24, 0.14),
     0 3px 8px rgba(50, 32, 10, 0.08);
 
   --bg-color: var(--ap-bg);
@@ -84,8 +83,7 @@
 
   --ap-shadow-subtle: 0 10px 28px rgba(2, 6, 12, 0.36);
   --ap-shadow-panel:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 22px 56px rgba(2, 6, 12, 0.48),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 22px 56px rgba(2, 6, 12, 0.48),
     0 3px 10px rgba(2, 6, 12, 0.28);
 
   --danger-color: #ff7a68;

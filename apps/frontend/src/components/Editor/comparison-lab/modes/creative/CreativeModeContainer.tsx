@@ -1,10 +1,5 @@
 import React from 'react'
-import type {
-  AuthProfile,
-  CapabilityPayload,
-  LabMode,
-  RoutingDecision
-} from '../../types'
+import type { AuthProfile, CapabilityPayload, LabMode, RoutingDecision } from '../../types'
 import CreativeModePanel from '../CreativeModePanel'
 import { useCreativeModeController } from '../../hooks/useCreativeModeController'
 

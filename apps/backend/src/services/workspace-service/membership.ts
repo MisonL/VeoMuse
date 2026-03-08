@@ -1,4 +1,9 @@
-import type { CollabPresence, WorkspaceInvite, WorkspaceMember, WorkspaceRole } from '@veomuse/shared'
+import type {
+  CollabPresence,
+  WorkspaceInvite,
+  WorkspaceMember,
+  WorkspaceRole
+} from '@veomuse/shared'
 import { getLocalDb } from '../LocalDatabaseService'
 import {
   generateInviteCode,
@@ -151,7 +156,9 @@ export const acceptWorkspaceInvite = ({
 
     const nowTs = Date.now()
     if (new Date(row.expires_at).getTime() < nowTs) {
-      getLocalDb().prepare(`UPDATE workspace_invites SET status = ? WHERE id = ?`).run('expired', row.id)
+      getLocalDb()
+        .prepare(`UPDATE workspace_invites SET status = ? WHERE id = ?`)
+        .run('expired', row.id)
       return null
     }
 
@@ -167,7 +174,9 @@ export const acceptWorkspaceInvite = ({
           `
           )
           .run('accepted', existingMember.name, nowIso(), row.id)
-        const inviteRow = getLocalDb().prepare(`SELECT * FROM workspace_invites WHERE id = ?`).get(row.id)
+        const inviteRow = getLocalDb()
+          .prepare(`SELECT * FROM workspace_invites WHERE id = ?`)
+          .get(row.id)
         const result: WorkspaceAcceptInviteResult = {
           invite: toInvite(inviteRow),
           member: existingMember,
@@ -222,7 +231,9 @@ export const acceptWorkspaceInvite = ({
       row.workspace_id
     )
 
-    const inviteRow = getLocalDb().prepare(`SELECT * FROM workspace_invites WHERE id = ?`).get(row.id)
+    const inviteRow = getLocalDb()
+      .prepare(`SELECT * FROM workspace_invites WHERE id = ?`)
+      .get(row.id)
     const member = getLocalDb()
       .prepare(`SELECT * FROM workspace_members WHERE id = ? LIMIT 1`)
       .get(memberId)

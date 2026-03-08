@@ -490,13 +490,7 @@ export const useV4OpsManager = ({
     } finally {
       setIsV4OpsBusy(false)
     }
-  }, [
-    buildV4AdminHeaders,
-    isV4OpsBusy,
-    showToast,
-    v4RollbackDrillId,
-    v4RollbackDrillResult?.id
-  ])
+  }, [buildV4AdminHeaders, isV4OpsBusy, showToast, v4RollbackDrillId, v4RollbackDrillResult?.id])
 
   return {
     v4Permissions,

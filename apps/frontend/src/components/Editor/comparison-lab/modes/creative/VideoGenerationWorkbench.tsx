@@ -558,7 +558,6 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
               </div>
             </div>
           </details>
-
         </aside>
       </div>
 

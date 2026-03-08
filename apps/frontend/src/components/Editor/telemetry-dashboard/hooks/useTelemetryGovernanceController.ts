@@ -103,7 +103,9 @@ export const useTelemetryGovernanceController = () => {
         const nextCursor = payload.page.nextCursor || ''
         setGovernanceCommentCursor(nextCursor)
         setGovernanceCommentHasMore(Boolean(nextCursor) && payload.page.hasMore)
-        setGovernanceSelectedCommentId(resolveSelectedCommentId(governanceSelectedCommentId, merged))
+        setGovernanceSelectedCommentId(
+          resolveSelectedCommentId(governanceSelectedCommentId, merged)
+        )
       } catch (error: unknown) {
         if (isStaleRequest()) return
         setGovernanceError(resolveErrorMessage(error, '加载项目评论失败'))

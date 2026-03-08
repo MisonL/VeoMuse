@@ -68,7 +68,9 @@ export interface TelemetrySloModel {
   signal: {
     hasSummary: boolean
     hasError: boolean
-    decisionStatus: SloSectionProps['sloDecision'] extends { status: infer T } | null ? T | null : null
+    decisionStatus: SloSectionProps['sloDecision'] extends { status: infer T } | null
+      ? T | null
+      : null
   }
 }
 
@@ -85,9 +87,7 @@ export const resolveTelemetryProviderAlertCount = (rows: TelemetryProviderRow[])
   rows.filter((row) => {
     const normalized = row.status.toLowerCase()
     return (
-      !normalized.includes('ok') &&
-      !normalized.includes('healthy') &&
-      !normalized.includes('pass')
+      !normalized.includes('ok') && !normalized.includes('healthy') && !normalized.includes('pass')
     )
   }).length
 
@@ -251,8 +251,7 @@ export const buildTelemetryProjectGovernancePanelProps = (
     onApplyGovernanceTemplate: () => void governanceController.handleApplyGovernanceTemplate(),
     onGovernanceTemplateOptionsChange: governanceController.setGovernanceTemplateOptions,
     onGovernanceBatchOperationsChange: governanceController.setGovernanceBatchOperations,
-    onGovernanceBatchUpdateClips: () =>
-      void governanceController.handleGovernanceBatchUpdateClips()
+    onGovernanceBatchUpdateClips: () => void governanceController.handleGovernanceBatchUpdateClips()
   } satisfies GovernanceTemplateBatchSectionProps
 })
 

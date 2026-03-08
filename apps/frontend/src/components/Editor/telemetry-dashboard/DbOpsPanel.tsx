@@ -21,10 +21,7 @@ export interface DbOpsPanelProps {
   repairHistorySectionProps: DbRepairHistorySectionProps
 }
 
-const DbOpsPanel: React.FC<DbOpsPanelProps> = ({
-  headerProps,
-  repairHistorySectionProps
-}) => {
+const DbOpsPanel: React.FC<DbOpsPanelProps> = ({ headerProps, repairHistorySectionProps }) => {
   return (
     <section className="db-ops-panel">
       <h3 className="telemetry-section-title">数据库自愈中心</h3>

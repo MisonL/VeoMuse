@@ -177,7 +177,9 @@ describe('TelemetryDashboard DOM 交互', () => {
       )
     })
     expect(view.getByText('总控链路存在异常待复核')).toBeInTheDocument()
-    expect(view.getByText('当前已捕获 1 处异常信号，建议先查看告警与 Provider 健康状态。')).toBeInTheDocument()
+    expect(
+      view.getByText('当前已捕获 1 处异常信号，建议先查看告警与 Provider 健康状态。')
+    ).toBeInTheDocument()
     expect(
       Array.from(view.container.querySelectorAll('.telemetry-command-stat strong')).map(
         (node) => node.textContent
@@ -209,7 +211,9 @@ describe('TelemetryDashboard DOM 交互', () => {
         return Promise.resolve(jsonResponse({ success: true, health: { status: 'ok' } }))
       }
       if (url.includes('/api/admin/db/runtime')) {
-        return Promise.resolve(jsonResponse({ success: true, runtime: { dbPath: '/tmp/test.sqlite' } }))
+        return Promise.resolve(
+          jsonResponse({ success: true, runtime: { dbPath: '/tmp/test.sqlite' } })
+        )
       }
       if (url.includes('/api/admin/slo/summary')) {
         return Promise.resolve(jsonResponse({ success: false, error: 'slo summary failed' }, 500))
@@ -218,7 +222,9 @@ describe('TelemetryDashboard DOM 交互', () => {
         return Promise.resolve(jsonResponse({ success: true, breakdown: { items: [] } }))
       }
       if (url.includes('/api/admin/slo/journey-failures')) {
-        return Promise.resolve(jsonResponse({ success: true, counts: { totalFailJourneys: 0 }, items: [] }))
+        return Promise.resolve(
+          jsonResponse({ success: true, counts: { totalFailJourneys: 0 }, items: [] })
+        )
       }
       return Promise.resolve(jsonResponse({ success: true }))
     })
@@ -231,7 +237,9 @@ describe('TelemetryDashboard DOM 交互', () => {
         'degraded'
       )
     })
-    expect(view.getByText('当前已捕获 1 处异常信号，建议先查看告警与 Provider 健康状态。')).toBeInTheDocument()
+    expect(
+      view.getByText('当前已捕获 1 处异常信号，建议先查看告警与 Provider 健康状态。')
+    ).toBeInTheDocument()
   })
 
   it('Provider unhealthy 时命令条应计入异常 Provider 信号', async () => {
@@ -261,7 +269,9 @@ describe('TelemetryDashboard DOM 交互', () => {
         return Promise.resolve(jsonResponse({ success: true, health: { status: 'ok' } }))
       }
       if (url.includes('/api/admin/db/runtime')) {
-        return Promise.resolve(jsonResponse({ success: true, runtime: { dbPath: '/tmp/test.sqlite' } }))
+        return Promise.resolve(
+          jsonResponse({ success: true, runtime: { dbPath: '/tmp/test.sqlite' } })
+        )
       }
       if (url.includes('/api/admin/slo/summary')) {
         return Promise.resolve(jsonResponse({ success: true, summary: null }))
@@ -270,7 +280,9 @@ describe('TelemetryDashboard DOM 交互', () => {
         return Promise.resolve(jsonResponse({ success: true, breakdown: { items: [] } }))
       }
       if (url.includes('/api/admin/slo/journey-failures')) {
-        return Promise.resolve(jsonResponse({ success: true, counts: { totalFailJourneys: 0 }, items: [] }))
+        return Promise.resolve(
+          jsonResponse({ success: true, counts: { totalFailJourneys: 0 }, items: [] })
+        )
       }
       return Promise.resolve(jsonResponse({ success: true }))
     })
@@ -307,9 +319,7 @@ describe('TelemetryDashboard DOM 交互', () => {
         fetchMock.mock.calls.some((args) => String(args[0]).includes('/api/admin/db/runtime'))
       ).toBe(true)
       expect(
-        fetchMock.mock.calls.some((args) =>
-          String(args[0]).includes('/api/admin/providers/health')
-        )
+        fetchMock.mock.calls.some((args) => String(args[0]).includes('/api/admin/providers/health'))
       ).toBe(true)
       expect(
         fetchMock.mock.calls.some((args) => String(args[0]).includes('/api/admin/slo/summary'))

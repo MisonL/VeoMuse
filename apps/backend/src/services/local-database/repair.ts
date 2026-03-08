@@ -12,12 +12,7 @@ import {
   nowStamp,
   resolveErrorMessage
 } from './common'
-import type {
-  DbIntegrityMode,
-  DbIntegrityReport,
-  DbRepairCheckMode,
-  DbRepairReport
-} from './types'
+import type { DbIntegrityMode, DbIntegrityReport, DbRepairCheckMode, DbRepairReport } from './types'
 import { createDbConnection, migrate } from './schema'
 
 const readIntegrityRows = (db: Database, mode: DbIntegrityMode) => {
@@ -39,8 +34,9 @@ const buildIntegrityReport = (
   checkedAt: nowIso()
 })
 
-export const shouldAutoRepairFromReport = (report: Pick<DbIntegrityReport, 'status' | 'messages'>) =>
-  report.status === 'corrupted' || report.messages.some(isCorruptionMessage)
+export const shouldAutoRepairFromReport = (
+  report: Pick<DbIntegrityReport, 'status' | 'messages'>
+) => report.status === 'corrupted' || report.messages.some(isCorruptionMessage)
 
 const emptySalvage = (): DbRepairReport['salvage'] => ({
   attempted: false,

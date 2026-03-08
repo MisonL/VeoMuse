@@ -3,10 +3,7 @@ import type { RoutingDecision } from '@veomuse/shared'
 import { requestJson } from '../api'
 import type { CreativeRun } from '../types'
 
-type ShowToast = (
-  message: string,
-  type?: 'info' | 'success' | 'error' | 'warning'
-) => void
+type ShowToast = (message: string, type?: 'info' | 'success' | 'error' | 'warning') => void
 
 interface UseCreativeRunManagerParams {
   selectedPolicyId: string

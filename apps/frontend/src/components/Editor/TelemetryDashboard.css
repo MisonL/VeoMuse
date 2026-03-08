@@ -642,12 +642,11 @@
 .provider-health-panel {
   border-radius: 18px;
   border-color: color-mix(in srgb, var(--ap-border) 82%, var(--ap-outline) 18%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
     0 14px 28px rgba(70, 48, 20, 0.08);
@@ -670,7 +669,11 @@
   border-radius: 16px;
   background:
     linear-gradient(180deg, rgba(8, 17, 29, 0.94), rgba(8, 17, 29, 0.86)),
-    radial-gradient(circle at 15% 18%, color-mix(in srgb, var(--ap-accent) 25%, transparent), transparent 36%);
+    radial-gradient(
+      circle at 15% 18%,
+      color-mix(in srgb, var(--ap-accent) 25%, transparent),
+      transparent 36%
+    );
 }
 
 .slo-card,
@@ -698,12 +701,11 @@
 .db-ops-panel select,
 .db-ops-panel textarea {
   border-radius: 14px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
-      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
 }
 
 .telemetry-command-bar {
@@ -714,15 +716,31 @@
   border-radius: 22px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 74%, var(--ap-outline) 26%);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%), color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)),
-    radial-gradient(circle at 14% 14%, color-mix(in srgb, var(--ap-accent-soft) 30%, transparent), transparent 30%);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    ),
+    radial-gradient(
+      circle at 14% 14%,
+      color-mix(in srgb, var(--ap-accent-soft) 30%, transparent),
+      transparent 30%
+    );
 }
 
 .telemetry-command-bar.degraded {
   border-color: color-mix(in srgb, var(--danger-color) 34%, var(--ap-border));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%), color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)),
-    radial-gradient(circle at 14% 14%, color-mix(in srgb, var(--danger-color) 18%, transparent), transparent 30%);
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    ),
+    radial-gradient(
+      circle at 14% 14%,
+      color-mix(in srgb, var(--danger-color) 18%, transparent),
+      transparent 30%
+    );
 }
 
 .telemetry-command-copy {
@@ -800,7 +818,11 @@
 .telemetry-alert {
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 74%, var(--ap-outline) 26%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%), color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
     0 14px 28px rgba(70, 48, 20, 0.08);
@@ -898,13 +920,12 @@
 
 .telemetry-command-bar::before {
   inset: 0;
-  background:
-    linear-gradient(
-      112deg,
-      color-mix(in srgb, var(--ap-accent-soft) 52%, transparent) 0%,
-      transparent 42%,
-      color-mix(in srgb, var(--ap-signal-soft) 34%, transparent) 100%
-    );
+  background: linear-gradient(
+    112deg,
+    color-mix(in srgb, var(--ap-accent-soft) 52%, transparent) 0%,
+    transparent 42%,
+    color-mix(in srgb, var(--ap-signal-soft) 34%, transparent) 100%
+  );
   opacity: 0.92;
 }
 
@@ -913,20 +934,22 @@
   width: 128px;
   height: 128px;
   border-radius: 50%;
-  background:
-    radial-gradient(circle, color-mix(in srgb, var(--ap-accent-soft) 58%, transparent) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--ap-accent-soft) 58%, transparent) 0%,
+    transparent 70%
+  );
   filter: blur(10px);
   opacity: 0.8;
 }
 
 .telemetry-dashboard[data-tone='degraded'] .telemetry-command-bar::before {
-  background:
-    linear-gradient(
-      112deg,
-      color-mix(in srgb, var(--danger-color) 18%, transparent) 0%,
-      color-mix(in srgb, var(--ap-signal-soft) 34%, transparent) 38%,
-      transparent 100%
-    );
+  background: linear-gradient(
+    112deg,
+    color-mix(in srgb, var(--danger-color) 18%, transparent) 0%,
+    color-mix(in srgb, var(--ap-signal-soft) 34%, transparent) 38%,
+    transparent 100%
+  );
 }
 
 .telemetry-command-copy {
@@ -969,12 +992,11 @@
   align-content: space-between;
   padding: 12px 14px 14px;
   border-radius: 18px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%)
+  );
 }
 
 .telemetry-command-stat::after {
@@ -1034,8 +1056,16 @@
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, transparent 0 18px, color-mix(in srgb, var(--ap-grid-line) 56%, transparent) 18px 19px),
-    linear-gradient(180deg, transparent 0 18px, color-mix(in srgb, var(--ap-grid-line) 56%, transparent) 18px 19px);
+    linear-gradient(
+      90deg,
+      transparent 0 18px,
+      color-mix(in srgb, var(--ap-grid-line) 56%, transparent) 18px 19px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 18px,
+      color-mix(in srgb, var(--ap-grid-line) 56%, transparent) 18px 19px
+    );
   background-size: 19px 19px;
   opacity: 0.18;
 }
@@ -1059,12 +1089,11 @@
 .provider-health-panel,
 .project-governance-panel {
   border: 1px solid color-mix(in srgb, var(--ap-border) 74%, var(--ap-outline) 26%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   padding: 14px;
 }
 
@@ -1152,8 +1181,16 @@
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(90deg, transparent 0 24px, color-mix(in srgb, var(--ap-grid-line) 74%, transparent) 24px 25px),
-    linear-gradient(180deg, transparent 0 24px, color-mix(in srgb, var(--ap-grid-line) 74%, transparent) 24px 25px);
+    linear-gradient(
+      90deg,
+      transparent 0 24px,
+      color-mix(in srgb, var(--ap-grid-line) 74%, transparent) 24px 25px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 24px,
+      color-mix(in srgb, var(--ap-grid-line) 74%, transparent) 24px 25px
+    );
   background-size: 25px 25px;
   opacity: 0.34;
   pointer-events: none;

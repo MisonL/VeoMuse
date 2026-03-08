@@ -2,7 +2,9 @@ import React from 'react'
 import CollabAdvancedSections, {
   type CollabAdvancedSectionsProps
 } from './collab/CollabAdvancedSections'
-import CommentThreadsSection, { type CommentThreadsSectionProps } from './collab/CommentThreadsSection'
+import CommentThreadsSection, {
+  type CommentThreadsSectionProps
+} from './collab/CommentThreadsSection'
 import InviteJoinSection, { type InviteJoinSectionProps } from './collab/InviteJoinSection'
 import RealtimeChannelSection, {
   type RealtimeChannelSectionProps

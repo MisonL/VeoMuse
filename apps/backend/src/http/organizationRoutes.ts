@@ -1,11 +1,7 @@
 import { Elysia, t } from 'elysia'
 import { OrganizationGovernanceService } from '../services/OrganizationGovernanceService'
 import { OrganizationService } from '../services/OrganizationService'
-import {
-  authorizeOrganizationRole,
-  parseBoundedLimit,
-  requireAuthenticatedUser
-} from './context'
+import { authorizeOrganizationRole, parseBoundedLimit, requireAuthenticatedUser } from './context'
 import { resolveErrorMessage } from './errors'
 
 const ORGANIZATION_MEMBER_ROLE_SCHEMA = t.Union([

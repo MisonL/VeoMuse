@@ -232,7 +232,14 @@ export class WorkspaceService {
     actorName: string,
     userId?: string
   ) {
-    return addWorkspaceMember(workspaceId, name, role, actorName, this.writeAudit.bind(this), userId)
+    return addWorkspaceMember(
+      workspaceId,
+      name,
+      role,
+      actorName,
+      this.writeAudit.bind(this),
+      userId
+    )
   }
 
   static createInvite(

@@ -69,8 +69,16 @@ body {
     background-color 0.32s ease,
     color 0.32s ease;
   background-image:
-    radial-gradient(circle at 14% 12%, color-mix(in srgb, var(--ap-accent) 12%, transparent), transparent 34%),
-    radial-gradient(circle at 86% 8%, color-mix(in srgb, var(--ap-signal) 11%, transparent), transparent 28%),
+    radial-gradient(
+      circle at 14% 12%,
+      color-mix(in srgb, var(--ap-accent) 12%, transparent),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 86% 8%,
+      color-mix(in srgb, var(--ap-signal) 11%, transparent),
+      transparent 28%
+    ),
     linear-gradient(180deg, color-mix(in srgb, var(--ap-bg) 88%, #ffffff 12%), var(--ap-bg)),
     repeating-linear-gradient(
       90deg,

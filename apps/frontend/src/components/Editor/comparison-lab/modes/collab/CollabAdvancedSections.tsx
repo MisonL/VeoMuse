@@ -59,15 +59,15 @@ const CollabAdvancedSections: React.FC<CollabAdvancedSectionsProps> = ({
         ? 'warning'
         : 'accent'
       : 'success'
-  const alertTone =
-    !hasAdminToken
-      ? 'warning'
-      : openReliabilityAlerts > 0
-        ? criticalReliabilityAlerts > 0
-          ? 'critical'
-          : 'warning'
-        : 'success'
-  const mergeTone = mergeConflictCount > 0 ? 'critical' : latestMergeStatus === 'merged' ? 'success' : 'neutral'
+  const alertTone = !hasAdminToken
+    ? 'warning'
+    : openReliabilityAlerts > 0
+      ? criticalReliabilityAlerts > 0
+        ? 'critical'
+        : 'warning'
+      : 'success'
+  const mergeTone =
+    mergeConflictCount > 0 ? 'critical' : latestMergeStatus === 'merged' ? 'success' : 'neutral'
   const storageTone = snapshotCount > 0 ? 'accent' : hasUploadToken ? 'success' : 'neutral'
   const calloutTone =
     criticalReliabilityAlerts > 0

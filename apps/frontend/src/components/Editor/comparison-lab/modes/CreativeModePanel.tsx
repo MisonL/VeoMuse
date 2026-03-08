@@ -283,7 +283,9 @@ const CreativeModePanel: React.FC<CreativeModePanelProps> = ({
             onVideoGenerationNegativePromptChange={onVideoGenerationNegativePromptChange}
             onVideoGenerationInputSourceTypeChange={onVideoGenerationInputSourceTypeChange}
             onVideoGenerationImageInputChange={onVideoGenerationImageInputChange}
-            onVideoGenerationReferenceImagesInputChange={onVideoGenerationReferenceImagesInputChange}
+            onVideoGenerationReferenceImagesInputChange={
+              onVideoGenerationReferenceImagesInputChange
+            }
             onVideoGenerationVideoInputChange={onVideoGenerationVideoInputChange}
             onVideoGenerationFirstFrameInputChange={onVideoGenerationFirstFrameInputChange}
             onVideoGenerationLastFrameInputChange={onVideoGenerationLastFrameInputChange}

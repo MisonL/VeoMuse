@@ -37,8 +37,8 @@ export const useComparisonLabController = ({
   const [inviteRole, setInviteRole] = useState<WorkspaceRole>('editor')
   const [inviteCode, setInviteCode] = useState('')
   const [uploadFileName, setUploadFileName] = useState('demo.mp4')
-  const [showChannelPanel, setShowChannelPanel] = useState(
-    () => Boolean(channelPanelRequestNonce && channelPanelRequestNonce > 0)
+  const [showChannelPanel, setShowChannelPanel] = useState(() =>
+    Boolean(channelPanelRequestNonce && channelPanelRequestNonce > 0)
   )
 
   const channelPanelTriggerRef = useRef<HTMLElement | null>(null)

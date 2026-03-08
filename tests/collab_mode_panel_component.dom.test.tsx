@@ -294,46 +294,46 @@ describe('CollabModePanel DOM 组件回归', () => {
             workspaceId: 'ws_1',
             isWsConnected: true,
             presence: [
-            {
-              workspaceId: 'ws_1',
-              sessionId: 'sess_1',
-              memberId: 'mem_1',
-              memberName: 'Alice',
-              role: 'owner',
-              status: 'online',
-              lastSeenAt: new Date().toISOString()
-            }
-          ],
+              {
+                workspaceId: 'ws_1',
+                sessionId: 'sess_1',
+                memberId: 'mem_1',
+                memberName: 'Alice',
+                role: 'owner',
+                status: 'online',
+                lastSeenAt: new Date().toISOString()
+              }
+            ],
             collabEvents: [
-            {
-              id: 'evt_1',
-              workspaceId: 'ws_1',
-              projectId: 'project_1',
-              actorId: 'owner_1',
-              actorName: 'Alice',
-              eventType: 'timeline.patch',
-              payload: { clips: 1 },
-              createdAt: new Date().toISOString()
-            }
-          ]
+              {
+                id: 'evt_1',
+                workspaceId: 'ws_1',
+                projectId: 'project_1',
+                actorId: 'owner_1',
+                actorName: 'Alice',
+                eventType: 'timeline.patch',
+                payload: { clips: 1 },
+                createdAt: new Date().toISOString()
+              }
+            ]
           },
           commentThreadsSectionProps: {
             ...baseProps.commentThreadsSectionProps,
             projectId: 'project_1',
             commentThreads: [
-            {
-              id: 'pc_1',
-              projectId: 'project_1',
-              anchor: 'timeline:1.2s',
-              content: '请优化节奏',
-              mentions: ['qa'],
-              createdBy: 'owner_1',
-              status: 'open',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              replyCount: 0
-            }
-          ]
+              {
+                id: 'pc_1',
+                projectId: 'project_1',
+                anchor: 'timeline:1.2s',
+                content: '请优化节奏',
+                mentions: ['qa'],
+                createdBy: 'owner_1',
+                status: 'open',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                replyCount: 0
+              }
+            ]
           },
           advancedSectionsProps: {
             ...baseProps.advancedSectionsProps,
@@ -341,49 +341,49 @@ describe('CollabModePanel DOM 组件回归', () => {
               ...baseProps.advancedSectionsProps.projectGovernanceProps,
               projectId: 'project_1',
               projectComments: [
-            {
-              id: 'c_1',
-              projectId: 'project_1',
-              anchor: 'timeline:2.0s',
-              content: '增加过渡镜头',
-              mentions: ['editor'],
-              createdBy: 'owner_1',
-              status: 'open',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              replyCount: 0
-            }
-          ],
+                {
+                  id: 'c_1',
+                  projectId: 'project_1',
+                  anchor: 'timeline:2.0s',
+                  content: '增加过渡镜头',
+                  mentions: ['editor'],
+                  createdBy: 'owner_1',
+                  status: 'open',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  replyCount: 0
+                }
+              ],
               projectReviews: [
-            {
-              id: 'r_1',
-              projectId: 'project_1',
-              decision: 'approved',
-              summary: '可发布',
-              score: 9.2,
-              createdBy: 'owner_1',
-              createdAt: new Date().toISOString()
-            }
-          ],
+                {
+                  id: 'r_1',
+                  projectId: 'project_1',
+                  decision: 'approved',
+                  summary: '可发布',
+                  score: 9.2,
+                  createdBy: 'owner_1',
+                  createdAt: new Date().toISOString()
+                }
+              ],
               projectTemplates: [
-            {
-              id: 'tpl_1',
-              projectId: 'project_1',
-              name: '快节奏模板',
-              description: '适配短视频节奏',
-              payload: {},
-              createdBy: 'owner_1',
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }
-          ],
+                {
+                  id: 'tpl_1',
+                  projectId: 'project_1',
+                  name: '快节奏模板',
+                  description: '适配短视频节奏',
+                  payload: {},
+                  createdBy: 'owner_1',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString()
+                }
+              ],
               projectClipBatchResult: {
-            requested: 2,
-            accepted: 2,
-            skipped: 0,
-            rejected: 0,
-            updated: 2
-          },
+                requested: 2,
+                accepted: 2,
+                skipped: 0,
+                rejected: 0,
+                updated: 2
+              },
               onBatchUpdateProjectClips
             },
             permissionMergeProps: {
@@ -391,79 +391,79 @@ describe('CollabModePanel DOM 组件回归', () => {
               workspaceId: 'ws_1',
               projectId: 'project_1',
               permissions: [
-            {
-              workspaceId: 'ws_1',
-              role: 'viewer',
-              permissions: { 'timeline.merge': false },
-              updatedBy: 'owner_1',
-              updatedAt: new Date().toISOString()
-            }
-          ],
+                {
+                  workspaceId: 'ws_1',
+                  role: 'viewer',
+                  permissions: { 'timeline.merge': false },
+                  updatedBy: 'owner_1',
+                  updatedAt: new Date().toISOString()
+                }
+              ],
               permissionSubjectId: 'timeline.merge',
               timelineMergeResult: {
-            id: 'merge_1',
-            projectId: 'project_1',
-            sourceRevision: 'rev-a',
-            targetRevision: 'rev-b',
-            status: 'merged',
-            conflicts: [],
-            result: {},
-            createdBy: 'owner_1',
-            createdAt: new Date().toISOString()
-          },
+                id: 'merge_1',
+                projectId: 'project_1',
+                sourceRevision: 'rev-a',
+                targetRevision: 'rev-b',
+                status: 'merged',
+                conflicts: [],
+                result: {},
+                createdBy: 'owner_1',
+                createdAt: new Date().toISOString()
+              },
               onUpdatePermission
             },
             opsToolsProps: {
               ...baseProps.advancedSectionsProps.opsToolsProps,
               errorBudget: {
-            policy: {
-              id: 'policy_1',
-              scope: 'global',
-              targetSlo: 0.99,
-              windowDays: 30,
-              warningThresholdRatio: 0.7,
-              alertThresholdRatio: 0.9,
-              freezeDeployOnBreach: false,
-              updatedBy: 'owner_1',
-              updatedAt: new Date().toISOString()
-            },
-            evaluation: {
-              asOf: new Date().toISOString(),
-              totalRequests: 100,
-              errorRequests: 1,
-              observedSlo: 0.99,
-              budgetRemaining: 0.01,
-              budgetRemainingRatio: 0.8,
-              burnRate: 0.2,
-              status: 'healthy'
-            }
-          },
+                policy: {
+                  id: 'policy_1',
+                  scope: 'global',
+                  targetSlo: 0.99,
+                  windowDays: 30,
+                  warningThresholdRatio: 0.7,
+                  alertThresholdRatio: 0.9,
+                  freezeDeployOnBreach: false,
+                  updatedBy: 'owner_1',
+                  updatedAt: new Date().toISOString()
+                },
+                evaluation: {
+                  asOf: new Date().toISOString(),
+                  totalRequests: 100,
+                  errorRequests: 1,
+                  observedSlo: 0.99,
+                  budgetRemaining: 0.01,
+                  budgetRemainingRatio: 0.8,
+                  burnRate: 0.2,
+                  status: 'healthy'
+                }
+              },
               reliabilityAlerts: [
-            {
-              id: 'rel_alert_1',
-              level: 'critical',
-              status: 'open',
-              title: '错误预算告警',
-              description: 'burn rate 过高',
-              payload: {},
-              triggeredAt: new Date().toISOString(),
-              acknowledgedAt: null
-            }
-          ],
+                {
+                  id: 'rel_alert_1',
+                  level: 'critical',
+                  status: 'open',
+                  title: '错误预算告警',
+                  description: 'burn rate 过高',
+                  payload: {},
+                  triggeredAt: new Date().toISOString(),
+                  acknowledgedAt: null
+                }
+              ],
               adminToken: 'admin-token-demo',
               rollbackDrillResult: {
-            id: 'drill_1',
-            policyId: 'policy_1',
-            environment: 'staging',
-            triggerType: 'manual',
-            summary: '演练完成',
-            plan: {},
-            status: 'completed',
-            initiatedBy: 'owner_1',
-            result: {},
-            startedAt: new Date().toISOString(),
-            completedAt: new Date().toISOString()
-          },
+                id: 'drill_1',
+                policyId: 'policy_1',
+                environment: 'staging',
+                triggerType: 'manual',
+                summary: '演练完成',
+                plan: {},
+                status: 'completed',
+                initiatedBy: 'owner_1',
+                result: {},
+                startedAt: new Date().toISOString(),
+                completedAt: new Date().toISOString()
+              },
               onLoadReliabilityAlerts,
               onAcknowledgeReliabilityAlert
             },
@@ -471,7 +471,9 @@ describe('CollabModePanel DOM 组件回归', () => {
               ...baseProps.advancedSectionsProps.storageSnapshotsProps,
               projectId: 'project_1',
               workspaceId: 'ws_1',
-              snapshots: [{ id: 'snap_1', actorName: 'owner_1', createdAt: new Date().toISOString() }]
+              snapshots: [
+                { id: 'snap_1', actorName: 'owner_1', createdAt: new Date().toISOString() }
+              ]
             }
           }
         })}

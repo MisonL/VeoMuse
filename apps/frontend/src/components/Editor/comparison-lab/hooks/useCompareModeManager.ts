@@ -2,10 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { requestJson } from '../api'
 import type { LabAssetOption, LabMode, ModelOption, ModelRecommendation } from '../types'
 
-type ShowToast = (
-  message: string,
-  type?: 'info' | 'success' | 'error' | 'warning'
-) => void
+type ShowToast = (message: string, type?: 'info' | 'success' | 'error' | 'warning') => void
 
 interface AssetLike extends LabAssetOption {
   type?: string

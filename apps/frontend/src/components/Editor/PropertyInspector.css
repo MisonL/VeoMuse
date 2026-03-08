@@ -223,24 +223,22 @@
 /* Editorial Control Deck redesign */
 
 .pro-inspector-inner {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
 }
 
 .inspector-header {
   height: 56px;
   padding: 0 14px;
   border-bottom-style: dashed;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
 }
 
 .inspector-tabs {
@@ -303,12 +301,11 @@
 .inspector-empty {
   border-radius: 18px;
   padding: 18px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
 }
 
 .inspector-context-bar {
@@ -318,7 +315,11 @@
   gap: 12px;
   padding: 12px 14px;
   border-bottom: 1px dashed color-mix(in srgb, var(--ap-border) 72%, var(--ap-outline) 28%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%), color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+  );
 }
 
 .inspector-context-copy,
@@ -377,7 +378,11 @@
 .inspector-context-pill.is-live {
   color: #fff8ef;
   border-color: transparent;
-  background: linear-gradient(165deg, color-mix(in srgb, var(--ap-accent) 86%, #ffffff 14%), color-mix(in srgb, var(--ap-accent-strong) 82%, #081736 18%));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 86%, #ffffff 14%),
+    color-mix(in srgb, var(--ap-accent-strong) 82%, #081736 18%)
+  );
 }
 
 .inspector-lab-shell {
@@ -393,8 +398,16 @@
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-outline) 28%);
   background:
-    radial-gradient(circle at 16% 12%, color-mix(in srgb, var(--ap-accent-soft) 36%, transparent), transparent 30%),
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%), color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%));
+    radial-gradient(
+      circle at 16% 12%,
+      color-mix(in srgb, var(--ap-accent-soft) 36%, transparent),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    );
 }
 
 .inspector-lab-banner-copy strong {
@@ -441,15 +454,31 @@
 .inspector-section--hero {
   border-color: color-mix(in srgb, var(--ap-accent) 40%, var(--ap-border));
   background:
-    radial-gradient(circle at 90% 10%, color-mix(in srgb, var(--ap-accent-soft) 34%, transparent), transparent 24%),
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%), color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%));
+    radial-gradient(
+      circle at 90% 10%,
+      color-mix(in srgb, var(--ap-accent-soft) 34%, transparent),
+      transparent 24%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    );
 }
 
 .inspector-section--focus {
   border-color: color-mix(in srgb, var(--ap-signal) 34%, var(--ap-border));
   background:
-    radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--ap-signal-soft) 40%, transparent), transparent 28%),
-    linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%), color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%));
+    radial-gradient(
+      circle at 12% 12%,
+      color-mix(in srgb, var(--ap-signal-soft) 40%, transparent),
+      transparent 28%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+    );
 }
 
 .inspector-section--support {
@@ -495,8 +524,16 @@
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, transparent 0 20px, color-mix(in srgb, var(--ap-grid-line) 60%, transparent) 20px 21px),
-    linear-gradient(180deg, transparent 0 20px, color-mix(in srgb, var(--ap-grid-line) 60%, transparent) 20px 21px);
+    linear-gradient(
+      90deg,
+      transparent 0 20px,
+      color-mix(in srgb, var(--ap-grid-line) 60%, transparent) 20px 21px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 20px,
+      color-mix(in srgb, var(--ap-grid-line) 60%, transparent) 20px 21px
+    );
   background-size: 21px 21px;
   opacity: 0.14;
 }
@@ -511,12 +548,11 @@
   top: 0;
   z-index: 3;
   backdrop-filter: blur(10px);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%)
+  );
 }
 
 .inspector-tabs {
@@ -543,12 +579,11 @@
 }
 
 .pro-inspector-inner[data-active-tab='lab'] .inspector-header {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-accent-soft) 34%, var(--ap-surface) 66%),
-      color-mix(in srgb, var(--ap-card) 78%, var(--ap-panel) 22%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-accent-soft) 34%, var(--ap-surface) 66%),
+    color-mix(in srgb, var(--ap-card) 78%, var(--ap-panel) 22%)
+  );
 }
 
 .inspector-context-bar {
@@ -567,19 +602,22 @@
   width: 220px;
   height: 220px;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--ap-signal-soft) 54%, transparent), transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--ap-signal-soft) 54%, transparent),
+    transparent 70%
+  );
   opacity: 0.58;
   filter: blur(4px);
 }
 
 .pro-inspector-inner[data-active-tab='lab'] .inspector-context-bar {
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--ap-accent-soft) 30%, var(--ap-surface) 70%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%) 52%,
-      color-mix(in srgb, var(--ap-signal-soft) 24%, var(--ap-panel) 76%) 100%
-    );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ap-accent-soft) 30%, var(--ap-surface) 70%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%) 52%,
+    color-mix(in srgb, var(--ap-signal-soft) 24%, var(--ap-panel) 76%) 100%
+  );
 }
 
 .inspector-context-title {
@@ -622,8 +660,12 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(105deg, color-mix(in srgb, var(--ap-accent-soft) 44%, transparent), transparent 44%, color-mix(in srgb, var(--ap-signal-soft) 28%, transparent));
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--ap-accent-soft) 44%, transparent),
+    transparent 44%,
+    color-mix(in srgb, var(--ap-signal-soft) 28%, transparent)
+  );
   opacity: 0.86;
 }
 
@@ -642,12 +684,11 @@
 .inspector-lab-banner-status {
   min-width: 144px;
   border-style: solid;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
 }
 
 .inspector-empty,
@@ -739,8 +780,16 @@
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(90deg, transparent 0 23px, color-mix(in srgb, var(--ap-grid-line) 74%, transparent) 23px 24px),
-    linear-gradient(180deg, transparent 0 23px, color-mix(in srgb, var(--ap-grid-line) 74%, transparent) 23px 24px);
+    linear-gradient(
+      90deg,
+      transparent 0 23px,
+      color-mix(in srgb, var(--ap-grid-line) 74%, transparent) 23px 24px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 23px,
+      color-mix(in srgb, var(--ap-grid-line) 74%, transparent) 23px 24px
+    );
   background-size: 24px 24px;
   opacity: 0.28;
   pointer-events: none;
@@ -812,12 +861,11 @@
   justify-content: center;
   padding-inline: 12px;
   border-color: color-mix(in srgb, var(--ap-accent) 24%, var(--ap-border));
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
     0 10px 18px rgba(32, 23, 12, 0.08);
@@ -885,12 +933,11 @@
 
 .inspector-body {
   padding: 16px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%),
-      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%),
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%)
+  );
 }
 
 .pro-inspector-content,
@@ -953,12 +1000,11 @@
 .pro-textarea-mini,
 .pro-select-mini {
   border-color: color-mix(in srgb, var(--ap-border) 78%, #ffffff 22%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   transition:
     border-color 160ms ease,
@@ -1014,12 +1060,11 @@
 
 .alchemy-mini-btn {
   border-color: color-mix(in srgb, var(--ap-border) 58%, var(--ap-accent) 42%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   transition:
     transform 160ms ease,

@@ -54,7 +54,12 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
   }, 0)
   const permissionTone = permissions.length > 0 ? 'accent' : 'neutral'
   const mergeTone = resolveMergeTone(timelineMergeResult?.status)
-  const watchTone = mergeConflictCount > 0 ? 'critical' : timelineMergeResult?.status === 'merged' ? 'success' : 'neutral'
+  const watchTone =
+    mergeConflictCount > 0
+      ? 'critical'
+      : timelineMergeResult?.status === 'merged'
+        ? 'success'
+        : 'neutral'
 
   return (
     <section className="collab-card">

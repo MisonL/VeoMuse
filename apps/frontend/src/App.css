@@ -2668,12 +2668,11 @@ body.resizing-y {
   padding: 10px 12px;
   border-radius: 20px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-outline) 30%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+  );
 }
 
 .system-telemetry.is-idle {

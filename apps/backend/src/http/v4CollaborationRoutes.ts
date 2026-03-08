@@ -220,7 +220,11 @@ export const v4CollaborationRoutes = () =>
         try {
           return {
             success: true,
-            merge: CollaborationV4Service.mergeTimeline(params.projectId, authorized.actorName, body)
+            merge: CollaborationV4Service.mergeTimeline(
+              params.projectId,
+              authorized.actorName,
+              body
+            )
           }
         } catch (error: unknown) {
           set.status = 400

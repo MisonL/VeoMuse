@@ -639,7 +639,12 @@ export const useAuthOrganizationChannelManager = ({
     selectOrganization(effectiveOrganizationId)
     void refreshOrganizationMembers()
     void refreshOrganizationQuota()
-  }, [effectiveOrganizationId, refreshOrganizationMembers, refreshOrganizationQuota, selectOrganization])
+  }, [
+    effectiveOrganizationId,
+    refreshOrganizationMembers,
+    refreshOrganizationQuota,
+    selectOrganization
+  ])
 
   useEffect(() => {
     if (!showChannelPanel || !authProfile) return

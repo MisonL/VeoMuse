@@ -40,8 +40,12 @@ const RealtimeChannelSection: React.FC<RealtimeChannelSectionProps> = ({
           <span className="collab-section-kicker">live relay</span>
           <h4>多人协同通道</h4>
         </div>
-        <div className={`realtime-channel-status-band realtime-channel-status-band--${connectionTone}`}>
-          <span className={`realtime-channel-status-pill realtime-channel-status-pill--${connectionTone}`}>
+        <div
+          className={`realtime-channel-status-band realtime-channel-status-band--${connectionTone}`}
+        >
+          <span
+            className={`realtime-channel-status-pill realtime-channel-status-pill--${connectionTone}`}
+          >
             连接状态：{getConnectionStatusText(isWsConnected)}
           </span>
           <span>在线人数：{presence.length}</span>

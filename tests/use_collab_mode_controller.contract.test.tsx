@@ -17,10 +17,24 @@ describe('useCollabModeController contract', () => {
 
   beforeEach(() => {
     window.confirm = () => true
-    workspaceSpy = spyOn(workspaceCollaborationModule, 'useWorkspaceCollaborationManager').mockReturnValue({
+    workspaceSpy = spyOn(
+      workspaceCollaborationModule,
+      'useWorkspaceCollaborationManager'
+    ).mockReturnValue({
       invites: [{ id: 'invite_1', code: 'INVITE-1', role: 'editor', status: 'active' }],
       presence: [],
-      collabEvents: [{ id: 'evt_1', workspaceId: 'ws_1', projectId: 'project_1', actorId: 'u1', actorName: 'Alice', eventType: 'timeline.patch', payload: {}, createdAt: new Date().toISOString() }],
+      collabEvents: [
+        {
+          id: 'evt_1',
+          workspaceId: 'ws_1',
+          projectId: 'project_1',
+          actorId: 'u1',
+          actorName: 'Alice',
+          eventType: 'timeline.patch',
+          payload: {},
+          createdAt: new Date().toISOString()
+        }
+      ],
       snapshots: [{ id: 'snap_1', actorName: 'Alice', createdAt: new Date().toISOString() }],
       uploadToken: 'upload-token',
       isWsConnected: true,
@@ -214,14 +228,14 @@ describe('useCollabModeController contract', () => {
     expect(controller?.advancedSectionsProps.projectGovernanceProps.projectCommentCursor).toBe(
       'cursor-comment'
     )
-    expect(
-      controller?.advancedSectionsProps.permissionMergeProps.permissionSubjectId
-    ).toBe('timeline.merge=true')
+    expect(controller?.advancedSectionsProps.permissionMergeProps.permissionSubjectId).toBe(
+      'timeline.merge=true'
+    )
     expect(controller?.advancedSectionsProps.opsToolsProps.adminToken).toBe('token')
     expect(controller?.advancedSectionsProps.opsToolsProps.isOpsBusy).toBe(false)
-    expect(
-      controller?.advancedSectionsProps.projectGovernanceProps.isProjectGovernanceBusy
-    ).toBe(true)
+    expect(controller?.advancedSectionsProps.projectGovernanceProps.isProjectGovernanceBusy).toBe(
+      true
+    )
     expect(controller?.advancedSectionsProps.storageSnapshotsProps.uploadToken).toBe('upload-token')
 
     await act(async () => {

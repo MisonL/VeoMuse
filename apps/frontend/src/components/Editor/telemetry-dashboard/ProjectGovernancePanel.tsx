@@ -49,7 +49,9 @@ const ProjectGovernancePanel: React.FC<ProjectGovernancePanelProps> = ({
       <GovernanceReviewsSection {...reviewsSectionProps} />
 
       <GovernanceTemplateBatchSection {...templateBatchSectionProps} />
-      {headerProps.governanceError ? <div className="db-error">{headerProps.governanceError}</div> : null}
+      {headerProps.governanceError ? (
+        <div className="db-error">{headerProps.governanceError}</div>
+      ) : null}
     </section>
   )
 }

@@ -443,12 +443,11 @@
 .asset-search-bar {
   border-radius: 16px;
   padding: 11px 13px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
-      color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.76),
     0 10px 22px rgba(75, 52, 23, 0.08);
@@ -457,12 +456,11 @@
 .import-btn-pro {
   border-radius: 16px;
   padding: 0 16px;
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--ap-signal) 86%, #ffffff 14%),
-      color-mix(in srgb, var(--ap-signal) 72%, #8f3609 28%)
-    );
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-signal) 86%, #ffffff 14%),
+    color-mix(in srgb, var(--ap-signal) 72%, #8f3609 28%)
+  );
   box-shadow: 0 14px 22px var(--ap-signal-soft);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -486,12 +484,11 @@
 
 .pro-empty-state-v2 {
   border-radius: 20px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
 }
 
 .asset-tile {
@@ -506,7 +503,11 @@
   height: 92px;
   background:
     linear-gradient(180deg, rgba(12, 18, 26, 0.08), rgba(12, 18, 26, 0.22)),
-    radial-gradient(circle at 24% 22%, color-mix(in srgb, var(--ap-accent-soft) 42%, transparent), transparent 36%);
+    radial-gradient(
+      circle at 24% 22%,
+      color-mix(in srgb, var(--ap-accent-soft) 42%, transparent),
+      transparent 36%
+    );
 }
 
 .tile-actions {
@@ -514,12 +515,11 @@
 }
 
 .tile-actions button {
-  background:
-    linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
-      color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
-    );
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
+    color-mix(in srgb, var(--ap-accent-strong) 80%, #0b2e61 20%)
+  );
   box-shadow: 0 10px 18px var(--ap-accent-glow);
 }
 
@@ -551,7 +551,11 @@
   padding: 10px 12px;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 74%, var(--ap-outline) 26%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%), color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+    color-mix(in srgb, var(--ap-card) 82%, var(--ap-panel) 18%)
+  );
 }
 
 .asset-intel-label,
@@ -622,7 +626,11 @@
 
 .tile-state.live {
   color: #fff8ef;
-  background: linear-gradient(165deg, color-mix(in srgb, var(--ap-accent) 86%, #ffffff 14%), color-mix(in srgb, var(--ap-accent-strong) 82%, #081736 18%));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--ap-accent) 86%, #ffffff 14%),
+    color-mix(in srgb, var(--ap-accent-strong) 82%, #081736 18%)
+  );
 }
 
 .tile-state.synced {
@@ -642,7 +650,11 @@
 .pro-empty-state-v2 {
   border-style: solid;
   border-width: 1px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%), color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%),
+    color-mix(in srgb, var(--ap-card) 80%, var(--ap-panel) 20%)
+  );
 }
 
 .pro-asset-panel[data-mode='director'] .analysis-card,

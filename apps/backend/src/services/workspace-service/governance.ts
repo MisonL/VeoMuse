@@ -50,10 +50,7 @@ export const createProjectSnapshotRecord = (
   return toSnapshot(row)
 }
 
-export const listProjectSnapshotsByProject = (
-  projectId: string,
-  limit = 20
-): ProjectSnapshot[] => {
+export const listProjectSnapshotsByProject = (projectId: string, limit = 20): ProjectSnapshot[] => {
   const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(100, Math.floor(limit)) : 20
   return getLocalDb()
     .prepare(
@@ -91,7 +88,12 @@ export const listProjectCommentsPageByProject = (
           LIMIT ${queryLimit}
         `
           )
-          .all(projectId, decodedCursor.createdAt, decodedCursor.createdAt, decodedCursor.id) as ProjectCommentRow[])
+          .all(
+            projectId,
+            decodedCursor.createdAt,
+            decodedCursor.createdAt,
+            decodedCursor.id
+          ) as ProjectCommentRow[])
       : decodedCursor
         ? (getLocalDb()
             .prepare(
@@ -117,7 +119,10 @@ export const listProjectCommentsPageByProject = (
   const pageRows = hasMore ? rows.slice(0, safeLimit) : rows
   const comments = pageRows.map(toProjectComment)
   const nextCursor = hasMore
-    ? encodeStableCursor(pageRows[pageRows.length - 1]?.created_at, pageRows[pageRows.length - 1]?.id)
+    ? encodeStableCursor(
+        pageRows[pageRows.length - 1]?.created_at,
+        pageRows[pageRows.length - 1]?.id
+      )
     : null
   return {
     comments,

@@ -45,8 +45,7 @@ const evaluateWithPolicy = (
     .listMarketplace({ refreshMetrics: options.refreshMetrics })
     .filter((item) => item.profile.enabled)
     .filter(
-      (item) =>
-        policy.allowedModels.length === 0 || policy.allowedModels.includes(item.profile.id)
+      (item) => policy.allowedModels.length === 0 || policy.allowedModels.includes(item.profile.id)
     )
 
   const scoreBreakdown = marketplace.map((item) => {
@@ -145,7 +144,9 @@ const evaluateWithPolicy = (
     },
     scoreBreakdown: normalizedScoreBreakdown,
     scoredCandidates,
-    hasBudgetMiss: Boolean(budgetUsd > 0 && underBudget.length === 0 && scoredCandidates.length > 0),
+    hasBudgetMiss: Boolean(
+      budgetUsd > 0 && underBudget.length === 0 && scoredCandidates.length > 0
+    ),
     budgetUsd
   }
 }
@@ -376,12 +377,7 @@ export const simulateDecisionBatch = (
       refreshMetrics: false
     })
     const status = decision.budgetGuard?.status || 'ok'
-    if (
-      status === 'warning' ||
-      status === 'critical' ||
-      status === 'degraded' ||
-      status === 'ok'
-    ) {
+    if (status === 'warning' || status === 'critical' || status === 'degraded' || status === 'ok') {
       summary[status] += 1
     }
     return {

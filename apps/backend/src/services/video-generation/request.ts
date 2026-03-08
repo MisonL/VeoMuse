@@ -1,8 +1,4 @@
-import type {
-  GenerateParams,
-  VideoGenerationInputs,
-  VideoGenerationMode
-} from '../ModelDriver'
+import type { GenerateParams, VideoGenerationInputs, VideoGenerationMode } from '../ModelDriver'
 import {
   DEFAULT_MODEL_ID,
   isPlainObject,

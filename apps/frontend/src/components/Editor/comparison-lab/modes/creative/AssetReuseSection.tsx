@@ -76,9 +76,10 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
   const assetComposeLeadText = isAssetReuseIdle
     ? '先确定来源 Asset 和目标项目，把第一条复用路径送进档案。'
     : '当前复用链已经形成，左侧继续发起，右侧回看历史轨迹。'
-  const assetHistoryLeadText = orderedHistoryRecords.length === 0
-    ? '暂无历史时，把它当成档案台预留位；生成首条记录后再从这里复盘。'
-    : '历史区只负责归档和回看，不再抢走发起复用这条主动作。'
+  const assetHistoryLeadText =
+    orderedHistoryRecords.length === 0
+      ? '暂无历史时，把它当成档案台预留位；生成首条记录后再从这里复盘。'
+      : '历史区只负责归档和回看，不再抢走发起复用这条主动作。'
 
   return (
     <section

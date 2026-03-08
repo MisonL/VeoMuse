@@ -96,21 +96,21 @@ docker compose -f config/docker/docker-compose.yml ps
 
 ### 开发与质量
 
-| 目标            | 命令                           |
-| --------------- | ------------------------------ |
-| 本地开发        | `bun run dev`                  |
-| 构建            | `bun run build`                |
-| 类型检查与 Lint | `bun run lint`                 |
-| 格式化          | `bun run format:prettier`      |
-| 格式检查        | `bun run format:check`         |
-| 单元与集成测试  | `bun run test`                 |
-| 覆盖率门禁      | `bun run test:coverage`        |
-| API 契约守卫    | `bun run quality:api-contract` |
-| Docker 烟测     | `bun run docker:smoke`         |
-| Docker UI 烟测  | `bun run docker:ui-smoke`      |
+| 目标              | 命令                               |
+| ----------------- | ---------------------------------- |
+| 本地开发          | `bun run dev`                      |
+| 构建              | `bun run build`                    |
+| 类型检查与 Lint   | `bun run lint`                     |
+| 格式化            | `bun run format:prettier`          |
+| 格式检查          | `bun run format:check`             |
+| 单元与集成测试    | `bun run test`                     |
+| 覆盖率门禁        | `bun run test:coverage`            |
+| API 契约守卫      | `bun run quality:api-contract`     |
+| Docker 烟测       | `bun run docker:smoke`             |
+| Docker UI 烟测    | `bun run docker:ui-smoke`          |
 | Docker 持久化演练 | `bun run docker:drill:persistence` |
-| Docker 清理     | `bun run docker:reset`         |
-| 全链路质量入口  | `bun run quality:full`         |
+| Docker 清理       | `bun run docker:reset`             |
+| 全链路质量入口    | `bun run quality:full`             |
 
 ### 发布与回归
 

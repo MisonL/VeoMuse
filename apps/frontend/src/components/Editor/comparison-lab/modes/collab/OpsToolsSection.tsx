@@ -233,9 +233,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
               name="v4AlertLevel"
               value={reliabilityAlertLevel}
               onChange={(event) =>
-                onReliabilityAlertLevelChange(
-                  event.target.value as 'all' | V4ReliabilityAlertLevel
-                )
+                onReliabilityAlertLevelChange(event.target.value as 'all' | V4ReliabilityAlertLevel)
               }
             >
               <option value="all">全部</option>
@@ -287,7 +285,9 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
             <div key={item.id} className="collab-list-item collab-list-item--rich">
               <div className="collab-list-item-head">
                 <strong>{item.title}</strong>
-                <span className={`lab-status-badge lab-status-badge--${resolveOpsTone(item.status)}`}>
+                <span
+                  className={`lab-status-badge lab-status-badge--${resolveOpsTone(item.status)}`}
+                >
                   {item.level} · {item.status}
                 </span>
               </div>
@@ -410,7 +410,9 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
           </div>
           <div className="collab-meta">
             <span>预算余量：{errorBudget?.evaluation.budgetRemaining ?? FALLBACK_TEXT}</span>
-            <span>预算比例：{formatRatioPercent(errorBudget?.evaluation.budgetRemainingRatio)}</span>
+            <span>
+              预算比例：{formatRatioPercent(errorBudget?.evaluation.budgetRemainingRatio)}
+            </span>
             <span>BurnRate：{errorBudget?.evaluation.burnRate ?? FALLBACK_TEXT}</span>
             <span>状态：{budgetStatus}</span>
             <span>演练：{rollbackStatus}</span>

@@ -13,10 +13,7 @@ import type {
 } from '../types'
 import { useVideoGenerationAutoPolling } from './useVideoGenerationAutoPolling'
 
-type ShowToast = (
-  message: string,
-  type?: 'info' | 'success' | 'error' | 'warning'
-) => void
+type ShowToast = (message: string, type?: 'info' | 'success' | 'error' | 'warning') => void
 
 interface UseVideoGenerationManagerParams {
   labMode: LabMode
@@ -218,7 +215,10 @@ export const useVideoGenerationManager = ({
         const rows = payload.jobs || []
         setVideoGenerationJobs((prev) => {
           if (!append) return rows
-          return [...prev, ...rows.filter((item) => prev.every((existing) => existing.id !== item.id))]
+          return [
+            ...prev,
+            ...rows.filter((item) => prev.every((existing) => existing.id !== item.id))
+          ]
         })
 
         const inferredCursor = rows.length > 0 ? rows[rows.length - 1]?.createdAt || '' : ''

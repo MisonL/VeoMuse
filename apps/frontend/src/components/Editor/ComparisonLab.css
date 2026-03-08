@@ -3028,12 +3028,11 @@
   padding: 10px 12px;
   border-radius: 16px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
 }
 
 .video-generation-stage-lead strong,
@@ -3070,12 +3069,11 @@
   padding: 10px 12px;
   border-radius: 18px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+  );
 }
 
 .video-generation-command-bar {
@@ -3122,12 +3120,11 @@
   padding: 12px;
   border-radius: 20px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
 }
 
 .video-generation-ops-fields {
@@ -3160,12 +3157,11 @@
 .video-generation-telemetry-strip .video-generation-polling-hint {
   padding: 7px 8px;
   border-style: dashed;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+  );
 }
 
 .video-generation-telemetry-strip .video-generation-quick-check-title,
@@ -3244,12 +3240,11 @@
   padding: 14px;
   border-radius: 20px;
   border: 1px dashed color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
 }
 
 .asset-reuse-panels {
@@ -3797,12 +3792,11 @@
   padding: 14px;
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
 }
 
 .collab-workflow-cluster-head {
@@ -4202,8 +4196,16 @@
   inset: 0;
   border-radius: inherit;
   background:
-    linear-gradient(90deg, transparent 0 25px, color-mix(in srgb, var(--ap-grid-line) 70%, transparent) 25px 26px),
-    linear-gradient(180deg, transparent 0 25px, color-mix(in srgb, var(--ap-grid-line) 70%, transparent) 25px 26px);
+    linear-gradient(
+      90deg,
+      transparent 0 25px,
+      color-mix(in srgb, var(--ap-grid-line) 70%, transparent) 25px 26px
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0 25px,
+      color-mix(in srgb, var(--ap-grid-line) 70%, transparent) 25px 26px
+    );
   background-size: 26px 26px;
   opacity: 0.26;
   pointer-events: none;
@@ -4311,12 +4313,11 @@
 }
 
 .comparison-lab-pro .lab-stage-marker.is-available {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
 }
 
 .comparison-lab-pro .lab-stage-marker.is-available:hover {
@@ -4389,12 +4390,11 @@
   padding: 10px 12px;
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 74%, #ffffff 26%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
@@ -4411,12 +4411,11 @@
   padding: 8px 12px;
   border-radius: 999px;
   border-color: color-mix(in srgb, var(--ap-border) 56%, var(--ap-accent) 44%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   color: color-mix(in srgb, var(--ap-text) 76%, var(--ap-accent) 24%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
@@ -4449,12 +4448,11 @@
 
 .comparison-lab-pro .lab-btn--secondary {
   border-color: color-mix(in srgb, var(--ap-border) 58%, var(--ap-accent) 42%);
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
   color: color-mix(in srgb, var(--ap-text) 84%, var(--ap-accent) 16%);
 }
 
@@ -4486,12 +4484,11 @@
 
 .comparison-lab-pro .pane-head,
 .comparison-lab-pro .empty-pane {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
-      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
-    );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+    color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+  );
 }
 
 .comparison-lab-pro .pane-head {
@@ -4580,8 +4577,16 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 10% 0, color-mix(in srgb, var(--ap-accent-soft) 20%, transparent), transparent 26%),
-    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--ap-signal-soft) 20%, transparent), transparent 32%);
+    radial-gradient(
+      circle at 10% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 20%, transparent),
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      color-mix(in srgb, var(--ap-signal-soft) 20%, transparent),
+      transparent 32%
+    );
   opacity: 0.92;
 }
 
@@ -4663,8 +4668,12 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(100deg, color-mix(in srgb, var(--ap-accent-soft) 26%, transparent), transparent 40%, color-mix(in srgb, var(--ap-signal-soft) 18%, transparent));
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--ap-accent-soft) 26%, transparent),
+    transparent 40%,
+    color-mix(in srgb, var(--ap-signal-soft) 18%, transparent)
+  );
   opacity: 0.86;
 }
 
@@ -4675,7 +4684,11 @@
 
 .comparison-lab-pro[data-lab-mode='compare'] {
   background:
-    radial-gradient(circle at 12% 0, color-mix(in srgb, var(--ap-accent-soft) 34%, transparent), transparent 26%),
+    radial-gradient(
+      circle at 12% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 34%, transparent),
+      transparent 26%
+    ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%),
@@ -4685,7 +4698,11 @@
 
 .comparison-lab-pro[data-lab-mode='marketplace'] {
   background:
-    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--ap-signal-soft) 28%, transparent), transparent 32%),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-signal-soft) 28%, transparent),
+      transparent 32%
+    ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--ap-panel) 86%, #ffffff 14%),
@@ -4695,8 +4712,16 @@
 
 .comparison-lab-pro[data-lab-mode='creative'] {
   background:
-    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--ap-accent-soft) 26%, transparent), transparent 26%),
-    radial-gradient(circle at 0 100%, color-mix(in srgb, var(--ap-signal-soft) 26%, transparent), transparent 30%),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 26%, transparent),
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 0 100%,
+      color-mix(in srgb, var(--ap-signal-soft) 26%, transparent),
+      transparent 30%
+    ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--ap-panel) 84%, #ffffff 16%),
@@ -4706,8 +4731,16 @@
 
 .comparison-lab-pro[data-lab-mode='collab'] {
   background:
-    radial-gradient(circle at 0 0, color-mix(in srgb, var(--ap-accent-soft) 20%, transparent), transparent 28%),
-    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--success-color) 12%, transparent), transparent 32%),
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--ap-accent-soft) 20%, transparent),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      color-mix(in srgb, var(--success-color) 12%, transparent),
+      transparent 32%
+    ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--ap-panel) 86%, #ffffff 14%),

@@ -148,13 +148,18 @@ export class ModelMarketplaceService {
     organizationId: string = 'org_default'
   ): RoutingDecision {
     this.ensureInitialized()
-    return simulateDecision(payload, {
-      listMarketplace: (options) => this.listMarketplace(options),
-      getPolicy,
-      listPolicies,
-      recordPolicyAlertEvent,
-      defaultFallbackPolicy: this.defaultFallbackPolicy
-    }, specificPolicyId, organizationId)
+    return simulateDecision(
+      payload,
+      {
+        listMarketplace: (options) => this.listMarketplace(options),
+        getPolicy,
+        listPolicies,
+        recordPolicyAlertEvent,
+        defaultFallbackPolicy: this.defaultFallbackPolicy
+      },
+      specificPolicyId,
+      organizationId
+    )
   }
 
   static executeDecision(
@@ -163,13 +168,18 @@ export class ModelMarketplaceService {
     organizationId: string = 'org_default'
   ): RoutingDecision {
     this.ensureInitialized()
-    return executeDecision(payload, {
-      listMarketplace: (options) => this.listMarketplace(options),
-      getPolicy,
-      listPolicies,
-      recordPolicyAlertEvent,
-      defaultFallbackPolicy: this.defaultFallbackPolicy
-    }, specificPolicyId, organizationId)
+    return executeDecision(
+      payload,
+      {
+        listMarketplace: (options) => this.listMarketplace(options),
+        getPolicy,
+        listPolicies,
+        recordPolicyAlertEvent,
+        defaultFallbackPolicy: this.defaultFallbackPolicy
+      },
+      specificPolicyId,
+      organizationId
+    )
   }
 
   static resetAfterDatabaseRecovery() {

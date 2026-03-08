@@ -1,7 +1,4 @@
-import type {
-  CancelOperationResult,
-  GenerateRuntimeContext
-} from '../ModelDriver'
+import type { CancelOperationResult, GenerateRuntimeContext } from '../ModelDriver'
 import { getLocalDb } from '../LocalDatabaseService'
 import { VideoOrchestrator } from '../VideoOrchestrator'
 import {
@@ -84,7 +81,9 @@ export const submitVideoGenerationJob = async (
       providerResult.status,
       toNullableString(providerResult.operationName),
       JSON.stringify(resultPayload),
-      toNullableString(providerResult.error || (providerResult.success ? null : providerResult.message)),
+      toNullableString(
+        providerResult.error || (providerResult.success ? null : providerResult.message)
+      ),
       null,
       null,
       startedAt,
@@ -172,7 +171,9 @@ export const retryVideoGenerationJob = async (
       providerResult.status,
       toNullableString(providerResult.operationName),
       JSON.stringify(resultPayload),
-      toNullableString(providerResult.error || (providerResult.success ? null : providerResult.message)),
+      toNullableString(
+        providerResult.error || (providerResult.success ? null : providerResult.message)
+      ),
       startedAt,
       finishedAt,
       durationMs,

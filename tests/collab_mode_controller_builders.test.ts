@@ -11,12 +11,35 @@ describe('CollabModeController builders', () => {
   it('workspace、invite 与 realtime builder 应保持协作主路径接线', () => {
     const createWorkspace = mock(() => Promise.resolve())
     const createInvite = mock(() => Promise.resolve())
-    const sendCollabEvent = mock((_type: 'timeline.patch' | 'project.patch' | 'cursor.update') => {})
+    const sendCollabEvent = mock(
+      (_type: 'timeline.patch' | 'project.patch' | 'cursor.update') => {}
+    )
 
     const workspaceCollaborationController = {
       invites: [{ id: 'invite_1', code: 'INVITE-1', role: 'editor', status: 'active' }],
-      presence: [{ workspaceId: 'ws_1', sessionId: 'sess_1', memberId: 'mem_1', memberName: 'Alice', role: 'owner', status: 'online', lastSeenAt: new Date().toISOString() }],
-      collabEvents: [{ id: 'evt_1', workspaceId: 'ws_1', projectId: 'project_1', actorId: 'owner_1', actorName: 'Alice', eventType: 'timeline.patch', payload: {}, createdAt: new Date().toISOString() }],
+      presence: [
+        {
+          workspaceId: 'ws_1',
+          sessionId: 'sess_1',
+          memberId: 'mem_1',
+          memberName: 'Alice',
+          role: 'owner',
+          status: 'online',
+          lastSeenAt: new Date().toISOString()
+        }
+      ],
+      collabEvents: [
+        {
+          id: 'evt_1',
+          workspaceId: 'ws_1',
+          projectId: 'project_1',
+          actorId: 'owner_1',
+          actorName: 'Alice',
+          eventType: 'timeline.patch',
+          payload: {},
+          createdAt: new Date().toISOString()
+        }
+      ],
       snapshots: [],
       uploadToken: 'upload-token',
       isWsConnected: true,
@@ -266,7 +289,9 @@ describe('CollabModeController builders', () => {
     expect(advancedSectionsProps.projectGovernanceProps.projectId).toBe('project_1')
     expect(advancedSectionsProps.projectGovernanceProps.projectCommentCursor).toBe('cursor-comment')
     expect(advancedSectionsProps.projectGovernanceProps.isProjectGovernanceBusy).toBe(true)
-    expect(advancedSectionsProps.permissionMergeProps.permissionSubjectId).toBe('timeline.merge=true')
+    expect(advancedSectionsProps.permissionMergeProps.permissionSubjectId).toBe(
+      'timeline.merge=true'
+    )
     expect(advancedSectionsProps.permissionMergeProps.isV4Busy).toBe(true)
     expect(advancedSectionsProps.opsToolsProps.adminToken).toBe('token')
     expect(advancedSectionsProps.opsToolsProps.isOpsBusy).toBe(false)

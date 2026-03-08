@@ -52,10 +52,7 @@ describe('前端 SSR 覆盖补强', () => {
   })
 
   it('index.html 应包含正式产品元信息', () => {
-    const indexHtml = readFileSync(
-      path.resolve(process.cwd(), 'apps/frontend/index.html'),
-      'utf8'
-    )
+    const indexHtml = readFileSync(path.resolve(process.cwd(), 'apps/frontend/index.html'), 'utf8')
     expect(indexHtml).toContain('<html lang="zh-CN">')
     expect(indexHtml).toContain('<title>VeoMuse Pro | 旗舰 AI 视频总线</title>')
     expect(indexHtml).toContain('name="description"')
