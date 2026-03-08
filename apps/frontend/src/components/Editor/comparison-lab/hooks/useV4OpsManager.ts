@@ -64,6 +64,44 @@ export const useV4OpsManager = ({
   const [isV4CollabBusy, setIsV4CollabBusy] = useState(false)
   const [isV4OpsBusy, setIsV4OpsBusy] = useState(false)
 
+  const normalizeError = useCallback((error: unknown, fallbackMessage: string) => {
+    if (error instanceof Error) {
+      return error.message ? error : new Error(fallbackMessage)
+    }
+    const message = String(error || '').trim()
+    return new Error(message || fallbackMessage)
+  }, [])
+  const showRequestError = useCallback(
+    (error: unknown, fallbackMessage: string) => {
+      showToast(normalizeError(error, fallbackMessage).message, 'error')
+    },
+    [normalizeError, showToast]
+  )
+  const applyErrorBudgetPayload = useCallback(
+    (policy?: V4ErrorBudget['policy'] | null, evaluation?: V4ErrorBudget['evaluation'] | null) => {
+      setV4ErrorBudget(policy && evaluation ? { policy, evaluation } : null)
+      if (!policy) return
+      setV4ErrorBudgetScope(policy.scope || 'global')
+      setV4ErrorBudgetTargetSlo(String(policy.targetSlo))
+      setV4ErrorBudgetWindowDays(String(policy.windowDays))
+      setV4ErrorBudgetWarningThresholdRatio(String(policy.warningThresholdRatio))
+      setV4ErrorBudgetAlertThresholdRatio(String(policy.alertThresholdRatio))
+      setV4ErrorBudgetFreezeDeployOnBreach(Boolean(policy.freezeDeployOnBreach))
+    },
+    []
+  )
+  const applyRollbackDrill = useCallback((drill?: V4RollbackDrillResult | null) => {
+    setV4RollbackDrillResult(drill || null)
+    if (!drill) return
+    if (drill.id) setV4RollbackDrillId(drill.id)
+    setV4RollbackPolicyId(drill.policyId || '')
+    setV4RollbackEnvironment(drill.environment || '')
+    setV4RollbackTriggerType(drill.triggerType || '')
+    setV4RollbackSummary(drill.summary || '')
+    setV4RollbackPlan(JSON.stringify(drill.plan || {}, null, 2))
+    setV4RollbackResult(JSON.stringify(drill.result || {}, null, 2))
+  }, [])
+
   useEffect(() => {
     setAdminToken(v4AdminToken)
   }, [v4AdminToken])
@@ -93,12 +131,11 @@ export const useV4OpsManager = ({
       )
       setV4Permissions(payload.permissions || [])
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '加载权限失败'
-      showToast(message || '加载权限失败', 'error')
+      showRequestError(error, '加载权限失败')
     } finally {
       setIsV4CollabBusy(false)
     }
-  }, [isV4CollabBusy, showToast, workspaceId])
+  }, [isV4CollabBusy, showRequestError, workspaceId])
 
   const updateV4Permission = useCallback(async () => {
     if (!workspaceId) {
@@ -158,8 +195,7 @@ export const useV4OpsManager = ({
       }
       showToast(`权限已更新：${permissionKey}=${allowed}`, 'success')
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '更新权限失败'
-      showToast(message || '更新权限失败', 'error')
+      showRequestError(error, '更新权限失败')
     } finally {
       setIsV4CollabBusy(false)
     }
@@ -167,6 +203,7 @@ export const useV4OpsManager = ({
     currentActorName,
     isV4CollabBusy,
     refreshV4Permissions,
+    showRequestError,
     showToast,
     v4PermissionRole,
     v4PermissionSubjectId,
@@ -197,12 +234,11 @@ export const useV4OpsManager = ({
       setV4TimelineMergeResult(payload.merge || null)
       showToast(`Timeline Merge 已触发：${payload.merge?.status || '-'}`, 'success')
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Timeline Merge 调用失败'
-      showToast(message || 'Timeline Merge 调用失败', 'error')
+      showRequestError(error, 'Timeline Merge 调用失败')
     } finally {
       setIsV4CollabBusy(false)
     }
-  }, [currentActorName, isV4CollabBusy, projectId, showToast])
+  }, [currentActorName, isV4CollabBusy, projectId, showRequestError, showToast])
 
   const loadV4ReliabilityAlerts = useCallback(async () => {
     const limitRaw = v4ReliabilityAlertLimit.trim() || '20'
@@ -229,14 +265,14 @@ export const useV4OpsManager = ({
       setV4ReliabilityAlerts(alerts)
       showToast(`可靠性告警已加载 ${alerts.length} 条`, 'success')
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '加载可靠性告警失败'
-      showToast(message || '加载可靠性告警失败', 'error')
+      showRequestError(error, '加载可靠性告警失败')
     } finally {
       setIsV4OpsBusy(false)
     }
   }, [
     buildV4AdminHeaders,
     isV4OpsBusy,
+    showRequestError,
     showToast,
     v4ReliabilityAlertLevel,
     v4ReliabilityAlertLimit,
@@ -275,13 +311,12 @@ export const useV4OpsManager = ({
         )
         showToast('告警已 ACK', 'success')
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'ACK 告警失败'
-        showToast(message || 'ACK 告警失败', 'error')
+        showRequestError(error, 'ACK 告警失败')
       } finally {
         setIsV4OpsBusy(false)
       }
     },
-    [buildV4AdminHeaders, currentActorName, isV4OpsBusy, showToast]
+    [buildV4AdminHeaders, currentActorName, isV4OpsBusy, showRequestError, showToast]
   )
 
   const loadV4ErrorBudget = useCallback(async () => {
@@ -295,30 +330,14 @@ export const useV4OpsManager = ({
       }>('/admin/reliability/error-budget', {
         headers: buildV4AdminHeaders()
       })
-      setV4ErrorBudget(
-        payload.policy && payload.evaluation
-          ? {
-              policy: payload.policy,
-              evaluation: payload.evaluation
-            }
-          : null
-      )
-      if (payload.policy) {
-        setV4ErrorBudgetScope(payload.policy.scope || 'global')
-        setV4ErrorBudgetTargetSlo(String(payload.policy.targetSlo))
-        setV4ErrorBudgetWindowDays(String(payload.policy.windowDays))
-        setV4ErrorBudgetWarningThresholdRatio(String(payload.policy.warningThresholdRatio))
-        setV4ErrorBudgetAlertThresholdRatio(String(payload.policy.alertThresholdRatio))
-        setV4ErrorBudgetFreezeDeployOnBreach(Boolean(payload.policy.freezeDeployOnBreach))
-      }
+      applyErrorBudgetPayload(payload.policy, payload.evaluation)
       showToast('错误预算读取成功', 'success')
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '读取错误预算失败'
-      showToast(message || '读取错误预算失败', 'error')
+      showRequestError(error, '读取错误预算失败')
     } finally {
       setIsV4OpsBusy(false)
     }
-  }, [buildV4AdminHeaders, isV4OpsBusy, showToast])
+  }, [applyErrorBudgetPayload, buildV4AdminHeaders, isV4OpsBusy, showRequestError, showToast])
 
   const updateV4ErrorBudget = useCallback(async () => {
     const targetSlo = Number.parseFloat(v4ErrorBudgetTargetSlo.trim() || '0.99')
@@ -376,23 +395,19 @@ export const useV4OpsManager = ({
           updatedBy: currentActorName || 'comparison-lab'
         })
       })
-      if (payload.policy && payload.evaluation) {
-        setV4ErrorBudget({
-          policy: payload.policy,
-          evaluation: payload.evaluation
-        })
-      }
+      applyErrorBudgetPayload(payload.policy, payload.evaluation)
       showToast('错误预算策略已更新', 'success')
     } catch (error: unknown) {
-      const normalized = error instanceof Error ? error : new Error(String(error))
-      showToast(normalized.message || '更新错误预算策略失败', 'error')
+      showRequestError(error, '更新错误预算策略失败')
     } finally {
       setIsV4OpsBusy(false)
     }
   }, [
+    applyErrorBudgetPayload,
     buildV4AdminHeaders,
     currentActorName,
     isV4OpsBusy,
+    showRequestError,
     showToast,
     v4ErrorBudget,
     v4ErrorBudgetAlertThresholdRatio,
@@ -427,28 +442,20 @@ export const useV4OpsManager = ({
           })
         }
       )
-      setV4RollbackDrillResult(payload.drill || null)
-      if (payload.drill) {
-        if (payload.drill.id) setV4RollbackDrillId(payload.drill.id)
-        setV4RollbackPolicyId(payload.drill.policyId || '')
-        setV4RollbackEnvironment(payload.drill.environment || '')
-        setV4RollbackTriggerType(payload.drill.triggerType || '')
-        setV4RollbackSummary(payload.drill.summary || '')
-        setV4RollbackPlan(JSON.stringify(payload.drill.plan || {}, null, 2))
-        setV4RollbackResult(JSON.stringify(payload.drill.result || {}, null, 2))
-      }
+      applyRollbackDrill(payload.drill)
       showToast(`回滚演练已触发：${payload.drill?.id || '-'}`, 'success')
     } catch (error: unknown) {
-      const normalized = error instanceof Error ? error : new Error(String(error))
-      showToast(normalized.message || '触发回滚演练失败', 'error')
+      showRequestError(error, '触发回滚演练失败')
     } finally {
       setIsV4OpsBusy(false)
     }
   }, [
+    applyRollbackDrill,
     buildV4AdminHeaders,
     currentActorName,
     isV4OpsBusy,
     parseJsonObjectInput,
+    showRequestError,
     showToast,
     v4RollbackEnvironment,
     v4RollbackPlan,
@@ -473,24 +480,22 @@ export const useV4OpsManager = ({
           headers: buildV4AdminHeaders()
         }
       )
-      setV4RollbackDrillResult(payload.drill || null)
-      if (payload.drill) {
-        if (payload.drill.id) setV4RollbackDrillId(payload.drill.id)
-        setV4RollbackPolicyId(payload.drill.policyId || '')
-        setV4RollbackEnvironment(payload.drill.environment || '')
-        setV4RollbackTriggerType(payload.drill.triggerType || '')
-        setV4RollbackSummary(payload.drill.summary || '')
-        setV4RollbackPlan(JSON.stringify(payload.drill.plan || {}, null, 2))
-        setV4RollbackResult(JSON.stringify(payload.drill.result || {}, null, 2))
-      }
+      applyRollbackDrill(payload.drill)
       showToast(`演练状态：${payload.drill?.status || '-'}`, 'success')
     } catch (error: unknown) {
-      const normalized = error instanceof Error ? error : new Error(String(error))
-      showToast(normalized.message || '查询回滚演练失败', 'error')
+      showRequestError(error, '查询回滚演练失败')
     } finally {
       setIsV4OpsBusy(false)
     }
-  }, [buildV4AdminHeaders, isV4OpsBusy, showToast, v4RollbackDrillId, v4RollbackDrillResult?.id])
+  }, [
+    applyRollbackDrill,
+    buildV4AdminHeaders,
+    isV4OpsBusy,
+    showRequestError,
+    showToast,
+    v4RollbackDrillId,
+    v4RollbackDrillResult?.id
+  ])
 
   return {
     v4Permissions,

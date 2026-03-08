@@ -101,6 +101,33 @@ export const useAuthOrganizationChannelManager = ({
   })
 
   const effectiveOrganizationId = selectedOrganizationId.trim() || organizations[0]?.id || ''
+  const normalizeError = useCallback((error: unknown, fallbackMessage: string) => {
+    if (error instanceof Error) {
+      return error.message ? error : new Error(fallbackMessage)
+    }
+    const message = String(error || '').trim()
+    return new Error(message || fallbackMessage)
+  }, [])
+  const showRequestError = useCallback(
+    (error: unknown, fallbackMessage: string, type: ToastType = 'error') => {
+      showToast(normalizeError(error, fallbackMessage).message, type)
+    },
+    [normalizeError, showToast]
+  )
+  const reportAuthFailure = useCallback(
+    (error: unknown, reason: string) => {
+      const normalizedError = normalizeError(error, reason)
+      const { errorKind, httpStatus } = classifyRequestError(normalizedError)
+      void reportJourney(false, {
+        reason,
+        failedStage: 'register',
+        errorKind,
+        httpStatus
+      })
+      return normalizedError
+    },
+    [normalizeError, reportJourney]
+  )
 
   const selectOrganization = useCallback((organizationId: string) => {
     setSelectedOrganizationId(organizationId)
@@ -251,15 +278,12 @@ export const useAuthOrganizationChannelManager = ({
         showToast('登录成功', 'success')
       }
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      const { errorKind, httpStatus } = classifyRequestError(normalizedError)
-      void reportJourney(false, {
-        reason: registerMode ? 'register-failed' : 'login-failed',
-        failedStage: 'register',
-        errorKind,
-        httpStatus
-      })
-      showToast(normalizedError.message || (registerMode ? '注册失败' : '登录失败'), 'error')
+      const fallbackMessage = registerMode ? '注册失败' : '登录失败'
+      showToast(
+        reportAuthFailure(error, registerMode ? 'register-failed' : 'login-failed').message ||
+          fallbackMessage,
+        'error'
+      )
     } finally {
       setIsAuthBusy(false)
     }
@@ -271,7 +295,7 @@ export const useAuthOrganizationChannelManager = ({
     markJourneyStep,
     registerMode,
     registerOrgName,
-    reportJourney,
+    reportAuthFailure,
     showToast
   ])
 
@@ -285,11 +309,8 @@ export const useAuthOrganizationChannelManager = ({
         })
       })
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      showToast(
-        `已本地退出，但服务端会话撤销失败：${normalizedError.message || 'unknown error'}`,
-        'warning'
-      )
+      const logoutError = normalizeError(error, 'unknown error')
+      showToast(`已本地退出，但服务端会话撤销失败：${logoutError.message}`, 'warning')
       window.setTimeout(() => {
         void requestJson('/api/auth/logout', {
           method: 'POST',
@@ -302,9 +323,13 @@ export const useAuthOrganizationChannelManager = ({
     setOrganizations([])
     setSelectedOrganizationId('')
     setOrgMembers([])
+    setChannelConfigs([])
+    setChannelForms({})
+    setOrganizationQuota(null)
+    setOrganizationUsage(null)
     resetJourney()
     showToast('已退出登录', 'success')
-  }, [resetJourney, showToast])
+  }, [normalizeError, resetJourney, showToast])
 
   const createOrganization = useCallback(async () => {
     if (!newOrgName.trim()) {
@@ -326,10 +351,9 @@ export const useAuthOrganizationChannelManager = ({
       markJourneyStep('organization_ready', { organizationId: payload.organization.id })
       showToast('组织创建成功', 'success')
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      showToast(normalizedError.message || '创建组织失败', 'error')
+      showRequestError(error, '创建组织失败')
     }
-  }, [markJourneyStep, newOrgName, showToast])
+  }, [markJourneyStep, newOrgName, showRequestError])
 
   const refreshOrganizationMembers = useCallback(async () => {
     if (!effectiveOrganizationId) {
@@ -367,14 +391,14 @@ export const useAuthOrganizationChannelManager = ({
       showToast('成员已加入组织', 'success')
       await refreshOrganizationMembers()
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      showToast(normalizedError.message || '添加成员失败', 'error')
+      showRequestError(error, '添加成员失败')
     }
   }, [
     effectiveOrganizationId,
     inviteMemberEmail,
     inviteOrgRole,
     refreshOrganizationMembers,
+    showRequestError,
     showToast
   ])
 
@@ -396,10 +420,9 @@ export const useAuthOrganizationChannelManager = ({
     } catch (error: unknown) {
       setOrganizationQuota(null)
       setOrganizationUsage(null)
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      showToast(normalizedError.message || '加载组织配额失败', 'error')
+      showRequestError(error, '加载组织配额失败')
     }
-  }, [applyQuotaForm, effectiveOrganizationId, showToast])
+  }, [applyQuotaForm, effectiveOrganizationId, showRequestError])
 
   const saveOrganizationQuota = useCallback(async () => {
     if (!effectiveOrganizationId) {
@@ -441,10 +464,9 @@ export const useAuthOrganizationChannelManager = ({
       if (payload.usage) setOrganizationUsage(payload.usage)
       showToast('组织配额已更新', 'success')
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      showToast(normalizedError.message || '更新组织配额失败', 'error')
+      showRequestError(error, '更新组织配额失败')
     }
-  }, [applyQuotaForm, effectiveOrganizationId, quotaForm, showToast])
+  }, [applyQuotaForm, effectiveOrganizationId, quotaForm, showRequestError, showToast])
 
   const exportOrganizationAudits = useCallback(
     async (format: 'json' | 'csv') => {
@@ -471,11 +493,10 @@ export const useAuthOrganizationChannelManager = ({
         URL.revokeObjectURL(downloadUrl)
         showToast(`审计记录已导出（${format.toUpperCase()}）`, 'success')
       } catch (error: unknown) {
-        const normalizedError = error instanceof Error ? error : new Error(String(error))
-        showToast(normalizedError.message || '获取审计记录失败', 'error')
+        showRequestError(error, '获取审计记录失败')
       }
     },
-    [effectiveOrganizationId, showToast]
+    [effectiveOrganizationId, showRequestError, showToast]
   )
 
   const updateChannelForm = useCallback(
@@ -520,10 +541,15 @@ export const useAuthOrganizationChannelManager = ({
         applyChannelForms(payload.configs || [])
       }
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      showToast(normalizedError.message || '加载模型失败', 'error')
+      showRequestError(error, '加载模型失败')
     }
-  }, [activeChannelScope, applyChannelForms, effectiveOrganizationId, showToast, workspaceId])
+  }, [
+    activeChannelScope,
+    applyChannelForms,
+    effectiveOrganizationId,
+    showRequestError,
+    workspaceId
+  ])
 
   const loadCapabilities = useCallback(async () => {
     setIsCapabilitiesLoading(true)
@@ -535,12 +561,11 @@ export const useAuthOrganizationChannelManager = ({
       const payload = await requestJson<CapabilityPayload>(`/api/capabilities${query}`)
       setCapabilities(payload)
     } catch (error: unknown) {
-      const normalizedError = error instanceof Error ? error : new Error(String(error))
-      showToast(normalizedError.message || '加载渠道接入状态失败', 'error')
+      showRequestError(error, '加载渠道接入状态失败')
     } finally {
       setIsCapabilitiesLoading(false)
     }
-  }, [activeChannelScope, showToast, workspaceId])
+  }, [activeChannelScope, showRequestError, workspaceId])
 
   const saveChannelConfig = useCallback(
     async (providerId: string) => {
@@ -579,8 +604,7 @@ export const useAuthOrganizationChannelManager = ({
         await refreshChannelConfigs()
         await loadCapabilities()
       } catch (error: unknown) {
-        const normalizedError = error instanceof Error ? error : new Error(String(error))
-        showToast(normalizedError.message || '保存渠道配置失败', 'error')
+        showRequestError(error, '保存渠道配置失败')
       }
     },
     [
@@ -589,6 +613,7 @@ export const useAuthOrganizationChannelManager = ({
       effectiveOrganizationId,
       loadCapabilities,
       refreshChannelConfigs,
+      showRequestError,
       showToast,
       workspaceId
     ]
@@ -623,11 +648,10 @@ export const useAuthOrganizationChannelManager = ({
           showToast(payload.message || '测试失败', 'error')
         }
       } catch (error: unknown) {
-        const normalizedError = error instanceof Error ? error : new Error(String(error))
-        showToast(normalizedError.message || '初始化失败', 'error')
+        showRequestError(error, '初始化失败')
       }
     },
-    [activeChannelScope, channelForms, showToast, workspaceId]
+    [activeChannelScope, channelForms, showRequestError, showToast, workspaceId]
   )
 
   useEffect(() => {

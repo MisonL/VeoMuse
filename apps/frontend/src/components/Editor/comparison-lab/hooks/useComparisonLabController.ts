@@ -44,11 +44,21 @@ export const useComparisonLabController = ({
   const channelPanelTriggerRef = useRef<HTMLElement | null>(null)
   const handledChannelPanelRequestRef = useRef(0)
 
-  const openChannelPanel = useCallback(() => {
+  const captureChannelPanelTrigger = useCallback(() => {
     const activeElement = document.activeElement
     channelPanelTriggerRef.current = activeElement instanceof HTMLElement ? activeElement : null
-    setShowChannelPanel(true)
   }, [])
+
+  const openChannelPanel = useCallback(() => {
+    captureChannelPanelTrigger()
+    setShowChannelPanel(true)
+  }, [captureChannelPanelTrigger])
+
+  const openMarketplaceChannelPanel = useCallback(() => {
+    setLabMode('marketplace')
+    captureChannelPanelTrigger()
+    setShowChannelPanel(true)
+  }, [captureChannelPanelTrigger])
 
   const {
     leftAssetId,
@@ -210,33 +220,26 @@ export const useComparisonLabController = ({
 
     handledChannelPanelRequestRef.current = nextRequestNonce
     const timerId = window.setTimeout(() => {
-      const activeElement = document.activeElement
-      channelPanelTriggerRef.current = activeElement instanceof HTMLElement ? activeElement : null
-      setLabMode('marketplace')
-      setShowChannelPanel(true)
+      openMarketplaceChannelPanel()
     }, 0)
 
     return () => {
       window.clearTimeout(timerId)
     }
-  }, [channelPanelRequestNonce])
+  }, [channelPanelRequestNonce, openMarketplaceChannelPanel])
 
   useEffect(() => {
-    const handleOpenChannelPanel = () => {
-      setLabMode('marketplace')
-      const activeElement = document.activeElement
-      channelPanelTriggerRef.current = activeElement instanceof HTMLElement ? activeElement : null
-      setShowChannelPanel(true)
-    }
-
-    window.addEventListener('veomuse:open-channel-panel', handleOpenChannelPanel as EventListener)
+    window.addEventListener(
+      'veomuse:open-channel-panel',
+      openMarketplaceChannelPanel as EventListener
+    )
     return () => {
       window.removeEventListener(
         'veomuse:open-channel-panel',
-        handleOpenChannelPanel as EventListener
+        openMarketplaceChannelPanel as EventListener
       )
     }
-  }, [])
+  }, [openMarketplaceChannelPanel])
 
   return {
     labMode,
