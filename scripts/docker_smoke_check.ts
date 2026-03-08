@@ -287,7 +287,11 @@ export const runSmokeCheck = async (options: CliOptions) => {
 
     const baseUrl = normalizeBaseUrl(options.baseUrl)
     if (!composeRuntime.supportsWait) {
-      await waitForEndpoint(`${baseUrl}/api/health`, options.waitTimeoutSec * 1_000, '[docker-smoke]')
+      await waitForEndpoint(
+        `${baseUrl}/api/health`,
+        options.waitTimeoutSec * 1_000,
+        '[docker-smoke]'
+      )
     }
 
     const summary = await runDeploymentAcceptanceProbes({

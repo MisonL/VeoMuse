@@ -10,7 +10,9 @@ describe('docker 构建依赖安装策略守卫', () => {
     const content = readDockerfile('config/docker/backend.Dockerfile')
 
     expect(content).toContain('--mount=type=cache,target=/root/.bun/install/cache')
-    expect(content).toContain("bun install --frozen-lockfile --production --filter '@veomuse/backend'")
+    expect(content).toContain(
+      "bun install --frozen-lockfile --production --filter '@veomuse/backend'"
+    )
     expect(content).not.toContain('--network-concurrency=16')
     expect(content).not.toContain('--no-verify')
   })

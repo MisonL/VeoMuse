@@ -771,7 +771,10 @@ const assertPersistedProjectState = async (
   }
 
   const snapshots = await jsonRequest<ProjectSnapshotsResponse>(
-    resolveAbsoluteUrl(baseUrl, `/api/projects/${runtimeState.workspace.projectId}/snapshots?limit=20`),
+    resolveAbsoluteUrl(
+      baseUrl,
+      `/api/projects/${runtimeState.workspace.projectId}/snapshots?limit=20`
+    ),
     {
       headers: {
         Authorization: `Bearer ${loggedIn.accessToken}`,
@@ -796,10 +799,7 @@ const assertPersistedProjectState = async (
   }
 }
 
-const assertPersistedUploadOnBackend = async (
-  composePrefix: string[],
-  upload: UploadArtifact
-) => {
+const assertPersistedUploadOnBackend = async (composePrefix: string[], upload: UploadArtifact) => {
   const stdoutText = await captureCommand(
     buildBackendUploadPersistenceProbeCommand(composePrefix, upload.objectKey)
   )

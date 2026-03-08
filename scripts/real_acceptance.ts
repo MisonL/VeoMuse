@@ -122,9 +122,7 @@ const readQualitySummary = async (): Promise<QualitySummary | null> => {
 export const validateRealAcceptanceSummary = (qualitySummary: Pick<QualitySummary, 'realE2E'>) => {
   const realE2EStatus = String(qualitySummary.realE2E?.status || '').trim()
   if (realE2EStatus !== 'passed') {
-    throw new Error(
-      `realE2E.status 校验失败: expected=passed actual=${realE2EStatus || '(empty)'}`
-    )
+    throw new Error(`realE2E.status 校验失败: expected=passed actual=${realE2EStatus || '(empty)'}`)
   }
   return {
     realE2EStatus,
@@ -219,7 +217,10 @@ export const runRealAcceptance = async (options: CliOptions) => {
       summary.failedSteps = qualitySummary.steps
         .filter((step) => step.status === 'failed')
         .map((step) => step.name)
-      await Bun.write(buildOutputPaths(outputDir).qualitySummary, JSON.stringify(qualitySummary, null, 2))
+      await Bun.write(
+        buildOutputPaths(outputDir).qualitySummary,
+        JSON.stringify(qualitySummary, null, 2)
+      )
 
       if (summary.realE2EStatus !== 'passed') {
         const failureReport = buildReleaseGateFailureReport(qualitySummary)

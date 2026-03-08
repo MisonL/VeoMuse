@@ -35,7 +35,9 @@ describe('外部验收入口脚本', () => {
     expect(parsed.options.outputDir).toBe(path.resolve(process.cwd(), 'artifacts/custom-deploy'))
     expect(parsed.options.timeoutSec).toBe(300)
     expect(parsed.options.adminTokenEnv).toBe('PROD_ADMIN_TOKEN')
-    expect(buildAcceptanceOutputPaths(path.resolve(process.cwd(), 'artifacts/custom-deploy'))).toEqual({
+    expect(
+      buildAcceptanceOutputPaths(path.resolve(process.cwd(), 'artifacts/custom-deploy'))
+    ).toEqual({
       json: path.join(path.resolve(process.cwd(), 'artifacts/custom-deploy'), 'summary.json'),
       markdown: path.join(path.resolve(process.cwd(), 'artifacts/custom-deploy'), 'summary.md')
     })
@@ -44,7 +46,9 @@ describe('外部验收入口脚本', () => {
   it('acceptance:deploy 默认值应稳定并拒绝非法参数', () => {
     const parsed = parseDeployArgs([])
 
-    expect(parsed.options.outputDir.startsWith(path.resolve(process.cwd(), DEPLOY_OUTPUT_ROOT))).toBe(true)
+    expect(
+      parsed.options.outputDir.startsWith(path.resolve(process.cwd(), DEPLOY_OUTPUT_ROOT))
+    ).toBe(true)
     expect(parsed.options.timeoutSec).toBe(DEFAULT_TIMEOUT_SEC)
     expect(parsed.options.adminTokenEnv).toBe(DEFAULT_ADMIN_TOKEN_ENV)
     expect(resolveDeployOutputDir(new Date('2026-03-08T04:00:00.000Z'))).toBe(
@@ -86,7 +90,8 @@ describe('外部验收入口脚本', () => {
     expect(source).not.toContain('docker-compose')
     expect(source).not.toContain('restart')
     expect(source).toContain('runDeploymentAcceptanceProbes')
-    expect(source).toContain("waitForEndpoint(resolveAbsoluteUrl(baseUrl, '/api/health')")
+    expect(source).toContain('waitForEndpoint(')
+    expect(source).toContain("resolveAbsoluteUrl(baseUrl, '/api/health')")
   })
 
   it('acceptance:real 应解析参数并生成稳定默认输出目录', () => {

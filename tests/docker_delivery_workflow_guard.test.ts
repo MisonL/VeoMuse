@@ -16,7 +16,9 @@ describe('docker 交付 workflow 守卫', () => {
 
     expect(workflow).toContain('workflow_dispatch:')
     expect(workflow).toContain('docker-smoke-main:')
-    expect(workflow).toContain("if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}")
+    expect(workflow).toContain(
+      "if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}"
+    )
     expect(workflow).toContain('run: bun run docker:smoke -- --wait-timeout 240')
     expect(workflow).toContain('docker-ui-smoke-main:')
     expect(workflow).toContain('needs: docker-smoke-main')

@@ -101,20 +101,20 @@ describe('docker persistence drill 脚本辅助逻辑', () => {
     expect(resolveContainerUploadPath('ws_1/proj_1/file.bin')).toBe(
       '/app/uploads/workspace/ws_1/proj_1/file.bin'
     )
-    expect(buildBackendUploadPersistenceProbeCommand(composePrefix, 'ws_1/proj_1/file.bin')).toEqual(
-      [
-        'docker',
-        'compose',
-        '-f',
-        'config/docker/docker-compose.yml',
-        'exec',
-        '-T',
-        'veomuse-backend',
-        'sh',
-        '-lc',
-        "test -f '/app/uploads/workspace/ws_1/proj_1/file.bin' && wc -c < '/app/uploads/workspace/ws_1/proj_1/file.bin'"
-      ]
-    )
+    expect(
+      buildBackendUploadPersistenceProbeCommand(composePrefix, 'ws_1/proj_1/file.bin')
+    ).toEqual([
+      'docker',
+      'compose',
+      '-f',
+      'config/docker/docker-compose.yml',
+      'exec',
+      '-T',
+      'veomuse-backend',
+      'sh',
+      '-lc',
+      "test -f '/app/uploads/workspace/ws_1/proj_1/file.bin' && wc -c < '/app/uploads/workspace/ws_1/proj_1/file.bin'"
+    ])
   })
 
   it('runPersistenceDrill 应按关键顺序执行建数、重启与复检', () => {

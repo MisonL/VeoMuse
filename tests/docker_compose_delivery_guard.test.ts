@@ -21,8 +21,8 @@ describe('docker compose 交付护栏', () => {
   it('应保留 smoke 所需的端口、卷与数据库持久化挂载', () => {
     const compose = readCompose()
 
-    expect(compose).toContain("46379")
-    expect(compose).toContain("33117")
+    expect(compose).toContain('46379')
+    expect(compose).toContain('33117')
     expect(compose).toContain("'18081:18081'")
     expect(compose).toContain('veomuse-uploads:/app/uploads')
     expect(compose).toContain('veomuse-data:/app/data')

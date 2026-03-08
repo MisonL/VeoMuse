@@ -666,7 +666,10 @@ export const runDeploymentAcceptanceProbes = async (
     )
 
     const assetPaths = extractStaticAssetPaths(html)
-    const healthResponse = await probeEndpoint(resolveAbsoluteUrl(baseUrl, '/api/health'), loggerPrefix)
+    const healthResponse = await probeEndpoint(
+      resolveAbsoluteUrl(baseUrl, '/api/health'),
+      loggerPrefix
+    )
     recordPassedStep(summary, 'GET /api/health', `HTTP ${healthResponse.status}`)
 
     const capabilitiesResponse = await probeEndpoint(

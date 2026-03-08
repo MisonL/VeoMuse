@@ -63,10 +63,14 @@ describe('docker smoke 脚本辅助逻辑', () => {
     expect(HELP_TEXT).toContain('前端实验室/系统监控入口 bundle 标识')
 
     expect(
-      buildComposeUpCommand(['docker', 'compose', '-f', 'config/docker/docker-compose.yml'], {
-        noBuild: false,
-        waitTimeoutSec: 180
-      }, true)
+      buildComposeUpCommand(
+        ['docker', 'compose', '-f', 'config/docker/docker-compose.yml'],
+        {
+          noBuild: false,
+          waitTimeoutSec: 180
+        },
+        true
+      )
     ).toEqual([
       'docker',
       'compose',
@@ -81,10 +85,14 @@ describe('docker smoke 脚本辅助逻辑', () => {
     ])
 
     expect(
-      buildComposeUpCommand(['docker-compose', '-f', 'config/docker/docker-compose.yml'], {
-        noBuild: true,
-        waitTimeoutSec: 240
-      }, false)
+      buildComposeUpCommand(
+        ['docker-compose', '-f', 'config/docker/docker-compose.yml'],
+        {
+          noBuild: true,
+          waitTimeoutSec: 240
+        },
+        false
+      )
     ).toEqual(['docker-compose', '-f', 'config/docker/docker-compose.yml', 'up', '-d'])
 
     expect(

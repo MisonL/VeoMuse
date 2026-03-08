@@ -283,7 +283,9 @@ describe('发布门禁脚本策略', () => {
   it('根脚本应提供独立的 release:gate:delivery 命令，同时不改写 quality:full 主链路', () => {
     const pkg = JSON.parse(readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8'))
 
-    expect(pkg?.scripts?.['release:gate:delivery']).toBe('bun run release:gate && bun run docker:smoke')
+    expect(pkg?.scripts?.['release:gate:delivery']).toBe(
+      'bun run release:gate && bun run docker:smoke'
+    )
     expect(String(pkg?.scripts?.['quality:full'] || '')).not.toContain('docker:smoke')
     expect(String(pkg?.scripts?.['quality:full'] || '')).toContain('bun run release:gate')
   })

@@ -160,7 +160,11 @@ export const runDeployAcceptance = async (options: CliOptions) => {
   const outputDir = options.outputDir.trim() || resolveDefaultOutputDir()
   await mkdir(outputDir, { recursive: true })
 
-  await waitForEndpoint(resolveAbsoluteUrl(baseUrl, '/api/health'), timeoutMs, '[deploy-acceptance]')
+  await waitForEndpoint(
+    resolveAbsoluteUrl(baseUrl, '/api/health'),
+    timeoutMs,
+    '[deploy-acceptance]'
+  )
   const summary = await runDeploymentAcceptanceProbes({
     baseUrl,
     loggerPrefix: '[deploy-acceptance]'
@@ -171,11 +175,11 @@ export const runDeployAcceptance = async (options: CliOptions) => {
     adminTokenEnv: options.adminTokenEnv
   })
 
+  await Bun.write(buildAcceptanceOutputPaths(outputDir).json, JSON.stringify(artifact, null, 2))
   await Bun.write(
-    buildAcceptanceOutputPaths(outputDir).json,
-    JSON.stringify(artifact, null, 2)
+    buildAcceptanceOutputPaths(outputDir).markdown,
+    buildDeployAcceptanceMarkdown(summary)
   )
-  await Bun.write(buildAcceptanceOutputPaths(outputDir).markdown, buildDeployAcceptanceMarkdown(summary))
 
   console.log(`[deploy-acceptance] summary: ${buildAcceptanceOutputPaths(outputDir).json}`)
   console.log(`[deploy-acceptance] markdown: ${buildAcceptanceOutputPaths(outputDir).markdown}`)
