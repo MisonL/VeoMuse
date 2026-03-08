@@ -44,6 +44,8 @@
     "docker:drill:persistence": "bun run scripts/docker_persistence_drill.ts",
     "docker:up": "docker compose -f config/docker/docker-compose.yml up -d --build --wait --wait-timeout 180",
     "docker:down": "docker compose -f config/docker/docker-compose.yml down",
+    "docker:reset": "docker compose -f config/docker/docker-compose.yml down --remove-orphans",
+    "docker:reset:volumes": "docker compose -f config/docker/docker-compose.yml down --volumes --remove-orphans",
     "clean": "bun run scripts/clean_workspace.ts"
   },
   "devDependencies": {

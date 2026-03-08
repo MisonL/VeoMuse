@@ -127,3 +127,52 @@ jobs:
 
       - name: Run docker smoke check
         run: bun run docker:smoke -- --wait-timeout 240
+
+  docker-ui-smoke-main:
+    name: Docker UI Smoke (main push only)
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: docker-smoke-main
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Prepare smoke env
+        run: |
+          cat > .env <<'EOF'
+          REDIS_PASSWORD=ci-redis-password
+          JWT_SECRET=ci-jwt-secret-please-change
+          SECRET_ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          ADMIN_TOKEN=ci-admin-token
+          EOF
+
+      - name: Bootstrap docker smoke env and keep containers up
+        run: bun run docker:smoke -- --wait-timeout 240 --keep-up
+
+      - name: Run docker UI smoke
+        run: bun run docker:ui-smoke
+
+      - name: Upload docker UI smoke artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-ui-smoke-artifacts
+          path: |
+            playwright-report/
+            test-results/playwright-docker/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Cleanup docker compose env
+        if: ${{ always() }}
+        run: bun run docker:reset

@@ -1,0 +1,57 @@
+name: Docker Persistence Manual
+
+on:
+  workflow_dispatch:
+
+jobs:
+  drill:
+    name: Run Docker Persistence Drill
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Prepare drill env
+        run: |
+          cat > .env <<'EOF'
+          REDIS_PASSWORD=ci-redis-password
+          JWT_SECRET=ci-jwt-secret-please-change
+          SECRET_ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          ADMIN_TOKEN=ci-admin-token
+          EOF
+
+      - name: Run docker persistence drill
+        run: |
+          mkdir -p artifacts
+          bun run docker:drill:persistence -- --wait-timeout 240 --keep-up | tee artifacts/docker-persistence-drill.log
+
+      - name: Capture docker persistence compose logs
+        if: ${{ always() }}
+        run: |
+          mkdir -p artifacts
+          docker compose -f config/docker/docker-compose.yml ps > artifacts/docker-persistence-compose-ps.log || true
+          docker compose -f config/docker/docker-compose.yml logs --tail 200 > artifacts/docker-persistence-compose.log || true
+
+      - name: Upload persistence drill artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-persistence-drill-artifacts
+          path: |
+            artifacts/docker-persistence-drill.log
+            artifacts/docker-persistence-compose.log
+            artifacts/docker-persistence-compose-ps.log
+            artifacts/*.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Cleanup docker compose env
+        if: ${{ always() }}
+        run: bun run docker:reset

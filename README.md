@@ -90,6 +90,7 @@ docker compose -f config/docker/docker-compose.yml ps
 - 网关地址：`http://127.0.0.1:18081`
 - 网关/API 联通检查：`http://127.0.0.1:18081/api/health`
 - 详细部署说明见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- Docker 交付验收与清理手册见 [docs/DOCKER_DELIVERY_RUNBOOK.md](docs/DOCKER_DELIVERY_RUNBOOK.md)
 
 ## 常用命令
 
@@ -106,6 +107,9 @@ docker compose -f config/docker/docker-compose.yml ps
 | 覆盖率门禁      | `bun run test:coverage`        |
 | API 契约守卫    | `bun run quality:api-contract` |
 | Docker 烟测     | `bun run docker:smoke`         |
+| Docker UI 烟测  | `bun run docker:ui-smoke`      |
+| Docker 持久化演练 | `bun run docker:drill:persistence` |
+| Docker 清理     | `bun run docker:reset`         |
 | 全链路质量入口  | `bun run quality:full`         |
 
 ### 发布与回归

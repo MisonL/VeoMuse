@@ -16,6 +16,7 @@ bun run format:check
 bun run lint
 bun run quality:api-contract
 bun run docker:smoke -- --no-build --wait-timeout 240
+bun run docker:ui-smoke
 bun run release:gate
 ```
 
@@ -24,8 +25,10 @@ bun run release:gate
 - `release:gate` 全绿（security/build/unit/e2e-smoke/e2e-regression/slo）
 - `artifacts/quality-summary.json` 中 `status=passed`
 - `docker:smoke` 全绿，并覆盖首页/API/WebSocket/上传/安全头/静态缓存
+- `docker:ui-smoke` 全绿，并覆盖真实 Docker 浏览器链路
 - Docker 服务 `frontend/backend/redis` 为 `healthy`
 - 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-07.md`
+- Docker 交付与清理说明已更新到 `docs/DOCKER_DELIVERY_RUNBOOK.md`
 - 研发结项总览与当前交付状态已更新到 `docs/RD_CLOSURE_2026-03-07.md`
 
 ## 2. 实网回归（有真实凭据时执行）

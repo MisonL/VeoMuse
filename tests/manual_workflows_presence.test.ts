@@ -61,4 +61,19 @@ describe('手动 workflows 存在性与关键字段守卫', () => {
     expect(workflow).toContain('artifacts/*.log')
     expect(workflow).toContain('if-no-files-found: warn')
   })
+
+  it('docker-persistence-manual workflow 应存在并包含 keep-up drill、日志上传与环境清理', () => {
+    const workflow = readWorkflow('.github/workflows/docker-persistence-manual.yml')
+
+    expect(workflow).toContain('workflow_dispatch')
+    expect(workflow).toContain('uses: oven-sh/setup-bun@v2')
+    expect(workflow).toContain('run: bun install --frozen-lockfile')
+    expect(workflow).toContain('bun run docker:drill:persistence -- --wait-timeout 240 --keep-up')
+    expect(workflow).toContain('docker compose -f config/docker/docker-compose.yml logs --tail 200')
+    expect(workflow).toContain('docker-persistence-drill-artifacts')
+    expect(workflow).toContain('artifacts/docker-persistence-drill.log')
+    expect(workflow).toContain('artifacts/docker-persistence-compose.log')
+    expect(workflow).toContain('artifacts/docker-persistence-compose-ps.log')
+    expect(workflow).toContain('run: bun run docker:reset')
+  })
 })
