@@ -11,8 +11,9 @@ COPY apps/backend/package.json ./apps/backend/package.json
 COPY apps/frontend/package.json ./apps/frontend/package.json
 COPY packages/shared/package.json ./packages/shared/package.json
 
-# 3. 在根目录安装 workspace 依赖，避免子目录冻结锁文件冲突
-RUN bun install --frozen-lockfile --network-concurrency=16 || bun install --frozen-lockfile --network-concurrency=16 --no-verify
+# 3. 仅安装后端运行时依赖，避免在镜像内重复拉取整仓 dev 工具链
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+  bun install --frozen-lockfile --production --filter '@veomuse/backend'
 
 # 4. 拷贝后端与共享源码
 COPY apps/backend ./apps/backend

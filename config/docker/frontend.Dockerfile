@@ -6,7 +6,8 @@ COPY package.json bun.lock ./
 COPY apps/frontend/package.json ./apps/frontend/package.json
 COPY apps/backend/package.json ./apps/backend/package.json
 COPY packages/shared/package.json ./packages/shared/package.json
-RUN bun install --frozen-lockfile --network-concurrency=16 || bun install --frozen-lockfile --network-concurrency=16 --no-verify
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+  bun install --frozen-lockfile --filter '@veomuse/frontend'
 
 # 再复制完整源码并构建前端
 COPY . .
