@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { buildTestPassword } from '../../helpers/credentials'
+import { waitForAuthSessionReady } from '../helpers/auth'
 import { attachPageDebug } from '../helpers/debug'
 import { dismissGuideIfPresent } from '../helpers/guide'
 
@@ -36,9 +37,7 @@ test('Docker UI smoke 应串通注册、工作区创建与关键值守入口', a
   await page.getByTestId('input-login-password').fill(password)
   await page.getByTestId('input-register-organization').fill(organizationName)
   await page.getByTestId('btn-submit-auth').click()
-  const organizationSelect = page.getByTestId('select-organization')
-  await expect(organizationSelect).toBeVisible({ timeout: 45_000 })
-  await expect(organizationSelect.locator('option').first()).toContainText(organizationName)
+  await waitForAuthSessionReady(page, 45_000)
 
   await page.getByTestId('btn-close-channel-panel').click()
   await page.getByTestId('btn-lab-mode-collab').click()

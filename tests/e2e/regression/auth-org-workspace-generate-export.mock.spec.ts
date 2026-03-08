@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import path from 'path'
 import { buildTestPassword } from '../../helpers/credentials'
+import { waitForAuthSessionReady } from '../helpers/auth'
 
 const fixtureFile = path.resolve(process.cwd(), 'tests/e2e/fixtures/sample.mp4')
 const uniq = () => `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
@@ -49,7 +50,7 @@ test('@mock 可通过 UI 串通注册 -> 组织 -> 工作区 -> 生成 -> 导出
   await page.getByTestId('input-login-password').fill(password)
   await page.getByTestId('input-register-organization').fill(`UI组织_${suffix}`)
   await page.getByTestId('btn-submit-auth').click()
-  await expect(page.getByTestId('select-organization')).toBeVisible({ timeout: 15000 })
+  await waitForAuthSessionReady(page, 15_000)
 
   await page.getByTestId('btn-close-channel-panel').click()
   await page.getByTestId('btn-lab-mode-collab').click()

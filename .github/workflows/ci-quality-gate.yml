@@ -73,17 +73,16 @@ jobs:
         run: |
           mkdir -p artifacts
           if [ ! -f artifacts/quality-summary.json ]; then
-            cat > artifacts/quality-summary.json <<EOF
-            {
-              "workflow": "CI Quality Gate",
-              "entry": "bun run release:gate",
-              "releaseSloMode": "${{ github.ref == 'refs/heads/main' && 'hard' || 'soft' }}",
-              "jobStatus": "${{ job.status }}",
-              "ref": "${{ github.ref }}",
-              "sha": "${{ github.sha }}",
-              "fallback": true
-            }
-            EOF
+            printf '%s\n' \
+              '{' \
+              '  "workflow": "CI Quality Gate",' \
+              '  "entry": "bun run release:gate",' \
+              '  "releaseSloMode": "${{ github.ref == '\''refs/heads/main'\'' && '\''hard'\'' || '\''soft'\'' }}",' \
+              '  "jobStatus": "${{ job.status }}",' \
+              '  "ref": "${{ github.ref }}",' \
+              '  "sha": "${{ github.sha }}",' \
+              '  "fallback": true' \
+              '}' > artifacts/quality-summary.json
           fi
 
       - name: Upload Playwright report

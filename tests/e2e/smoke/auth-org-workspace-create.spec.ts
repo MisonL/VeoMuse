@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { buildTestPassword } from '../../helpers/credentials'
+import { waitForAuthSessionReady } from '../helpers/auth'
 import { attachPageDebug } from '../helpers/debug'
 import { dismissGuideIfPresent } from '../helpers/guide'
 
@@ -30,8 +31,7 @@ test('可通过实验室 UI 完成注册、登录、创建工作区', async ({ p
   await page.getByTestId('input-login-password').fill(password)
   await page.getByTestId('input-register-organization').fill(`UI组织_${suffix}`)
   await page.getByTestId('btn-submit-auth').click()
-
-  await expect(page.getByTestId('select-organization')).toBeVisible({ timeout: 45000 })
+  await waitForAuthSessionReady(page, 45_000)
 
   await page.getByTestId('btn-close-channel-panel').click()
   await page.getByTestId('btn-lab-mode-collab').click()
