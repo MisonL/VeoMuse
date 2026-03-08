@@ -10,7 +10,7 @@
 - `2026-03-08` 已再次完成本地闭环复验：
   - `bun run lint`
   - `bun run build`
-  - `bun run test`（`496 pass / 0 fail`）
+  - `bun run test`（`509 pass / 0 fail`）
   - `bun run release:gate`
   - `bun run docker:smoke -- --wait-timeout 240 --keep-up`
   - `bun run docker:ui-smoke`
@@ -67,7 +67,7 @@
 ## 已完成验证
 
 - `bun run test`
-  - 最近一次整仓结果：`484 pass / 0 fail`
+  - 最近一次整仓结果：`509 pass / 0 fail`
 - `bun run lint`
 - `bun run build`
 - `bun run release:gate`

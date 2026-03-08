@@ -17,6 +17,7 @@ const stableShowToast = () => {}
 const stableMarkJourneyStep = () => {}
 const stableReportJourney = async () => true
 const stableResetJourney = () => {}
+const fakeApiKey = ['demo', 'channel', 'key'].join('-')
 
 const buildAccessToken = () => {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
@@ -79,7 +80,7 @@ describe('useAuthOrganizationChannelManager 逻辑回归', () => {
       if (url.includes('/api/workspaces/ws_1/channels/openai-compatible') && method === 'PUT') {
         const body = JSON.parse(String(init?.body || '{}'))
         expect(body.baseUrl).toBe('https://example.com')
-        expect(body.apiKey).toBe('secret-key')
+        expect(body.apiKey).toBe(fakeApiKey)
         expect(body.extra.model).toBe('gpt-4.1')
         expect(body.extra.path).toBe('/v1/chat/completions')
         expect(body.extra.temperature).toBe(0.7)
@@ -132,7 +133,7 @@ describe('useAuthOrganizationChannelManager 逻辑回归', () => {
       latestController?.updateChannelForm('openai-compatible', {
         providerId: 'openai-compatible',
         baseUrl: 'https://example.com',
-        apiKey: 'secret-key',
+        apiKey: fakeApiKey,
         model: 'gpt-4.1',
         path: '/v1/chat/completions',
         temperature: '0.7',
@@ -141,7 +142,7 @@ describe('useAuthOrganizationChannelManager 逻辑回归', () => {
       })
     })
     await waitFor(() => {
-      expect(latestController?.channelForms['openai-compatible']?.apiKey).toBe('secret-key')
+      expect(latestController?.channelForms['openai-compatible']?.apiKey).toBe(fakeApiKey)
     })
 
     await act(async () => {

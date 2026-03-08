@@ -5,9 +5,9 @@
 
 ## 执行环境
 
-- 日期时间：`2026-03-08 16:11:04 CST`
+- 日期时间：`2026-03-08 19:36:43 CST`
 - 分支：`main`
-- 代码基线：`03a1630`
+- 代码基线：`e4e7135`
 - 本地入口：`http://127.0.0.1:18081`
 
 ## 本轮执行命令
@@ -25,7 +25,7 @@ bun run docker:ui-smoke
 
 - `bun run lint`：通过
 - `bun run build`：通过
-- `bun run test`：通过，结果 `496 pass / 0 fail`
+- `bun run test`：通过，结果 `509 pass / 0 fail`
 - `bun run release:gate`：通过
 - `bun run docker:smoke -- --wait-timeout 240 --keep-up`：通过
 - `bun run docker:ui-smoke`：通过
