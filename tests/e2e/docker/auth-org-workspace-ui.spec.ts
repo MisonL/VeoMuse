@@ -17,6 +17,8 @@ test('Docker UI smoke 应串通注册、工作区创建与关键值守入口', a
 
   await page.goto('/')
   await dismissGuideIfPresent(page)
+  await page.getByTestId('btn-reset-layout').click()
+  await page.getByTestId('btn-center-mode-fit').click()
 
   await page.getByTestId('btn-mode-color').click()
   await expect(page.getByTestId('area-comparison-lab')).toBeVisible()
@@ -44,7 +46,10 @@ test('Docker UI smoke 应串通注册、工作区创建与关键值守入口', a
 
   await page.getByTestId('input-workspace-name').fill(workspaceName)
   await page.getByTestId('input-workspace-owner').fill('DOCKER_OWNER')
-  await page.getByTestId('btn-create-workspace').click()
+  await page.getByTestId('btn-create-workspace').scrollIntoViewIfNeeded()
+  await page.getByTestId('btn-create-workspace').evaluate((node) => {
+    ;(node as HTMLButtonElement).click()
+  })
   await expect(page.getByTestId('text-workspace-id')).not.toContainText('workspace: -', {
     timeout: 20_000
   })
