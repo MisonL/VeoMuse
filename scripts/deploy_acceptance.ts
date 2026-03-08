@@ -47,7 +47,7 @@ Checks:
   - /ws/generation handshake
   - security headers
   - /assets/* immutable cache
-  - register -> workspace -> upload flow
+  - optional /api/admin/metrics read-only probe (when --admin-token-env is configured)
 `.trim()
 
 const parsePositiveInt = (value: string, flagName: string) => {
@@ -144,13 +144,16 @@ export const buildAcceptanceOutputPaths = (outputDir: string) => ({
 
 export const buildDeployAcceptanceArtifact = (
   summary: DeployAcceptanceSummary,
-  options: Pick<CliOptions, 'adminTokenEnv' | 'outputDir' | 'timeoutSec'>
+  options: Pick<CliOptions, 'adminTokenEnv' | 'outputDir' | 'timeoutSec'> & {
+    adminTokenPresent: boolean
+  }
 ) => {
   return {
     ...summary,
     outputDir: options.outputDir,
     timeoutSec: options.timeoutSec,
-    adminTokenEnv: options.adminTokenEnv
+    adminTokenEnv: options.adminTokenEnv,
+    adminTokenPresent: options.adminTokenPresent
   }
 }
 
@@ -158,6 +161,7 @@ export const runDeployAcceptance = async (options: CliOptions) => {
   const baseUrl = validateBaseUrl(options.baseUrl)
   const timeoutMs = options.timeoutSec * 1_000
   const outputDir = options.outputDir.trim() || resolveDefaultOutputDir()
+  const adminToken = String(process.env[options.adminTokenEnv] || '').trim()
   await mkdir(outputDir, { recursive: true })
 
   await waitForEndpoint(
@@ -167,12 +171,15 @@ export const runDeployAcceptance = async (options: CliOptions) => {
   )
   const summary = await runDeploymentAcceptanceProbes({
     baseUrl,
-    loggerPrefix: '[deploy-acceptance]'
+    loggerPrefix: '[deploy-acceptance]',
+    adminToken,
+    adminTokenEnv: options.adminTokenEnv
   })
   const artifact = buildDeployAcceptanceArtifact(summary, {
     outputDir,
     timeoutSec: options.timeoutSec,
-    adminTokenEnv: options.adminTokenEnv
+    adminTokenEnv: options.adminTokenEnv,
+    adminTokenPresent: adminToken.length > 0
   })
 
   await Bun.write(buildAcceptanceOutputPaths(outputDir).json, JSON.stringify(artifact, null, 2))

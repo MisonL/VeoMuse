@@ -1,38 +1,9 @@
 import net from 'node:net'
-
-export interface RegisterResponse {
-  session?: {
-    accessToken?: string
-  }
-  organizations?: Array<{
-    id?: string
-  }>
-}
-
-export interface CreateWorkspaceResponse {
-  workspace?: {
-    id?: string
-  }
-  defaultProject?: {
-    id?: string
-  }
-}
-
-export interface UploadTokenResponse {
-  token?: {
-    uploadUrl?: string
-  }
-}
-
-export interface UploadPutResponse {
-  uploaded?: {
-    bytes?: number
-  }
-}
+import tls from 'node:tls'
 
 export interface DeployAcceptanceStep {
   name: string
-  status: 'passed' | 'failed'
+  status: 'passed' | 'failed' | 'skipped'
   detail: string
 }
 
@@ -49,6 +20,8 @@ export interface DeployAcceptanceSummary {
 export interface RunDeploymentAcceptanceOptions {
   baseUrl: string
   loggerPrefix?: string
+  adminToken?: string
+  adminTokenEnv?: string
 }
 
 const DEFAULT_LOGGER_PREFIX = '[deploy-acceptance]'
@@ -210,6 +183,11 @@ export const buildWebSocketUpgradeRequest = (url: URL) => {
     '',
     ''
   ].join('\r\n')
+}
+
+export const resolveWebSocketProbeScheme = (baseUrl: string) => {
+  const protocol = new URL(baseUrl).protocol
+  return protocol === 'https:' ? 'wss' : 'ws'
 }
 
 export const resolveAbsoluteUrl = (baseUrl: string, pathOrUrl: string) =>
@@ -420,133 +398,16 @@ const probeFrontendTelemetryEntries = async (
   })
 }
 
-const createSmokePassword = (seed: string) => {
-  const compact = seed
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .slice(-12)
-    .padEnd(12, 'x')
-  return `Vm${compact}#Q9a`
-}
-
-const createSmokeIdentity = () => {
-  const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-  return {
-    email: `deploy_acceptance_${suffix}@veomuse.test`,
-    password: createSmokePassword(suffix),
-    organizationName: `DeployAcceptanceOrg_${suffix}`,
-    workspaceName: `deploy-acceptance-${suffix}`
-  }
-}
-
-const createAuthenticatedWorkspace = async (baseUrl: string) => {
-  const identity = createSmokeIdentity()
-  const registerPayload = await jsonRequest<RegisterResponse>(
-    resolveAbsoluteUrl(baseUrl, '/api/auth/register'),
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email: identity.email,
-        password: identity.password,
-        organizationName: identity.organizationName
-      })
+const probeAdminMetrics = async (baseUrl: string, adminToken: string, loggerPrefix: string) => {
+  const url = resolveAbsoluteUrl(baseUrl, '/api/admin/metrics')
+  const response = await fetchWithTimeout(url, {
+    headers: {
+      'x-admin-token': adminToken
     }
-  )
-
-  const accessToken = String(registerPayload.session?.accessToken || '').trim()
-  const organizationId = String(registerPayload.organizations?.[0]?.id || '').trim()
-  if (!accessToken || !organizationId) {
-    throw new Error('注册成功后未返回 accessToken 或 organizationId')
-  }
-
-  const workspacePayload = await jsonRequest<CreateWorkspaceResponse>(
-    resolveAbsoluteUrl(baseUrl, '/api/workspaces'),
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-        'x-organization-id': organizationId
-      },
-      body: JSON.stringify({
-        name: identity.workspaceName,
-        ownerName: 'DeployAcceptanceOwner',
-        organizationId
-      })
-    }
-  )
-
-  const workspaceId = String(workspacePayload.workspace?.id || '').trim()
-  const projectId = String(workspacePayload.defaultProject?.id || '').trim()
-  if (!workspaceId || !projectId) {
-    throw new Error('创建工作区成功后未返回 workspaceId 或 defaultProject.id')
-  }
-
-  return {
-    accessToken,
-    organizationId,
-    workspaceId,
-    projectId
-  }
-}
-
-const probeUploadFlow = async (baseUrl: string, loggerPrefix: string) => {
-  const workspaceSession = await createAuthenticatedWorkspace(baseUrl)
-  const uploadTokenPayload = await jsonRequest<UploadTokenResponse>(
-    resolveAbsoluteUrl(baseUrl, '/api/storage/upload-token'),
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${workspaceSession.accessToken}`,
-        'x-organization-id': workspaceSession.organizationId
-      },
-      body: JSON.stringify({
-        workspaceId: workspaceSession.workspaceId,
-        projectId: workspaceSession.projectId,
-        fileName: 'deploy-acceptance.bin',
-        contentType: 'application/octet-stream'
-      })
-    }
-  )
-
-  const uploadUrl = String(uploadTokenPayload.token?.uploadUrl || '').trim()
-  if (!uploadUrl) {
-    throw new Error('上传令牌响应缺少 token.uploadUrl')
-  }
-
-  const uploadBytes = new Uint8Array([0x56, 0x4d, 0x53, 0x4d, 0x4f, 0x4b, 0x45])
-  const uploadResponse = await jsonRequest<UploadPutResponse>(
-    resolveAbsoluteUrl(baseUrl, uploadUrl),
-    {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${workspaceSession.accessToken}`,
-        'x-organization-id': workspaceSession.organizationId,
-        'Content-Type': 'application/octet-stream'
-      },
-      body: uploadBytes
-    }
-  )
-
-  const uploadedBytes = Number(uploadResponse.uploaded?.bytes || 0)
-  if (uploadedBytes !== uploadBytes.byteLength) {
-    throw new Error(
-      `上传链路返回的 uploaded.bytes 异常: expected=${uploadBytes.byteLength}, actual=${uploadedBytes}`
-    )
-  }
-
-  createLogger(loggerPrefix)(
-    `上传链路通过: workspace=${workspaceSession.workspaceId}, project=${workspaceSession.projectId}`
-  )
-
-  return {
-    workspaceId: workspaceSession.workspaceId,
-    projectId: workspaceSession.projectId,
-    uploadedBytes
-  }
+  })
+  expectOkResponse(response, url)
+  createLogger(loggerPrefix)(`管理员只读探针通过: ${url} -> ${response.status}`)
+  return `HTTP ${response.status}`
 }
 
 const probeWebSocketHandshake = async (
@@ -554,11 +415,10 @@ const probeWebSocketHandshake = async (
   loggerPrefix: string,
   wsPath = DEFAULT_WS_PATH
 ) => {
+  const secure = resolveWebSocketProbeScheme(baseUrl) === 'wss'
   const targetUrl = new URL(resolveAbsoluteUrl(baseUrl, wsPath))
-  const port = Number.parseInt(
-    targetUrl.port || (targetUrl.protocol === 'https:' ? '443' : '80'),
-    10
-  )
+  targetUrl.protocol = secure ? 'wss:' : 'ws:'
+  const port = Number.parseInt(targetUrl.port || (secure ? '443' : '80'), 10)
   if (!Number.isFinite(port) || port <= 0) {
     throw new Error(`无法解析 WebSocket 探测端口: ${targetUrl.toString()}`)
   }
@@ -571,10 +431,16 @@ const probeWebSocketHandshake = async (
       callback()
     }
 
-    const socket = net.createConnection({
-      host: targetUrl.hostname,
-      port
-    })
+    const socket = secure
+      ? tls.connect({
+          host: targetUrl.hostname,
+          port,
+          servername: targetUrl.hostname
+        })
+      : net.createConnection({
+          host: targetUrl.hostname,
+          port
+        })
     const timer = setTimeout(() => {
       finish(() => {
         socket.destroy()
@@ -641,11 +507,21 @@ const recordFailedStep = (summary: DeployAcceptanceSummary, name: string, detail
   })
 }
 
+const recordSkippedStep = (summary: DeployAcceptanceSummary, name: string, detail: string) => {
+  summary.steps.push({
+    name,
+    status: 'skipped',
+    detail
+  })
+}
+
 export const runDeploymentAcceptanceProbes = async (
   options: RunDeploymentAcceptanceOptions
 ): Promise<DeployAcceptanceSummary> => {
   const loggerPrefix = options.loggerPrefix || DEFAULT_LOGGER_PREFIX
   const baseUrl = normalizeBaseUrl(options.baseUrl)
+  const adminToken = String(options.adminToken || '').trim()
+  const adminTokenEnv = String(options.adminTokenEnv || 'ADMIN_TOKEN').trim() || 'ADMIN_TOKEN'
   const summary: DeployAcceptanceSummary = {
     schemaVersion: '1.0',
     startedAt: new Date().toISOString(),
@@ -694,12 +570,16 @@ export const runDeploymentAcceptanceProbes = async (
     const wsUrl = await probeWebSocketHandshake(baseUrl, loggerPrefix)
     recordPassedStep(summary, '/ws/generation WebSocket 握手', wsUrl)
 
-    const uploadResult = await probeUploadFlow(baseUrl, loggerPrefix)
-    recordPassedStep(
-      summary,
-      '注册 -> 工作区 -> 上传链路',
-      `workspace=${uploadResult.workspaceId}, project=${uploadResult.projectId}, bytes=${uploadResult.uploadedBytes}`
-    )
+    if (!adminToken) {
+      recordSkippedStep(
+        summary,
+        '管理员只读探针',
+        `未提供 ${adminTokenEnv}，跳过 /api/admin/metrics 只读校验`
+      )
+    } else {
+      const adminProbeDetail = await probeAdminMetrics(baseUrl, adminToken, loggerPrefix)
+      recordPassedStep(summary, '管理员只读探针', adminProbeDetail)
+    }
   } catch (error: unknown) {
     summary.status = 'failed'
     summary.error = toErrorMessage(error)
@@ -730,7 +610,9 @@ export const buildDeployAcceptanceMarkdown = (summary: DeployAcceptanceSummary) 
 
   lines.push('## 步骤结果', '')
   for (const step of summary.steps) {
-    lines.push(`- [${step.status === 'passed' ? 'x' : ' '}] ${step.name}: ${step.detail}`)
+    lines.push(
+      `- [${step.status === 'passed' ? 'x' : step.status === 'skipped' ? '-' : ' '}] ${step.name}: ${step.detail}`
+    )
   }
 
   return lines.join('\n')

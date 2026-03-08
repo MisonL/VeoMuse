@@ -16,6 +16,7 @@ import {
   TELEMETRY_ENTRY_MARKERS,
   validateBaseUrl,
   resolveJavaScriptAssetUrl,
+  resolveWebSocketProbeScheme,
   resolveMissingLabEntryMarkers,
   resolveMissingTelemetryEntryMarkers,
   resolveMissingSecurityHeaders
@@ -229,6 +230,8 @@ describe('docker smoke 脚本辅助逻辑', () => {
     expect(request).toContain('GET /ws/generation?source=docker-smoke HTTP/1.1')
     expect(request).toContain('Upgrade: websocket')
     expect(request).toContain('Sec-WebSocket-Version: 13')
+    expect(resolveWebSocketProbeScheme('http://127.0.0.1:18081')).toBe('ws')
+    expect(resolveWebSocketProbeScheme('https://veomuse.example.com')).toBe('wss')
   })
 
   it('应从原始 HTTP 响应中解析状态码', () => {

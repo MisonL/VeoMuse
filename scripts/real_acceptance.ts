@@ -1,11 +1,19 @@
 import path from 'node:path'
-import { mkdir, readFile } from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import { runRealE2EPrecheck } from './real_e2e_precheck'
-import { buildReleaseGateFailureReport, runReleaseGate } from './release_gate'
-import { QUALITY_SUMMARY_RELATIVE_PATH, type QualitySummary } from './release-gate/contracts'
+import {
+  DEFAULT_DEPLOY_ACCEPTANCE_BASE_URL,
+  resolveAbsoluteUrl,
+  toErrorMessage,
+  validateBaseUrl,
+  waitForEndpoint
+} from './deploy_acceptance_core'
 
 interface CliOptions {
   outputDir: string
+  baseUrl: string
+  apiBaseUrl: string
+  timeoutSec: number
 }
 
 interface ParseResult {
@@ -13,28 +21,40 @@ interface ParseResult {
   options: CliOptions
 }
 
+interface RealAcceptanceStep {
+  status: 'passed' | 'failed' | 'not-run'
+  message: string
+}
+
 interface RealAcceptanceSummary {
   schemaVersion: '1.0'
   startedAt: string
   finishedAt?: string
   outputDir: string
+  baseUrl: string
+  apiBaseUrl: string
   status: 'passed' | 'failed'
-  precheck: {
-    status: 'passed' | 'failed'
-    message: string
+  precheck: RealAcceptanceStep & {
     missingEnv: string[]
   }
-  releaseGate: {
-    status: 'passed' | 'failed'
-    message: string
+  readiness: RealAcceptanceStep
+  realE2E: RealAcceptanceStep & {
+    command: string
+    stdoutPath?: string
+    stderrPath?: string
   }
-  qualitySummaryPath?: string
-  realE2EStatus?: string
-  realE2EFailureType?: string | null
   failedSteps: string[]
 }
 
+interface RealAcceptanceCommand {
+  cmd: string[]
+  env: NodeJS.ProcessEnv
+}
+
 export const DEFAULT_OUTPUT_ROOT = path.join('artifacts', 'real-acceptance')
+export const DEFAULT_TIMEOUT_SEC = 240
+export const DEFAULT_REAL_ACCEPTANCE_BASE_URL = DEFAULT_DEPLOY_ACCEPTANCE_BASE_URL
+export const DEFAULT_REAL_ACCEPTANCE_PLAYWRIGHT_CONFIG = 'playwright.acceptance.config.ts'
 
 export const HELP_TEXT = `
 Real Acceptance
@@ -43,13 +63,16 @@ Usage:
   bun run scripts/real_acceptance.ts [options]
 
 Flags:
-  --output-dir <path>   output directory (default: ${DEFAULT_OUTPUT_ROOT}/<timestamp>)
-  -h, --help            show help
+  --base-url <url>       deployed frontend base URL (default: ${DEFAULT_REAL_ACCEPTANCE_BASE_URL})
+  --api-base-url <url>   deployed gateway/API base URL (default: same as --base-url)
+  --output-dir <path>    output directory (default: ${DEFAULT_OUTPUT_ROOT}/<timestamp>)
+  --timeout <sec>        readiness wait timeout seconds (default: ${DEFAULT_TIMEOUT_SEC})
+  -h, --help             show help
 
 Flow:
-  1. bun run release:real:precheck
-  2. bun run release:gate:real
-  3. verify artifacts/quality-summary.json realE2E.status=passed
+  1. validate release:real:precheck env contract
+  2. wait for deployed frontend / and gateway /api/health
+  3. run external Playwright @real suite against deployed instance
 `.trim()
 
 const createTimestampLabel = (now = new Date()) => now.toISOString().replace(/[:.]/g, '-')
@@ -58,6 +81,14 @@ export const resolveDefaultOutputDir = (now = new Date()) =>
   path.resolve(process.cwd(), DEFAULT_OUTPUT_ROOT, createTimestampLabel(now))
 
 export const createDefaultOutputDir = resolveDefaultOutputDir
+
+const parsePositiveInt = (value: string, flagName: string) => {
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`${flagName} 需要正整数，收到: ${value}`)
+  }
+  return parsed
+}
 
 const readFlagValue = (
   args: string[],
@@ -81,7 +112,10 @@ const readFlagValue = (
 
 export const parseArgs = (args: string[], now = new Date()): ParseResult => {
   const options: CliOptions = {
-    outputDir: resolveDefaultOutputDir(now)
+    outputDir: resolveDefaultOutputDir(now),
+    baseUrl: DEFAULT_REAL_ACCEPTANCE_BASE_URL,
+    apiBaseUrl: DEFAULT_REAL_ACCEPTANCE_BASE_URL,
+    timeoutSec: DEFAULT_TIMEOUT_SEC
   }
   let showHelp = false
 
@@ -97,6 +131,28 @@ export const parseArgs = (args: string[], now = new Date()): ParseResult => {
       index = parsed.nextIndex
       continue
     }
+    if (arg === '--base-url' || arg.startsWith('--base-url=')) {
+      const parsed = readFlagValue(args, index, '--base-url')
+      const validated = validateBaseUrl(parsed.value)
+      options.baseUrl = validated
+      if (options.apiBaseUrl === DEFAULT_REAL_ACCEPTANCE_BASE_URL) {
+        options.apiBaseUrl = validated
+      }
+      index = parsed.nextIndex
+      continue
+    }
+    if (arg === '--api-base-url' || arg.startsWith('--api-base-url=')) {
+      const parsed = readFlagValue(args, index, '--api-base-url')
+      options.apiBaseUrl = validateBaseUrl(parsed.value)
+      index = parsed.nextIndex
+      continue
+    }
+    if (arg === '--timeout' || arg.startsWith('--timeout=')) {
+      const parsed = readFlagValue(args, index, '--timeout')
+      options.timeoutSec = parsePositiveInt(parsed.value, '--timeout')
+      index = parsed.nextIndex
+      continue
+    }
 
     throw new Error(`未知参数: ${arg}`)
   }
@@ -107,26 +163,36 @@ export const parseArgs = (args: string[], now = new Date()): ParseResult => {
 const buildOutputPaths = (outputDir: string) => ({
   json: path.join(outputDir, 'summary.json'),
   markdown: path.join(outputDir, 'summary.md'),
-  qualitySummary: path.join(outputDir, 'quality-summary.json')
+  stdout: path.join(outputDir, 'playwright.stdout.log'),
+  stderr: path.join(outputDir, 'playwright.stderr.log')
 })
 
-const readQualitySummary = async (): Promise<QualitySummary | null> => {
-  try {
-    const text = await readFile(QUALITY_SUMMARY_RELATIVE_PATH, 'utf8')
-    return JSON.parse(text) as QualitySummary
-  } catch {
-    return null
-  }
-}
-
-export const validateRealAcceptanceSummary = (qualitySummary: Pick<QualitySummary, 'realE2E'>) => {
-  const realE2EStatus = String(qualitySummary.realE2E?.status || '').trim()
-  if (realE2EStatus !== 'passed') {
-    throw new Error(`realE2E.status 校验失败: expected=passed actual=${realE2EStatus || '(empty)'}`)
-  }
+export const buildRealAcceptanceCommand = (options: {
+  baseUrl: string
+  apiBaseUrl: string
+  outputDir: string
+}): RealAcceptanceCommand => {
+  const playwrightOutputDir = path.join(options.outputDir, 'playwright-results')
+  const playwrightHtmlOutputDir = path.join(options.outputDir, 'playwright-report')
   return {
-    realE2EStatus,
-    realE2EFailureType: qualitySummary.realE2E?.failureType || null
+    cmd: [
+      'bunx',
+      'playwright',
+      'test',
+      '-c',
+      DEFAULT_REAL_ACCEPTANCE_PLAYWRIGHT_CONFIG,
+      '--project=external-regression-chromium',
+      '--grep',
+      '@real',
+      '--workers=1'
+    ],
+    env: {
+      ...process.env,
+      PLAYWRIGHT_BASE_URL: options.baseUrl,
+      PLAYWRIGHT_API_BASE_URL: options.apiBaseUrl,
+      PLAYWRIGHT_OUTPUT_DIR: playwrightOutputDir,
+      PLAYWRIGHT_HTML_OUTPUT_DIR: playwrightHtmlOutputDir
+    }
   }
 }
 
@@ -135,12 +201,13 @@ export const buildRealAcceptanceMarkdown = (summary: RealAcceptanceSummary) => {
     '# VeoMuse 实网回归验收摘要',
     '',
     `- 状态：\`${summary.status}\``,
+    `- 前端地址：\`${summary.baseUrl}\``,
+    `- 网关地址：\`${summary.apiBaseUrl}\``,
     `- 开始时间：\`${summary.startedAt}\``,
     `- 结束时间：\`${summary.finishedAt || ''}\``,
     `- 预检：\`${summary.precheck.status}\``,
-    `- 发布门禁：\`${summary.releaseGate.status}\``,
-    `- realE2E.status：\`${summary.realE2EStatus || 'missing'}\``,
-    `- realE2E.failureType：\`${summary.realE2EFailureType || 'null'}\``,
+    `- 就绪探测：\`${summary.readiness.status}\``,
+    `- 外部 @real 回归：\`${summary.realE2E.status}\``,
     ''
   ]
 
@@ -154,37 +221,86 @@ export const buildRealAcceptanceMarkdown = (summary: RealAcceptanceSummary) => {
 
   lines.push('## 结果摘要', '')
   lines.push(`- precheck: ${summary.precheck.message}`)
-  lines.push(`- release gate: ${summary.releaseGate.message}`)
+  lines.push(`- readiness: ${summary.readiness.message}`)
+  lines.push(`- real e2e: ${summary.realE2E.message}`)
+  lines.push(`- command: ${summary.realE2E.command}`)
+
+  if (summary.realE2E.stdoutPath) {
+    lines.push(`- stdout: ${summary.realE2E.stdoutPath}`)
+  }
+  if (summary.realE2E.stderrPath) {
+    lines.push(`- stderr: ${summary.realE2E.stderrPath}`)
+  }
 
   return lines.join('\n')
 }
 
+const readStreamText = async (stream?: ReadableStream<Uint8Array> | null) => {
+  if (!stream) return ''
+  return await new Response(stream).text()
+}
+
+const runExternalRealAcceptance = async (command: RealAcceptanceCommand) => {
+  const childProcess = Bun.spawn(command.cmd, {
+    cwd: process.cwd(),
+    env: command.env,
+    stdout: 'pipe',
+    stderr: 'pipe'
+  })
+
+  const [stdout, stderr, exitCode] = await Promise.all([
+    readStreamText(childProcess.stdout),
+    readStreamText(childProcess.stderr),
+    childProcess.exited
+  ])
+
+  return {
+    exitCode,
+    stdout,
+    stderr
+  }
+}
+
 export const runRealAcceptance = async (options: CliOptions) => {
   const outputDir = options.outputDir.trim() || resolveDefaultOutputDir()
+  const baseUrl = validateBaseUrl(options.baseUrl)
+  const apiBaseUrl = validateBaseUrl(options.apiBaseUrl || options.baseUrl)
+  const timeoutMs = options.timeoutSec * 1_000
   await mkdir(outputDir, { recursive: true })
-  const env = {
-    ...process.env,
-    E2E_REAL_CHANNELS: 'true'
-  }
+
   const summary: RealAcceptanceSummary = {
     schemaVersion: '1.0',
     startedAt: new Date().toISOString(),
     outputDir,
+    baseUrl,
+    apiBaseUrl,
     status: 'failed',
     precheck: {
       status: 'failed',
       message: 'not-run',
       missingEnv: []
     },
-    releaseGate: {
-      status: 'failed',
+    readiness: {
+      status: 'not-run',
       message: 'not-run'
+    },
+    realE2E: {
+      status: 'not-run',
+      message: 'not-run',
+      command: 'not-run'
     },
     failedSteps: []
   }
 
+  const command = buildRealAcceptanceCommand({
+    baseUrl,
+    apiBaseUrl,
+    outputDir
+  })
+  summary.realE2E.command = command.cmd.join(' ')
+
   try {
-    const precheck = runRealE2EPrecheck(env)
+    const precheck = runRealE2EPrecheck(command.env)
     summary.precheck = {
       status: precheck.ok ? 'passed' : 'failed',
       message: precheck.message,
@@ -195,51 +311,55 @@ export const runRealAcceptance = async (options: CliOptions) => {
       throw new Error(precheck.message)
     }
 
-    try {
-      await runReleaseGate(['--with-real-e2e'], env)
-      summary.releaseGate = {
-        status: 'passed',
-        message: 'release:gate:real passed'
-      }
-    } catch (error: unknown) {
-      summary.releaseGate = {
+    await waitForEndpoint(resolveAbsoluteUrl(baseUrl, '/'), timeoutMs, '[real-acceptance]')
+    await waitForEndpoint(
+      resolveAbsoluteUrl(apiBaseUrl, '/api/health'),
+      timeoutMs,
+      '[real-acceptance]'
+    )
+    summary.readiness = {
+      status: 'passed',
+      message: `已确认 ${baseUrl} 与 ${resolveAbsoluteUrl(apiBaseUrl, '/api/health')} 可访问`
+    }
+
+    const result = await runExternalRealAcceptance(command)
+    await Bun.write(buildOutputPaths(outputDir).stdout, result.stdout)
+    await Bun.write(buildOutputPaths(outputDir).stderr, result.stderr)
+    summary.realE2E.stdoutPath = buildOutputPaths(outputDir).stdout
+    summary.realE2E.stderrPath = buildOutputPaths(outputDir).stderr
+
+    if (result.exitCode !== 0) {
+      summary.realE2E = {
+        ...summary.realE2E,
         status: 'failed',
-        message: error instanceof Error && error.message ? error.message : String(error)
+        message: `外部 @real 回归失败，exitCode=${result.exitCode}`
       }
+      summary.failedSteps.push('external-playwright-real')
+      throw new Error(summary.realE2E.message)
     }
 
-    const qualitySummary = await readQualitySummary()
-    if (qualitySummary) {
-      summary.qualitySummaryPath = QUALITY_SUMMARY_RELATIVE_PATH
-      const validated = validateRealAcceptanceSummary(qualitySummary)
-      summary.realE2EStatus = validated.realE2EStatus
-      summary.realE2EFailureType = validated.realE2EFailureType
-      summary.failedSteps = qualitySummary.steps
-        .filter((step) => step.status === 'failed')
-        .map((step) => step.name)
-      await Bun.write(
-        buildOutputPaths(outputDir).qualitySummary,
-        JSON.stringify(qualitySummary, null, 2)
-      )
-
-      if (summary.realE2EStatus !== 'passed') {
-        const failureReport = buildReleaseGateFailureReport(qualitySummary)
-        summary.releaseGate.message =
-          summary.releaseGate.status === 'failed' ? summary.releaseGate.message : failureReport
-        throw new Error(
-          `realE2E.status=${summary.realE2EStatus}, failureType=${summary.realE2EFailureType || 'null'}`
-        )
-      }
-    } else {
-      summary.failedSteps.push('quality-summary.json')
-      throw new Error('缺少 artifacts/quality-summary.json')
+    summary.realE2E = {
+      ...summary.realE2E,
+      status: 'passed',
+      message: '外部 @real 回归已通过'
     }
-
-    if (summary.releaseGate.status !== 'passed') {
-      throw new Error(summary.releaseGate.message)
-    }
-
     summary.status = 'passed'
+  } catch (error: unknown) {
+    if (summary.readiness.status === 'not-run' && summary.precheck.status === 'passed') {
+      summary.readiness = {
+        status: 'failed',
+        message: toErrorMessage(error)
+      }
+      if (!summary.failedSteps.includes('deployed-readiness')) {
+        summary.failedSteps.push('deployed-readiness')
+      }
+    } else if (summary.realE2E.status === 'not-run') {
+      summary.realE2E = {
+        ...summary.realE2E,
+        status: 'failed',
+        message: toErrorMessage(error)
+      }
+    }
   } finally {
     summary.finishedAt = new Date().toISOString()
     await Bun.write(buildOutputPaths(outputDir).json, JSON.stringify(summary, null, 2))
@@ -260,7 +380,11 @@ const main = async () => {
 
   const result = await runRealAcceptance(parsed.options)
   if (result.status !== 'passed') {
-    throw new Error(result.releaseGate.message || result.precheck.message || '实网回归验收失败')
+    throw new Error(
+      result.realE2E.message !== 'not-run'
+        ? result.realE2E.message
+        : result.readiness.message || result.precheck.message || '实网回归验收失败'
+    )
   }
 }
 

@@ -122,7 +122,7 @@ bun run docker:smoke -- --keep-up
 ```
 
 - 默认探测基础地址：`http://127.0.0.1:18081`。
-- 当前脚本覆盖：`redis/backend/frontend` 健康态、`GET /`、`/api/health`、`/api/capabilities`、`/ws/generation`、注册后上传链路、安全响应头、`/assets` 强缓存。
+- 当前脚本覆盖：`redis/backend/frontend` 健康态、`GET /`、`/api/health`、`/api/capabilities`、`/ws/generation`、安全响应头、`/assets` 强缓存、可选管理员只读探针。
 - 失败时会自动输出 `docker compose ps` 与最近 `200` 行日志。
 - 默认执行 `docker compose down --volumes --remove-orphans` 回收环境，可用 `--keep-up` 跳过。
 
@@ -211,11 +211,11 @@ bun run release:gate
 # 正式部署环境验收（在目标主机本地执行，非侵入探测）
 bun run acceptance:deploy -- --base-url http://127.0.0.1:18081
 
-# 真实凭据预检（当前默认检查 `E2E_REAL_CHANNELS=true` 与必需 Provider 凭据）
+# 真实凭据预检（需显式设置 `E2E_REAL_CHANNELS=true` 与必需 Provider 凭据）
 bun run release:real:precheck
 
-# 实网回归留痕入口（包装 precheck + release:gate:real）
-bun run acceptance:real
+# 实网回归留痕入口（面向已部署实例执行外部 @real Playwright）
+E2E_REAL_CHANNELS=true bun run acceptance:real -- --base-url https://veomuse.example.com --api-base-url https://api.veomuse.example.com
 
 # 含真实渠道回归（需要真实 AI 凭据，real 用例若全部 skipped 将直接失败）
 bun run release:gate:real
@@ -224,12 +224,12 @@ bun run release:gate:real
 ### 外部后置验收入口
 
 - `acceptance:deploy`
-  - 用途：在目标正式部署环境主机本地做协议级与上传级非侵入验收。
+  - 用途：在目标正式部署环境主机本地做协议级只读验收；若存在管理员令牌，会额外校验 `/api/admin/metrics`。
   - 输出：`artifacts/deploy-acceptance/<timestamp>/summary.json`、`summary.md`
   - 默认不执行 `docker compose up/down`、不重启服务、不跑浏览器 UI smoke。
 - `acceptance:real`
-  - 用途：统一执行真实凭据预检与 real 门禁，并生成留痕。
-  - 输出：`artifacts/real-acceptance/<timestamp>/summary.json`、`summary.md`、`quality-summary.json`
+  - 用途：统一执行真实凭据预检、部署实例就绪探测与外部 `@real` Playwright 回归，并生成留痕。
+  - 输出：`artifacts/real-acceptance/<timestamp>/summary.json`、`summary.md`、`playwright.stdout.log`、`playwright.stderr.log`
 
 工程质量补充命令：
 

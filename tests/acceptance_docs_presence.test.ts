@@ -10,7 +10,7 @@ describe('外部验收文档入口守卫', () => {
     const content = readDoc('docs/DEPLOYMENT.md')
 
     expect(content).toContain('bun run acceptance:deploy')
-    expect(content).toContain('bun run acceptance:real')
+    expect(content).toContain('E2E_REAL_CHANNELS=true bun run acceptance:real')
     expect(content).toContain('artifacts/deploy-acceptance/<timestamp>/summary.json')
     expect(content).toContain('artifacts/real-acceptance/<timestamp>/summary.json')
   })
@@ -20,8 +20,8 @@ describe('外部验收文档入口守卫', () => {
     const remaining = readDoc('docs/REMAINING_TASKS.md')
 
     expect(checklist).toContain('bun run acceptance:deploy')
-    expect(checklist).toContain('bun run acceptance:real')
+    expect(checklist).toContain('E2E_REAL_CHANNELS=true bun run acceptance:real')
     expect(remaining).toContain('bun run acceptance:deploy -- --base-url <target_url>')
-    expect(remaining).toContain('bun run acceptance:real')
+    expect(remaining).toContain('E2E_REAL_CHANNELS=true bun run acceptance:real')
   })
 })

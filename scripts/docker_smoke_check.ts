@@ -8,6 +8,7 @@ export {
   normalizeBaseUrl,
   parseHttpStatusCode,
   REQUIRED_SECURITY_HEADERS,
+  resolveWebSocketProbeScheme,
   resolveJavaScriptAssetUrl,
   resolveMissingLabEntryMarkers,
   resolveMissingSecurityHeaders,
@@ -75,7 +76,7 @@ Coverage:
   - GET /api/health
   - GET /api/capabilities
   - /ws/generation websocket handshake
-  - register -> workspace -> upload token -> PUT upload flow
+  - optional /api/admin/metrics read-only probe (when ADMIN_TOKEN is configured)
 `.trim()
 
 const parsePositiveInt = (value: string, flagName: string) => {
