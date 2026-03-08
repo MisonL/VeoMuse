@@ -3,6 +3,7 @@
 ## 当前基线
 
 - 本地工程基线：`bun run lint`、`bun run build`、`bun run test`、`bun run release:gate` 已形成稳定回归路径。
+- CI 基线：`CI Quality Gate`、`Docker Smoke (main push only)`、`Docker UI Smoke (main push only)` 最新线上执行均已成功。
 - 当前阶段：研发结项已完成，进入外部后置验收阶段。
 - 已确认不纳入当前排期：`24h` 长稳压测。
 - 外部依赖限制：未配置真实 Provider 凭据时，`release:gate:real` 不能视为完成。

@@ -7,6 +7,10 @@
 
 - 研发范围内的代码实现、结构化收口、质量门禁与本地 Docker 正式复核均已完成。
 - 当前仓库可判定为“研发结项成立”。
+- 最近一次 CI 收口补充已完成：
+  - `CI Quality Gate` 已恢复为可手动触发并成功通过
+  - Playwright 前端 webServer 已与门禁后端端口保持同源注入，不再出现 `33118/33117` 错位
+  - 最新线上成功 run：`22813348373`
 - 若要声明“可正式上线”，仍需补齐两个外部后置验收：
   - 目标正式部署环境的 Docker 留痕复核
   - 真实凭据就绪后的 `release:gate:real`
@@ -48,17 +52,24 @@
 - `a148208` `refactor(backend): split video generation service`
 - `5697284` `refactor(backend): split workspace service`
 - `29418da` `docs(deploy): record local docker acceptance baseline`
+- `3790657` `fix(ci): repair quality gate fallback summary step`
+- `9bd70d3` `test(ci): stabilize auth session ui readiness wait`
+- `5dbf9ff` `fix(ci): align playwright frontend api base with gate backend`
 
 ## 已完成验证
 
 - `bun run test`
-  - 最近一次整仓结果：`441 pass / 0 fail`
+  - 最近一次整仓结果：`484 pass / 0 fail`
 - `bun run lint`
 - `bun run build`
 - `bun run release:gate`
 - `bun run docker:smoke -- --wait-timeout 240 --keep-up`
 - `bun run docker:ui-smoke`
 - `bun run docker:drill:persistence -- --wait-timeout 240 --no-build --keep-up`
+- GitHub Actions：
+  - `CI Quality Gate` 成功
+  - `Docker Smoke (main push only)` 成功
+  - `Docker UI Smoke (main push only)` 成功
 - 本地人工补验：
   - `docker compose ps`
   - `GET /`

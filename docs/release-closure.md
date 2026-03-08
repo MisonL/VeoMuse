@@ -8,6 +8,10 @@
 - 发布门禁失败说明补强：
   - `scripts/release_gate.ts` 在失败时输出增强摘要。
   - 输出内容聚焦失败步骤、失败域、重试次数、闭环状态、修复建议与 `artifacts/quality-summary.json` 工件路径。
+- CI 统一门禁对齐补强：
+  - `playwright.config.ts` 启动前端 dev server 时，显式注入 `VITE_API_BASE_URL=${BACKEND_URL}`。
+  - `tests/ci_quality_gate_unified_entry.test.ts` 已补充守卫，防止前端继续回退到默认 `33117`。
+  - 最新线上成功 run：`22813348373`。
 - Docker 交付闭环补强：
   - `scripts/docker_smoke_check.ts` 保留首页、API、WebSocket、上传、安全头、静态缓存探测，并补齐实验室/系统监控入口探针。
   - `playwright.docker.config.ts` + `docker:ui-smoke` 已补齐真实 Docker 浏览器链路。
@@ -49,6 +53,8 @@
 
 ## 主线程后续注意事项
 
+- 仓库内研发与 CI 收口已经闭环。
+  - 当前剩余事项均属于外部正式环境验收或真实凭据回归，不再属于研发实现阻塞。
 - 正式环境验收仍需单独执行并留痕：
   - 目标环境 Docker 复核
   - 真实凭据就绪后的 `bun run release:gate:real`
