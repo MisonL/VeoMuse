@@ -95,7 +95,11 @@ export const useWorkspaceCollaborationManager = ({
   const heartbeatRef = useRef<number | null>(null)
   const wsMessageParseWarningShownRef = useRef(false)
   const workspaceCreateIdempotencyKeyRef = useRef('')
+  const inviteAcceptInFlightRef = useRef(false)
+  const inviteAcceptIdempotencyKeyRef = useRef('')
   const wsBindingKeyRef = useRef('')
+  const refreshWorkspaceStateSeqRef = useRef(0)
+  const uploadTokenRequestSeqRef = useRef(0)
 
   const currentActorName = memberName.trim() || workspaceOwner.trim() || 'Owner'
   const normalizeError = useCallback((error: unknown, fallbackMessage: string) => {
@@ -212,9 +216,19 @@ export const useWorkspaceCollaborationManager = ({
       `${nextWorkspaceId.trim()}::${nextMemberName.trim() || 'Editor'}::${nextRole}`,
     [collabRole, memberName, workspaceId]
   )
+  const buildUploadTokenContextKey = useCallback(
+    (
+      nextWorkspaceId = workspaceId,
+      nextProjectId = projectId,
+      nextUploadFileName = uploadFileName
+    ) => `${nextWorkspaceId.trim()}::${nextProjectId.trim()}::${nextUploadFileName.trim()}`,
+    [projectId, uploadFileName, workspaceId]
+  )
 
   const refreshWorkspaceState = useCallback(
     async (nextWorkspaceId?: string | null, nextProjectId?: string | null) => {
+      const requestSeq = refreshWorkspaceStateSeqRef.current + 1
+      refreshWorkspaceStateSeqRef.current = requestSeq
       const targetWorkspaceId = nextWorkspaceId === undefined ? workspaceId : nextWorkspaceId || ''
       const targetProjectId = nextProjectId === undefined ? projectId : nextProjectId || ''
       if (!targetWorkspaceId) {
@@ -231,11 +245,13 @@ export const useWorkspaceCollaborationManager = ({
             `/api/workspaces/${targetWorkspaceId}/collab/events?limit=50`
           )
         ])
+        if (requestSeq !== refreshWorkspaceStateSeqRef.current) return
         applyWorkspaceRealtimeState({
           presence: presencePayload.members,
           events: eventsPayload.events
         })
       } catch (error: unknown) {
+        if (requestSeq !== refreshWorkspaceStateSeqRef.current) return
         showRequestError(error, '刷新协作状态失败')
       }
 
@@ -245,11 +261,14 @@ export const useWorkspaceCollaborationManager = ({
             success: boolean
             snapshots: Array<{ id: string; actorName: string; createdAt: string }>
           }>(`/api/projects/${targetProjectId}/snapshots?limit=20`)
+          if (requestSeq !== refreshWorkspaceStateSeqRef.current) return
           applyWorkspaceSnapshots(snapshotsPayload.snapshots)
         } catch {
+          if (requestSeq !== refreshWorkspaceStateSeqRef.current) return
           applyWorkspaceSnapshots([])
         }
       } else {
+        if (requestSeq !== refreshWorkspaceStateSeqRef.current) return
         applyWorkspaceSnapshots([])
       }
 
@@ -257,8 +276,10 @@ export const useWorkspaceCollaborationManager = ({
         const invitesPayload = await requestJson<{ success: boolean; invites: WorkspaceInvite[] }>(
           `/api/workspaces/${targetWorkspaceId}/invites`
         )
+        if (requestSeq !== refreshWorkspaceStateSeqRef.current) return
         setInvites(invitesPayload.invites || [])
       } catch {
+        if (requestSeq !== refreshWorkspaceStateSeqRef.current) return
         setInvites([])
       }
     },
@@ -370,7 +391,12 @@ export const useWorkspaceCollaborationManager = ({
       showToast('请输入邀请码', 'info')
       return
     }
-    const idempotencyKey = buildIdempotencyKey('workspace:invite-accept')
+    if (inviteAcceptInFlightRef.current) return
+    if (!inviteAcceptIdempotencyKeyRef.current) {
+      inviteAcceptIdempotencyKeyRef.current = buildIdempotencyKey('workspace:invite-accept')
+    }
+    const idempotencyKey = inviteAcceptIdempotencyKeyRef.current
+    inviteAcceptInFlightRef.current = true
     try {
       const payload = await requestJsonWithRetry<{
         success: boolean
@@ -402,6 +428,9 @@ export const useWorkspaceCollaborationManager = ({
       )
     } catch (error: unknown) {
       showToast(reportWorkspaceFailure(error, 'workspace-accept-invite-failed').message, 'error')
+    } finally {
+      inviteAcceptInFlightRef.current = false
+      inviteAcceptIdempotencyKeyRef.current = ''
     }
   }, [
     currentActorName,
@@ -446,6 +475,9 @@ export const useWorkspaceCollaborationManager = ({
       showToast('请输入文件名', 'info')
       return
     }
+    const requestSeq = uploadTokenRequestSeqRef.current + 1
+    uploadTokenRequestSeqRef.current = requestSeq
+    const uploadTokenContextKey = buildUploadTokenContextKey()
     try {
       const payload = await requestJson<{
         success: boolean
@@ -459,12 +491,19 @@ export const useWorkspaceCollaborationManager = ({
           contentType: 'video/mp4'
         })
       })
+      if (
+        requestSeq !== uploadTokenRequestSeqRef.current ||
+        uploadTokenContextKey !== buildUploadTokenContextKey()
+      ) {
+        return
+      }
       setUploadToken(payload.token.objectKey)
       showToast('上传令牌已生成', 'success')
     } catch (error: unknown) {
+      if (requestSeq !== uploadTokenRequestSeqRef.current) return
       showRequestError(error, '生成上传令牌失败')
     }
-  }, [projectId, showRequestError, uploadFileName, workspaceId])
+  }, [buildUploadTokenContextKey, projectId, showRequestError, uploadFileName, workspaceId])
 
   const connectWs = useCallback(
     (options?: { force?: boolean }) => {
@@ -621,6 +660,11 @@ export const useWorkspaceCollaborationManager = ({
       }, 0)
     }
   }, [buildWsBindingKey, connectWs, disconnectWs, workspaceId])
+
+  useEffect(() => {
+    uploadTokenRequestSeqRef.current += 1
+    setUploadToken('')
+  }, [projectId, uploadFileName, workspaceId])
 
   useEffect(() => () => disconnectWs(), [disconnectWs])
 
