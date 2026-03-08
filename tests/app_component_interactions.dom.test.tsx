@@ -126,14 +126,7 @@ describe('App DOM 运行态交互补测', () => {
     const view = await act(async () => render(<App />))
     await waitFor(() => {
       expect(view.getByTestId('area-guide-overlay')).toBeInTheDocument()
-    })
-
-    await click(view.getByTestId('btn-open-channel-access'))
-    await waitFor(() => {
-      expect(onOpenChannel).toHaveBeenCalledTimes(1)
-    })
-    await waitFor(() => {
-      expect(view.getByTestId('area-channel-panel')).toBeInTheDocument()
+      expect(view.getByRole('button', { name: '下一步' })).toHaveFocus()
     })
 
     await click(view.getByRole('button', { name: '下一步' }))
@@ -144,10 +137,18 @@ describe('App DOM 运行态交互补测', () => {
     })
     expect(localStorage.getItem('veomuse-onboarding-v1')).toBe('done')
 
+    await click(view.getByTestId('btn-open-channel-access'))
+    await waitFor(() => {
+      expect(onOpenChannel).toHaveBeenCalledTimes(1)
+      expect(view.getByTestId('area-channel-panel')).toBeInTheDocument()
+    })
+
     await click(view.getByTestId('btn-mode-audio'))
     expect(view.getByText('AUDIO MASTER 引擎已就绪')).toBeInTheDocument()
+    expect(view.getByTestId('btn-mode-audio')).toHaveAttribute('aria-pressed', 'true')
     await click(view.getByRole('button', { name: '导入素材开始处理' }))
     expect(view.getByTestId('btn-mode-edit').className).toContain('active')
+    expect(view.getByTestId('btn-mode-edit')).toHaveAttribute('aria-pressed', 'true')
 
     window.removeEventListener('veomuse:open-channel-panel', listener)
   }, 20_000)

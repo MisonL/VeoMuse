@@ -2,6 +2,7 @@ import React from 'react'
 
 export interface WorkspaceSectionProps {
   isAuthenticated: boolean
+  isWorkspaceCreating: boolean
   workspaceName: string
   workspaceOwner: string
   workspaceId: string
@@ -14,6 +15,7 @@ export interface WorkspaceSectionProps {
 
 const WorkspaceSection: React.FC<WorkspaceSectionProps> = ({
   isAuthenticated,
+  isWorkspaceCreating,
   workspaceName,
   workspaceOwner,
   workspaceId,
@@ -50,13 +52,20 @@ const WorkspaceSection: React.FC<WorkspaceSectionProps> = ({
         <button
           onClick={onCreateWorkspace}
           data-testid="btn-create-workspace"
-          disabled={!isAuthenticated}
-          title={!isAuthenticated ? '请先登录后再创建工作区' : ''}
+          disabled={!isAuthenticated || isWorkspaceCreating}
+          title={
+            !isAuthenticated
+              ? '请先登录后再创建工作区'
+              : isWorkspaceCreating
+                ? '工作区创建中，请勿重复提交'
+                : ''
+          }
+          aria-busy={isWorkspaceCreating}
         >
-          创建工作区
+          {isWorkspaceCreating ? '创建中...' : '创建工作区'}
         </button>
         <button
-          disabled={!workspaceId}
+          disabled={!workspaceId || isWorkspaceCreating}
           onClick={onRefreshWorkspaceState}
           data-testid="btn-refresh-workspace-state"
         >

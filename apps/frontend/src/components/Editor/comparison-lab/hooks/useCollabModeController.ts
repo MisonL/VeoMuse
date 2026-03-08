@@ -71,6 +71,7 @@ export const buildCollabWorkspaceProps = ({
   workspaceCollaborationController
 }: BuildCollabWorkspacePropsOptions): CollabWorkspaceProps => ({
   isAuthenticated: Boolean(authProfile),
+  isWorkspaceCreating: workspaceCollaborationController.isWorkspaceCreating,
   workspaceName,
   workspaceOwner,
   workspaceId,
@@ -128,6 +129,7 @@ export const buildCollabRealtimeChannelSectionProps = ({
 >): CollabRealtimeChannelProps => ({
   workspaceId,
   isWsConnected: workspaceCollaborationController.isWsConnected,
+  isWsConnecting: workspaceCollaborationController.isWsConnecting,
   presence: workspaceCollaborationController.presence,
   collabEvents: workspaceCollaborationController.collabEvents,
   onConnectWs: workspaceCollaborationController.connectWs,

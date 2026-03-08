@@ -42,7 +42,9 @@ describe('CollabModeController builders', () => {
       ],
       snapshots: [],
       uploadToken: 'upload-token',
+      isWorkspaceCreating: false,
       isWsConnected: true,
+      isWsConnecting: false,
       refreshWorkspaceState: mock(() => Promise.resolve()),
       createWorkspace,
       createInvite,
@@ -96,11 +98,13 @@ describe('CollabModeController builders', () => {
     realtimeProps.onSendCollabEvent('timeline.patch')
 
     expect(workspaceProps.isAuthenticated).toBe(true)
+    expect(workspaceProps.isWorkspaceCreating).toBe(false)
     expect(workspaceProps.workspaceId).toBe('ws_1')
     expect(workspaceProps.projectId).toBe('project_1')
     expect(inviteProps.invites).toHaveLength(1)
     expect(inviteProps.collabRole).toBe('owner')
     expect(realtimeProps.isWsConnected).toBe(true)
+    expect(realtimeProps.isWsConnecting).toBe(false)
     expect(realtimeProps.presence).toHaveLength(1)
     expect(realtimeProps.collabEvents).toHaveLength(1)
     expect(createWorkspace).toHaveBeenCalledTimes(1)
@@ -170,7 +174,9 @@ describe('CollabModeController builders', () => {
         collabEvents: [],
         snapshots: [],
         uploadToken: 'upload-token',
+        isWorkspaceCreating: false,
         isWsConnected: false,
+        isWsConnecting: false,
         refreshWorkspaceState: mock(() => Promise.resolve()),
         createWorkspace: mock(() => Promise.resolve()),
         createInvite: mock(() => Promise.resolve()),

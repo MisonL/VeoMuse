@@ -87,11 +87,14 @@ export const useWorkspaceCollaborationManager = ({
     Array<{ id: string; actorName: string; createdAt: string }>
   >([])
   const [uploadToken, setUploadToken] = useState('')
+  const [isWorkspaceCreating, setIsWorkspaceCreating] = useState(false)
   const [isWsConnected, setIsWsConnected] = useState(false)
+  const [isWsConnecting, setIsWsConnecting] = useState(false)
 
   const wsRef = useRef<WebSocket | null>(null)
   const heartbeatRef = useRef<number | null>(null)
   const wsMessageParseWarningShownRef = useRef(false)
+  const workspaceCreateIdempotencyKeyRef = useRef('')
 
   const currentActorName = memberName.trim() || workspaceOwner.trim() || 'Owner'
 
@@ -142,6 +145,9 @@ export const useWorkspaceCollaborationManager = ({
   )
 
   const createWorkspace = useCallback(async () => {
+    if (isWorkspaceCreating) {
+      return
+    }
     if (!authProfile) {
       showToast('请先登录后再创建工作区', 'info')
       openChannelPanel()
@@ -151,7 +157,11 @@ export const useWorkspaceCollaborationManager = ({
       showToast('请输入工作区名称', 'info')
       return
     }
-    const idempotencyKey = buildIdempotencyKey('workspace:create')
+    if (!workspaceCreateIdempotencyKeyRef.current) {
+      workspaceCreateIdempotencyKeyRef.current = buildIdempotencyKey('workspace:create')
+    }
+    const idempotencyKey = workspaceCreateIdempotencyKeyRef.current
+    setIsWorkspaceCreating(true)
     try {
       const payload = await requestJsonWithRetry<{
         success: boolean
@@ -197,10 +207,14 @@ export const useWorkspaceCollaborationManager = ({
         httpStatus
       })
       showToast(normalizedError.message || '创建协作空间失败', 'error')
+    } finally {
+      setIsWorkspaceCreating(false)
+      workspaceCreateIdempotencyKeyRef.current = ''
     }
   }, [
     authProfile,
     effectiveOrganizationId,
+    isWorkspaceCreating,
     markJourneyStep,
     openChannelPanel,
     refreshWorkspaceState,
@@ -372,10 +386,14 @@ export const useWorkspaceCollaborationManager = ({
       wsRef.current.close()
       wsRef.current = null
     }
+    setIsWsConnecting(false)
     setIsWsConnected(false)
   }, [])
 
   const connectWs = useCallback(() => {
+    if (isWsConnecting || isWsConnected) {
+      return
+    }
     if (!workspaceId) {
       showToast('请先创建工作区', 'info')
       return
@@ -386,6 +404,7 @@ export const useWorkspaceCollaborationManager = ({
       showToast('请先登录后再连接协作通道', 'info')
       return
     }
+    setIsWsConnecting(true)
     const query = new URLSearchParams({
       memberName: memberName.trim() || 'Editor',
       role: collabRole,
@@ -396,6 +415,7 @@ export const useWorkspaceCollaborationManager = ({
     wsRef.current = socket
 
     socket.onopen = () => {
+      setIsWsConnecting(false)
       setIsWsConnected(true)
       showToast('协作实时通道已连接', 'success')
       heartbeatRef.current = window.setInterval(() => {
@@ -454,6 +474,8 @@ export const useWorkspaceCollaborationManager = ({
     collabRole,
     disconnectWs,
     effectiveOrganizationId,
+    isWsConnected,
+    isWsConnecting,
     memberName,
     reportJourney,
     showToast,
@@ -503,7 +525,9 @@ export const useWorkspaceCollaborationManager = ({
     collabEvents,
     snapshots,
     uploadToken,
+    isWorkspaceCreating,
     isWsConnected,
+    isWsConnecting,
     refreshWorkspaceState,
     createWorkspace,
     createInvite,

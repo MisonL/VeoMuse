@@ -9,6 +9,7 @@ import type { CollabEvent, CollabPresence } from '../../types'
 export interface RealtimeChannelSectionProps {
   workspaceId: string
   isWsConnected: boolean
+  isWsConnecting: boolean
   presence: CollabPresence[]
   collabEvents: CollabEvent[]
   onConnectWs: () => void
@@ -19,6 +20,7 @@ export interface RealtimeChannelSectionProps {
 const RealtimeChannelSection: React.FC<RealtimeChannelSectionProps> = ({
   workspaceId,
   isWsConnected,
+  isWsConnecting,
   presence,
   collabEvents,
   onConnectWs,
@@ -46,7 +48,7 @@ const RealtimeChannelSection: React.FC<RealtimeChannelSectionProps> = ({
           <span
             className={`realtime-channel-status-pill realtime-channel-status-pill--${connectionTone}`}
           >
-            连接状态：{getConnectionStatusText(isWsConnected)}
+            连接状态：{getConnectionStatusText(isWsConnected, isWsConnecting)}
           </span>
           <span>在线人数：{presence.length}</span>
           <span>Workspace：{workspaceId || '-'}</span>
@@ -54,27 +56,19 @@ const RealtimeChannelSection: React.FC<RealtimeChannelSectionProps> = ({
       </div>
       <div className="lab-inline-actions collab-live-actions">
         <button
-          aria-label="连接协作通道"
-          disabled={isWsConnected || !workspaceId}
+          disabled={isWsConnected || isWsConnecting || !workspaceId}
           onClick={onConnectWs}
+          aria-busy={isWsConnecting}
         >
-          连接 WS
+          {isWsConnecting ? '连接中...' : '连接 WS'}
         </button>
-        <button aria-label="断开协作通道" disabled={!isWsConnected} onClick={onDisconnectWs}>
+        <button disabled={!isWsConnected && !isWsConnecting} onClick={onDisconnectWs}>
           断开 WS
         </button>
-        <button
-          aria-label="发送时间轴补丁"
-          disabled={!isWsConnected}
-          onClick={() => onSendCollabEvent('timeline.patch')}
-        >
+        <button disabled={!isWsConnected} onClick={() => onSendCollabEvent('timeline.patch')}>
           发送 Timeline Patch
         </button>
-        <button
-          aria-label="发送光标更新"
-          disabled={!isWsConnected}
-          onClick={() => onSendCollabEvent('cursor.update')}
-        >
+        <button disabled={!isWsConnected} onClick={() => onSendCollabEvent('cursor.update')}>
           发送 Cursor 更新
         </button>
       </div>
@@ -82,7 +76,13 @@ const RealtimeChannelSection: React.FC<RealtimeChannelSectionProps> = ({
         <div className={`collab-command-summary-card collab-command-summary-card--${presenceTone}`}>
           <span>presence rail</span>
           <strong>{presence.length}</strong>
-          <small>{isWsConnected ? '实时在线成员' : '通道未连接，在线态待刷新'}</small>
+          <small>
+            {isWsConnected
+              ? '实时在线成员'
+              : isWsConnecting
+                ? '通道握手中，在线态即将刷新'
+                : '通道未连接，在线态待刷新'}
+          </small>
         </div>
         <div className={`collab-command-summary-card collab-command-summary-card--${eventTone}`}>
           <span>event spine</span>

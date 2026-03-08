@@ -83,14 +83,23 @@ const AppHeader = ({
       </div>
     </div>
     <div className="header-center-stack">
-      <div className="mode-selector" data-guide="mode-selector" data-testid="area-mode-selector">
+      <div
+        className="mode-selector"
+        data-guide="mode-selector"
+        data-testid="area-mode-selector"
+        role="group"
+        aria-label="主工作模式"
+      >
         {MODE_OPTIONS.map((mode) => (
           <button
             key={mode.value}
+            type="button"
             className={`mode-tab ${activeMode === mode.value ? 'active' : ''}`}
             onMouseEnter={() => onModeHover(mode.value)}
             onClick={() => onModeChange(mode.value)}
             data-testid={`btn-mode-${mode.value}`}
+            aria-pressed={activeMode === mode.value}
+            aria-current={activeMode === mode.value ? 'page' : undefined}
           >
             {mode.label}
           </button>
@@ -109,6 +118,7 @@ const AppHeader = ({
             className={`header-segment-btn ${centerMode === 'fit' ? 'active' : ''}`}
             onClick={() => onCenterModeChange('fit')}
             data-testid="btn-center-mode-fit"
+            aria-pressed={centerMode === 'fit'}
           >
             均衡
           </button>
@@ -117,6 +127,7 @@ const AppHeader = ({
             className={`header-segment-btn ${centerMode === 'focus' ? 'active' : ''}`}
             onClick={() => onCenterModeChange('focus')}
             data-testid="btn-center-mode-focus"
+            aria-pressed={centerMode === 'focus'}
           >
             聚焦
           </button>
@@ -127,6 +138,7 @@ const AppHeader = ({
             className={`header-segment-btn ${topBarDensity === 'comfortable' ? 'active' : ''}`}
             onClick={() => onTopBarDensityChange('comfortable')}
             data-testid="btn-density-comfortable"
+            aria-pressed={topBarDensity === 'comfortable'}
           >
             舒展
           </button>
@@ -135,6 +147,7 @@ const AppHeader = ({
             className={`header-segment-btn ${topBarDensity === 'compact' ? 'active' : ''}`}
             onClick={() => onTopBarDensityChange('compact')}
             data-testid="btn-density-compact"
+            aria-pressed={topBarDensity === 'compact'}
           >
             紧凑
           </button>
@@ -146,29 +159,29 @@ const AppHeader = ({
       >
         <button
           id="btn-open-channel-access"
-          aria-label="打开 AI 渠道接入"
           className="channel-entry-btn"
           onClick={onOpenChannelAccess}
           data-testid="btn-open-channel-access"
+          type="button"
         >
           AI接入
         </button>
         <button
           id="btn-open-guide"
-          aria-label="打开使用引导"
           className="guide-toggle-btn"
           onClick={onOpenGuide}
           data-testid="btn-open-guide"
+          type="button"
         >
           使用引导
         </button>
         <ThemeSwitcher />
         <button
           id="btn-reset-layout"
-          aria-label="重置布局"
           className="layout-reset-btn"
           onClick={onResetLayout}
           data-testid="btn-reset-layout"
+          type="button"
         >
           重置布局
         </button>
@@ -202,11 +215,11 @@ const AppHeader = ({
         <div className="export-action-wrap">
           <button
             id="btn-export"
-            aria-label="导出视频"
             className={`export-btn ${exportUiStatus === 'pending' ? 'is-pending' : ''} ${exportUiStatus === 'done' ? 'is-done' : ''} ${exportUiStatus === 'error' ? 'is-error' : ''}`}
             onClick={onExport}
             disabled={isProcessing || isExportPending}
             data-testid="btn-export"
+            type="button"
           >
             {exportButtonLabel}
           </button>

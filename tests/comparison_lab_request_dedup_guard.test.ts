@@ -163,6 +163,26 @@ describe('ComparisonLab 请求去重守卫', () => {
         return Promise.resolve(jsonResponse({ models: {}, services: {}, timestamp: 'now' }))
       }
 
+      if (url.includes('/api/workspaces')) {
+        if (method === 'POST') {
+          return Promise.resolve(
+            jsonResponse({
+              success: true,
+              workspace: { id: 'ws_test_1', organizationId: 'org-1' },
+              defaultProject: { id: 'project_test_1' },
+              owner: { name: 'Owner', role: 'owner' }
+            })
+          )
+        }
+        return Promise.resolve(
+          jsonResponse({ success: true, invites: [], members: [], events: [] })
+        )
+      }
+
+      if (url.includes('/api/projects/project_test_1/snapshots')) {
+        return Promise.resolve(jsonResponse({ success: true, snapshots: [] }))
+      }
+
       return Promise.resolve(jsonResponse({ success: true }))
     })
 
@@ -233,6 +253,32 @@ describe('ComparisonLab 请求去重守卫', () => {
       const postCalls = fetchMock.mock.calls.filter(([url, init]) => {
         const method = String((init as RequestInit | undefined)?.method || 'GET').toUpperCase()
         return String(url).includes('/api/models/policies') && method === 'POST'
+      })
+      expect(postCalls.length).toBe(1)
+    })
+  })
+
+  it('创建工作区按钮重复点击时应仅提交一次 POST', async () => {
+    const view = render(React.createElement(ComparisonLab, { onOpenAssets: () => {} }))
+
+    await waitFor(() => {
+      expect(countCalls('/api/auth/me')).toBeGreaterThan(0)
+    })
+
+    fireEvent.click(view.getByTestId('btn-lab-mode-collab'))
+
+    await waitFor(() => {
+      expect(view.getByTestId('btn-create-workspace')).toBeInTheDocument()
+    })
+
+    const createButton = view.getByTestId('btn-create-workspace')
+    fireEvent.click(createButton)
+    fireEvent.click(createButton)
+
+    await waitFor(() => {
+      const postCalls = fetchMock.mock.calls.filter(([url, init]) => {
+        const method = String((init as RequestInit | undefined)?.method || 'GET').toUpperCase()
+        return String(url).includes('/api/workspaces') && method === 'POST'
       })
       expect(postCalls.length).toBe(1)
     })

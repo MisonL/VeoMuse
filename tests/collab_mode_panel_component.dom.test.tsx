@@ -10,6 +10,7 @@ const createProps = (overrides: Record<string, unknown> = {}) =>
   ({
     workspaceSectionProps: {
       isAuthenticated: true,
+      isWorkspaceCreating: false,
       workspaceName: 'VeoMuse 协作空间',
       workspaceOwner: 'Owner',
       workspaceId: '',
@@ -36,6 +37,7 @@ const createProps = (overrides: Record<string, unknown> = {}) =>
     realtimeChannelSectionProps: {
       workspaceId: '',
       isWsConnected: false,
+      isWsConnecting: false,
       presence: [],
       collabEvents: [],
       onConnectWs: noop,
@@ -527,5 +529,29 @@ describe('CollabModePanel DOM 组件回归', () => {
     const createWorkspaceBtn = view.getByTestId('btn-create-workspace')
     expect(createWorkspaceBtn).toBeDisabled()
     expect(createWorkspaceBtn).toHaveAttribute('title', '请先登录后再创建工作区')
+  })
+
+  it('创建中与连接中状态应禁用重复动作并暴露忙碌文案', () => {
+    const baseProps = createProps()
+    const view = render(
+      <CollabModePanel
+        {...createProps({
+          workspaceSectionProps: {
+            ...baseProps.workspaceSectionProps,
+            isWorkspaceCreating: true
+          },
+          realtimeChannelSectionProps: {
+            ...baseProps.realtimeChannelSectionProps,
+            workspaceId: 'ws_1',
+            isWsConnecting: true
+          }
+        })}
+      />
+    )
+
+    expect(view.getByTestId('btn-create-workspace')).toBeDisabled()
+    expect(view.getByText('创建中...')).toBeInTheDocument()
+    expect(view.getByText('连接状态：连接中')).toBeInTheDocument()
+    expect(view.getByText('连接中...')).toBeInTheDocument()
   })
 })

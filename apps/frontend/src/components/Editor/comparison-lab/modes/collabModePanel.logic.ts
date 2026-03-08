@@ -49,7 +49,8 @@ export const takePreviewItems = <T>(items: T[], limit: number) => {
   return items.slice(0, safeLimit)
 }
 
-export const getConnectionStatusText = (connected: boolean) => {
+export const getConnectionStatusText = (connected: boolean, connecting = false) => {
+  if (connecting) return '连接中'
   return connected ? '已连接' : '未连接'
 }
 

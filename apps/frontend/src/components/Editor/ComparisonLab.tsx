@@ -47,6 +47,15 @@ const resolveStageStatus = (stageIndex: number, currentStageIndex: number) => {
   return 'available'
 }
 
+const focusStageButton = (mode: (typeof LAB_STAGE_ORDER)[number]['mode']) => {
+  window.requestAnimationFrame(() => {
+    const nextButton = document.getElementById(`lab-tab-${mode}`)
+    if (nextButton instanceof HTMLButtonElement) {
+      nextButton.focus()
+    }
+  })
+}
+
 const ComparisonLab: React.FC<ComparisonLabProps> = ({
   onOpenAssets,
   channelPanelRequestNonce
@@ -61,6 +70,29 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
     channelAccessPanelProps
   } = useComparisonLabController({ onOpenAssets, channelPanelRequestNonce })
   const currentStageIndex = LAB_STAGE_ORDER.findIndex((stage) => stage.mode === labMode)
+  const handleStageKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    stageIndex: number
+  ) => {
+    let nextIndex = stageIndex
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      nextIndex = (stageIndex + 1) % LAB_STAGE_ORDER.length
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      nextIndex = (stageIndex - 1 + LAB_STAGE_ORDER.length) % LAB_STAGE_ORDER.length
+    } else if (event.key === 'Home') {
+      nextIndex = 0
+    } else if (event.key === 'End') {
+      nextIndex = LAB_STAGE_ORDER.length - 1
+    } else {
+      return
+    }
+
+    event.preventDefault()
+    const nextMode = LAB_STAGE_ORDER[nextIndex]?.mode
+    if (!nextMode) return
+    toolbarProps.onModeChange(nextMode)
+    focusStageButton(nextMode)
+  }
 
   return (
     <div className="comparison-lab-pro" data-testid="area-comparison-lab" data-lab-mode={labMode}>
@@ -82,7 +114,6 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
                   aria-controls={`lab-panel-${stage.mode}`}
                   aria-selected={stage.mode === labMode}
                   aria-current={status === 'current' ? 'step' : undefined}
-                  aria-label={`${LAB_STAGE_META[stage.mode].label}，${LAB_STAGE_STATUS_LABEL[status]}`}
                   tabIndex={stage.mode === labMode ? 0 : -1}
                   data-testid={`btn-lab-mode-${stage.mode}`}
                   data-stage-status={status}
@@ -90,6 +121,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
                     status === 'completed' ? 'is-completed' : 'is-available'
                   }`}
                   onClick={() => toolbarProps.onModeChange(stage.mode)}
+                  onKeyDown={(event) => handleStageKeyDown(event, stageIndex)}
                 >
                   <span className="lab-stage-marker-index">{LAB_STAGE_META[stage.mode].index}</span>
                   <span className="lab-stage-marker-copy">
