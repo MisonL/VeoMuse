@@ -14,6 +14,7 @@ describe('docker 交付 workflow 守卫', () => {
   it('ci quality gate 应保留 main-only docker smoke，并串入 docker UI smoke 后置 job', () => {
     const workflow = readWorkflow('.github/workflows/ci-quality-gate.yml')
 
+    expect(workflow).toContain('workflow_dispatch:')
     expect(workflow).toContain('docker-smoke-main:')
     expect(workflow).toContain("if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}")
     expect(workflow).toContain('run: bun run docker:smoke -- --wait-timeout 240')
