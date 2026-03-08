@@ -12,6 +12,12 @@ interface UseCreativeRunManagerParams {
   showToast: ShowToast
 }
 
+const resolveCreativeRunErrorMessage = (error: unknown, fallbackMessage: string) => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  const message = String(error || '').trim()
+  return message || fallbackMessage
+}
+
 export const useCreativeRunManager = ({
   selectedPolicyId,
   policyDecision,
@@ -27,6 +33,32 @@ export const useCreativeRunManager = ({
   const [commitScore, setCommitScore] = useState<number>(0.9)
   const [isCreativeBusy, setIsCreativeBusy] = useState(false)
 
+  const showCreativeRunError = useCallback(
+    (error: unknown, fallbackMessage: string) => {
+      showToast(resolveCreativeRunErrorMessage(error, fallbackMessage), 'error')
+    },
+    [showToast]
+  )
+  const resetCreativeFeedbackInputs = useCallback(() => {
+    setSceneFeedbackMap({})
+    setCreativeRunFeedback('')
+  }, [])
+  const runCreativeTask = useCallback(
+    async <T>(task: () => Promise<T>, fallbackMessage: string) => {
+      if (isCreativeBusy) return null
+      setIsCreativeBusy(true)
+      try {
+        return await task()
+      } catch (error: unknown) {
+        showCreativeRunError(error, fallbackMessage)
+        return null
+      } finally {
+        setIsCreativeBusy(false)
+      }
+    },
+    [isCreativeBusy, showCreativeRunError]
+  )
+
   const refreshCreativeVersions = useCallback(
     async (runId?: string) => {
       const targetRunId = runId || creativeRun?.id
@@ -37,8 +69,9 @@ export const useCreativeRunManager = ({
         )
         setCreativeVersions(payload.versions || [])
       } catch (error: unknown) {
-        const normalized = error instanceof Error ? error : new Error(String(error))
-        console.warn(`[creative-run] refresh versions failed: ${normalized.message}`)
+        console.warn(
+          `[creative-run] refresh versions failed: ${resolveCreativeRunErrorMessage(error, 'unknown')}`
+        )
         setCreativeVersions([])
       }
     },
@@ -64,44 +97,34 @@ export const useCreativeRunManager = ({
       showToast('请输入创意脚本', 'info')
       return
     }
-    if (isCreativeBusy) return
-
-    setIsCreativeBusy(true)
-    try {
+    const payload = await runCreativeTask(async () => {
       const routingDecision = await resolveRoutingDecisionForCreativeRun()
-      const payload = await requestJson<{ success: boolean; run: CreativeRun }>(
-        '/api/ai/creative/run',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            script: creativeScript.trim(),
-            style: creativeStyle,
-            context: {
-              source: 'comparison-lab',
-              createdBy: 'frontend-user',
-              routingPolicyId: selectedPolicyId || null,
-              routingDecision: routingDecision || null
-            }
-          })
-        }
-      )
-      setCreativeRun(payload.run)
-      setSceneFeedbackMap({})
-      setCreativeRunFeedback('')
-      showToast(`创意 run 已创建：${payload.run.id}`, 'success')
-      await refreshCreativeVersions(payload.run.id)
-    } catch (error: unknown) {
-      const normalized = error instanceof Error ? error : new Error(String(error))
-      showToast(normalized.message || '创建创意 run 失败', 'error')
-    } finally {
-      setIsCreativeBusy(false)
-    }
+      return requestJson<{ success: boolean; run: CreativeRun }>('/api/ai/creative/run', {
+        method: 'POST',
+        body: JSON.stringify({
+          script: creativeScript.trim(),
+          style: creativeStyle,
+          context: {
+            source: 'comparison-lab',
+            createdBy: 'frontend-user',
+            routingPolicyId: selectedPolicyId || null,
+            routingDecision: routingDecision || null
+          }
+        })
+      })
+    }, '创建创意 run 失败')
+    if (!payload) return
+    setCreativeRun(payload.run)
+    resetCreativeFeedbackInputs()
+    showToast(`创意 run 已创建：${payload.run.id}`, 'success')
+    await refreshCreativeVersions(payload.run.id)
   }, [
     creativeScript,
     creativeStyle,
-    isCreativeBusy,
     refreshCreativeVersions,
     resolveRoutingDecisionForCreativeRun,
+    resetCreativeFeedbackInputs,
+    runCreativeTask,
     selectedPolicyId,
     showToast
   ])
@@ -121,36 +144,32 @@ export const useCreativeRunManager = ({
       showToast('请至少填写一条反馈', 'warning')
       return
     }
-
-    setIsCreativeBusy(true)
-    try {
-      const payload = await requestJson<{
-        success: boolean
-        run: CreativeRun
-        parentRun: CreativeRun | null
-      }>(`/api/ai/creative/run/${creativeRun.id}/feedback`, {
-        method: 'POST',
-        body: JSON.stringify({
-          runFeedback: creativeRunFeedback.trim() || undefined,
-          sceneFeedbacks
-        })
-      })
-      setCreativeRun(payload.run)
-      setSceneFeedbackMap({})
-      setCreativeRunFeedback('')
-      showToast(`反馈已应用，生成版本 v${payload.run.version || 1}`, 'success')
-      await refreshCreativeVersions(payload.run.id)
-    } catch (error: unknown) {
-      const normalized = error instanceof Error ? error : new Error(String(error))
-      showToast(normalized.message || '操作失败', 'error')
-    } finally {
-      setIsCreativeBusy(false)
-    }
+    const payload = await runCreativeTask(
+      () =>
+        requestJson<{
+          success: boolean
+          run: CreativeRun
+          parentRun: CreativeRun | null
+        }>(`/api/ai/creative/run/${creativeRun.id}/feedback`, {
+          method: 'POST',
+          body: JSON.stringify({
+            runFeedback: creativeRunFeedback.trim() || undefined,
+            sceneFeedbacks
+          })
+        }),
+      '操作失败'
+    )
+    if (!payload) return
+    setCreativeRun(payload.run)
+    resetCreativeFeedbackInputs()
+    showToast(`反馈已应用，生成版本 v${payload.run.version || 1}`, 'success')
+    await refreshCreativeVersions(payload.run.id)
   }, [
     creativeRun?.id,
     creativeRunFeedback,
-    isCreativeBusy,
     refreshCreativeVersions,
+    resetCreativeFeedbackInputs,
+    runCreativeTask,
     sceneFeedbackMap,
     showToast
   ])
@@ -160,33 +179,28 @@ export const useCreativeRunManager = ({
       showToast('请先创建创意 run', 'info')
       return
     }
-    if (isCreativeBusy) return
-
-    setIsCreativeBusy(true)
-    try {
-      const payload = await requestJson<{ success: boolean; run: CreativeRun }>(
-        `/api/ai/creative/run/${creativeRun.id}/commit`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            qualityScore: commitScore,
-            notes: {
-              source: 'comparison-lab',
-              reviewedAt: new Date().toISOString()
-            }
-          })
-        }
-      )
-      setCreativeRun(payload.run)
-      showToast('创意 run 已提交完成', 'success')
-      await refreshCreativeVersions(payload.run.id)
-    } catch (error: unknown) {
-      const normalized = error instanceof Error ? error : new Error(String(error))
-      showToast(normalized.message || '提交创意 run 失败', 'error')
-    } finally {
-      setIsCreativeBusy(false)
-    }
-  }, [commitScore, creativeRun?.id, isCreativeBusy, refreshCreativeVersions, showToast])
+    const payload = await runCreativeTask(
+      () =>
+        requestJson<{ success: boolean; run: CreativeRun }>(
+          `/api/ai/creative/run/${creativeRun.id}/commit`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              qualityScore: commitScore,
+              notes: {
+                source: 'comparison-lab',
+                reviewedAt: new Date().toISOString()
+              }
+            })
+          }
+        ),
+      '提交创意 run 失败'
+    )
+    if (!payload) return
+    setCreativeRun(payload.run)
+    showToast('创意 run 已提交完成', 'success')
+    await refreshCreativeVersions(payload.run.id)
+  }, [commitScore, creativeRun?.id, refreshCreativeVersions, runCreativeTask, showToast])
 
   const updateSceneFeedback = useCallback((sceneId: string, value: string) => {
     setSceneFeedbackMap((prev) => ({ ...prev, [sceneId]: value }))
