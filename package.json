@@ -30,6 +30,8 @@
     "drill:db-repair": "bun run scripts/db_repair_drill.ts",
     "deploy:oneclick": "bash scripts/one-click-deploy.sh",
     "deploy:oneclick:win": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/one-click-deploy.ps1",
+    "acceptance:deploy": "bun run scripts/deploy_acceptance.ts",
+    "acceptance:real": "bun run scripts/real_acceptance.ts",
     "release:gate": "bun run scripts/release_gate.ts",
     "release:gate:delivery": "bun run release:gate && bun run docker:smoke",
     "release:real:precheck": "E2E_REAL_CHANNELS=true bun run scripts/real_e2e_precheck.ts",

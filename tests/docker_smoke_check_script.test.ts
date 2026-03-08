@@ -234,7 +234,7 @@ describe('docker smoke 脚本辅助逻辑', () => {
       path.resolve(process.cwd(), 'scripts/docker_smoke_check.ts'),
       'utf8'
     )
-    expect(source).toContain('await probeFrontendLabEntries(baseUrl, assetPaths)')
-    expect(source).toContain('await probeFrontendTelemetryEntries(baseUrl, assetPaths)')
+    expect(source).toContain('runDeploymentAcceptanceProbes')
+    expect(source).toContain("loggerPrefix: '[docker-smoke]'")
   })
 })
