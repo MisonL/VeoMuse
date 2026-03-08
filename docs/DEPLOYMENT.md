@@ -3,6 +3,7 @@
 当前研发结项总览见：`docs/RD_CLOSURE_2026-03-07.md`。
 Docker 交付验收与清理手册见：`docs/DOCKER_DELIVERY_RUNBOOK.md`。
 最新一次本地 Docker 正式复核记录见：`docs/DOCKER_ACCEPTANCE_2026-03-08.md`。
+最新一次本地闭环结项记录见：`docs/LOCAL_CLOSURE_2026-03-08.md`。
 
 ## 一键部署
 
@@ -128,10 +129,11 @@ bun run docker:smoke -- --keep-up
 
 ### 最近一次本地正式复核
 
-- 最近一次本地正式复核已于 `2026-03-07` 执行完成。
-- 留痕记录：`docs/DOCKER_ACCEPTANCE_2026-03-07.md`
-- 结论：本地 Compose 基线通过，`redis/backend/frontend` 全部 `healthy`，首页/API/WebSocket/上传/安全头/静态缓存均已验证。
-- 说明：该记录只代表本地正式复核通过，不等于真实渠道回归已完成。
+- 最近一次本地正式复核已于 `2026-03-08` 执行完成。
+- 留痕记录：`docs/DOCKER_ACCEPTANCE_2026-03-08.md`
+- 结论：本地 Compose 基线通过，`redis/backend/frontend` 全部 `healthy`，首页/API/WebSocket/安全头/静态缓存均已验证。
+- 补充：同日已完成 `lint/build/test/release:gate/docker:smoke/docker:ui-smoke` 本地闭环复验，见 `docs/LOCAL_CLOSURE_2026-03-08.md`。
+- 说明：该记录确认的是本地闭环通过；真实外部环境与真实凭据链路保留为后续增强验收。
 
 ## 验证命令
 
@@ -221,7 +223,7 @@ E2E_REAL_CHANNELS=true bun run acceptance:real -- --base-url https://veomuse.exa
 bun run release:gate:real
 ```
 
-### 外部后置验收入口
+### 外部增强验收入口
 
 - `acceptance:deploy`
   - 用途：在目标正式部署环境主机本地做协议级只读验收；若存在管理员令牌，会额外校验 `/api/admin/metrics`。

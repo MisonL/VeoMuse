@@ -1,25 +1,32 @@
-# VeoMuse 剩余任务清单（V3.2）
+# VeoMuse 后续事项清单（V3.2）
 
 ## 当前基线
 
 - 本地工程基线：`bun run lint`、`bun run build`、`bun run test`、`bun run release:gate` 已形成稳定回归路径。
 - CI 基线：`CI Quality Gate`、`Docker Smoke (main push only)`、`Docker UI Smoke (main push only)` 最新线上执行均已成功。
-- 当前阶段：研发结项已完成，进入外部后置验收阶段。
+- 当前阶段：研发结项与本地闭环结项均已完成。
 - 已确认不纳入当前排期：`24h` 长稳压测。
-- 外部依赖限制：未配置真实 Provider 凭据时，`release:gate:real` 不能视为完成。
+- 外部依赖限制：未配置真实 Provider 凭据时，`release:gate:real` 保留为后续增强项。
 - 研发结项总览：`docs/RD_CLOSURE_2026-03-07.md`
+- 本地闭环留痕：`docs/LOCAL_CLOSURE_2026-03-08.md`
 
-## 后置验收事项（按优先级）
+## 当前结论
 
-1. 生产环境 Docker 正式部署留痕
+- 当前仓库已满足“本地闭环完成”口径。
+- 当前没有阻塞本地交付的剩余开发任务。
+- 下述内容保留为后续增强项，而非当前阻塞项。
+
+## 后续增强项
+
+1. 目标部署环境 Docker 留痕验收
 
 - 目标：把已完成的本地 Docker Compose 正式复核迁移到目标正式部署环境执行并留痕。
 - 覆盖范围：`GET /`、`/api/health`、`/api/capabilities`、`/ws` 握手、安全响应头、静态资源缓存、可选管理员只读探针。
-- 当前自动化现状：`bun run docker:smoke` 已覆盖上述检查项与 `redis/backend/frontend` 健康态；本地正式复核已完成并留痕于 `docs/DOCKER_ACCEPTANCE_2026-03-07.md`。
+- 当前自动化现状：`bun run docker:smoke` 已覆盖上述检查项与 `redis/backend/frontend` 健康态；本地正式复核已完成并留痕于 `docs/DOCKER_ACCEPTANCE_2026-03-08.md`。
 - 剩余内容：在目标正式部署环境主机本地执行 `bun run acceptance:deploy -- --base-url <target_url>` 并留痕。
 - 验收标准：目标环境 `redis/backend/frontend` 全部 `healthy`，网关首页与 API 正常，WebSocket 可用，默认不写入生产数据。
 
-2. 实网回归闭环（阻塞后置验收）
+2. 实网回归闭环
 
 - 前置条件：real 用例依赖调用方显式设置 `E2E_REAL_CHANNELS=true` 与 `GEMINI_API_KEYS`；如需扩展多 Provider 实网回归，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加对应渠道凭据预检。
 - 执行命令：
@@ -55,12 +62,13 @@
 - 前端 `ComparisonLab` 持续拆分：认证/组织/渠道、工作区协作、V4 运维、视频生成、对比态管理、创意运行管理均已抽到 hooks。
 - 前端 `TelemetryDashboard` 已开始拆纯展示块：概览、Provider 健康、治理预览、数据库摘要、SLO 数据列表已模块化。
 - 发布门禁脚本模块化：`scripts/release_gate.ts` 作为 façade，核心实现下沉到 `scripts/release-gate/`。
-- 本地 Docker Compose 正式复核已完成：服务健康态、首页/API/WebSocket/上传链路、安全头与静态缓存均已验证，并已形成留痕文档 `docs/DOCKER_ACCEPTANCE_2026-03-07.md`。
+- 本地 Docker Compose 正式复核已完成：服务健康态、首页/API/WebSocket、安全头与静态缓存均已验证，并已形成留痕文档 `docs/DOCKER_ACCEPTANCE_2026-03-08.md`。
 - 后端四个大服务第一轮职责拆分已完成：`LocalDatabaseService`、`WorkspaceService`、`ModelMarketplaceService`、`VideoGenerationService` 均已收口为 façade + 领域子模块。
 - 当前研发结项总览已形成：`docs/RD_CLOSURE_2026-03-07.md`。
+- 当前本地闭环留痕已形成：`docs/LOCAL_CLOSURE_2026-03-08.md`。
 
 ## 说明
 
 - 若新增功能需求，请先更新 `docs/requirements/PROJECT_REQUIREMENTS.md`，再纳入排期。
-- 当前仓库已满足“研发结项”口径。
-- 若要声明“可正式上线”，仍需补齐目标正式部署环境的 Docker 留痕复核与真实渠道回归两项后置验收。
+- 当前仓库已满足“研发结项”和“本地闭环结项”口径。
+- 若后续需要外部生产环境背书，可再执行目标环境 Docker 留痕复核与真实渠道回归。

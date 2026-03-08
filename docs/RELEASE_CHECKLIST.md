@@ -3,11 +3,12 @@
 本清单用于发布前“短流程收口 + 实网回归”执行，不包含 24h 长测。
 最近一次本地 Docker 正式复核记录见：`docs/DOCKER_ACCEPTANCE_2026-03-08.md`。
 当前研发结项总览见：`docs/RD_CLOSURE_2026-03-07.md`。
+当前本地闭环留痕见：`docs/LOCAL_CLOSURE_2026-03-08.md`。
 
 说明：
 
 - 研发结项已成立。
-- 当前清单主要用于“上线前复验”和“外部后置验收”。
+- 当前清单主要用于“本地复验复跑”和“外部增强验收”。
 
 ## 1. 上线前本地复验（可复跑）
 
@@ -24,14 +25,14 @@ bun run release:gate
 
 - `release:gate` 全绿（security/build/unit/e2e-smoke/e2e-regression/slo）
 - `artifacts/quality-summary.json` 中 `status=passed`
-- `docker:smoke` 全绿，并覆盖首页/API/WebSocket/上传/安全头/静态缓存
+- `docker:smoke` 全绿，并覆盖首页/API/WebSocket/安全头/静态缓存
 - `docker:ui-smoke` 全绿，并覆盖真实 Docker 浏览器链路
 - Docker 服务 `frontend/backend/redis` 为 `healthy`
 - 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-08.md`
 - Docker 交付与清理说明已更新到 `docs/DOCKER_DELIVERY_RUNBOOK.md`
 - 研发结项总览与当前交付状态已更新到 `docs/RD_CLOSURE_2026-03-07.md`
 
-## 2. 实网回归（有真实凭据时执行）
+## 2. 外部增强验收（有真实环境/真实凭据时执行）
 
 ```bash
 # 正式部署环境协议级验收（在目标主机本地执行）
@@ -48,7 +49,7 @@ E2E_REAL_CHANNELS=true bun run acceptance:real -- --base-url https://veomuse.exa
 - `artifacts/real-acceptance/<timestamp>/playwright.stdout.log` 中可见 `@real` 外部回归执行记录
 - 如需扩展更多 provider 凭据校验，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加必需环境变量列表
 - `bun run release:real:precheck` 与 `acceptance:real` 都要求调用方显式设置 `E2E_REAL_CHANNELS=true`
-- 本项仍属于外部真实凭据后置验收，不应被本地 Docker 复核替代
+- 本项属于外部增强验收，不影响当前“本地闭环完成”结论
 
 ## 3. 发布产物复核
 

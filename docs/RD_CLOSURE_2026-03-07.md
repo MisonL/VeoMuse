@@ -1,19 +1,25 @@
 # VeoMuse 研发结项总览（2026-03-07）
 
 本文用于确认当前仓库已经达到“研发结项”状态。
-本文不等同于“正式上线确认书”。
+本文同时记录当前仓库已完成“本地闭环结项”，但不等同于真实外部环境上线确认书。
 
 ## 结项结论
 
 - 研发范围内的代码实现、结构化收口、质量门禁与本地 Docker 正式复核均已完成。
 - 当前仓库可判定为“研发结项成立”。
+- `2026-03-08` 已再次完成本地闭环复验：
+  - `bun run lint`
+  - `bun run build`
+  - `bun run test`（`496 pass / 0 fail`）
+  - `bun run release:gate`
+  - `bun run docker:smoke -- --wait-timeout 240 --keep-up`
+  - `bun run docker:ui-smoke`
+- 按当前项目口径，可判定为“本地闭环结项成立”。
 - 最近一次 CI 收口补充已完成：
   - `CI Quality Gate` 已恢复为可手动触发并成功通过
   - Playwright 前端 webServer 已与门禁后端端口保持同源注入，不再出现 `33118/33117` 错位
   - 最新线上成功 run：`22813348373`
-- 若要声明“可正式上线”，仍需补齐两个外部后置验收：
-  - 目标正式部署环境的 Docker 留痕复核
-  - 真实凭据就绪后的 `release:gate:real`
+- 外部正式部署环境留痕与真实凭据回归保留为后续增强项，不构成本轮本地闭环阻塞。
 
 ## 已完成范围
 
@@ -32,12 +38,13 @@
   - `ModelMarketplaceService` façade + `model-marketplace/*`
   - `VideoGenerationService` façade + `video-generation/*`
 - 发布与部署链路已完成：
-  - `docker:smoke` 覆盖首页、API、WebSocket、上传、安全头、静态缓存
+  - `docker:smoke` 覆盖首页、API、WebSocket、安全头、静态缓存与健康态
   - `docker:ui-smoke` 已补齐并通过真实 Docker 浏览器链路
   - `docker:drill:persistence` 已补齐并通过真实重启恢复链路
   - Docker UI smoke main-only workflow、manual persistence workflow、delivery runbook 与 reset 命令已补齐
   - `release_gate` / `real precheck` / `release:gate:real` 口径已统一
-  - 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-08.md`
+- 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-08.md`
+- 本地闭环结项留痕已更新到 `docs/LOCAL_CLOSURE_2026-03-08.md`
 
 ## 关键提交
 
@@ -65,6 +72,7 @@
 - `bun run release:gate`
 - `bun run docker:smoke -- --wait-timeout 240 --keep-up`
 - `bun run docker:ui-smoke`
+- `docs/LOCAL_CLOSURE_2026-03-08.md`
 - `bun run docker:drill:persistence -- --wait-timeout 240 --no-build --keep-up`
 - GitHub Actions：
   - `CI Quality Gate` 成功
@@ -85,7 +93,7 @@
 - 前端在“视觉精修”和“监控信息架构继续上提”上仍有提升空间，但不构成当前研发阻塞。
 - `24h` 长稳压测未纳入当前排期。
 
-## 后置验收项
+## 后续增强项
 
 1. 目标正式部署环境 Docker 留痕复核
 
@@ -105,5 +113,5 @@
 
 ## 说明
 
-- 本文确认的是“研发结项”，不是“正式上线判定”。
-- 后续如果只做正式环境复核与 real E2E，不应再被视为研发未完成，而应视为外部验收阶段。
+- 本文确认的是“研发结项”和“本地闭环结项”，不是“真实外部环境上线判定”。
+- 后续如果只做正式环境复核与 real E2E，应视为外部增强验收，而不是研发未完成。

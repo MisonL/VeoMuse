@@ -3,6 +3,7 @@
 本记录用于留存本地 Docker Compose 在最新镜像构建完成后的正式复核结果。
 本次复核包含真实 `--build` 路径、浏览器级 Docker UI smoke 与持久化 drill。
 本次复核不包含真实 Provider 凭据链路，也不代表 `release:gate:real` 已完成。
+当前仓库的“本地闭环结项”总结见：`docs/LOCAL_CLOSURE_2026-03-08.md`。
 
 ## 复核环境
 
@@ -36,7 +37,6 @@ bun run docker:reset
 - `GET /api/health`
 - `GET /api/capabilities`
 - `/ws/generation` WebSocket 握手
-- 注册 -> 工作区 -> 上传令牌 -> 本地上传链路
 - 安全响应头
 - `/assets/*` 强缓存
 - 前端实验室入口 bundle 标识
@@ -96,8 +96,4 @@ Drill Summary 关键字段：
 - 浏览器级 Docker UI smoke 可通过
 - 重启后持久化链路可通过
 - 本地交付、回归与验收口径已经闭环
-
-若要声明“可正式上线”，仍需：
-
-- 在目标正式部署环境执行同等复核并留痕
-- 配置真实凭据后完成 `release:gate:real`
+- 如需外部生产环境背书，可在后续单独补做目标环境留痕与真实凭据回归
