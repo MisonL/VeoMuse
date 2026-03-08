@@ -34,23 +34,21 @@ bun run release:gate
 ## 2. 实网回归（有真实凭据时执行）
 
 ```bash
-# 快速凭据预检（当前默认检查 `E2E_REAL_CHANNELS=true` 与 `GEMINI_API_KEYS`）
-bun run release:real:precheck
+# 正式部署环境协议级验收（在目标主机本地执行）
+bun run acceptance:deploy -- --base-url http://127.0.0.1:18081
 
-# real 用例回归
-E2E_REAL_CHANNELS=true bun run e2e:regression:real -- --workers=1
-
-# 全量门禁 + real 回归
-bun run release:gate:real
+# 实网回归统一入口（内含 precheck + release:gate:real）
+bun run acceptance:real
 ```
 
 通过标准：
 
-- `release:real:precheck` 返回 0
+- `acceptance:deploy` 返回 0，并生成 `artifacts/deploy-acceptance/<timestamp>/summary.json`
+- `acceptance:real` 返回 0
 - `release:gate:real` 全绿，且 real 用例非全部 skipped
 - `artifacts/quality-summary.json` 中 `realE2E.status=passed`
 - 如需扩展更多 provider 凭据校验，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加必需环境变量列表
-- `bun run release:real:precheck` 已内置 `E2E_REAL_CHANNELS=true`；手工执行 `e2e:regression:real` 时仍需显式设置该环境变量
+- `bun run release:real:precheck` 已内置 `E2E_REAL_CHANNELS=true`；若单独手工执行 `e2e:regression:real`，仍需显式设置该环境变量
 - 本项仍属于外部真实凭据后置验收，不应被本地 Docker 复核替代
 
 ## 3. 发布产物复核

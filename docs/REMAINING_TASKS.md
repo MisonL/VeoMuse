@@ -16,16 +16,14 @@
 - 目标：把已完成的本地 Docker Compose 正式复核迁移到目标正式部署环境执行并留痕。
 - 覆盖范围：`GET /`、`/api/health`、`/api/capabilities`、`/ws` 握手、上传链路、安全响应头、静态资源缓存。
 - 当前自动化现状：`bun run docker:smoke` 已覆盖上述检查项与 `redis/backend/frontend` 健康态；本地正式复核已完成并留痕于 `docs/DOCKER_ACCEPTANCE_2026-03-07.md`。
-- 剩余内容：在目标正式部署环境重新执行同等验收并留痕。
+- 剩余内容：在目标正式部署环境主机本地执行 `bun run acceptance:deploy -- --base-url <target_url>` 并留痕。
 - 验收标准：目标环境 `redis/backend/frontend` 全部 `healthy`，网关首页与 API 正常，上传与 WebSocket 可用。
 
 2. 实网回归闭环（阻塞后置验收）
 
 - 前置条件：当前 real 用例默认依赖 `E2E_REAL_CHANNELS=true` 与 `GEMINI_API_KEYS`；`release:real:precheck` 会内置该开关并默认检查这两项，如需扩展多 Provider 实网回归，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加对应渠道凭据预检。
 - 执行命令：
-  - `bun run release:real:precheck`
-  - `bun run e2e:regression:real -- --workers=1`
-  - `bun run release:gate:real`
+  - `bun run acceptance:real`
 - 验收标准：real 用例非全 skipped，`artifacts/quality-summary.json` 中 `realE2E.status=passed`。
 
 ## 非阻塞优化建议

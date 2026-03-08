@@ -208,12 +208,28 @@ curl -i \
 # 标准发布门禁（本地标准回归 + SLO）
 bun run release:gate
 
+# 正式部署环境验收（在目标主机本地执行，非侵入探测）
+bun run acceptance:deploy -- --base-url http://127.0.0.1:18081
+
 # 真实凭据预检（当前默认检查 `E2E_REAL_CHANNELS=true` 与必需 Provider 凭据）
 bun run release:real:precheck
+
+# 实网回归留痕入口（包装 precheck + release:gate:real）
+bun run acceptance:real
 
 # 含真实渠道回归（需要真实 AI 凭据，real 用例若全部 skipped 将直接失败）
 bun run release:gate:real
 ```
+
+### 外部后置验收入口
+
+- `acceptance:deploy`
+  - 用途：在目标正式部署环境主机本地做协议级与上传级非侵入验收。
+  - 输出：`artifacts/deploy-acceptance/<timestamp>/summary.json`、`summary.md`
+  - 默认不执行 `docker compose up/down`、不重启服务、不跑浏览器 UI smoke。
+- `acceptance:real`
+  - 用途：统一执行真实凭据预检与 real 门禁，并生成留痕。
+  - 输出：`artifacts/real-acceptance/<timestamp>/summary.json`、`summary.md`、`quality-summary.json`
 
 工程质量补充命令：
 
