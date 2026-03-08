@@ -32,6 +32,7 @@
   - `ComparisonLab` 聚合 controller
   - `TelemetryDashboard` 聚合 controller
   - Creative / Collab 模式层第二轮收口
+  - Comparison Lab 的 controller / polling / workspace / auth 关键 hook contract / logic 护栏已补齐
 - 后端结构化收口已完成：
   - `LocalDatabaseService` façade + `local-database/*`
   - `WorkspaceService` façade + `workspace-service/*`

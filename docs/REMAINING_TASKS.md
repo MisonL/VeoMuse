@@ -14,6 +14,7 @@
 
 - 当前仓库已满足“本地闭环完成”口径。
 - 当前没有阻塞本地交付的剩余开发任务。
+- 前端 Comparison Lab 的 controller / polling / workspace / auth 关键 hook 已补齐 contract / logic 护栏测试。
 - 下述内容保留为后续增强项，而非当前阻塞项。
 
 ## 后续增强项
