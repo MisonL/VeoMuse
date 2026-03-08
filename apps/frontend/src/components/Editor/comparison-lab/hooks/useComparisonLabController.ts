@@ -9,6 +9,11 @@ import { useCompareModeManager } from './useCompareModeManager'
 import { useMarketplacePolicy } from './useMarketplacePolicy'
 import { useSyncedPlayback } from './useSyncedPlayback'
 
+interface ModelSummary {
+  id: string
+  name: string
+}
+
 interface UseComparisonLabControllerOptions {
   onOpenAssets?: ComparisonLabProps['onOpenAssets']
   channelPanelRequestNonce?: number
@@ -48,6 +53,11 @@ export const useComparisonLabController = ({
     const activeElement = document.activeElement
     channelPanelTriggerRef.current = activeElement instanceof HTMLElement ? activeElement : null
   }, [])
+  const restoreChannelPanelTriggerFocus = useCallback(() => {
+    window.setTimeout(() => {
+      channelPanelTriggerRef.current?.focus()
+    }, 0)
+  }, [])
 
   const openChannelPanel = useCallback(() => {
     captureChannelPanelTrigger()
@@ -59,6 +69,10 @@ export const useComparisonLabController = ({
     captureChannelPanelTrigger()
     setShowChannelPanel(true)
   }, [captureChannelPanelTrigger])
+  const closeChannelPanel = useCallback(() => {
+    setShowChannelPanel(false)
+    restoreChannelPanelTriggerFocus()
+  }, [restoreChannelPanelTriggerFocus])
 
   const {
     leftAssetId,
@@ -183,21 +197,38 @@ export const useComparisonLabController = ({
     resetJourney
   })
 
-  useEffect(() => {
-    const loadModels = async () => {
-      const { data, error } = await api.api.models.get()
-      if (error) return
-      if (Array.isArray(data)) {
-        const rows = data as Array<{ id: string; name: string }>
-        setAvailableModels(rows)
-        setPolicyAllowedModels(rows.map((item) => item.id))
-        if (rows[0]?.id) setLeftModel(rows[0].id)
-        if (rows[1]?.id) setRightModel(rows[1].id)
-      }
+  const applyInitialModelOptions = useCallback(
+    (rows: ModelSummary[]) => {
+      setAvailableModels(rows)
+      setPolicyAllowedModels(rows.map((item) => item.id))
+      if (rows[0]?.id) setLeftModel(rows[0].id)
+      if (rows[1]?.id) setRightModel(rows[1].id)
+    },
+    [setAvailableModels, setLeftModel, setPolicyAllowedModels, setRightModel]
+  )
+  const bootstrapComparisonLab = useCallback(async () => {
+    const { data, error } = await api.api.models.get()
+    if (!error && Array.isArray(data)) {
+      applyInitialModelOptions(data as ModelSummary[])
     }
-    void loadModels()
-    void refreshMarketplace(false)
-  }, [refreshMarketplace, setPolicyAllowedModels, setAvailableModels, setLeftModel, setRightModel])
+    await refreshMarketplace(false)
+  }, [applyInitialModelOptions, refreshMarketplace])
+  const handlePolicyWeightChange = useCallback(
+    (key: string, value: number) => {
+      setPolicyWeights((prev) => ({ ...prev, [key]: value }))
+    },
+    [setPolicyWeights]
+  )
+  const handleQuotaFormChange = useCallback(
+    (next: Partial<QuotaFormState>) => {
+      setQuotaForm((prev) => ({ ...prev, ...next }))
+    },
+    [setQuotaForm]
+  )
+
+  useEffect(() => {
+    void bootstrapComparisonLab()
+  }, [bootstrapComparisonLab])
 
   useEffect(() => {
     if (!selectedPolicyId) return
@@ -298,8 +329,7 @@ export const useComparisonLabController = ({
       onPolicyCreateNameChange: setPolicyCreateName,
       onPolicyCreatePriorityChange: setPolicyCreatePriority,
       onPolicyCreateBudgetChange: setPolicyCreateBudget,
-      onPolicyWeightChange: (key: string, value: number) =>
-        setPolicyWeights((prev) => ({ ...prev, [key]: value })),
+      onPolicyWeightChange: handlePolicyWeightChange,
       onToggleAllowedModel: toggleAllowedModel,
       onCreatePolicy: () => void createPolicy(),
       onLoadPolicies: (notify: boolean) => void loadPolicies(notify),
@@ -379,12 +409,7 @@ export const useComparisonLabController = ({
       channelConfigs,
       channelForms,
       capabilities,
-      onClose: () => {
-        setShowChannelPanel(false)
-        window.setTimeout(() => {
-          channelPanelTriggerRef.current?.focus()
-        }, 0)
-      },
+      onClose: closeChannelPanel,
       onLoadCapabilities: () => void loadCapabilities(),
       onRefreshChannelConfigs: () => void refreshChannelConfigs(),
       onSubmitAuth: () => void submitAuth(),
@@ -401,8 +426,7 @@ export const useComparisonLabController = ({
       onAddOrganizationMember: () => void addOrganizationMember(),
       onRefreshOrganizationMembers: () => void refreshOrganizationMembers(),
       onActiveChannelScopeChange: setActiveChannelScope,
-      onQuotaFormChange: (next: Partial<QuotaFormState>) =>
-        setQuotaForm((prev) => ({ ...prev, ...next })),
+      onQuotaFormChange: handleQuotaFormChange,
       onSaveOrganizationQuota: () => void saveOrganizationQuota(),
       onRefreshOrganizationQuota: () => void refreshOrganizationQuota(),
       onExportOrganizationAudits: (format: 'json' | 'csv') => void exportOrganizationAudits(format),

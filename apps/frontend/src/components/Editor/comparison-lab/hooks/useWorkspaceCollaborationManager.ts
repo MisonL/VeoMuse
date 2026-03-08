@@ -95,6 +95,7 @@ export const useWorkspaceCollaborationManager = ({
   const heartbeatRef = useRef<number | null>(null)
   const wsMessageParseWarningShownRef = useRef(false)
   const workspaceCreateIdempotencyKeyRef = useRef('')
+  const wsBindingKeyRef = useRef('')
 
   const currentActorName = memberName.trim() || workspaceOwner.trim() || 'Owner'
   const normalizeError = useCallback((error: unknown, fallbackMessage: string) => {
@@ -124,12 +125,102 @@ export const useWorkspaceCollaborationManager = ({
     },
     [normalizeError, reportJourney]
   )
+  const applyWorkspaceRealtimeState = useCallback(
+    (payload: { presence?: CollabPresence[] | null; events?: CollabEvent[] | null }) => {
+      setPresence(payload.presence || [])
+      setCollabEvents(payload.events || [])
+    },
+    []
+  )
+  const applyWorkspaceSnapshots = useCallback(
+    (rows: Array<{ id: string; actorName: string; createdAt: string }> | null | undefined) => {
+      setSnapshots(rows || [])
+    },
+    []
+  )
+  const resetWorkspaceViewState = useCallback(
+    (options?: { clearUploadToken?: boolean }) => {
+      applyWorkspaceRealtimeState({ presence: [], events: [] })
+      setInvites([])
+      applyWorkspaceSnapshots([])
+      if (options?.clearUploadToken) setUploadToken('')
+    },
+    [applyWorkspaceRealtimeState, applyWorkspaceSnapshots]
+  )
+  const applyWorkspaceJoinState = useCallback(
+    (payload: {
+      workspace?: { id: string; organizationId?: string } | null
+      defaultProject?: { id: string } | null
+      member?: { role: WorkspaceRole } | null
+      owner?: { name?: string; role?: WorkspaceRole } | null
+    }) => {
+      setUploadToken('')
+      if (payload.workspace?.id) setWorkspaceId(payload.workspace.id)
+      if (payload.workspace?.organizationId) {
+        selectOrganization(payload.workspace.organizationId)
+      }
+      if (payload.defaultProject?.id) setProjectId(payload.defaultProject.id)
+      const nextActorName = payload.owner?.name || workspaceOwner.trim() || currentActorName
+      if (payload.owner) {
+        setMemberName(nextActorName)
+        setCollabRole(payload.owner.role || 'owner')
+      } else if (payload.member?.role) {
+        setCollabRole(payload.member.role)
+      }
+    },
+    [
+      currentActorName,
+      selectOrganization,
+      setCollabRole,
+      setMemberName,
+      setProjectId,
+      setWorkspaceId,
+      setUploadToken,
+      workspaceOwner
+    ]
+  )
+  const appendInvite = useCallback(
+    (invite: WorkspaceInvite) => {
+      setInviteCode(invite.code)
+      setInvites((prev) => [invite, ...prev.filter((item) => item.id !== invite.id)])
+    },
+    [setInviteCode]
+  )
+  const clearHeartbeat = useCallback(() => {
+    if (heartbeatRef.current) {
+      window.clearInterval(heartbeatRef.current)
+      heartbeatRef.current = null
+    }
+  }, [])
+  const disconnectWs = useCallback(() => {
+    clearHeartbeat()
+    const activeSocket = wsRef.current
+    wsRef.current = null
+    wsBindingKeyRef.current = ''
+    if (
+      activeSocket &&
+      (activeSocket.readyState === WebSocket.OPEN ||
+        activeSocket.readyState === WebSocket.CONNECTING)
+    ) {
+      activeSocket.close()
+    }
+    setIsWsConnecting(false)
+    setIsWsConnected(false)
+  }, [clearHeartbeat])
+  const buildWsBindingKey = useCallback(
+    (nextWorkspaceId = workspaceId, nextMemberName = memberName, nextRole = collabRole) =>
+      `${nextWorkspaceId.trim()}::${nextMemberName.trim() || 'Editor'}::${nextRole}`,
+    [collabRole, memberName, workspaceId]
+  )
 
   const refreshWorkspaceState = useCallback(
-    async (nextWorkspaceId?: string, nextProjectId?: string) => {
-      const targetWorkspaceId = nextWorkspaceId || workspaceId
-      const targetProjectId = nextProjectId || projectId
-      if (!targetWorkspaceId) return
+    async (nextWorkspaceId?: string | null, nextProjectId?: string | null) => {
+      const targetWorkspaceId = nextWorkspaceId === undefined ? workspaceId : nextWorkspaceId || ''
+      const targetProjectId = nextProjectId === undefined ? projectId : nextProjectId || ''
+      if (!targetWorkspaceId) {
+        resetWorkspaceViewState({ clearUploadToken: true })
+        return
+      }
 
       try {
         const [presencePayload, eventsPayload] = await Promise.all([
@@ -140,8 +231,10 @@ export const useWorkspaceCollaborationManager = ({
             `/api/workspaces/${targetWorkspaceId}/collab/events?limit=50`
           )
         ])
-        setPresence(presencePayload.members || [])
-        setCollabEvents(eventsPayload.events || [])
+        applyWorkspaceRealtimeState({
+          presence: presencePayload.members,
+          events: eventsPayload.events
+        })
       } catch (error: unknown) {
         showRequestError(error, '刷新协作状态失败')
       }
@@ -152,10 +245,12 @@ export const useWorkspaceCollaborationManager = ({
             success: boolean
             snapshots: Array<{ id: string; actorName: string; createdAt: string }>
           }>(`/api/projects/${targetProjectId}/snapshots?limit=20`)
-          setSnapshots(snapshotsPayload.snapshots || [])
+          applyWorkspaceSnapshots(snapshotsPayload.snapshots)
         } catch {
-          setSnapshots([])
+          applyWorkspaceSnapshots([])
         }
+      } else {
+        applyWorkspaceSnapshots([])
       }
 
       try {
@@ -167,7 +262,14 @@ export const useWorkspaceCollaborationManager = ({
         setInvites([])
       }
     },
-    [projectId, showToast, workspaceId]
+    [
+      applyWorkspaceRealtimeState,
+      applyWorkspaceSnapshots,
+      projectId,
+      resetWorkspaceViewState,
+      showRequestError,
+      workspaceId
+    ]
   )
 
   const createWorkspace = useCallback(async () => {
@@ -209,14 +311,7 @@ export const useWorkspaceCollaborationManager = ({
           idempotent: true
         }
       )
-      setWorkspaceId(payload.workspace.id)
-      if (payload.workspace.organizationId) {
-        selectOrganization(payload.workspace.organizationId)
-      }
-      setProjectId(payload.defaultProject.id)
-      const ownerName = payload.owner?.name || workspaceOwner.trim() || 'Owner'
-      setMemberName(ownerName)
-      setCollabRole(payload.owner?.role || 'owner')
+      applyWorkspaceJoinState(payload)
       markJourneyStep('workspace_ready', {
         organizationId: payload.workspace.organizationId || effectiveOrganizationId,
         workspaceId: payload.workspace.id
@@ -235,13 +330,9 @@ export const useWorkspaceCollaborationManager = ({
     isWorkspaceCreating,
     markJourneyStep,
     openChannelPanel,
+    applyWorkspaceJoinState,
     refreshWorkspaceState,
     reportJourney,
-    selectOrganization,
-    setCollabRole,
-    setMemberName,
-    setProjectId,
-    setWorkspaceId,
     showToast,
     workspaceName,
     workspaceOwner
@@ -267,13 +358,12 @@ export const useWorkspaceCollaborationManager = ({
           })
         }
       )
-      setInviteCode(payload.invite.code)
-      setInvites((prev) => [payload.invite, ...prev])
+      appendInvite(payload.invite)
       showToast(`邀请已生成：${payload.invite.code}`, 'success')
     } catch (error: unknown) {
       showRequestError(error, '创建邀请失败')
     }
-  }, [collabRole, inviteRole, setInviteCode, showRequestError, workspaceId])
+  }, [appendInvite, collabRole, inviteRole, showRequestError, workspaceId])
 
   const acceptInvite = useCallback(async () => {
     if (!inviteCode.trim()) {
@@ -300,12 +390,7 @@ export const useWorkspaceCollaborationManager = ({
           idempotent: true
         }
       )
-      if (payload.workspace?.id) setWorkspaceId(payload.workspace.id)
-      if (payload.workspace?.organizationId) {
-        selectOrganization(payload.workspace.organizationId)
-      }
-      if (payload.defaultProject?.id) setProjectId(payload.defaultProject.id)
-      if (payload.member?.role) setCollabRole(payload.member.role)
+      applyWorkspaceJoinState(payload)
       markJourneyStep('workspace_ready', {
         organizationId: payload.workspace?.organizationId || effectiveOrganizationId,
         workspaceId: payload.workspace?.id || ''
@@ -323,12 +408,9 @@ export const useWorkspaceCollaborationManager = ({
     effectiveOrganizationId,
     inviteCode,
     markJourneyStep,
+    applyWorkspaceJoinState,
     refreshWorkspaceState,
     reportWorkspaceFailure,
-    selectOrganization,
-    setCollabRole,
-    setProjectId,
-    setWorkspaceId,
     showToast
   ])
 
@@ -384,111 +466,114 @@ export const useWorkspaceCollaborationManager = ({
     }
   }, [projectId, showRequestError, uploadFileName, workspaceId])
 
-  const disconnectWs = useCallback(() => {
-    if (heartbeatRef.current) {
-      window.clearInterval(heartbeatRef.current)
-      heartbeatRef.current = null
-    }
-    if (wsRef.current) {
-      wsRef.current.close()
-      wsRef.current = null
-    }
-    setIsWsConnecting(false)
-    setIsWsConnected(false)
-  }, [])
+  const connectWs = useCallback(
+    (options?: { force?: boolean }) => {
+      if (!options?.force && (isWsConnecting || isWsConnected)) {
+        return
+      }
+      if (!workspaceId) {
+        showToast('请先创建工作区', 'info')
+        return
+      }
+      disconnectWs()
+      const accessToken = getAccessToken().trim()
+      if (!accessToken) {
+        showToast('请先登录后再连接协作通道', 'info')
+        return
+      }
+      setIsWsConnecting(true)
+      const bindingKey = buildWsBindingKey()
+      wsBindingKeyRef.current = bindingKey
+      const query = new URLSearchParams({
+        memberName: memberName.trim() || 'Editor',
+        role: collabRole,
+        sessionId: `sess-${Math.random().toString(36).slice(2, 10)}`
+      })
+      const wsUrl = `${wsBaseFromApi(resolveApiBase())}/ws/collab/${workspaceId}?${query.toString()}`
+      const socket = new WebSocket(wsUrl, ['veomuse-collab.v1', `veomuse-auth.${accessToken}`])
+      wsRef.current = socket
 
-  const connectWs = useCallback(() => {
-    if (isWsConnecting || isWsConnected) {
-      return
-    }
-    if (!workspaceId) {
-      showToast('请先创建工作区', 'info')
-      return
-    }
-    disconnectWs()
-    const accessToken = getAccessToken().trim()
-    if (!accessToken) {
-      showToast('请先登录后再连接协作通道', 'info')
-      return
-    }
-    setIsWsConnecting(true)
-    const query = new URLSearchParams({
-      memberName: memberName.trim() || 'Editor',
-      role: collabRole,
-      sessionId: `sess-${Math.random().toString(36).slice(2, 10)}`
-    })
-    const wsUrl = `${wsBaseFromApi(resolveApiBase())}/ws/collab/${workspaceId}?${query.toString()}`
-    const socket = new WebSocket(wsUrl, ['veomuse-collab.v1', `veomuse-auth.${accessToken}`])
-    wsRef.current = socket
+      socket.onopen = () => {
+        if (wsRef.current !== socket) return
+        setIsWsConnecting(false)
+        setIsWsConnected(true)
+        showToast('协作实时通道已连接', 'success')
+        clearHeartbeat()
+        heartbeatRef.current = window.setInterval(() => {
+          socket.send(JSON.stringify({ type: 'presence.heartbeat' }))
+        }, 12_000)
+      }
 
-    socket.onopen = () => {
-      setIsWsConnecting(false)
-      setIsWsConnected(true)
-      showToast('协作实时通道已连接', 'success')
-      heartbeatRef.current = window.setInterval(() => {
-        socket.send(JSON.stringify({ type: 'presence.heartbeat' }))
-      }, 12_000)
-    }
-
-    socket.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data)
-        if (
-          payload.type === 'presence.snapshot' ||
-          payload.type === 'presence.joined' ||
-          payload.type === 'presence.left'
-        ) {
-          if (Array.isArray(payload.members)) setPresence(payload.members as CollabPresence[])
-          return
-        }
-        if (payload.type === 'collab.event') {
-          const eventRow: CollabEvent = {
-            id: `rt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            organizationId: effectiveOrganizationId || 'local',
-            workspaceId,
-            projectId: payload.projectId || null,
-            actorName: payload.actorName || 'Unknown',
-            sessionId: payload.sessionId || null,
-            eventType: payload.eventType || 'project.patch',
-            payload: payload.payload || {},
-            createdAt: new Date(payload.ts || Date.now()).toISOString()
+      socket.onmessage = (event) => {
+        if (wsRef.current !== socket) return
+        try {
+          const payload = JSON.parse(event.data)
+          if (
+            payload.type === 'presence.snapshot' ||
+            payload.type === 'presence.joined' ||
+            payload.type === 'presence.left'
+          ) {
+            if (Array.isArray(payload.members)) setPresence(payload.members as CollabPresence[])
+            return
           }
-          setCollabEvents((prev) => [eventRow, ...prev].slice(0, 100))
-        }
-      } catch (error: unknown) {
-        const normalizedError = normalizeError(error, 'parse-failed')
-        void reportJourney(false, {
-          reason: `collab-ws-message-parse-failed:${normalizedError.message || 'parse-failed'}`,
-          failedStage: 'workspace',
-          errorKind: 'unknown'
-        })
-        if (!wsMessageParseWarningShownRef.current) {
-          wsMessageParseWarningShownRef.current = true
-          showToast('收到一条异常协作事件，已自动忽略并上报诊断', 'warning')
+          if (payload.type === 'collab.event') {
+            const eventRow: CollabEvent = {
+              id: `rt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              organizationId: effectiveOrganizationId || 'local',
+              workspaceId,
+              projectId: payload.projectId || null,
+              actorName: payload.actorName || 'Unknown',
+              sessionId: payload.sessionId || null,
+              eventType: payload.eventType || 'project.patch',
+              payload: payload.payload || {},
+              createdAt: new Date(payload.ts || Date.now()).toISOString()
+            }
+            setCollabEvents((prev) => [eventRow, ...prev].slice(0, 100))
+          }
+        } catch (error: unknown) {
+          const normalizedError = normalizeError(error, 'parse-failed')
+          void reportJourney(false, {
+            reason: `collab-ws-message-parse-failed:${normalizedError.message || 'parse-failed'}`,
+            failedStage: 'workspace',
+            errorKind: 'unknown'
+          })
+          if (!wsMessageParseWarningShownRef.current) {
+            wsMessageParseWarningShownRef.current = true
+            showToast('收到一条异常协作事件，已自动忽略并上报诊断', 'warning')
+          }
         }
       }
-    }
 
-    socket.onclose = () => {
-      disconnectWs()
-    }
+      socket.onclose = () => {
+        if (wsRef.current !== socket) return
+        clearHeartbeat()
+        wsRef.current = null
+        wsBindingKeyRef.current = ''
+        setIsWsConnecting(false)
+        setIsWsConnected(false)
+      }
 
-    socket.onerror = () => {
-      showToast('协作通道连接异常', 'error')
-      disconnectWs()
-    }
-  }, [
-    collabRole,
-    disconnectWs,
-    effectiveOrganizationId,
-    isWsConnected,
-    isWsConnecting,
-    memberName,
-    normalizeError,
-    reportJourney,
-    showToast,
-    workspaceId
-  ])
+      socket.onerror = () => {
+        if (wsRef.current !== socket) return
+        showToast('协作通道连接异常', 'error')
+        socket.close()
+      }
+    },
+    [
+      buildWsBindingKey,
+      clearHeartbeat,
+      collabRole,
+      disconnectWs,
+      effectiveOrganizationId,
+      isWsConnected,
+      isWsConnecting,
+      memberName,
+      normalizeError,
+      reportJourney,
+      showToast,
+      workspaceId
+    ]
+  )
 
   const sendCollabEvent = useCallback(
     (type: 'timeline.patch' | 'project.patch' | 'cursor.update') => {
@@ -524,6 +609,18 @@ export const useWorkspaceCollaborationManager = ({
     },
     [effectiveOrganizationId, memberName, projectId, showToast, workspaceId]
   )
+
+  useEffect(() => {
+    if (!wsRef.current) return
+    const nextBindingKey = buildWsBindingKey()
+    if (wsBindingKeyRef.current === nextBindingKey) return
+    disconnectWs()
+    if (workspaceId && getAccessToken().trim()) {
+      window.setTimeout(() => {
+        connectWs({ force: true })
+      }, 0)
+    }
+  }, [buildWsBindingKey, connectWs, disconnectWs, workspaceId])
 
   useEffect(() => () => disconnectWs(), [disconnectWs])
 

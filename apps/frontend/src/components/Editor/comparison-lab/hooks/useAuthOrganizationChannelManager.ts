@@ -55,6 +55,21 @@ interface UseAuthOrganizationChannelManagerOptions {
   resetJourney: (force?: boolean) => void
 }
 
+interface AuthSessionPayload {
+  session: { accessToken: string; refreshToken: string; user: { id: string; email: string } }
+  organizations?: Organization[]
+}
+
+interface ChannelConfigsPayload {
+  configs: AiChannelConfig[]
+  capabilities: CapabilityPayload
+}
+
+interface OrganizationQuotaPayload {
+  quota: OrganizationQuota
+  usage: OrganizationUsage
+}
+
 const resolveResponseError = (payload: unknown, status: number) => {
   if (!payload || typeof payload !== 'object') return `HTTP ${status}`
   const candidate = payload as { error?: unknown }
@@ -135,10 +150,7 @@ export const useAuthOrganizationChannelManager = ({
   }, [])
 
   const applySession = useCallback(
-    (payload: {
-      session: { accessToken: string; refreshToken: string; user: { id: string; email: string } }
-      organizations?: Organization[]
-    }) => {
+    (payload: AuthSessionPayload) => {
       setAccessToken(payload.session.accessToken)
       setRefreshToken(payload.session.refreshToken)
       setAuthProfile({
@@ -156,6 +168,16 @@ export const useAuthOrganizationChannelManager = ({
     },
     [selectOrganization, selectedOrganizationId]
   )
+  const resetAuthResources = useCallback(() => {
+    setAuthProfile(null)
+    setOrganizations([])
+    setSelectedOrganizationId('')
+    setOrgMembers([])
+    setChannelConfigs([])
+    setChannelForms({})
+    setOrganizationQuota(null)
+    setOrganizationUsage(null)
+  }, [])
 
   const applyQuotaForm = useCallback((quota: OrganizationQuota) => {
     setQuotaForm({
@@ -186,12 +208,50 @@ export const useAuthOrganizationChannelManager = ({
     }
     setChannelForms(next)
   }, [])
+  const applyChannelConfigPayload = useCallback(
+    (payload: ChannelConfigsPayload) => {
+      const rows = payload.configs || []
+      setChannelConfigs(rows)
+      setCapabilities(payload.capabilities || null)
+      applyChannelForms(rows)
+    },
+    [applyChannelForms]
+  )
+  const applyOrganizationQuotaPayload = useCallback(
+    (payload: OrganizationQuotaPayload | null) => {
+      if (!payload) {
+        setOrganizationQuota(null)
+        setOrganizationUsage(null)
+        return
+      }
+      setOrganizationQuota(payload.quota || null)
+      setOrganizationUsage(payload.usage || null)
+      if (payload.quota) applyQuotaForm(payload.quota)
+    },
+    [applyQuotaForm]
+  )
+  const resolveScopedChannelConfigPath = useCallback(() => {
+    if (activeChannelScope === 'workspace' && workspaceId) {
+      return `/api/workspaces/${workspaceId}/channels`
+    }
+    return effectiveOrganizationId ? `/api/organizations/${effectiveOrganizationId}/channels` : ''
+  }, [activeChannelScope, effectiveOrganizationId, workspaceId])
+  const handleAuthSuccess = useCallback(
+    async (payload: AuthSessionPayload, successMessage: string) => {
+      applySession(payload)
+      await loadPolicies(false)
+      const organizationId = payload.organizations?.[0]?.id || ''
+      markJourneyStep('register_or_login', { organizationId })
+      markJourneyStep('organization_ready', { organizationId })
+      showToast(successMessage, 'success')
+    },
+    [applySession, loadPolicies, markJourneyStep, showToast]
+  )
 
   const loadAuthProfile = useCallback(async () => {
     const accessToken = getAccessToken().trim()
     if (!accessToken) {
-      setAuthProfile(null)
-      setOrganizations([])
+      resetAuthResources()
       return
     }
     try {
@@ -212,10 +272,9 @@ export const useAuthOrganizationChannelManager = ({
       void loadPolicies(false)
     } catch {
       clearAuthSession()
-      setAuthProfile(null)
-      setOrganizations([])
+      resetAuthResources()
     }
-  }, [loadPolicies, selectOrganization])
+  }, [loadPolicies, resetAuthResources, selectOrganization])
 
   const submitAuth = useCallback(async () => {
     if (!loginEmail.trim() || !loginPassword.trim()) {
@@ -228,11 +287,7 @@ export const useAuthOrganizationChannelManager = ({
       if (registerMode) {
         const payload = await requestJsonWithRetry<{
           success: boolean
-          session: {
-            accessToken: string
-            refreshToken: string
-            user: { id: string; email: string }
-          }
+          session: AuthSessionPayload['session']
           organizations: Organization[]
         }>('/api/auth/register', {
           method: 'POST',
@@ -242,20 +297,11 @@ export const useAuthOrganizationChannelManager = ({
             organizationName: registerOrgName.trim() || '我的组织'
           })
         })
-        applySession(payload)
-        await loadPolicies(false)
-        const organizationId = payload.organizations?.[0]?.id || ''
-        markJourneyStep('register_or_login', { organizationId })
-        markJourneyStep('organization_ready', { organizationId })
-        showToast('注册并登录成功', 'success')
+        await handleAuthSuccess(payload, '注册并登录成功')
       } else {
         const payload = await requestJsonWithRetry<{
           success: boolean
-          session: {
-            accessToken: string
-            refreshToken: string
-            user: { id: string; email: string }
-          }
+          session: AuthSessionPayload['session']
           organizations: Organization[]
         }>(
           '/api/auth/login',
@@ -270,12 +316,7 @@ export const useAuthOrganizationChannelManager = ({
             idempotent: true
           }
         )
-        applySession(payload)
-        await loadPolicies(false)
-        const organizationId = payload.organizations?.[0]?.id || ''
-        markJourneyStep('register_or_login', { organizationId })
-        markJourneyStep('organization_ready', { organizationId })
-        showToast('登录成功', 'success')
+        await handleAuthSuccess(payload, '登录成功')
       }
     } catch (error: unknown) {
       const fallbackMessage = registerMode ? '注册失败' : '登录失败'
@@ -288,11 +329,9 @@ export const useAuthOrganizationChannelManager = ({
       setIsAuthBusy(false)
     }
   }, [
-    applySession,
-    loadPolicies,
+    handleAuthSuccess,
     loginEmail,
     loginPassword,
-    markJourneyStep,
     registerMode,
     registerOrgName,
     reportAuthFailure,
@@ -319,17 +358,10 @@ export const useAuthOrganizationChannelManager = ({
       }, 1_500)
     }
     clearAuthSession()
-    setAuthProfile(null)
-    setOrganizations([])
-    setSelectedOrganizationId('')
-    setOrgMembers([])
-    setChannelConfigs([])
-    setChannelForms({})
-    setOrganizationQuota(null)
-    setOrganizationUsage(null)
+    resetAuthResources()
     resetJourney()
     showToast('已退出登录', 'success')
-  }, [normalizeError, resetJourney, showToast])
+  }, [normalizeError, resetAuthResources, resetJourney, showToast])
 
   const createOrganization = useCallback(async () => {
     if (!newOrgName.trim()) {
@@ -404,8 +436,7 @@ export const useAuthOrganizationChannelManager = ({
 
   const refreshOrganizationQuota = useCallback(async () => {
     if (!effectiveOrganizationId) {
-      setOrganizationQuota(null)
-      setOrganizationUsage(null)
+      applyOrganizationQuotaPayload(null)
       return
     }
     try {
@@ -414,15 +445,12 @@ export const useAuthOrganizationChannelManager = ({
         quota: OrganizationQuota
         usage: OrganizationUsage
       }>(`/api/organizations/${effectiveOrganizationId}/quota`)
-      setOrganizationQuota(payload.quota || null)
-      setOrganizationUsage(payload.usage || null)
-      if (payload.quota) applyQuotaForm(payload.quota)
+      applyOrganizationQuotaPayload(payload)
     } catch (error: unknown) {
-      setOrganizationQuota(null)
-      setOrganizationUsage(null)
+      applyOrganizationQuotaPayload(null)
       showRequestError(error, '加载组织配额失败')
     }
-  }, [applyQuotaForm, effectiveOrganizationId, showRequestError])
+  }, [applyOrganizationQuotaPayload, effectiveOrganizationId, showRequestError])
 
   const saveOrganizationQuota = useCallback(async () => {
     if (!effectiveOrganizationId) {
@@ -457,16 +485,18 @@ export const useAuthOrganizationChannelManager = ({
           concurrencyLimit
         })
       })
-      if (payload.quota) {
-        setOrganizationQuota(payload.quota)
-        applyQuotaForm(payload.quota)
-      }
-      if (payload.usage) setOrganizationUsage(payload.usage)
+      applyOrganizationQuotaPayload(payload)
       showToast('组织配额已更新', 'success')
     } catch (error: unknown) {
       showRequestError(error, '更新组织配额失败')
     }
-  }, [applyQuotaForm, effectiveOrganizationId, quotaForm, showRequestError, showToast])
+  }, [
+    applyOrganizationQuotaPayload,
+    effectiveOrganizationId,
+    quotaForm,
+    showRequestError,
+    showToast
+  ])
 
   const exportOrganizationAudits = useCallback(
     async (format: 'json' | 'csv') => {
@@ -521,32 +551,21 @@ export const useAuthOrganizationChannelManager = ({
   const refreshChannelConfigs = useCallback(async () => {
     if (!effectiveOrganizationId) return
     try {
-      if (activeChannelScope === 'workspace' && workspaceId) {
-        const payload = await requestJson<{
-          success: boolean
-          configs: AiChannelConfig[]
-          capabilities: CapabilityPayload
-        }>(`/api/workspaces/${workspaceId}/channels`)
-        setChannelConfigs(payload.configs || [])
-        setCapabilities(payload.capabilities || null)
-        applyChannelForms(payload.configs || [])
-      } else {
-        const payload = await requestJson<{
-          success: boolean
-          configs: AiChannelConfig[]
-          capabilities: CapabilityPayload
-        }>(`/api/organizations/${effectiveOrganizationId}/channels`)
-        setChannelConfigs(payload.configs || [])
-        setCapabilities(payload.capabilities || null)
-        applyChannelForms(payload.configs || [])
-      }
+      const path = resolveScopedChannelConfigPath()
+      if (!path) return
+      const payload = await requestJson<{
+        success: boolean
+        configs: AiChannelConfig[]
+        capabilities: CapabilityPayload
+      }>(path)
+      applyChannelConfigPayload(payload)
     } catch (error: unknown) {
       showRequestError(error, '加载模型失败')
     }
   }, [
-    activeChannelScope,
-    applyChannelForms,
+    applyChannelConfigPayload,
     effectiveOrganizationId,
+    resolveScopedChannelConfigPath,
     showRequestError,
     workspaceId
   ])
