@@ -55,7 +55,9 @@ Flow:
 const createTimestampLabel = (now = new Date()) => now.toISOString().replace(/[:.]/g, '-')
 
 export const resolveDefaultOutputDir = (now = new Date()) =>
-  path.join(DEFAULT_OUTPUT_ROOT, createTimestampLabel(now))
+  path.resolve(process.cwd(), DEFAULT_OUTPUT_ROOT, createTimestampLabel(now))
+
+export const createDefaultOutputDir = resolveDefaultOutputDir
 
 const readFlagValue = (
   args: string[],
@@ -91,7 +93,7 @@ export const parseArgs = (args: string[], now = new Date()): ParseResult => {
     }
     if (arg === '--output-dir' || arg.startsWith('--output-dir=')) {
       const parsed = readFlagValue(args, index, '--output-dir')
-      options.outputDir = parsed.value.trim()
+      options.outputDir = path.resolve(process.cwd(), parsed.value.trim())
       index = parsed.nextIndex
       continue
     }

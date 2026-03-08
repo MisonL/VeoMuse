@@ -32,23 +32,23 @@ describe('外部验收入口脚本', () => {
 
     expect(parsed.showHelp).toBe(false)
     expect(parsed.options.baseUrl).toBe('https://veomuse.example.com')
-    expect(parsed.options.outputDir).toBe('artifacts/custom-deploy')
+    expect(parsed.options.outputDir).toBe(path.resolve(process.cwd(), 'artifacts/custom-deploy'))
     expect(parsed.options.timeoutSec).toBe(300)
     expect(parsed.options.adminTokenEnv).toBe('PROD_ADMIN_TOKEN')
-    expect(buildAcceptanceOutputPaths('artifacts/custom-deploy')).toEqual({
-      json: path.join('artifacts/custom-deploy', 'summary.json'),
-      markdown: path.join('artifacts/custom-deploy', 'summary.md')
+    expect(buildAcceptanceOutputPaths(path.resolve(process.cwd(), 'artifacts/custom-deploy'))).toEqual({
+      json: path.join(path.resolve(process.cwd(), 'artifacts/custom-deploy'), 'summary.json'),
+      markdown: path.join(path.resolve(process.cwd(), 'artifacts/custom-deploy'), 'summary.md')
     })
   })
 
   it('acceptance:deploy 默认值应稳定并拒绝非法参数', () => {
     const parsed = parseDeployArgs([])
 
-    expect(parsed.options.outputDir.startsWith(`${DEPLOY_OUTPUT_ROOT}${path.sep}`)).toBe(true)
+    expect(parsed.options.outputDir.startsWith(path.resolve(process.cwd(), DEPLOY_OUTPUT_ROOT))).toBe(true)
     expect(parsed.options.timeoutSec).toBe(DEFAULT_TIMEOUT_SEC)
     expect(parsed.options.adminTokenEnv).toBe(DEFAULT_ADMIN_TOKEN_ENV)
     expect(resolveDeployOutputDir(new Date('2026-03-08T04:00:00.000Z'))).toBe(
-      path.join(DEPLOY_OUTPUT_ROOT, '2026-03-08T04-00-00-000Z')
+      path.resolve(process.cwd(), DEPLOY_OUTPUT_ROOT, '2026-03-08T04-00-00-000Z')
     )
 
     expect(() => parseDeployArgs(['--timeout', '0'])).toThrow('--timeout 需要正整数')
@@ -92,9 +92,9 @@ describe('外部验收入口脚本', () => {
   it('acceptance:real 应解析参数并生成稳定默认输出目录', () => {
     const parsed = parseRealArgs(['--output-dir', 'artifacts/custom-real'])
     expect(parsed.showHelp).toBe(false)
-    expect(parsed.options.outputDir).toBe('artifacts/custom-real')
+    expect(parsed.options.outputDir).toBe(path.resolve(process.cwd(), 'artifacts/custom-real'))
     expect(resolveRealOutputDir(new Date('2026-03-08T05:00:00.000Z'))).toBe(
-      path.join(REAL_OUTPUT_ROOT, '2026-03-08T05-00-00-000Z')
+      path.resolve(process.cwd(), REAL_OUTPUT_ROOT, '2026-03-08T05-00-00-000Z')
     )
     expect(() => parseRealArgs(['--unknown'])).toThrow('未知参数')
   })
