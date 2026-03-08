@@ -55,6 +55,30 @@ export const useMarketplacePolicy = ({
   const policyExecRequestSeqRef = useRef(0)
   const policySimulateSeqRef = useRef(0)
 
+  const showPolicyError = useCallback(
+    (error: unknown, fallback: string) => {
+      showToast(resolveErrorMessage(error, fallback), 'error')
+    },
+    [showToast]
+  )
+  const applyPolicies = useCallback((rows: RoutingPolicy[]) => {
+    setPolicies(rows)
+    setSelectedPolicyId((prev) => prev || rows[0]?.id || '')
+  }, [])
+  const applyPolicyExecutionPage = useCallback(
+    (
+      rows: RoutingExecution[],
+      reset: boolean,
+      offset: number,
+      page?: { hasMore?: boolean } | null
+    ) => {
+      setPolicyExecutions((prev) => (reset ? rows : [...prev, ...rows]))
+      setPolicyExecHasMore(Boolean(page?.hasMore))
+      setPolicyExecOffset(offset + rows.length)
+    },
+    []
+  )
+
   const selectedPolicy = useMemo(
     () => policies.find((item) => item.id === selectedPolicyId) || null,
     [policies, selectedPolicyId]
@@ -74,12 +98,12 @@ export const useMarketplacePolicy = ({
         const message = resolveErrorMessage(error, '加载模型超市失败')
         setMarketplace([])
         setMarketplaceError(message)
-        showToast(message, 'error')
+        showPolicyError(error, '加载模型超市失败')
       } finally {
         setIsMarketplaceLoading(false)
       }
     },
-    [showToast]
+    [showPolicyError, showToast]
   )
 
   const loadPolicies = useCallback(
@@ -95,19 +119,16 @@ export const useMarketplacePolicy = ({
           '/api/models/policies'
         )
         const rows = payload.policies || []
-        setPolicies(rows)
-        if (!selectedPolicyId && rows[0]?.id) {
-          setSelectedPolicyId(rows[0].id)
-        }
+        applyPolicies(rows)
         if (notify) showToast(`已加载 ${rows.length} 条策略`, 'success')
       } catch (error: unknown) {
-        setPolicies([])
-        showToast(resolveErrorMessage(error, '加载策略失败'), 'error')
+        applyPolicies([])
+        showPolicyError(error, '加载策略失败')
       } finally {
         setIsPolicyLoading(false)
       }
     },
-    [selectedPolicyId, showToast]
+    [applyPolicies, showPolicyError, showToast]
   )
 
   const loadPolicyExecutions = useCallback(
@@ -127,12 +148,10 @@ export const useMarketplacePolicy = ({
         )
         if (requestSeq !== policyExecRequestSeqRef.current) return
         const rows = payload.executions || []
-        setPolicyExecutions((prev) => (reset ? rows : [...prev, ...rows]))
-        setPolicyExecHasMore(Boolean(payload.page?.hasMore))
-        setPolicyExecOffset(offset + rows.length)
+        applyPolicyExecutionPage(rows, reset, offset, payload.page)
       } catch (error: unknown) {
         if (requestSeq === policyExecRequestSeqRef.current) {
-          showToast(resolveErrorMessage(error, '加载策略执行记录失败'), 'error')
+          showPolicyError(error, '加载策略执行记录失败')
         }
       } finally {
         if (requestSeq === policyExecRequestSeqRef.current) {
@@ -140,7 +159,7 @@ export const useMarketplacePolicy = ({
         }
       }
     },
-    [policyExecOffset, selectedPolicyId, showToast]
+    [applyPolicyExecutionPage, policyExecOffset, selectedPolicyId, showPolicyError]
   )
 
   const toggleAllowedModel = useCallback((modelId: string) => {
@@ -180,7 +199,7 @@ export const useMarketplacePolicy = ({
       await loadPolicies(false)
       setSelectedPolicyId(payload.policy.id)
     } catch (error: unknown) {
-      showToast(resolveErrorMessage(error, '创建策略失败'), 'error')
+      showPolicyError(error, '创建策略失败')
     } finally {
       setIsPolicyCreating(false)
     }
@@ -192,6 +211,7 @@ export const useMarketplacePolicy = ({
     policyCreateName,
     policyCreatePriority,
     policyWeights,
+    showPolicyError,
     showToast
   ])
 
@@ -215,11 +235,11 @@ export const useMarketplacePolicy = ({
       )
       showToast(`策略状态已更新：${payload.policy.enabled ? '启用' : '停用'}`, 'success')
     } catch (error: unknown) {
-      showToast(resolveErrorMessage(error, '更新策略失败'), 'error')
+      showPolicyError(error, '更新策略失败')
     } finally {
       setIsPolicyUpdating(false)
     }
-  }, [isPolicyUpdating, policyBudget, policyPriority, selectedPolicy, showToast])
+  }, [isPolicyUpdating, policyBudget, policyPriority, selectedPolicy, showPolicyError, showToast])
 
   const simulatePolicy = useCallback(
     async (overridePrompt?: string) => {
@@ -261,7 +281,7 @@ export const useMarketplacePolicy = ({
         return decision
       } catch (error: unknown) {
         if (requestSeq === policySimulateSeqRef.current) {
-          showToast(resolveErrorMessage(error, '策略模拟失败'), 'error')
+          showPolicyError(error, '策略模拟失败')
         }
         return null
       } finally {
@@ -278,6 +298,7 @@ export const useMarketplacePolicy = ({
       policyPriority,
       policyPrompt,
       selectedPolicyId,
+      showPolicyError,
       showToast
     ]
   )

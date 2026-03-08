@@ -25,6 +25,12 @@ interface UseVideoGenerationManagerParams {
   showToast: ShowToast
 }
 
+const resolveVideoGenerationErrorMessage = (error: unknown, fallbackMessage: string) => {
+  if (error instanceof Error && error.message.trim()) return error.message
+  const message = String(error || '').trim()
+  return message || fallbackMessage
+}
+
 export const useVideoGenerationManager = ({
   labMode,
   authProfile,
@@ -59,6 +65,13 @@ export const useVideoGenerationManager = ({
   const [isVideoGenerationAutoSyncTicking, setIsVideoGenerationAutoSyncTicking] = useState(false)
   const [isVideoGenerationBusy, setIsVideoGenerationBusy] = useState(false)
 
+  const showVideoGenerationError = useCallback(
+    (error: unknown, fallbackMessage: string, silent = false) => {
+      if (silent) return
+      showToast(resolveVideoGenerationErrorMessage(error, fallbackMessage), 'error')
+    },
+    [showToast]
+  )
   const upsertVideoGenerationJob = useCallback((job: VideoGenerationJob) => {
     setVideoGenerationJobs((prev) => {
       const index = prev.findIndex((item) => item.id === job.id)
@@ -68,6 +81,69 @@ export const useVideoGenerationManager = ({
       return next
     })
   }, [])
+  const selectAndUpsertVideoGenerationJob = useCallback(
+    (job: VideoGenerationJob | null | undefined) => {
+      if (!job) return false
+      setVideoGenerationSelectedJobId(job.id)
+      upsertVideoGenerationJob(job)
+      return true
+    },
+    [upsertVideoGenerationJob]
+  )
+  const runVideoGenerationTask = useCallback(
+    async <T>(
+      task: () => Promise<T>,
+      options: {
+        fallbackMessage: string
+        silent?: boolean
+      }
+    ) => {
+      if (isVideoGenerationBusy) return null
+      setIsVideoGenerationBusy(true)
+      try {
+        return await task()
+      } catch (error: unknown) {
+        showVideoGenerationError(error, options.fallbackMessage, options.silent)
+        return null
+      } finally {
+        setIsVideoGenerationBusy(false)
+      }
+    },
+    [isVideoGenerationBusy, showVideoGenerationError]
+  )
+  const applyVideoGenerationPage = useCallback(
+    (
+      rows: VideoGenerationJob[],
+      append: boolean,
+      limit: number,
+      page?: {
+        cursor?: string | null
+        nextCursor?: string | null
+        hasMore?: boolean
+      }
+    ) => {
+      setVideoGenerationJobs((prev) => {
+        if (!append) return rows
+        return [
+          ...prev,
+          ...rows.filter((item) => prev.every((existing) => existing.id !== item.id))
+        ]
+      })
+
+      const inferredCursor = rows.length > 0 ? rows[rows.length - 1]?.createdAt || '' : ''
+      const cursorFromPage =
+        typeof page?.nextCursor === 'string'
+          ? page.nextCursor
+          : typeof page?.cursor === 'string'
+            ? page.cursor
+            : inferredCursor
+      const hasMore =
+        typeof page?.hasMore === 'boolean' ? page.hasMore : rows.length >= Math.min(limit, 100)
+      setVideoGenerationCursor(cursorFromPage || '')
+      setVideoGenerationHasMore(Boolean(cursorFromPage) && hasMore)
+    },
+    []
+  )
 
   const createVideoGenerationTask = useCallback(async () => {
     const prompt = videoGenerationPrompt.trim()
@@ -133,36 +209,32 @@ export const useVideoGenerationManager = ({
       inputs: Object.keys(inputs).length > 0 ? inputs : undefined
     }
 
-    setIsVideoGenerationBusy(true)
-    try {
-      const payload = await requestJson<{
-        success: boolean
-        job: VideoGenerationJob | null
-        providerResult?: { status?: string; message?: string } | null
-      }>('/api/video/generations', {
-        method: 'POST',
-        body: JSON.stringify(payloadBody)
-      })
-      if (!payload.job) {
-        showToast('任务创建成功，但未返回任务对象', 'warning')
-        return
-      }
-      setVideoGenerationSelectedJobId(payload.job.id)
-      upsertVideoGenerationJob(payload.job)
-      showToast(
-        `视频任务已创建：${payload.job.id}（${payload.providerResult?.status || payload.job.status}）`,
-        'success'
-      )
-    } catch (error: unknown) {
-      const normalized = error instanceof Error ? error : new Error(String(error))
-      showToast(normalized.message || '创建视频任务失败', 'error')
-    } finally {
-      setIsVideoGenerationBusy(false)
+    const payload = await runVideoGenerationTask(
+      () =>
+        requestJson<{
+          success: boolean
+          job: VideoGenerationJob | null
+          providerResult?: { status?: string; message?: string } | null
+        }>('/api/video/generations', {
+          method: 'POST',
+          body: JSON.stringify(payloadBody)
+        }),
+      { fallbackMessage: '创建视频任务失败' }
+    )
+    if (!payload) return
+    if (!payload.job) {
+      showToast('任务创建成功，但未返回任务对象', 'warning')
+      return
     }
+    selectAndUpsertVideoGenerationJob(payload.job)
+    showToast(
+      `视频任务已创建：${payload.job.id}（${payload.providerResult?.status || payload.job.status}）`,
+      'success'
+    )
   }, [
-    isVideoGenerationBusy,
+    runVideoGenerationTask,
+    selectAndUpsertVideoGenerationJob,
     showToast,
-    upsertVideoGenerationJob,
     videoGenerationFirstFrameInput,
     videoGenerationImageInput,
     videoGenerationInputSourceType,
@@ -190,64 +262,41 @@ export const useVideoGenerationManager = ({
         setVideoGenerationHasMore(false)
         return
       }
-      if (isVideoGenerationBusy) return
+      const query = new URLSearchParams({
+        limit: String(Math.min(limit, 100))
+      })
+      if (workspaceId.trim()) query.set('workspaceId', workspaceId.trim())
+      if (videoGenerationStatusFilter !== 'all') query.set('status', videoGenerationStatusFilter)
+      if (cursor) query.set('cursor', cursor)
+      if (videoGenerationModelId.trim()) query.set('modelId', videoGenerationModelId.trim())
 
-      setIsVideoGenerationBusy(true)
-      try {
-        const query = new URLSearchParams({
-          limit: String(Math.min(limit, 100))
-        })
-        if (workspaceId.trim()) query.set('workspaceId', workspaceId.trim())
-        if (videoGenerationStatusFilter !== 'all') query.set('status', videoGenerationStatusFilter)
-        if (cursor) query.set('cursor', cursor)
-        if (videoGenerationModelId.trim()) query.set('modelId', videoGenerationModelId.trim())
-
-        const payload = await requestJson<{
-          success: boolean
-          jobs: VideoGenerationJob[]
-          page?: {
-            cursor?: string | null
-            nextCursor?: string | null
-            limit?: number
-            hasMore?: boolean
-          }
-        }>(`/api/video/generations?${query.toString()}`)
-        const rows = payload.jobs || []
-        setVideoGenerationJobs((prev) => {
-          if (!append) return rows
-          return [
-            ...prev,
-            ...rows.filter((item) => prev.every((existing) => existing.id !== item.id))
-          ]
-        })
-
-        const inferredCursor = rows.length > 0 ? rows[rows.length - 1]?.createdAt || '' : ''
-        const cursorFromPage =
-          typeof payload.page?.nextCursor === 'string'
-            ? payload.page.nextCursor
-            : typeof payload.page?.cursor === 'string'
-              ? payload.page.cursor
-              : inferredCursor
-        const hasMore =
-          typeof payload.page?.hasMore === 'boolean'
-            ? payload.page.hasMore
-            : rows.length >= Math.min(limit, 100)
-        setVideoGenerationCursor(cursorFromPage || '')
-        setVideoGenerationHasMore(Boolean(cursorFromPage) && hasMore)
-        if (!options?.silent) {
-          showToast(`已加载 ${rows.length} 条视频任务`, 'success')
+      const payload = await runVideoGenerationTask(
+        () =>
+          requestJson<{
+            success: boolean
+            jobs: VideoGenerationJob[]
+            page?: {
+              cursor?: string | null
+              nextCursor?: string | null
+              limit?: number
+              hasMore?: boolean
+            }
+          }>(`/api/video/generations?${query.toString()}`),
+        {
+          fallbackMessage: '加载视频任务失败',
+          silent: options?.silent
         }
-      } catch (error: unknown) {
-        const normalized = error instanceof Error ? error : new Error(String(error))
-        if (!options?.silent) {
-          showToast(normalized.message || '加载视频任务失败', 'error')
-        }
-      } finally {
-        setIsVideoGenerationBusy(false)
+      )
+      if (!payload) return
+      const rows = payload.jobs || []
+      applyVideoGenerationPage(rows, append, limit, payload.page)
+      if (!options?.silent) {
+        showToast(`已加载 ${rows.length} 条视频任务`, 'success')
       }
     },
     [
-      isVideoGenerationBusy,
+      applyVideoGenerationPage,
+      runVideoGenerationTask,
       showToast,
       videoGenerationCursor,
       videoGenerationListLimit,
@@ -264,125 +313,108 @@ export const useVideoGenerationManager = ({
         if (!options?.silent) showToast('请先选择任务 ID', 'info')
         return
       }
-      if (isVideoGenerationBusy) return
-      setIsVideoGenerationBusy(true)
-      try {
-        const payload = await requestJson<{ success: boolean; job: VideoGenerationJob }>(
-          `/api/video/generations/${encodeURIComponent(targetJobId)}`
-        )
-        if (payload.job) {
-          upsertVideoGenerationJob(payload.job)
-          setVideoGenerationSelectedJobId(payload.job.id)
+      const payload = await runVideoGenerationTask(
+        () =>
+          requestJson<{ success: boolean; job: VideoGenerationJob }>(
+            `/api/video/generations/${encodeURIComponent(targetJobId)}`
+          ),
+        {
+          fallbackMessage: '查询任务详情失败',
+          silent: options?.silent
         }
-        if (!options?.silent) {
-          showToast(`任务详情已刷新：${payload.job?.status || '-'}`, 'success')
-        }
-      } catch (error: unknown) {
-        const normalized = error instanceof Error ? error : new Error(String(error))
-        if (!options?.silent) {
-          showToast(normalized.message || '查询任务详情失败', 'error')
-        }
-      } finally {
-        setIsVideoGenerationBusy(false)
+      )
+      if (!payload) return
+      selectAndUpsertVideoGenerationJob(payload.job)
+      if (!options?.silent) {
+        showToast(`任务详情已刷新：${payload.job?.status || '-'}`, 'success')
       }
     },
-    [isVideoGenerationBusy, showToast, upsertVideoGenerationJob, videoGenerationSelectedJobId]
+    [
+      runVideoGenerationTask,
+      selectAndUpsertVideoGenerationJob,
+      showToast,
+      videoGenerationSelectedJobId
+    ]
   )
 
   const syncVideoGenerationJob = useCallback(
     async (jobId: string, options?: { silent?: boolean }) => {
       const normalizedJobId = jobId.trim()
       if (!normalizedJobId) return
-      if (isVideoGenerationBusy) return
-      setIsVideoGenerationBusy(true)
-      try {
-        const payload = await requestJson<{
-          success: boolean
-          job: VideoGenerationJob
-          queryResult?: { state?: string; status?: string } | null
-        }>(`/api/video/generations/${encodeURIComponent(normalizedJobId)}/sync`, {
-          method: 'POST'
-        })
-        if (payload.job) {
-          setVideoGenerationSelectedJobId(payload.job.id)
-          upsertVideoGenerationJob(payload.job)
+      const payload = await runVideoGenerationTask(
+        () =>
+          requestJson<{
+            success: boolean
+            job: VideoGenerationJob
+            queryResult?: { state?: string; status?: string } | null
+          }>(`/api/video/generations/${encodeURIComponent(normalizedJobId)}/sync`, {
+            method: 'POST'
+          }),
+        {
+          fallbackMessage: '同步任务失败',
+          silent: options?.silent
         }
-        if (!options?.silent) {
-          showToast(
-            `同步完成：${payload.queryResult?.state || payload.job?.status || '-'}`,
-            payload.job?.status === 'failed' ? 'warning' : 'success'
-          )
-        }
-      } catch (error: unknown) {
-        const normalized = error instanceof Error ? error : new Error(String(error))
-        if (!options?.silent) {
-          showToast(normalized.message || '同步任务失败', 'error')
-        }
-      } finally {
-        setIsVideoGenerationBusy(false)
+      )
+      if (!payload) return
+      selectAndUpsertVideoGenerationJob(payload.job)
+      if (!options?.silent) {
+        showToast(
+          `同步完成：${payload.queryResult?.state || payload.job?.status || '-'}`,
+          payload.job?.status === 'failed' ? 'warning' : 'success'
+        )
       }
     },
-    [isVideoGenerationBusy, showToast, upsertVideoGenerationJob]
+    [runVideoGenerationTask, selectAndUpsertVideoGenerationJob, showToast]
   )
 
   const retryVideoGenerationJob = useCallback(
     async (jobId: string) => {
       const normalizedJobId = jobId.trim()
       if (!normalizedJobId) return
-      if (isVideoGenerationBusy) return
-      setIsVideoGenerationBusy(true)
-      try {
-        const payload = await requestJson<{
-          success: boolean
-          job: VideoGenerationJob
-          providerResult?: { status?: string } | null
-        }>(`/api/video/generations/${encodeURIComponent(normalizedJobId)}/retry`, {
-          method: 'POST'
-        })
-        setVideoGenerationSelectedJobId(payload.job.id)
-        upsertVideoGenerationJob(payload.job)
-        showToast(
-          `重试任务已创建：${payload.job.id}（${payload.providerResult?.status || payload.job.status}）`,
-          'success'
-        )
-      } catch (error: unknown) {
-        const normalized = error instanceof Error ? error : new Error(String(error))
-        showToast(normalized.message || '重试任务失败', 'error')
-      } finally {
-        setIsVideoGenerationBusy(false)
-      }
+      const payload = await runVideoGenerationTask(
+        () =>
+          requestJson<{
+            success: boolean
+            job: VideoGenerationJob
+            providerResult?: { status?: string } | null
+          }>(`/api/video/generations/${encodeURIComponent(normalizedJobId)}/retry`, {
+            method: 'POST'
+          }),
+        { fallbackMessage: '重试任务失败' }
+      )
+      if (!payload) return
+      selectAndUpsertVideoGenerationJob(payload.job)
+      showToast(
+        `重试任务已创建：${payload.job.id}（${payload.providerResult?.status || payload.job.status}）`,
+        'success'
+      )
     },
-    [isVideoGenerationBusy, showToast, upsertVideoGenerationJob]
+    [runVideoGenerationTask, selectAndUpsertVideoGenerationJob, showToast]
   )
 
   const cancelVideoGenerationJob = useCallback(
     async (jobId: string) => {
       const normalizedJobId = jobId.trim()
       if (!normalizedJobId) return
-      if (isVideoGenerationBusy) return
-      setIsVideoGenerationBusy(true)
-      try {
-        const payload = await requestJson<{
-          success: boolean
-          job: VideoGenerationJob
-          cancelResult?: { state?: string } | null
-        }>(`/api/video/generations/${encodeURIComponent(normalizedJobId)}/cancel`, {
-          method: 'POST'
-        })
-        setVideoGenerationSelectedJobId(payload.job.id)
-        upsertVideoGenerationJob(payload.job)
-        showToast(
-          `取消结果：${payload.cancelResult?.state || payload.job.status}`,
-          payload.job.status === 'canceled' ? 'success' : 'info'
-        )
-      } catch (error: unknown) {
-        const normalized = error instanceof Error ? error : new Error(String(error))
-        showToast(normalized.message || '取消任务失败', 'error')
-      } finally {
-        setIsVideoGenerationBusy(false)
-      }
+      const payload = await runVideoGenerationTask(
+        () =>
+          requestJson<{
+            success: boolean
+            job: VideoGenerationJob
+            cancelResult?: { state?: string } | null
+          }>(`/api/video/generations/${encodeURIComponent(normalizedJobId)}/cancel`, {
+            method: 'POST'
+          }),
+        { fallbackMessage: '取消任务失败' }
+      )
+      if (!payload) return
+      selectAndUpsertVideoGenerationJob(payload.job)
+      showToast(
+        `取消结果：${payload.cancelResult?.state || payload.job.status}`,
+        payload.job.status === 'canceled' ? 'success' : 'info'
+      )
     },
-    [isVideoGenerationBusy, showToast, upsertVideoGenerationJob]
+    [runVideoGenerationTask, selectAndUpsertVideoGenerationJob, showToast]
   )
 
   const refreshVideoGenerationJobDetail = useCallback(

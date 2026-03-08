@@ -85,13 +85,43 @@ export const useProjectGovernance = ({
     useState<ProjectGovernanceClipBatchUpdateResult | null>(null)
   const [isProjectGovernanceBusy, setIsProjectGovernanceBusy] = useState(false)
 
+  const showGovernanceError = useCallback(
+    (error: unknown, fallbackMessage: string) => {
+      const message = error instanceof Error && error.message ? error.message : fallbackMessage
+      showToast(message, 'error')
+    },
+    [showToast]
+  )
+  const resetProjectCommentState = useCallback(() => {
+    setProjectComments([])
+    setProjectSelectedCommentId('')
+    setProjectCommentCursor('')
+    setProjectCommentHasMore(false)
+  }, [])
+  const resetProjectTemplateState = useCallback(() => {
+    setProjectTemplates([])
+    setProjectSelectedTemplateId('')
+  }, [])
+  const runProjectGovernanceTask = useCallback(
+    async <T>(task: () => Promise<T>, fallbackMessage: string) => {
+      if (isProjectGovernanceBusy) return null
+      setIsProjectGovernanceBusy(true)
+      try {
+        return await task()
+      } catch (error: unknown) {
+        showGovernanceError(error, fallbackMessage)
+        return null
+      } finally {
+        setIsProjectGovernanceBusy(false)
+      }
+    },
+    [isProjectGovernanceBusy, showGovernanceError]
+  )
+
   const loadProjectComments = useCallback(
     async (append = false) => {
       if (!projectId) {
-        setProjectComments([])
-        setProjectSelectedCommentId('')
-        setProjectCommentCursor('')
-        setProjectCommentHasMore(false)
+        resetProjectCommentState()
         return
       }
       const limit = normalizeProjectGovernanceLimit(projectCommentLimit, 20)
@@ -100,46 +130,42 @@ export const useProjectGovernance = ({
         setProjectCommentHasMore(false)
         return
       }
-      if (isProjectGovernanceBusy) return
-      setIsProjectGovernanceBusy(true)
-      try {
-        const payload = await listProjectGovernanceComments(projectId, {
-          limit,
-          cursor: nextCursor || undefined
-        })
-        const rows = payload.comments || []
-        const merged = append
-          ? [
-              ...projectComments,
-              ...rows.filter((item) => projectComments.every((prev) => prev.id !== item.id))
-            ]
-          : rows
-        setProjectComments(merged)
-        const cursor = payload.page.nextCursor || ''
-        const hasMore = Boolean(cursor) && payload.page.hasMore
-        setProjectCommentCursor(cursor)
-        setProjectCommentHasMore(hasMore)
-        if (
-          !projectSelectedCommentId ||
-          merged.every((item) => item.id !== projectSelectedCommentId)
-        ) {
-          setProjectSelectedCommentId(merged[0]?.id || '')
-        }
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : '加载项目评论失败'
-        showToast(message || '加载项目评论失败', 'error')
-      } finally {
-        setIsProjectGovernanceBusy(false)
+      const payload = await runProjectGovernanceTask(
+        () =>
+          listProjectGovernanceComments(projectId, {
+            limit,
+            cursor: nextCursor || undefined
+          }),
+        '加载项目评论失败'
+      )
+      if (!payload) return
+      const rows = payload.comments || []
+      const merged = append
+        ? [
+            ...projectComments,
+            ...rows.filter((item) => projectComments.every((prev) => prev.id !== item.id))
+          ]
+        : rows
+      setProjectComments(merged)
+      const cursor = payload.page.nextCursor || ''
+      const hasMore = Boolean(cursor) && payload.page.hasMore
+      setProjectCommentCursor(cursor)
+      setProjectCommentHasMore(hasMore)
+      if (
+        !projectSelectedCommentId ||
+        merged.every((item) => item.id !== projectSelectedCommentId)
+      ) {
+        setProjectSelectedCommentId(merged[0]?.id || '')
       }
     },
     [
       projectId,
       projectCommentLimit,
       projectCommentCursor,
-      isProjectGovernanceBusy,
       projectComments,
       projectSelectedCommentId,
-      showToast
+      resetProjectCommentState,
+      runProjectGovernanceTask
     ]
   )
 
@@ -152,34 +178,28 @@ export const useProjectGovernance = ({
       showToast('请输入评论内容', 'info')
       return
     }
-    if (isProjectGovernanceBusy) return
-    setIsProjectGovernanceBusy(true)
-    try {
-      const comment = await createProjectGovernanceComment(projectId, {
-        anchor: projectCommentAnchor.trim() || undefined,
-        content: projectCommentContent.trim(),
-        mentions: parseMentionsInput(projectCommentMentions)
-      })
-      if (comment) {
-        setProjectComments((prev) => [comment, ...prev.filter((item) => item.id !== comment.id)])
-        setProjectSelectedCommentId(comment.id)
-      }
-      setProjectCommentContent('')
-      setProjectCommentMentions('')
-      showToast('项目评论已创建', 'success')
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '创建项目评论失败'
-      showToast(message || '创建项目评论失败', 'error')
-    } finally {
-      setIsProjectGovernanceBusy(false)
-    }
+    const comment = await runProjectGovernanceTask(
+      () =>
+        createProjectGovernanceComment(projectId, {
+          anchor: projectCommentAnchor.trim() || undefined,
+          content: projectCommentContent.trim(),
+          mentions: parseMentionsInput(projectCommentMentions)
+        }),
+      '创建项目评论失败'
+    )
+    if (!comment) return
+    setProjectComments((prev) => [comment, ...prev.filter((item) => item.id !== comment.id)])
+    setProjectSelectedCommentId(comment.id)
+    setProjectCommentContent('')
+    setProjectCommentMentions('')
+    showToast('项目评论已创建', 'success')
   }, [
     projectId,
     projectCommentContent,
-    isProjectGovernanceBusy,
     projectCommentAnchor,
     parseMentionsInput,
     projectCommentMentions,
+    runProjectGovernanceTask,
     showToast
   ])
 
@@ -188,21 +208,14 @@ export const useProjectGovernance = ({
       showToast('请先选择评论', 'info')
       return
     }
-    if (isProjectGovernanceBusy) return
-    setIsProjectGovernanceBusy(true)
-    try {
-      const comment = await resolveProjectGovernanceComment(projectId, projectSelectedCommentId)
-      if (comment) {
-        setProjectComments((prev) => prev.map((item) => (item.id === comment.id ? comment : item)))
-      }
-      showToast('项目评论已标记为已解决', 'success')
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '标记项目评论失败'
-      showToast(message || '标记项目评论失败', 'error')
-    } finally {
-      setIsProjectGovernanceBusy(false)
-    }
-  }, [projectId, projectSelectedCommentId, isProjectGovernanceBusy, showToast])
+    const comment = await runProjectGovernanceTask(
+      () => resolveProjectGovernanceComment(projectId, projectSelectedCommentId),
+      '标记项目评论失败'
+    )
+    if (!comment) return
+    setProjectComments((prev) => prev.map((item) => (item.id === comment.id ? comment : item)))
+    showToast('项目评论已标记为已解决', 'success')
+  }, [projectId, projectSelectedCommentId, runProjectGovernanceTask, showToast])
 
   const loadProjectReviews = useCallback(async () => {
     if (!projectId) {
@@ -210,18 +223,12 @@ export const useProjectGovernance = ({
       return
     }
     const limit = normalizeProjectGovernanceLimit(projectReviewLimit, 20)
-    if (isProjectGovernanceBusy) return
-    setIsProjectGovernanceBusy(true)
-    try {
-      const rows = await listProjectGovernanceReviews(projectId, { limit })
-      setProjectReviews(rows)
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '加载项目评审失败'
-      showToast(message || '加载项目评审失败', 'error')
-    } finally {
-      setIsProjectGovernanceBusy(false)
-    }
-  }, [projectId, projectReviewLimit, isProjectGovernanceBusy, showToast])
+    const rows = await runProjectGovernanceTask(
+      () => listProjectGovernanceReviews(projectId, { limit }),
+      '加载项目评审失败'
+    )
+    if (rows) setProjectReviews(rows)
+  }, [projectId, projectReviewLimit, runProjectGovernanceTask])
 
   const createProjectReviewEntry = useCallback(async () => {
     if (!projectId) {
@@ -241,59 +248,44 @@ export const useProjectGovernance = ({
         return
       }
     }
-    if (isProjectGovernanceBusy) return
-    setIsProjectGovernanceBusy(true)
-    try {
-      const review = await createProjectGovernanceReview(projectId, {
-        decision: projectReviewDecision,
-        summary: projectReviewSummary.trim(),
-        score
-      })
-      if (review) {
-        setProjectReviews((prev) => [review, ...prev.filter((item) => item.id !== review.id)])
-      }
-      setProjectReviewSummary('')
-      setProjectReviewScore('')
-      showToast('项目评审已提交', 'success')
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '提交项目评审失败'
-      showToast(message || '提交项目评审失败', 'error')
-    } finally {
-      setIsProjectGovernanceBusy(false)
-    }
+    const review = await runProjectGovernanceTask(
+      () =>
+        createProjectGovernanceReview(projectId, {
+          decision: projectReviewDecision,
+          summary: projectReviewSummary.trim(),
+          score
+        }),
+      '提交项目评审失败'
+    )
+    if (!review) return
+    setProjectReviews((prev) => [review, ...prev.filter((item) => item.id !== review.id)])
+    setProjectReviewSummary('')
+    setProjectReviewScore('')
+    showToast('项目评审已提交', 'success')
   }, [
     projectId,
     projectReviewSummary,
     projectReviewScore,
-    isProjectGovernanceBusy,
-    showToast,
-    projectReviewDecision
+    projectReviewDecision,
+    runProjectGovernanceTask,
+    showToast
   ])
 
   const loadProjectTemplates = useCallback(async () => {
     if (!projectId) {
-      setProjectTemplates([])
-      setProjectSelectedTemplateId('')
+      resetProjectTemplateState()
       return
     }
-    if (isProjectGovernanceBusy) return
-    setIsProjectGovernanceBusy(true)
-    try {
-      const rows = await listProjectGovernanceTemplates(projectId)
-      setProjectTemplates(rows)
-      if (
-        !projectSelectedTemplateId ||
-        rows.every((item) => item.id !== projectSelectedTemplateId)
-      ) {
-        setProjectSelectedTemplateId(rows[0]?.id || '')
-      }
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '加载项目模板失败'
-      showToast(message || '加载项目模板失败', 'error')
-    } finally {
-      setIsProjectGovernanceBusy(false)
+    const rows = await runProjectGovernanceTask(
+      () => listProjectGovernanceTemplates(projectId),
+      '加载项目模板失败'
+    )
+    if (!rows) return
+    setProjectTemplates(rows)
+    if (!projectSelectedTemplateId || rows.every((item) => item.id !== projectSelectedTemplateId)) {
+      setProjectSelectedTemplateId(rows[0]?.id || '')
     }
-  }, [projectId, isProjectGovernanceBusy, projectSelectedTemplateId, showToast])
+  }, [projectId, projectSelectedTemplateId, resetProjectTemplateState, runProjectGovernanceTask])
 
   const applyProjectTemplateEntry = useCallback(async () => {
     if (!projectId) {
@@ -306,27 +298,23 @@ export const useProjectGovernance = ({
     }
     const options = parseJsonObjectInput(projectTemplateApplyOptions, '模板应用参数')
     if (!options) return
-    if (isProjectGovernanceBusy) return
-    setIsProjectGovernanceBusy(true)
-    try {
-      const result = await applyProjectGovernanceTemplate(projectId, {
-        templateId: projectSelectedTemplateId.trim(),
-        options: Object.keys(options).length > 0 ? options : undefined
-      })
-      setProjectTemplateApplyResult(result || null)
-      showToast(`模板应用成功：${result?.traceId || '-'}`, 'success')
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '应用模板失败'
-      showToast(message || '应用模板失败', 'error')
-    } finally {
-      setIsProjectGovernanceBusy(false)
-    }
+    const result = await runProjectGovernanceTask(
+      () =>
+        applyProjectGovernanceTemplate(projectId, {
+          templateId: projectSelectedTemplateId.trim(),
+          options: Object.keys(options).length > 0 ? options : undefined
+        }),
+      '应用模板失败'
+    )
+    if (!result) return
+    setProjectTemplateApplyResult(result)
+    showToast(`模板应用成功：${result.traceId || '-'}`, 'success')
   }, [
     projectId,
     projectSelectedTemplateId,
     parseJsonObjectInput,
     projectTemplateApplyOptions,
-    isProjectGovernanceBusy,
+    runProjectGovernanceTask,
     showToast
   ])
 
@@ -342,23 +330,18 @@ export const useProjectGovernance = ({
       showToast('至少提供一条有效操作（clipId + patch）', 'warning')
       return
     }
-    if (isProjectGovernanceBusy) return
-    setIsProjectGovernanceBusy(true)
-    try {
-      const result = await batchUpdateProjectGovernanceClips(projectId, operations)
-      setProjectClipBatchResult(result || null)
-      showToast(`片段批量更新完成：accepted ${result?.accepted ?? 0}`, 'success')
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '片段批量更新失败'
-      showToast(message || '片段批量更新失败', 'error')
-    } finally {
-      setIsProjectGovernanceBusy(false)
-    }
+    const result = await runProjectGovernanceTask(
+      () => batchUpdateProjectGovernanceClips(projectId, operations),
+      '片段批量更新失败'
+    )
+    if (!result) return
+    setProjectClipBatchResult(result)
+    showToast(`片段批量更新完成：accepted ${result.accepted ?? 0}`, 'success')
   }, [
     projectId,
     parseJsonArrayInput,
     projectClipBatchOperations,
-    isProjectGovernanceBusy,
+    runProjectGovernanceTask,
     showToast
   ])
 
