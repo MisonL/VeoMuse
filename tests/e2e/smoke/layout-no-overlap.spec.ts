@@ -14,6 +14,12 @@ const COMPACT_CREATIVE_VIEWPORTS = [
   { width: 600, height: 900 }
 ]
 
+const COMPACT_COMPARE_VIEWPORTS = [
+  { width: 420, height: 900 },
+  { width: 520, height: 900 },
+  { width: 600, height: 900 }
+]
+
 test('主布局三区域在常见桌面分辨率不重叠且关键操作可达', async ({ page }) => {
   for (const viewport of VIEWPORTS) {
     await page.setViewportSize(viewport)
@@ -214,6 +220,58 @@ test('creative telemetry strip 在紧凑宽度下应切回单列且不横向溢�
     const stacked = Math.abs(quickCheckBox.x - pollingHintBox.x) < 4
     expect(stacked).toBe(true)
     expect(quickCheckBox.y + quickCheckBox.height).toBeLessThanOrEqual(pollingHintBox.y + 2)
+  }
+})
+
+test('compare 模式在紧凑宽度下应切回单列并优先呈现 A/B 结果区', async ({ page }) => {
+  for (const viewport of COMPACT_COMPARE_VIEWPORTS) {
+    await page.setViewportSize(viewport)
+    attachPageDebug(page, `compare-compact-${viewport.width}x${viewport.height}`)
+    await page.goto('/')
+    await dismissGuideIfPresent(page)
+
+    await page.getByTestId('btn-reset-layout').click()
+    await page.getByTestId('btn-center-mode-fit').click()
+    await page.getByTestId('btn-mode-color').click()
+
+    const stageShell = page.locator('.comparison-lab-pro .lab-stage-shell')
+    const stageSpine = page.locator('.comparison-lab-pro .lab-stage-spine')
+    const stageMain = page.locator('.comparison-lab-pro .lab-stage-main')
+    const splitEngine = page.locator('.compare-mode-shell .lab-split-engine')
+    const commandDeck = page.locator('.compare-mode-shell .compare-command-deck')
+
+    await expect(stageShell).toBeVisible()
+    await expect(splitEngine).toBeVisible()
+    await expect(commandDeck).toBeVisible()
+
+    const shellGrid = await stageShell.evaluate(
+      (node) => getComputedStyle(node as HTMLElement).gridTemplateColumns
+    )
+    expect(shellGrid.trim()).not.toContain(' ')
+
+    const spineBox = await stageSpine.boundingBox()
+    const mainBox = await stageMain.boundingBox()
+    const splitBox = await splitEngine.boundingBox()
+    const commandBox = await commandDeck.boundingBox()
+    if (!spineBox || !mainBox || !splitBox || !commandBox) {
+      throw new Error(
+        `compare compact boundingBox 为空，无法验证: ${viewport.width}x${viewport.height}`
+      )
+    }
+
+    const stageStacked = Math.abs(spineBox.x - mainBox.x) < 4
+    expect(stageStacked).toBe(true)
+    expect(spineBox.y + spineBox.height).toBeLessThanOrEqual(mainBox.y + 2)
+
+    const compareStacked = Math.abs(splitBox.x - commandBox.x) < 4
+    expect(compareStacked).toBe(true)
+    expect(splitBox.y + splitBox.height).toBeLessThanOrEqual(commandBox.y + 2)
+
+    const splitOverflow = await splitEngine.evaluate((node) => ({
+      scrollWidth: node.scrollWidth,
+      clientWidth: node.clientWidth
+    }))
+    expect(splitOverflow.scrollWidth).toBeLessThanOrEqual(splitOverflow.clientWidth + 2)
   }
 })
 

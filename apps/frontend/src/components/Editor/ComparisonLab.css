@@ -6569,3 +6569,82 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Delivery follow-up fixes */
+.comparison-lab-pro[data-lab-mode='compare'] .compare-mode-shell {
+  grid-template-columns: minmax(0, 1.58fr) minmax(312px, 0.92fr);
+  grid-template-areas: 'results command';
+  align-items: start;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-split-engine {
+  grid-area: results;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-deck {
+  grid-area: command;
+  align-self: start;
+  padding: 12px 14px;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-copy {
+  gap: 5px;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-copy strong {
+  font-size: 21px;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-grid,
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-group {
+  grid-template-columns: 1fr;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-link {
+  width: 100%;
+  justify-content: center;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-main-head {
+  padding: 12px 14px;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-main-title-row strong {
+  font-size: 24px;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-main-state {
+  font-size: 12px;
+}
+
+@media (max-width: 1180px) {
+  .comparison-lab-pro .lab-stage-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-lab-pro .lab-stage-spine {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .comparison-lab-pro .lab-stage-markers {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .compare-mode-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'results'
+      'command';
+  }
+}
+
+@media (max-width: 720px) {
+  .comparison-lab-pro .lab-stage-markers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .compare-command-deck {
+    padding: 12px;
+  }
+}
