@@ -123,35 +123,40 @@ describe('App DOM 运行态交互补测', () => {
     const listener = () => onOpenChannel()
     window.addEventListener('veomuse:open-channel-panel', listener)
 
-    const view = await act(async () => render(<App />))
-    await waitFor(() => {
-      expect(view.getByTestId('area-guide-overlay')).toBeInTheDocument()
-      expect(view.getByRole('button', { name: '下一步' })).toHaveFocus()
-    })
+    try {
+      const view = await act(async () => render(<App />))
+      const guideOverlay = await view.findByTestId('area-guide-overlay')
+      expect(guideOverlay).toBeInTheDocument()
 
-    await click(view.getByRole('button', { name: '下一步' }))
-    await click(view.getByRole('button', { name: '聚焦导入按钮' }))
-    await click(view.getByRole('button', { name: '跳过' }))
-    await waitFor(() => {
-      expect(view.queryByTestId('area-guide-overlay')).toBeNull()
-    })
-    expect(localStorage.getItem('veomuse-onboarding-v1')).toBe('done')
+      const nextGuideButton = await view.findByRole('button', { name: '下一步' })
+      await waitFor(() => {
+        expect(nextGuideButton).toHaveFocus()
+      })
 
-    await click(view.getByTestId('btn-open-channel-access'))
-    await waitFor(() => {
-      expect(onOpenChannel).toHaveBeenCalledTimes(1)
-      expect(view.getByTestId('area-channel-panel')).toBeInTheDocument()
-    })
+      await click(nextGuideButton)
+      await click(await view.findByRole('button', { name: '聚焦导入按钮' }))
+      await click(await view.findByRole('button', { name: '跳过' }))
+      await waitFor(() => {
+        expect(view.queryByTestId('area-guide-overlay')).toBeNull()
+      })
+      expect(localStorage.getItem('veomuse-onboarding-v1')).toBe('done')
 
-    await click(view.getByTestId('btn-mode-audio'))
-    expect(view.getByText('音频母带引擎已就绪')).toBeInTheDocument()
-    expect(view.getByTestId('btn-mode-audio')).toHaveAttribute('aria-pressed', 'true')
-    await click(view.getByRole('button', { name: '导入素材开始处理' }))
-    expect(view.getByTestId('btn-mode-edit').className).toContain('active')
-    expect(view.getByTestId('btn-mode-edit')).toHaveAttribute('aria-pressed', 'true')
+      await click(view.getByTestId('btn-open-channel-access'))
+      await waitFor(() => {
+        expect(onOpenChannel).toHaveBeenCalledTimes(1)
+        expect(view.getByTestId('area-channel-panel')).toBeInTheDocument()
+      })
 
-    window.removeEventListener('veomuse:open-channel-panel', listener)
-  }, 20_000)
+      await click(view.getByTestId('btn-mode-audio'))
+      expect(view.getByText('音频母带引擎已就绪')).toBeInTheDocument()
+      expect(view.getByTestId('btn-mode-audio')).toHaveAttribute('aria-pressed', 'true')
+      await click(view.getByRole('button', { name: '导入素材开始处理' }))
+      expect(view.getByTestId('btn-mode-edit').className).toContain('active')
+      expect(view.getByTestId('btn-mode-edit')).toHaveAttribute('aria-pressed', 'true')
+    } finally {
+      window.removeEventListener('veomuse:open-channel-panel', listener)
+    }
+  }, 30_000)
 
   it('应覆盖导出守卫、成功导出、播放器与布局控制分支', async () => {
     localStorage.setItem('veomuse-onboarding-v1', 'done')

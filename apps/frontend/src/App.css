@@ -1857,7 +1857,10 @@ body.resizing-y {
 }
 
 .sidebar-content {
+  min-height: 0;
   padding: 14px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--ap-panel) 80%, #ffffff 20%),
@@ -3151,8 +3154,16 @@ body.resizing-y {
   min-height: 0;
   padding: 22px;
   background:
-    radial-gradient(circle at 14% 12%, color-mix(in srgb, var(--ap-accent-soft) 24%, transparent), transparent 24%),
-    radial-gradient(circle at 86% 16%, color-mix(in srgb, var(--ap-signal-soft) 24%, transparent), transparent 24%),
+    radial-gradient(
+      circle at 14% 12%,
+      color-mix(in srgb, var(--ap-accent-soft) 24%, transparent),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 86% 16%,
+      color-mix(in srgb, var(--ap-signal-soft) 24%, transparent),
+      transparent 24%
+    ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
@@ -3168,7 +3179,12 @@ body.resizing-y {
   border-radius: 26px;
   border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
   background:
-    linear-gradient(135deg, rgba(7, 15, 27, 0.92), rgba(7, 15, 27, 0.82) 52%, rgba(13, 31, 59, 0.94)),
+    linear-gradient(
+      135deg,
+      rgba(7, 15, 27, 0.92),
+      rgba(7, 15, 27, 0.82) 52%,
+      rgba(13, 31, 59, 0.94)
+    ),
     radial-gradient(circle at 82% 14%, rgba(11, 102, 255, 0.22), transparent 24%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
@@ -3279,7 +3295,11 @@ body.resizing-y {
 .timeline-container[data-active-mode='audio'] .timeline-priority-band {
   border-color: color-mix(in srgb, var(--ap-border) 62%, var(--ap-signal) 38%);
   background:
-    radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--ap-signal-soft) 20%, transparent), transparent 26%),
+    radial-gradient(
+      circle at 88% 18%,
+      color-mix(in srgb, var(--ap-signal-soft) 20%, transparent),
+      transparent 26%
+    ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
