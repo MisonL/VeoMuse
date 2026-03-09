@@ -24,8 +24,6 @@ const createSafeStorage = () =>
 interface ThemeState {
   mode: ThemeMode
   customPalette: Record<string, string>
-
-  // Actions
   setMode: (mode: ThemeMode) => void
   updateCustomPalette: (palette: Record<string, string>) => void
   resetCustomPalette: () => void
@@ -34,22 +32,18 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      mode: 'light',
+      mode: 'dark',
       customPalette: {},
-
       setMode: (mode) => set({ mode }),
-
       updateCustomPalette: (palette) =>
         set((state) => ({
           customPalette: { ...state.customPalette, ...palette }
         })),
-
       resetCustomPalette: () => set({ customPalette: {} })
     }),
     {
-      name: 'veomuse-theme-storage',
+      name: 'veomuse-theme-storage-v2',
       storage: createSafeStorage(),
-      // 仅在浏览器环境下执行持久化
       skipHydration: typeof window === 'undefined'
     }
   )

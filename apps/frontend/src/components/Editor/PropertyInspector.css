@@ -1261,3 +1261,86 @@
 .inspector-section:not(.inspector-section--hero) {
   background: rgba(255, 255, 255, 0.72);
 }
+
+/* Visual Reset 2026-03-10 */
+.pro-inspector-inner {
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 80%, var(--ap-outline) 20%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 94%, rgba(255, 255, 255, 0.03)),
+      color-mix(in srgb, var(--ap-surface) 88%, rgba(255, 255, 255, 0.04))
+    ),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 34%, transparent),
+      transparent 26%
+    );
+  box-shadow: 0 24px 44px rgba(2, 10, 22, 0.14);
+}
+
+.pro-inspector-inner::before {
+  opacity: 0.08;
+  background-size: 40px 40px;
+}
+
+.inspector-header {
+  gap: 14px;
+  padding: 16px 16px 14px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, rgba(255, 255, 255, 0.03)),
+      color-mix(in srgb, var(--ap-card) 84%, rgba(255, 255, 255, 0.03))
+    ),
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--ap-accent-soft) 28%, transparent),
+      transparent 24%
+    );
+}
+
+.inspector-header-title {
+  font-family: var(--ap-font-ui);
+  font-size: 20px;
+  line-height: 1.18;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.inspector-tabs {
+  gap: 10px;
+  padding: 5px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--ap-panel) 88%, rgba(255, 255, 255, 0.06));
+}
+
+.inspector-tabs button {
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.inspector-tabs button span {
+  font-family: var(--ap-font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.inspector-tabs button small {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.inspector-tabs button.active {
+  color: var(--ap-ink-inverse);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-accent) 88%, #ffffff 12%),
+    color-mix(in srgb, var(--ap-accent-strong) 82%, #08111e 18%)
+  );
+  box-shadow: 0 12px 22px var(--ap-accent-glow);
+}

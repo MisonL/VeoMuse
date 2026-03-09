@@ -4,50 +4,50 @@
   --ap-font-display: 'Barlow Condensed', 'Avenir Next Condensed', 'Noto Sans SC', sans-serif;
   --ap-font-mono: 'Chakra Petch', 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
 
-  --ap-bg: #efe3d1;
-  --ap-surface: #fff8ef;
-  --ap-card: #f6ead7;
-  --ap-panel: #fbf2e6;
-  --ap-panel-soft: #f1e4d3;
-  --pro-surface: #f3e4d0;
+  --ap-bg: #dce5f0;
+  --ap-surface: #f7fbff;
+  --ap-card: #eaf1f8;
+  --ap-panel: #f1f6fb;
+  --ap-panel-soft: #e2ebf5;
+  --pro-surface: #e7eef7;
 
-  --ap-accent: #0f4cad;
-  --ap-accent-soft: rgba(15, 76, 173, 0.14);
-  --ap-accent-glow: rgba(15, 76, 173, 0.22);
-  --ap-accent-strong: #0a3274;
-  --ap-signal: #ef6a2f;
-  --ap-signal-soft: rgba(239, 106, 47, 0.14);
+  --ap-accent: #1157db;
+  --ap-accent-soft: rgba(17, 87, 219, 0.14);
+  --ap-accent-glow: rgba(17, 87, 219, 0.24);
+  --ap-accent-strong: #0a2f79;
+  --ap-signal: #ff7a1a;
+  --ap-signal-soft: rgba(255, 122, 26, 0.16);
 
-  --ap-border: rgba(52, 36, 12, 0.14);
-  --ap-outline: rgba(123, 90, 40, 0.18);
-  --ap-grid-line: rgba(102, 78, 47, 0.08);
-  --ap-text: #17130e;
-  --ap-text-dim: #6b5f4d;
-  --ap-monitor-bg: #08111d;
-  --ap-monitor-border: rgba(231, 236, 245, 0.28);
-  --ap-stage-shell: #f4ede2;
-  --ap-stage-shell-strong: #ece2d4;
-  --ap-stage-shell-muted: #f3ecdf;
-  --ap-stage-shell-panel: #ebe2d5;
-  --ap-stage-deck: #0f1727;
-  --ap-stage-deck-strong: #131d30;
-  --ap-stage-deck-soft: #1a2740;
-  --ap-ink-inverse: #f8fafc;
+  --ap-border: rgba(18, 38, 68, 0.14);
+  --ap-outline: rgba(40, 77, 126, 0.18);
+  --ap-grid-line: rgba(52, 87, 132, 0.08);
+  --ap-text: #0b1524;
+  --ap-text-dim: #526171;
+  --ap-monitor-bg: #060d17;
+  --ap-monitor-border: rgba(214, 228, 246, 0.24);
+  --ap-stage-shell: #e9eff7;
+  --ap-stage-shell-strong: #dfe8f2;
+  --ap-stage-shell-muted: #eef4fa;
+  --ap-stage-shell-panel: #dde7f1;
+  --ap-stage-deck: #09111d;
+  --ap-stage-deck-strong: #0f1a2b;
+  --ap-stage-deck-soft: #12233d;
+  --ap-ink-inverse: #f8fbff;
 
   --ap-blur: 14px;
   --ap-saturate: 132%;
-  --ap-glass-bg: rgba(255, 248, 239, 0.82);
+  --ap-glass-bg: rgba(247, 251, 255, 0.82);
 
-  --ap-radius: 20px;
-  --ap-radius-inner: 13px;
+  --ap-radius: 18px;
+  --ap-radius-inner: 12px;
 
   --ap-transition: all 0.28s cubic-bezier(0.2, 0.82, 0.22, 1);
   --ap-transition-fast: all 0.18s cubic-bezier(0.2, 0.82, 0.22, 1);
   --ap-spring-button: all 0.24s cubic-bezier(0.22, 1.05, 0.35, 1);
-  --ap-shadow-subtle: 0 10px 24px rgba(80, 54, 24, 0.08);
+  --ap-shadow-subtle: 0 14px 30px rgba(18, 34, 59, 0.08);
   --ap-shadow-panel:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 18px 48px rgba(80, 54, 24, 0.14),
-    0 3px 8px rgba(50, 32, 10, 0.08);
+    0 1px 0 rgba(255, 255, 255, 0.86) inset, 0 24px 56px rgba(18, 34, 59, 0.14),
+    0 6px 16px rgba(18, 34, 59, 0.08);
 
   --bg-color: var(--ap-bg);
   --panel-bg: var(--ap-glass-bg);
@@ -57,50 +57,50 @@
   --text-sub: var(--ap-text-dim);
   --accent-color: var(--ap-accent);
   --accent-glow: var(--ap-accent-glow);
-  --danger-color: #b64232;
-  --success-color: #256d50;
+  --danger-color: #d95744;
+  --success-color: #1f9367;
 }
 
 [data-theme='dark'] {
   color-scheme: dark;
-  --ap-bg: #0d141a;
-  --ap-surface: #121d25;
-  --ap-card: #182631;
-  --ap-panel: #101922;
-  --ap-panel-soft: #17232d;
-  --pro-surface: #16222d;
+  --ap-bg: #081019;
+  --ap-surface: #0d1825;
+  --ap-card: #122132;
+  --ap-panel: #0a131e;
+  --ap-panel-soft: #152434;
+  --pro-surface: #142231;
 
-  --ap-accent: #96b6ff;
-  --ap-accent-soft: rgba(150, 182, 255, 0.18);
-  --ap-accent-glow: rgba(150, 182, 255, 0.26);
-  --ap-accent-strong: #c6d7ff;
-  --ap-signal: #ff9360;
-  --ap-signal-soft: rgba(255, 147, 96, 0.16);
+  --ap-accent: #3f8cff;
+  --ap-accent-soft: rgba(63, 140, 255, 0.18);
+  --ap-accent-glow: rgba(63, 140, 255, 0.28);
+  --ap-accent-strong: #d9e7ff;
+  --ap-signal: #ff8d3a;
+  --ap-signal-soft: rgba(255, 141, 58, 0.18);
 
-  --ap-border: rgba(255, 236, 213, 0.14);
-  --ap-outline: rgba(255, 226, 188, 0.12);
-  --ap-grid-line: rgba(255, 236, 213, 0.06);
-  --ap-text: #f6efe5;
-  --ap-text-dim: #c9bcab;
-  --ap-monitor-bg: #070d15;
-  --ap-monitor-border: rgba(230, 236, 247, 0.22);
-  --ap-stage-shell: #151d25;
-  --ap-stage-shell-strong: #101821;
-  --ap-stage-shell-muted: #17212b;
-  --ap-stage-shell-panel: #121b24;
-  --ap-stage-deck: #0a111b;
-  --ap-stage-deck-strong: #101928;
-  --ap-stage-deck-soft: #142035;
-  --ap-ink-inverse: #f8fafc;
+  --ap-border: rgba(175, 205, 247, 0.14);
+  --ap-outline: rgba(175, 205, 247, 0.12);
+  --ap-grid-line: rgba(175, 205, 247, 0.06);
+  --ap-text: #eef5ff;
+  --ap-text-dim: #94a8c4;
+  --ap-monitor-bg: #050a12;
+  --ap-monitor-border: rgba(214, 228, 246, 0.22);
+  --ap-stage-shell: #0c1622;
+  --ap-stage-shell-strong: #0b131d;
+  --ap-stage-shell-muted: #111d2b;
+  --ap-stage-shell-panel: #0e1824;
+  --ap-stage-deck: #040911;
+  --ap-stage-deck-strong: #0a1320;
+  --ap-stage-deck-soft: #0e2038;
+  --ap-ink-inverse: #f8fbff;
 
   --ap-blur: 20px;
   --ap-saturate: 156%;
-  --ap-glass-bg: rgba(15, 24, 33, 0.82);
+  --ap-glass-bg: rgba(9, 16, 25, 0.82);
 
-  --ap-shadow-subtle: 0 10px 28px rgba(2, 6, 12, 0.36);
+  --ap-shadow-subtle: 0 12px 28px rgba(2, 6, 12, 0.4);
   --ap-shadow-panel:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 22px 56px rgba(2, 6, 12, 0.48),
-    0 3px 10px rgba(2, 6, 12, 0.28);
+    0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 28px 64px rgba(2, 6, 12, 0.56),
+    0 8px 18px rgba(2, 6, 12, 0.32);
 
   --danger-color: #ff7a68;
   --success-color: #47c08b;

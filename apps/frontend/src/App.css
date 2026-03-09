@@ -133,7 +133,7 @@ body,
 }
 
 .pro-master-shell[data-topbar-density='compact'] {
-  --header-h: 148px;
+  --header-h: 136px;
 }
 
 .pro-master-shell[data-topbar-density='compact'] .os-header {
@@ -1930,7 +1930,7 @@ body.resizing-y {
 }
 
 .timecode {
-  font-size: 30px;
+  font-size: 28px;
   letter-spacing: -0.06em;
 }
 
@@ -3388,7 +3388,7 @@ body.resizing-y {
   height: 100%;
   min-height: 0;
   gap: 10px;
-  padding: 12px 18px 14px;
+  padding: 10px 18px 12px;
   border-radius: 28px;
   background:
     linear-gradient(
@@ -3406,14 +3406,14 @@ body.resizing-y {
 .os-header-bridge,
 .os-header-deck {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
 .os-header-bridge {
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.84fr);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.82fr);
   align-items: end;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid color-mix(in srgb, var(--ap-border) 72%, transparent);
 }
 
@@ -4748,5 +4748,517 @@ body.resizing-y {
 
   .preview-frame {
     min-height: clamp(180px, 32vh, 240px);
+  }
+}
+
+/* Visual Reset 2026-03-10 */
+.pro-master-shell {
+  --left-panel-w: 320px;
+  --right-panel-w: 288px;
+  --left-panel-flex: 1.42fr;
+  --right-panel-flex: 1.22fr;
+  --center-panel-min-w: 440px;
+  --center-panel-fit-w: 760px;
+  --timeline-h: 260px;
+  --header-h: 148px;
+  gap: 14px;
+  padding: 14px;
+  background:
+    radial-gradient(
+      circle at 16% 0,
+      color-mix(in srgb, var(--ap-accent) 18%, transparent),
+      transparent 26%
+    ),
+    radial-gradient(
+      circle at 84% 0,
+      color-mix(in srgb, var(--ap-signal) 16%, transparent),
+      transparent 22%
+    ),
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-bg) 74%, #03070d 26%), var(--ap-bg)),
+    linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 79px,
+      color-mix(in srgb, var(--ap-grid-line) 88%, transparent) 79px,
+      color-mix(in srgb, var(--ap-grid-line) 88%, transparent) 80px
+    );
+  background-size:
+    auto,
+    auto,
+    auto,
+    80px 80px;
+}
+
+.pro-panel {
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 88%, rgba(255, 255, 255, 0.08));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 96%, rgba(255, 255, 255, 0.04)),
+      color-mix(in srgb, var(--ap-surface) 92%, rgba(255, 255, 255, 0.08))
+    ),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 46%, transparent),
+      transparent 26%
+    );
+  box-shadow: var(--ap-shadow-panel);
+}
+
+.os-header {
+  min-height: 0;
+  padding: 12px 18px 14px;
+  border-radius: 24px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 96%, rgba(255, 255, 255, 0.02)),
+      color-mix(in srgb, var(--ap-surface) 90%, rgba(255, 255, 255, 0.04))
+    ),
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--ap-accent-soft) 42%, transparent),
+      transparent 22%
+    );
+}
+
+.brand-title {
+  font-size: 30px;
+  letter-spacing: 0.14em;
+}
+
+.brand-status-ribbon,
+.mode-selector,
+.header-actions-export,
+.header-actions-group--quiet .header-segment,
+.header-select,
+.layout-reset-btn,
+.guide-toggle-btn,
+.channel-entry-btn,
+.export-btn,
+.mode-tab,
+.sidebar-tab,
+.timeline-section-title,
+.tool-icon,
+.transport-btn,
+.transport-btn.play,
+.monitor-action-btn {
+  border-radius: 12px;
+}
+
+.brand-status-ribbon {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 82%, rgba(255, 255, 255, 0.02)),
+      color-mix(in srgb, var(--ap-card) 72%, rgba(255, 255, 255, 0.04))
+    ),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-signal-soft) 48%, transparent),
+      transparent 30%
+    );
+}
+
+.brand-status-pill,
+.timeline-priority-pill,
+.monitor-cue-pill {
+  border-radius: 999px;
+}
+
+.panel-left,
+.panel-right {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 94%, rgba(255, 255, 255, 0.02)),
+      color-mix(in srgb, var(--ap-surface) 88%, rgba(255, 255, 255, 0.04))
+    ),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 36%, transparent),
+      transparent 26%
+    );
+}
+
+.panel-center,
+.monitor-core {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 90%, rgba(255, 255, 255, 0.02)),
+      color-mix(in srgb, var(--ap-surface) 84%, rgba(255, 255, 255, 0.03))
+    ),
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--ap-accent-soft) 42%, transparent),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 100% 100%,
+      color-mix(in srgb, var(--ap-signal-soft) 28%, transparent),
+      transparent 24%
+    );
+}
+
+.panel-title-bar {
+  height: 46px;
+  padding: 0 16px;
+}
+
+.sidebar-content,
+.inspector-scroll {
+  padding: 14px;
+}
+
+.monitor-content {
+  padding: 14px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 18% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 34%, transparent),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 86%, rgba(255, 255, 255, 0.02)),
+      color-mix(in srgb, var(--ap-surface) 78%, rgba(255, 255, 255, 0.02))
+    );
+}
+
+.monitor-stage-shell {
+  grid-template-columns: minmax(0, 1.7fr) minmax(248px, 0.72fr);
+  gap: 16px;
+}
+
+.monitor-stage-primary {
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 26px;
+  border: 1px solid color-mix(in srgb, var(--ap-monitor-border) 72%, rgba(255, 255, 255, 0.1));
+  background:
+    linear-gradient(180deg, rgba(4, 9, 18, 0.96), rgba(10, 18, 29, 0.92)),
+    radial-gradient(
+      circle at 14% 18%,
+      color-mix(in srgb, var(--ap-accent) 34%, transparent),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 88% 14%,
+      color-mix(in srgb, var(--ap-signal) 24%, transparent),
+      transparent 22%
+    );
+  box-shadow: 0 30px 68px rgba(2, 8, 18, 0.36);
+}
+
+.preview-host {
+  padding: 0;
+}
+
+.preview-frame {
+  min-height: 430px;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--ap-monitor-border) 78%, rgba(255, 255, 255, 0.12));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 30px 60px rgba(2, 8, 18, 0.34);
+}
+
+.monitor-stage-shell.is-idle .preview-frame {
+  min-height: 248px;
+}
+
+.monitor-overlay {
+  top: 16px;
+  left: 16px;
+  right: 16px;
+}
+
+.timecode {
+  font-size: 34px;
+  letter-spacing: -0.06em;
+}
+
+.preview-mode-toggle,
+.preview-quality {
+  min-height: 34px;
+  border-radius: 12px;
+}
+
+.monitor-stage-intro {
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ap-monitor-border) 68%, rgba(255, 255, 255, 0.14));
+  background:
+    linear-gradient(180deg, rgba(8, 14, 24, 0.92), rgba(12, 20, 31, 0.84)),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-accent) 30%, transparent),
+      transparent 28%
+    );
+}
+
+.monitor-stage-intro-copy strong,
+.monitor-launchpad-kicker strong,
+.monitor-ledger-card strong,
+.monitor-readout strong,
+.timeline-empty-copy strong,
+.audio-master-stage .audio-master-title,
+.audio-master-status-card strong,
+.audio-master-lane strong {
+  font-family: var(--ap-font-ui);
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.monitor-stage-intro .monitor-ledger-label {
+  color: rgba(233, 242, 255, 0.74);
+  background: rgba(63, 140, 255, 0.18);
+}
+
+.monitor-stage-intro-copy strong {
+  font-size: clamp(24px, 2vw, 31px);
+  line-height: 1.18;
+  color: var(--ap-ink-inverse);
+}
+
+.monitor-stage-intro-copy small {
+  max-width: 60ch;
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(233, 242, 255, 0.72);
+}
+
+.monitor-stage-intro-actions {
+  justify-content: flex-start;
+}
+
+.monitor-launchpad,
+.monitor-stage-aside-stack,
+.monitor-action-strip,
+.timeline-control-surface,
+.timeline-priority-band,
+.timeline-tools,
+.system-telemetry,
+.timeline-editor-slot,
+.timeline-empty-state {
+  border-radius: 18px;
+}
+
+.monitor-launchpad,
+.monitor-stage-aside-stack {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 95%, rgba(255, 255, 255, 0.04)),
+      color-mix(in srgb, var(--ap-card) 86%, rgba(255, 255, 255, 0.02))
+    ),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 30%, transparent),
+      transparent 24%
+    );
+}
+
+.monitor-ledger-card,
+.monitor-readout,
+.timeline-empty-state {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, rgba(255, 255, 255, 0.03)),
+      color-mix(in srgb, var(--ap-card) 84%, rgba(255, 255, 255, 0.02))
+    ),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-signal-soft) 26%, transparent),
+      transparent 22%
+    );
+}
+
+.monitor-ledger-card strong,
+.monitor-readout strong {
+  font-size: 18px;
+}
+
+.monitor-control-band {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.transport-controls {
+  min-width: 232px;
+  border-style: solid;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(8, 15, 26, 0.88), rgba(10, 18, 29, 0.74)),
+    radial-gradient(
+      circle at 50% 0,
+      color-mix(in srgb, var(--ap-accent) 26%, transparent),
+      transparent 30%
+    );
+}
+
+.transport-btn {
+  width: 44px;
+  height: 44px;
+  color: rgba(248, 251, 255, 0.88);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.transport-btn.play {
+  width: 60px;
+  height: 60px;
+}
+
+.monitor-action-strip {
+  justify-content: flex-end;
+  padding: 10px 12px;
+}
+
+.monitor-action-btn {
+  min-height: 42px;
+  padding-inline: 14px;
+  font-size: 12px;
+}
+
+.timeline-container {
+  border-radius: 24px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 94%, rgba(255, 255, 255, 0.02)),
+      color-mix(in srgb, var(--ap-surface) 88%, rgba(255, 255, 255, 0.03))
+    ),
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--ap-accent-soft) 38%, transparent),
+      transparent 20%
+    );
+}
+
+.timeline-actions {
+  grid-template-columns: minmax(0, 1.2fr) minmax(284px, 0.8fr);
+  gap: 16px;
+  padding: 16px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, rgba(255, 255, 255, 0.03)),
+      color-mix(in srgb, var(--ap-card) 88%, rgba(255, 255, 255, 0.02))
+    ),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-signal-soft) 26%, transparent),
+      transparent 24%
+    );
+}
+
+.timeline-control-surface {
+  gap: 14px;
+  padding: 12px;
+}
+
+.timeline-priority-band {
+  min-height: 74px;
+}
+
+.timeline-tools {
+  min-width: max-content;
+  padding: 10px 12px;
+}
+
+.system-telemetry {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-width: none;
+  padding: 12px;
+}
+
+.telemetry-dock-head,
+.telemetry-item--gpu {
+  grid-column: 1 / -1;
+}
+
+.timeline-body {
+  padding: 14px 16px 16px;
+  background:
+    linear-gradient(180deg, rgba(7, 12, 20, 0.12), rgba(7, 12, 20, 0.04)),
+    linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 71px,
+      color-mix(in srgb, var(--ap-grid-line) 88%, transparent) 71px,
+      color-mix(in srgb, var(--ap-grid-line) 88%, transparent) 72px
+    );
+  background-size:
+    auto,
+    72px 72px;
+}
+
+.timeline-editor-slot {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, rgba(255, 255, 255, 0.04)),
+      color-mix(in srgb, var(--ap-card) 86%, rgba(255, 255, 255, 0.02))
+    ),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 24%, transparent),
+      transparent 24%
+    );
+}
+
+.timeline-empty-state {
+  width: min(560px, calc(100% - 24px));
+}
+
+.audio-master-stage {
+  padding: 24px;
+}
+
+.audio-master-stage .audio-master-title {
+  font-size: 28px;
+}
+
+@media (max-width: 1520px) {
+  .timeline-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .system-telemetry {
+    width: 100%;
+  }
+}
+
+@media (max-width: 1280px) {
+  .monitor-stage-shell,
+  .monitor-control-band,
+  .timeline-control-surface {
+    grid-template-columns: 1fr;
+  }
+
+  .monitor-action-strip {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 980px) {
+  .monitor-stage-shell,
+  .monitor-control-band,
+  .timeline-actions,
+  .timeline-control-surface {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-frame {
+    min-height: 320px;
   }
 }
