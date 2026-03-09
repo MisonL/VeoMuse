@@ -82,11 +82,13 @@ describe('PropertyInspector DOM 交互', () => {
 
   it('未选中片段时应展示空态', () => {
     const view = render(<PropertyInspector shellMode="edit" />)
-    expect(view.getAllByText('等待片段进入工位')).toHaveLength(2)
+    expect(view.getByText('等待片段进入工位')).toBeInTheDocument()
+    expect(view.getByText('先把当前片段接进工位')).toBeInTheDocument()
     expect(view.getByText('clip forge / active context')).toBeInTheDocument()
     expect(
-      view.getByText('时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。')
-    ).toBeInTheDocument()
+      view.queryAllByText('时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。')
+        .length
+    ).toBeGreaterThan(0)
   })
 
   it('应支持在属性页与监控页之间切换', () => {

@@ -12,20 +12,20 @@ interface LabToolbarProps {
 
 const MODE_META: Record<LabMode, { status: string; actionHint: string }> = {
   compare: {
-    status: '双通道路由在线',
-    actionHint: '先补齐两路素材，再导出判断结论。'
+    status: '双通道总线在线',
+    actionHint: '先补齐两路素材，再导出本轮判断结论。'
   },
   marketplace: {
-    status: '治理总线待命',
-    actionHint: '策略、预算和渠道状态会在这里统一接管。'
+    status: '治理面板待命',
+    actionHint: '先看路由和预算，再决定本轮策略是否接入。'
   },
   creative: {
-    status: '创意引擎待命',
+    status: '创意总线待命',
     actionHint: '主引擎、工作流和资产复用会围绕同一工位展开。'
   },
   collab: {
     status: '协作频道待命',
-    actionHint: '成员、事件与治理动作集中在同一条协作脊柱。'
+    actionHint: '成员、事件与治理动作会围绕同一条协作频道汇流。'
   }
 }
 
@@ -46,7 +46,7 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
         }
       : labMode === 'marketplace'
         ? {
-            label: '刷新超市',
+            label: '刷新治理面板',
             onClick: onRefreshMarketplace
           }
         : null
@@ -55,6 +55,10 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
     <div className="lab-toolbar" data-guide="lab-toolbar" data-testid="area-lab-toolbar">
       <div className="lab-toolbar-main">
         <div className="lab-toolbar-left">
+          <div className="lab-toolbar-bridge-copy">
+            <span className="lab-toolbar-bridge-tag">命令桥</span>
+            <span className="lab-toolbar-hint">{currentModeMeta.actionHint}</span>
+          </div>
           <div className="lab-status-cluster">
             <div className="lab-status">
               <span className="live-dot">●</span> {currentModeMeta.status}
@@ -70,7 +74,6 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
                 <span>同步预览</span>
               </label>
             ) : null}
-            <span className="lab-toolbar-hint">{currentModeMeta.actionHint}</span>
           </div>
         </div>
         <div className="lab-toolbar-cta">

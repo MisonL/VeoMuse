@@ -55,51 +55,52 @@ const AppCenterPanel = ({
     <section className="pro-panel monitor-core panel-center" data-testid="area-center-panel">
       {activeMode === 'edit' ? (
         <div className="monitor-content">
-          <div className="monitor-stage-shell">
-            <div className="preview-host" ref={previewHostRef} data-testid="area-preview-host">
-              <div
-                className="preview-frame"
-                style={previewFrameStyle}
-                data-testid="area-preview-frame"
-                data-aspect-ratio={previewAspect}
-              >
-                <div className="monitor-deck-label">节目监看</div>
-                <div className="monitor-overlay">
-                  <div className="monitor-overlay-left">
-                    <div className="live-badge">● 实时</div>
-                    {timecodeDisplay}
+          <div className={`monitor-stage-shell ${hasTimelineClips ? 'is-armed' : 'is-idle'}`}>
+            <div className="monitor-stage-primary">
+              <div className="preview-host" ref={previewHostRef} data-testid="area-preview-host">
+                <div
+                  className="preview-frame"
+                  style={previewFrameStyle}
+                  data-testid="area-preview-frame"
+                  data-aspect-ratio={previewAspect}
+                >
+                  <div className="monitor-deck-label">节目监看</div>
+                  <div className="monitor-overlay">
+                    <div className="monitor-overlay-left">
+                      <div className="live-badge">● 实时</div>
+                      {timecodeDisplay}
+                    </div>
+                    <div className="preview-meta">
+                      <button
+                        onClick={onToggleSpatialPreview}
+                        className={`preview-mode-toggle ${isSpatialPreview ? 'active' : ''}`}
+                        data-testid="btn-preview-mode-toggle"
+                      >
+                        {isSpatialPreview ? '3D 模式' : '2D 模式'}
+                      </button>
+                      <div className="preview-quality">4K | HDR</div>
+                    </div>
                   </div>
-                  <div className="preview-meta">
-                    <button
-                      onClick={onToggleSpatialPreview}
-                      className={`preview-mode-toggle ${isSpatialPreview ? 'active' : ''}`}
-                      data-testid="btn-preview-mode-toggle"
-                    >
-                      {isSpatialPreview ? '3D 模式' : '2D 模式'}
-                    </button>
-                    <div className="preview-quality">4K | HDR</div>
-                  </div>
+                  {hasTimelineClips ? (
+                    <div className="monitor-cue-strip">
+                      <span className="monitor-cue-pill">主监 01</span>
+                      <span className="monitor-cue-copy">
+                        {isPlaying ? '节目正在播出，转场链路稳定' : '节目待播，控制台已进入预备态'}
+                      </span>
+                    </div>
+                  ) : null}
+                  {previewPlayer}
                 </div>
-                {hasTimelineClips ? (
-                  <div className="monitor-cue-strip">
-                    <span className="monitor-cue-pill">主监 01</span>
-                    <span className="monitor-cue-copy">
-                      {isPlaying ? '节目正在播出，转场链路稳定' : '节目待播，控制台已进入预备态'}
-                    </span>
-                  </div>
-                ) : null}
-                {previewPlayer}
               </div>
-            </div>
-            <div className="monitor-lower-third">
+
               {!hasTimelineClips ? (
-                <div className="monitor-launchpad">
-                  <div className="monitor-launchpad-copy">
+                <div className="monitor-stage-intro">
+                  <div className="monitor-stage-intro-copy">
                     <span className="monitor-ledger-label">首轮编排</span>
                     <strong>{launchpadTitle}</strong>
                     <small>{launchpadSummary}</small>
                   </div>
-                  <div className="monitor-launchpad-actions">
+                  <div className="monitor-stage-intro-actions">
                     <button
                       type="button"
                       className="monitor-action-btn monitor-action-btn--signal"
@@ -113,6 +114,63 @@ const AppCenterPanel = ({
                     <button type="button" className="monitor-action-btn" onClick={onSwitchToLab}>
                       切到实验室
                     </button>
+                  </div>
+                </div>
+              ) : null}
+
+              {hasTimelineClips ? (
+                <div className="monitor-control-band">
+                  <div className="transport-controls">
+                    <button
+                      id="tool-prev"
+                      aria-label="跳转到开头"
+                      className="transport-btn"
+                      onClick={onSeekToStart}
+                      data-testid="btn-player-prev"
+                    >
+                      ⏮
+                    </button>
+                    <button
+                      id="tool-play"
+                      aria-label={isPlaying ? '暂停播放' : '开始播放'}
+                      className="transport-btn play"
+                      onClick={onTogglePlay}
+                      data-testid="btn-player-play"
+                    >
+                      {isPlaying ? '⏸' : '▶'}
+                    </button>
+                    <button
+                      id="tool-next"
+                      aria-label="跳转到下一片段"
+                      className="transport-btn"
+                      onClick={onSeekToNextClip}
+                      data-testid="btn-player-next"
+                    >
+                      ⏭
+                    </button>
+                  </div>
+                  <div className="monitor-action-strip">
+                    <button type="button" className="monitor-action-btn" onClick={onOpenAssets}>
+                      打开素材抽屉
+                    </button>
+                    <button
+                      type="button"
+                      className="monitor-action-btn monitor-action-btn--signal"
+                      onClick={onSwitchToLab}
+                    >
+                      切到实验室
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <aside className="monitor-stage-aside">
+              {!hasTimelineClips ? (
+                <div className="monitor-launchpad">
+                  <div className="monitor-launchpad-kicker">
+                    <span className="monitor-ledger-label">Control Tower</span>
+                    <strong>值守概览</strong>
                   </div>
                   <div className="monitor-launchpad-stats">
                     <div className="monitor-readout">
@@ -128,9 +186,15 @@ const AppCenterPanel = ({
                       <strong>导入 / 导演</strong>
                     </div>
                   </div>
+                  <div className="monitor-launchpad-note">
+                    <span className="monitor-ledger-label">状态提示</span>
+                    <small>
+                      主舞台已经接管首轮准备，右侧只保留值守摘要，不再平铺完整空态说明。
+                    </small>
+                  </div>
                 </div>
               ) : (
-                <>
+                <div className="monitor-stage-aside-stack">
                   <div className="monitor-ledger">
                     <div className="monitor-ledger-card">
                       <span className="monitor-ledger-label">节目单</span>
@@ -148,49 +212,6 @@ const AppCenterPanel = ({
                       <small>{isPlaying ? '播出链路正在推进' : '等待进入下一段'}</small>
                     </div>
                   </div>
-                  <div className="monitor-control-band">
-                    <div className="transport-controls">
-                      <button
-                        id="tool-prev"
-                        aria-label="跳转到开头"
-                        className="transport-btn"
-                        onClick={onSeekToStart}
-                        data-testid="btn-player-prev"
-                      >
-                        ⏮
-                      </button>
-                      <button
-                        id="tool-play"
-                        aria-label={isPlaying ? '暂停播放' : '开始播放'}
-                        className="transport-btn play"
-                        onClick={onTogglePlay}
-                        data-testid="btn-player-play"
-                      >
-                        {isPlaying ? '⏸' : '▶'}
-                      </button>
-                      <button
-                        id="tool-next"
-                        aria-label="跳转到下一片段"
-                        className="transport-btn"
-                        onClick={onSeekToNextClip}
-                        data-testid="btn-player-next"
-                      >
-                        ⏭
-                      </button>
-                    </div>
-                    <div className="monitor-action-strip">
-                      <button type="button" className="monitor-action-btn" onClick={onOpenAssets}>
-                        打开素材抽屉
-                      </button>
-                      <button
-                        type="button"
-                        className="monitor-action-btn monitor-action-btn--signal"
-                        onClick={onSwitchToLab}
-                      >
-                        切到实验室
-                      </button>
-                    </div>
-                  </div>
                   <div className="monitor-readout-cluster">
                     <div className="monitor-readout">
                       <span className="monitor-readout-label">画面总线</span>
@@ -205,9 +226,9 @@ const AppCenterPanel = ({
                       <strong>{isPlaying ? '播出推进' : '待命'}</strong>
                     </div>
                   </div>
-                </>
+                </div>
               )}
-            </div>
+            </aside>
           </div>
         </div>
       ) : activeMode === 'color' ? (

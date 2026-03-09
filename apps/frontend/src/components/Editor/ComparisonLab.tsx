@@ -13,22 +13,22 @@ const LAB_STAGE_META = {
   compare: {
     index: '01',
     label: '双通道比对',
-    summary: '同一素材在两路模型上并行播出，先判断差异，再决定是否继续扩展。'
+    summary: '同一批素材在两路模型上并行接入，先判断差异，再决定是否继续放量。'
   },
   marketplace: {
     index: '02',
     label: '策略治理',
-    summary: '把路由、预算和策略超市拉进同一块播控台，统一处理治理决策。'
+    summary: '把路由、预算和治理面板接到同一条实验总线，统一处理策略决策。'
   },
   creative: {
     index: '03',
     label: '创意闭环',
-    summary: '让提示词、工作流、生成结果和资产复用围绕主引擎形成完整回路。'
+    summary: '让提示词、工作流、生成结果和资产复用围绕同一创意工位形成闭环。'
   },
   collab: {
     index: '04',
     label: '协作平台',
-    summary: 'Presence、事件流与治理动作汇入一处协作指挥室，形成多人作战闭环。'
+    summary: '成员、事件流与治理动作汇入同一条协作频道，形成多人联动闭环。'
   }
 } as const
 
@@ -40,9 +40,9 @@ const LAB_STAGE_ORDER = [
 ] as const
 
 const LAB_STAGE_STATUS_LABEL = {
-  current: '当前阶段',
-  completed: '已完成阶段',
-  available: '可进入阶段'
+  current: '当前工位',
+  completed: '热备工位',
+  available: '待接入'
 } as const
 
 const resolveStageStatus = (stageIndex: number, currentStageIndex: number) => {
@@ -77,12 +77,12 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
   const activeStageMeta = LAB_STAGE_META[labMode]
   const activeStageState =
     labMode === 'compare'
-      ? '适合快速做模型判断'
+      ? '适合先完成模型判断'
       : labMode === 'marketplace'
         ? '优先检查路由、预算与策略命中'
         : labMode === 'creative'
-          ? '把主描述、版本链与工作流拉进一个工位'
-          : '先建立空间，再接入实时频道与治理动作'
+          ? '把主描述、版本链和工作流收进同一工位'
+          : '先建立协作频道，再接入治理动作'
   const handleStageKeyDown = (
     event: React.KeyboardEvent<HTMLButtonElement>,
     stageIndex: number
@@ -112,9 +112,9 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
       <div className="lab-stage-shell">
         <aside className="lab-stage-spine">
           <div className="lab-stage-rail-head">
-            <span className="lab-stage-rail-kicker">四段实验流</span>
-            <strong>实验阶段</strong>
-            <p className="lab-stage-rail-note">从判断到协作，沿同一条操作线完成闭环。</p>
+            <span className="lab-stage-rail-kicker">实验总控工位</span>
+            <strong>工位索引</strong>
+            <p className="lab-stage-rail-note">四个工位共用同一条实验总线，按当前目标切换。</p>
           </div>
           <div className="lab-stage-markers" role="tablist" aria-label="实验室阶段切换">
             {LAB_STAGE_ORDER.map((stage, stageIndex) => {
@@ -143,10 +143,10 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
                       <span className="lab-stage-marker-label">{stage.short}</span>
                       <span className={`lab-stage-state-chip lab-stage-state-chip--${status}`}>
                         {status === 'current'
-                          ? '进行中'
+                          ? '当前工位'
                           : status === 'completed'
-                            ? '已完成'
-                            : '待进入'}
+                            ? '热备'
+                            : '待接入'}
                       </span>
                     </span>
                     <span className="lab-stage-marker-state">{LAB_STAGE_STATUS_LABEL[status]}</span>
@@ -159,22 +159,20 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
         <div className="lab-stage-main">
           <div className="lab-stage-hero">
             <div className="lab-stage-hero-copy">
-              <span className="lab-stage-hero-kicker">
-                Stage {activeStageMeta.index} / Editorial Lab Deck
-              </span>
+              <span className="lab-stage-hero-kicker">实验总控工位 / 当前总线</span>
               <div className="lab-stage-hero-headline">
                 <strong>{activeStageMeta.label}</strong>
-                <span className="lab-stage-hero-chip">实验室在线</span>
+                <span className="lab-stage-hero-chip">总线在线</span>
               </div>
               <p>{activeStageMeta.summary}</p>
             </div>
             <div className="lab-stage-hero-status">
               <div className="lab-stage-hero-card">
-                <span>当前阶段</span>
+                <span>当前工位</span>
                 <strong>{activeStageMeta.index}</strong>
               </div>
               <div className="lab-stage-hero-card">
-                <span>主目标</span>
+                <span>当前任务</span>
                 <strong>{activeStageState}</strong>
               </div>
             </div>
