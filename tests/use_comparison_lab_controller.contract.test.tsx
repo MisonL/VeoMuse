@@ -166,7 +166,7 @@ describe('useComparisonLabController contract', () => {
     expect(controller?.comparePanelProps.leftAssetId).toBe('asset_left')
     expect(controller?.marketplacePanelProps.selectedPolicyId).toBe('policy_1')
     expect(controller?.creativeContainerProps.workspaceId).toBe('')
-    expect(controller?.collabContainerProps.workspaceOwner).toBe('Owner')
+    expect(controller?.collabContainerProps.workspaceOwner).toBe('空间管理员')
     expect(controller?.channelAccessPanelProps.show).toBe(false)
     expect(controller?.channelAccessPanelProps.selectedOrganizationId).toBe('org_1')
 

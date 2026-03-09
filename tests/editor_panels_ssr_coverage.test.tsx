@@ -10,7 +10,7 @@ import { createCreativeModePanelProps } from './helpers/creativeModePanelProps'
 describe('编辑器聚合面板 SSR 覆盖补强', () => {
   it('AssetPanel 多模式应渲染关键区块（默认 store）', () => {
     const assetsHtml = renderToString(createElement(AssetPanel, { mode: 'assets' }))
-    expect(assetsHtml).toContain('暂无媒体素材')
+    expect(assetsHtml).toContain('暂无素材')
     expect(assetsHtml).toContain('asset-search-input')
 
     const directorHtml = renderToString(
@@ -71,7 +71,7 @@ describe('编辑器聚合面板 SSR 覆盖补强', () => {
     expect(html).toContain('area-creative-hero-stage')
     expect(html).toContain('统一视频生成工作台')
     expect(html).toContain('v4 Workflow')
-    expect(html).toContain('v4 Asset Reuse')
+    expect(html).toContain('资产复用')
     expect(html).toContain('Gemini 快速自检')
   })
 })
