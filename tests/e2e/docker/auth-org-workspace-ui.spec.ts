@@ -65,7 +65,7 @@ test('Docker UI smoke 应串通注册、工作区创建与关键值守入口', a
   await expect(page.locator('.telemetry-dashboard')).toBeVisible()
   await expect(page.locator('.telemetry-command-bar')).toBeVisible()
   await expect(page.locator('.telemetry-command-stat')).toHaveCount(3)
-  await expect(page.getByText('Provider 健康检查')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Provider 健康检查' })).toBeVisible()
   await expect(page.getByText('数据库自愈中心')).toBeVisible()
 
   await page.getByTestId('btn-mode-color').click()
