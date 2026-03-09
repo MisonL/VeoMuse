@@ -144,7 +144,7 @@ describe('App DOM 运行态交互补测', () => {
     })
 
     await click(view.getByTestId('btn-mode-audio'))
-    expect(view.getByText('AUDIO MASTER 引擎已就绪')).toBeInTheDocument()
+    expect(view.getByText('音频母带引擎已就绪')).toBeInTheDocument()
     expect(view.getByTestId('btn-mode-audio')).toHaveAttribute('aria-pressed', 'true')
     await click(view.getByRole('button', { name: '导入素材开始处理' }))
     expect(view.getByTestId('btn-mode-edit').className).toContain('active')
