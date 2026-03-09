@@ -180,7 +180,7 @@ const TelemetryDashboard: React.FC<TelemetryDashboardProps> = ({
             <strong>{incidentCount > 0 ? '待复核' : '稳定'}</strong>
           </div>
           <button type="button" className="telemetry-watch-action" onClick={onReturnToStage}>
-            返回监控摘要
+            返回系统监控摘要
           </button>
         </div>
       </header>

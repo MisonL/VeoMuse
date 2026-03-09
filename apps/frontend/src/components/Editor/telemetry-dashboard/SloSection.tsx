@@ -111,7 +111,7 @@ const SloSection: React.FC<SloSectionProps> = ({
           />
         </>
       ) : (
-        <div className="api-empty">暂无 SLO 数据，请先保存管理员令牌</div>
+        <div className="api-empty">等待管理员令牌后载入 SLO 数据</div>
       )}
       {sloError ? <div className="db-error">{sloError}</div> : null}
     </section>

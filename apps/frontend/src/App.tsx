@@ -1149,7 +1149,7 @@ function App() {
               <span className="inspector-shell-subtitle">
                 {activeMode === 'color'
                   ? labSurface === 'watch'
-                    ? '中央监控 / 全幅值守'
+                    ? '中央监控 / 系统监控总控'
                     : '右席摘要 / 系统监控'
                   : activeMode === 'audio'
                     ? '音频上下文 / 交付校验'

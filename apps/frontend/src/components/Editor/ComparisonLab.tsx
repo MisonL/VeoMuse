@@ -108,7 +108,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
       <div className="lab-stage-shell">
         <aside className="lab-stage-spine">
           <div className="lab-stage-rail-head">
-            <span className="lab-stage-rail-kicker">实验流程</span>
+            <span className="lab-stage-rail-kicker">实验室阶段</span>
             <strong>阶段导航</strong>
           </div>
           <div className="lab-stage-markers" role="tablist" aria-label="实验室阶段切换">

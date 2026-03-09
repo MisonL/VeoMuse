@@ -131,25 +131,25 @@ const INSPECTOR_MODE_META: Record<
     idleTitle: '等待片段进入工位',
     idleSubtitle: '属性、炼金与空间渲染动作都绑定到当前片段，不再丢失上下文。',
     idleAction: '时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。',
-    labTitle: '系统监控正在值守',
+    labTitle: '系统监控摘要在线',
     labSubtitle: '运行态、告警与治理记录会在当前侧栏持续值守显示。',
-    labStatus: '系统值守'
+    labStatus: '系统监控摘要'
   },
   color: {
     idleTitle: '实验上下文待接管',
     idleSubtitle: '实验策略、比对判断与协作动作将围绕当前实验阶段集中显示。',
     idleAction: '上方实验室选中当前阶段后，可在这里查看上下文、切换监控并承接后续动作。',
-    labTitle: '实验监控与策略值守',
+    labTitle: '实验室系统监控',
     labSubtitle: 'Provider 健康、治理信号与实验告警会围绕当前实验阶段持续更新。',
-    labStatus: '实验值守'
+    labStatus: '实验监控摘要'
   },
   audio: {
     idleTitle: '母带工位待命',
     idleSubtitle: '旁白、音乐、响度与导出前校验会在这里绑定到当前母带会话。',
     idleAction: '导入素材并进入母带流程后，可在这里查看当前输入、调参并切换到系统监控。',
-    labTitle: '母带监控与交付值守',
+    labTitle: '母带系统监控',
     labSubtitle: '输入健康、总线状态与交付前检查会围绕当前母带会话持续显示。',
-    labStatus: '母带值守'
+    labStatus: '母带监控摘要'
   }
 }
 
@@ -567,7 +567,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             onClick={() => setActiveTab('lab')}
           >
             <span>系统监控</span>
-            <small>运行摘要</small>
+            <small>监控摘要</small>
           </button>
         </div>
 
@@ -583,7 +583,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
       <div className="inspector-context-bar">
         <div className="inspector-context-copy">
           <span className="inspector-context-kicker">
-            {activeTab === 'lab' ? '运行摘要 / 右侧面板' : '当前上下文 / 片段属性'}
+            {activeTab === 'lab' ? '系统监控 / 右侧摘要' : '当前上下文 / 片段属性'}
           </span>
           {activeTab !== 'lab' ? (
             <span hidden aria-hidden="true">
@@ -633,11 +633,11 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
           <div className="inspector-lab-shell">
             <div className="inspector-lab-banner">
               <div className="inspector-lab-banner-copy">
-                <span className="inspector-lab-banner-kicker">中央联动</span>
+                <span className="inspector-lab-banner-kicker">系统联动</span>
                 <strong>{shellMeta.labTitle}</strong>
                 <span>
                   {labSurface === 'watch'
-                    ? '中央监控台已经展开，右席只保留摘要与状态提示。'
+                    ? '中央监控台已经展开，右席只保留系统监控摘要与状态提示。'
                     : shellMeta.labSubtitle}
                 </span>
               </div>
@@ -654,11 +654,11 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                   <div className="inspector-lab-stage-bridge-copy">
                     <span className="inspector-lab-stage-bridge-kicker">中央监控已展开</span>
                     <strong>当前视图已切到系统监控总控</strong>
-                    <p>右侧保留摘要席，中央舞台正在承接完整监控、治理与数据库动作。</p>
+                    <p>右侧保留系统监控摘要，中央舞台正在承接完整监控、治理与数据库动作。</p>
                   </div>
                   <div className="inspector-lab-stage-bridge-actions">
                     <button type="button" className="pro-master-btn" onClick={onReturnToLabStage}>
-                      返回监控摘要
+                      返回系统监控摘要
                     </button>
                     <button
                       type="button"

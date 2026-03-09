@@ -1602,6 +1602,46 @@
   line-height: 1.45;
 }
 
+.telemetry-watch-brief[data-tone='stable'] {
+  border-color: color-mix(in srgb, #0f9f63 22%, var(--ap-border) 78%);
+  background:
+    linear-gradient(180deg, rgba(241, 255, 249, 0.92), rgba(255, 255, 255, 0.22)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+    );
+}
+
+.telemetry-watch-brief[data-tone='degraded'] {
+  border-color: color-mix(in srgb, #ef6a2f 38%, var(--ap-border) 62%);
+  background:
+    linear-gradient(180deg, rgba(255, 247, 240, 0.94), rgba(255, 255, 255, 0.22)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+    );
+}
+
+.telemetry-watch-brief[data-tone='stable'] .telemetry-watch-brief-card:first-child {
+  border-color: color-mix(in srgb, #0f9f63 28%, var(--ap-border) 72%);
+  background: color-mix(in srgb, #ebfff6 72%, var(--ap-surface) 28%);
+}
+
+.telemetry-watch-brief[data-tone='stable'] .telemetry-watch-brief-card:first-child strong {
+  color: #0f9f63;
+}
+
+.telemetry-watch-brief[data-tone='degraded'] .telemetry-watch-brief-card:first-child {
+  border-color: color-mix(in srgb, #ef6a2f 42%, var(--ap-border) 58%);
+  background: color-mix(in srgb, #fff1e9 78%, var(--ap-surface) 22%);
+}
+
+.telemetry-watch-brief[data-tone='degraded'] .telemetry-watch-brief-card:first-child strong {
+  color: #c24d14;
+}
+
 .telemetry-watch-brief-actions {
   display: flex;
   flex-wrap: wrap;

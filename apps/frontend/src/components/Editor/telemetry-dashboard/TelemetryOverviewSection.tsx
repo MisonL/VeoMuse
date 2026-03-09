@@ -73,7 +73,7 @@ const TelemetryOverviewSection: React.FC<TelemetryOverviewSectionProps> = ({
           </div>
         ))
       ) : (
-        <div className="api-empty">暂无指标</div>
+        <div className="api-empty">等待指标接入</div>
       )}
     </section>
   </>

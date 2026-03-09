@@ -127,17 +127,17 @@ const AppTimeline = ({
   const modeMeta =
     activeMode === 'color'
       ? {
-          eyebrow: '实验闭环',
-          sectionTitle: '模式总览',
-          runningOrder: '实验室 / 四段闭环',
-          priorityPill: '实验主轴',
+          eyebrow: '实验室',
+          sectionTitle: '阶段总览',
+          runningOrder: '实验室 / 四段阶段',
+          priorityPill: '实验室主轴',
           priorityCopy: '上方实验区承接比对、治理、创意与协作，下方保持实验上下文与状态总览。',
           telemetryLabel: '实验状态',
-          telemetryCopy: '实验室在线 / 双通道路由与策略摘要已就绪',
-          emptyTitle: '实验台待命',
-          emptyLead: '上方实验区负责推进阶段切换，下方负责承接判断线索与运行摘要。',
-          emptySummary: '切换到上方实验区后，这里负责承接过程摘要、状态与节奏。',
-          emptyTrackStatus: '实验摘要已就绪',
+          telemetryCopy: '实验室在线 / 阶段摘要待命',
+          emptyTitle: '实验室待命',
+          emptyLead: '上方实验室负责推进阶段切换，下方负责承接判断线索与运行摘要。',
+          emptySummary: '切换到上方实验室后，这里负责承接阶段摘要、状态与节奏。',
+          emptyTrackStatus: '阶段摘要待命',
           emptyFocus: '四段切换'
         }
       : activeMode === 'audio'
@@ -152,7 +152,7 @@ const AppTimeline = ({
             emptyTitle: '音频轨待命',
             emptyLead: '上方母带舞台负责推进导入与调度，下方承接输入健康、总线状态与交付摘要。',
             emptySummary: '素材接入后，这里会承接母带流程、输入状态和导出前检查。',
-            emptyTrackStatus: '母带摘要已就绪',
+            emptyTrackStatus: '母带摘要待命',
             emptyFocus: '导入 / 母带'
           }
         : {

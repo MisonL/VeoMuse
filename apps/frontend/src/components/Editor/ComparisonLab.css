@@ -6648,3 +6648,24 @@
     padding: 12px;
   }
 }
+
+@media (max-width: 640px) {
+  .comparison-lab-pro .creative-hero-main,
+  .comparison-lab-pro .creative-hero-side,
+  .comparison-lab-pro .creative-support-card,
+  .comparison-lab-pro .creative-ops-card,
+  .comparison-lab-pro .asset-reuse-panel,
+  .comparison-lab-pro .collab-command-card,
+  .comparison-lab-pro .collab-live-primary,
+  .comparison-lab-pro .collab-live-secondary {
+    min-width: 0 !important;
+  }
+
+  .comparison-lab-pro .creative-support-grid,
+  .comparison-lab-pro .creative-ops-rail,
+  .comparison-lab-pro .asset-reuse-panels,
+  .comparison-lab-pro .collab-command-stage,
+  .comparison-lab-pro .collab-live-grid {
+    grid-template-columns: 1fr;
+  }
+}

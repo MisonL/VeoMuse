@@ -20,7 +20,7 @@ const ProviderHealthPanel: React.FC<ProviderHealthPanelProps> = ({
       <button disabled={isLoading} onClick={onRefresh}>
         {isLoading ? '检查中...' : '刷新 Provider 状态'}
       </button>
-      <span>{rows.length > 0 ? `已检查 ${rows.length} 个` : '暂无数据'}</span>
+      <span>{rows.length > 0 ? `已检查 ${rows.length} 个` : '等待 Provider 检查'}</span>
     </div>
     {error ? <div className="db-error">{error}</div> : null}
     <div className="governance-list">
@@ -33,7 +33,7 @@ const ProviderHealthPanel: React.FC<ProviderHealthPanelProps> = ({
           <span>{item.latencyMs ?? '-'}ms</span>
         </div>
       ))}
-      {rows.length === 0 ? <div className="api-empty">暂无 Provider 健康记录</div> : null}
+      {rows.length === 0 ? <div className="api-empty">等待 Provider 健康检查</div> : null}
     </div>
   </section>
 )

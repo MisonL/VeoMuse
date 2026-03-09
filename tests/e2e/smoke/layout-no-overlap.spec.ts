@@ -275,6 +275,46 @@ test('compare 模式在紧凑宽度下应切回单列并优先呈现 A/B 结果�
   }
 })
 
+test('移动端头部关键操作与预览叠层在窄屏下应保持可达', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  attachPageDebug(page, 'mobile-header-overlay-smoke')
+  await page.goto('/')
+  await dismissGuideIfPresent(page)
+
+  await expect(page.getByTestId('btn-open-channel-access')).toBeVisible()
+  await expect(page.getByTestId('btn-open-guide')).toBeVisible()
+  await expect(page.getByTestId('select-export-quality')).toBeVisible()
+  await expect(page.getByTestId('select-preview-aspect')).toBeVisible()
+  await expect(page.getByTestId('btn-export')).toBeVisible()
+
+  const headerActions = page.getByTestId('area-header-actions')
+  const headerOverflow = await headerActions.evaluate((node) => ({
+    scrollWidth: node.scrollWidth,
+    clientWidth: node.clientWidth
+  }))
+  expect(headerOverflow.scrollWidth).toBeLessThanOrEqual(headerOverflow.clientWidth + 2)
+
+  await page.getByTestId('select-preview-aspect').selectOption('21:9')
+
+  const overlayLeft = page.locator('.monitor-overlay-left')
+  const previewMeta = page.locator('.preview-meta')
+  await expect(overlayLeft).toBeVisible()
+  await expect(previewMeta).toBeVisible()
+
+  const overlayLeftBox = await overlayLeft.boundingBox()
+  const previewMetaBox = await previewMeta.boundingBox()
+  if (!overlayLeftBox || !previewMetaBox) {
+    throw new Error('移动端预览叠层 boundingBox 为空，无法验证')
+  }
+
+  const stacked = Math.abs(overlayLeftBox.x - previewMetaBox.x) < 4
+  if (stacked) {
+    expect(overlayLeftBox.y + overlayLeftBox.height).toBeLessThanOrEqual(previewMetaBox.y + 4)
+  } else {
+    expect(overlayLeftBox.x + overlayLeftBox.width).toBeLessThanOrEqual(previewMetaBox.x + 8)
+  }
+})
+
 test('右侧系统监控面板应展示关键区块与值守动作', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   attachPageDebug(page, 'telemetry-dashboard-smoke')
@@ -292,7 +332,7 @@ test('右侧系统监控面板应展示关键区块与值守动作', async ({ pa
   await expect(page.locator('.telemetry-command-bar')).toBeVisible()
   await expect(page.locator('.telemetry-command-stat')).toHaveCount(3)
   await expect(page.getByText('播放 FPS 稳定性')).toBeVisible()
-  await expect(page.getByText('Provider 健康检查')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Provider 健康检查' })).toBeVisible()
   await expect(page.getByText('北极星 SLO（24h）')).toBeVisible()
   await expect(page.getByText('项目治理卡片（第二入口）')).toBeVisible()
   await expect(page.getByText('数据库自愈中心')).toBeVisible()
