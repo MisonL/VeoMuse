@@ -168,10 +168,7 @@ describe('docker smoke 脚本辅助逻辑', () => {
     `
     expect(resolveMissingTelemetryEntryMarkers(fullBundle)).toEqual([])
 
-    const splitBundles = [
-      '系统监控 系统监控正在值守',
-      '切到系统监控 ops watch / live audit'
-    ]
+    const splitBundles = ['系统监控 系统监控正在值守', '切到系统监控 ops watch / live audit']
     expect(resolveMissingTelemetryEntryMarkers(splitBundles)).toEqual([])
 
     const missing = resolveMissingTelemetryEntryMarkers('系统监控 ops watch / live audit')
