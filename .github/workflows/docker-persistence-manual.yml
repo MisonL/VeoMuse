@@ -1,11 +1,11 @@
-name: Docker Persistence Manual
+name: Manual · Docker Persistence Drill
 
 on:
   workflow_dispatch:
 
 jobs:
   drill:
-    name: Run Docker Persistence Drill
+    name: Docker Persistence Drill
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

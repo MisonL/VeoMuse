@@ -1,4 +1,4 @@
-name: CI Quality Gate
+name: CI · Quality Gate
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   gate:
-    name: Unified Release Gate
+    name: Release Gate
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -103,7 +103,7 @@ jobs:
           retention-days: 14
 
   docker-delivery-main:
-    name: Docker Delivery (main push only)
+    name: Docker Delivery
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     needs: gate
     runs-on: ubuntu-latest

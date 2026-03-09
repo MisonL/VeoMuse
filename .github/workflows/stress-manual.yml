@@ -1,11 +1,11 @@
-name: Stress Manual
+name: Manual · Collaboration WS Stress
 
 on:
   workflow_dispatch:
 
 jobs:
   stress:
-    name: Run Collaboration WS Stress
+    name: Collaboration WS Stress
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
