@@ -86,7 +86,7 @@ describe('App 运行态关键分支（DOM/SSR）', () => {
   })
 
   it('模式切换相关尺寸计算应覆盖 edit/color/audio 分支', () => {
-    expect(computeCenterPanelMinWidth(true, 'fit', 'edit')).toBe(360)
+    expect(computeCenterPanelMinWidth(true, 'fit', 'edit')).toBe(420)
     expect(computeCenterPanelMinWidth(true, 'fit', 'color')).toBe(420)
     expect(computeCenterPanelMinWidth(true, 'focus', 'audio')).toBe(376)
 
@@ -116,7 +116,7 @@ describe('App 运行态关键分支（DOM/SSR）', () => {
         isDesktopLayout: false,
         previewFrameWidth: 960
       })
-    ).toBe(520)
+    ).toBe(560)
   })
 
   it('App 应保留导出守卫、引导与模式分支实现', () => {

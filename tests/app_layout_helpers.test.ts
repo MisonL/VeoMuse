@@ -95,7 +95,7 @@ describe('App 布局与状态辅助函数', () => {
     expect(computeCenterPanelMinWidth(false, 'fit', 'edit')).toBe(340)
     expect(computeCenterPanelMinWidth(true, 'fit', 'color')).toBe(420)
     expect(computeCenterPanelMinWidth(true, 'fit', 'audio')).toBe(348)
-    expect(computeCenterPanelMinWidth(true, 'fit', 'edit')).toBe(360)
+    expect(computeCenterPanelMinWidth(true, 'fit', 'edit')).toBe(420)
     expect(computeCenterPanelMinWidth(true, 'focus', 'audio')).toBe(376)
     expect(computeCenterPanelMinWidth(true, 'focus', 'edit')).toBe(396)
 
@@ -107,7 +107,7 @@ describe('App 布局与状态辅助函数', () => {
         isDesktopLayout: false,
         previewFrameWidth: 0
       })
-    ).toBe(520)
+    ).toBe(560)
     expect(
       computeCenterPanelFitWidth({
         activeMode: 'color',
@@ -125,7 +125,7 @@ describe('App 布局与状态辅助函数', () => {
         isDesktopLayout: true,
         previewFrameWidth: 900
       })
-    ).toBe(796)
+    ).toBe(936)
   })
 
   it('样式构造函数应输出可直接渲染的 CSS 变量', () => {
@@ -141,7 +141,7 @@ describe('App 布局与状态辅助函数', () => {
     expect(vars['--left-panel-w']).toBe('280px')
     expect(vars['--right-panel-w']).toBe('360px')
     expect(vars['--center-panel-fit-w']).toBe('779px')
-    expect(vars['--left-panel-flex']).toBe('1.36fr')
+    expect(vars['--left-panel-flex']).toBe('1.08fr')
     expect(vars['--timeline-h']).toBe('260px')
 
     expect(buildPreviewFrameStyle({ width: 0, height: 100 })).toBeUndefined()
@@ -221,7 +221,7 @@ describe('App 布局与状态辅助函数', () => {
         shellHeight: 600,
         timelinePx: 320
       })
-    ).toBe(220)
+    ).toBe(260)
   })
 
   it('引导样式计算应处理越界与空值', () => {

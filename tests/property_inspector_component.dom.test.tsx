@@ -81,16 +81,16 @@ describe('PropertyInspector DOM 交互', () => {
   })
 
   it('未选中片段时应展示空态', () => {
-    const view = render(<PropertyInspector />)
-    expect(view.getByText('等待片段进入工位')).toBeInTheDocument()
-    expect(view.getByText('属性工位待命')).toBeInTheDocument()
+    const view = render(<PropertyInspector shellMode="edit" />)
+    expect(view.getAllByText('等待片段进入工位')).toHaveLength(2)
+    expect(view.getByText('clip forge / active context')).toBeInTheDocument()
     expect(
       view.getByText('时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。')
     ).toBeInTheDocument()
   })
 
   it('应支持在属性页与监控页之间切换', () => {
-    const view = render(<PropertyInspector />)
+    const view = render(<PropertyInspector shellMode="edit" />)
     expect(view.container.querySelector('.pro-inspector-inner')).toHaveAttribute(
       'data-active-tab',
       'properties'
@@ -106,7 +106,7 @@ describe('PropertyInspector DOM 交互', () => {
   })
 
   it('空态下应可直接切换到系统监控', () => {
-    const view = render(<PropertyInspector />)
+    const view = render(<PropertyInspector shellMode="edit" />)
     fireEvent.click(view.getByRole('button', { name: '切到系统监控' }))
     expect(view.getByText('播放 FPS 稳定性')).toBeInTheDocument()
   })
@@ -136,7 +136,7 @@ describe('PropertyInspector DOM 交互', () => {
       selectedClipId: 'clip-text-1'
     })
 
-    const view = render(<PropertyInspector />)
+    const view = render(<PropertyInspector shellMode="edit" />)
     setValidAccessToken()
     fireEvent.click(view.getByRole('button', { name: '翻译并克隆' }))
 
@@ -168,7 +168,7 @@ describe('PropertyInspector DOM 交互', () => {
       selectedClipId: 'clip-v1'
     })
 
-    const view = render(<PropertyInspector />)
+    const view = render(<PropertyInspector shellMode="edit" />)
     setValidAccessToken()
     fireEvent.click(view.getByRole('button', { name: '画面修复' }))
 

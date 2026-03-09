@@ -35,7 +35,7 @@ describe('编辑器聚合面板 SSR 覆盖补强', () => {
   })
 
   it('PropertyInspector 默认应渲染空态', () => {
-    const html = renderToString(createElement(PropertyInspector))
+    const html = renderToString(createElement(PropertyInspector, { shellMode: 'edit' }))
     expect(html).toContain('等待片段进入工位')
     expect(html).toContain('时间轴选中片段后，可在这里查看参数')
     expect(html).toContain('系统监控')
