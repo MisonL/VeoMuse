@@ -84,10 +84,12 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
             <video ref={leftVideoRef} src={leftAsset.src} controls playsInline />
           ) : (
             <div className="empty-pane">
-              <span>请选择左侧素材</span>
+              <span className="empty-pane-kicker">A 通道待装载</span>
+              <strong>先放入素材，马上开始双通道对照。</strong>
+              <p>从左侧素材库拖入片段，或直接打开媒体资源面板快速选片。</p>
               {onOpenAssets ? (
                 <button type="button" className="empty-pane-cta" onClick={onOpenAssets}>
-                  去左侧导入素材
+                  打开媒体资源
                 </button>
               ) : null}
             </div>
@@ -144,10 +146,12 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
             <video ref={rightVideoRef} src={rightAsset.src} controls playsInline />
           ) : (
             <div className="empty-pane">
-              <span>请选择右侧素材</span>
+              <span className="empty-pane-kicker">B 通道待装载</span>
+              <strong>右侧画面还空着，补齐后才能看出模型差异。</strong>
+              <p>建议使用同一批素材做双路对照，判断速度会更稳定。</p>
               {onOpenAssets ? (
                 <button type="button" className="empty-pane-cta" onClick={onOpenAssets}>
-                  去右侧导入素材
+                  打开媒体资源
                 </button>
               ) : null}
             </div>

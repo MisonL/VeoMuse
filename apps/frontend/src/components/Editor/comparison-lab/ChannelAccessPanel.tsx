@@ -294,17 +294,19 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
       aria-modal="true"
       aria-label="AI 渠道接入状态"
       data-testid="area-channel-panel-mask"
+      onClick={onClose}
     >
       <section
         ref={dialogRef}
         className="channel-panel"
         data-testid="area-channel-panel"
         tabIndex={-1}
+        onClick={(event) => event.stopPropagation()}
       >
         <header className="channel-panel-head">
           <div>
             <h3>AI 渠道接入中心</h3>
-            <p>支持多租户组织级共享与工作区覆写，配置即时生效。</p>
+            <p>统一管理组织共享与工作区覆写，所有渠道配置在这里集中生效。</p>
           </div>
           <button
             type="button"

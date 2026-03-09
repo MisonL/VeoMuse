@@ -71,14 +71,14 @@ const AppHeader = ({
     <div className="brand-zone">
       <div className="brand-mark">
         <div className="brand-logo">V</div>
-        <span className="brand-beacon">LIVE</span>
+        <span className="brand-beacon">直播</span>
       </div>
       <div className="brand-copy">
-        <span className="brand-kicker">Flagship AI Video Bus</span>
+        <span className="brand-kicker">旗舰 AI 视频总线</span>
         <span className="brand-title">VEOMUSE PRO</span>
       </div>
       <div className="brand-status-ribbon">
-        <span className="brand-status-pill">On Air</span>
+        <span className="brand-status-pill">播出中</span>
         <span className="brand-status-copy">导播总线稳定 / 三路节目待播</span>
       </div>
     </div>
@@ -106,7 +106,7 @@ const AppHeader = ({
         ))}
       </div>
       <div className="mode-runtime">
-        <span className="mode-runtime-pill">Run Of Show</span>
+        <span className="mode-runtime-pill">节目编排</span>
         <span className="mode-runtime-copy">{MODE_RUNTIME_COPY[activeMode]}</span>
       </div>
     </div>
