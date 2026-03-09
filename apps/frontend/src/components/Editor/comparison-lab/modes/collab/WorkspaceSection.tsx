@@ -39,7 +39,7 @@ const WorkspaceSection: React.FC<WorkspaceSectionProps> = ({
           />
         </label>
         <label className="lab-field">
-          <span>Owner</span>
+          <span>管理员</span>
           <input
             name="workspaceOwner"
             value={workspaceOwner}
@@ -73,8 +73,8 @@ const WorkspaceSection: React.FC<WorkspaceSectionProps> = ({
         </button>
       </div>
       <div className="collab-meta">
-        <span data-testid="text-workspace-id">workspace: {workspaceId || '-'}</span>
-        <span>project: {projectId || '-'}</span>
+        <span data-testid="text-workspace-id">空间 ID：{workspaceId || '-'}</span>
+        <span>项目 ID：{projectId || '-'}</span>
       </div>
     </section>
   )

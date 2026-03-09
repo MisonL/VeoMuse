@@ -87,15 +87,15 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
     >
       <div className="creative-section-head">
         <div className="creative-section-copy">
-          <span className="creative-section-kicker">asset archive</span>
-          <h4>v4 Asset Reuse</h4>
+          <span className="creative-section-kicker">资产归档</span>
+          <h4>资产复用</h4>
         </div>
         <div className="creative-section-chip">资源回路</div>
       </div>
       <div className="asset-reuse-panels">
         <div className="asset-reuse-panel asset-reuse-panel--compose">
           <div className="creative-stage-callout">
-            <span className="creative-section-kicker">reuse lane</span>
+            <span className="creative-section-kicker">复用链路</span>
             <strong>发起复用是主动作，档案追踪放到另一侧。</strong>
             <span>{assetComposeLeadText}</span>
           </div>
@@ -104,7 +104,7 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
             <span>把关键资产转运到目标项目，保持风格与制作链路一致。</span>
           </div>
           <div className="asset-reuse-route-spotlight">
-            <span className="creative-section-kicker">route preview</span>
+            <span className="creative-section-kicker">路径预览</span>
             <strong>
               {(assetReuseSourceId || 'asset_xxx').trim() || 'asset_xxx'} →{' '}
               {(assetReuseTargetId || 'project_xxx').trim() || 'project_xxx'}
@@ -137,7 +137,7 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
               name="v4AssetReuseNote"
               value={assetReuseNote}
               onChange={(event) => onAssetReuseNoteChange(event.target.value)}
-              placeholder="reuse for style consistency"
+              placeholder="例如：保持风格一致，沿用同一素材版本"
             />
           </label>
           <div className="lab-inline-actions">
@@ -157,7 +157,7 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
 
         <div className="asset-reuse-panel asset-reuse-panel--history">
           <div className="creative-stage-callout creative-stage-callout--secondary">
-            <span className="creative-section-kicker">archive lane</span>
+            <span className="creative-section-kicker">历史归档</span>
             <strong>历史区只做回看，不干扰主路径。</strong>
             <span>{assetHistoryLeadText}</span>
           </div>

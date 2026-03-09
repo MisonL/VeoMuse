@@ -43,7 +43,7 @@ export const useCreativeModeController = ({
   openChannelPanel
 }: UseCreativeModeControllerOptions): CreativeModePanelProps => {
   const geminiQuickCheck = useMemo(() => resolveGeminiQuickCheck(capabilities), [capabilities])
-  const currentActorName = memberName.trim() || workspaceOwner.trim() || 'Owner'
+  const currentActorName = memberName.trim() || workspaceOwner.trim() || '空间管理员'
 
   const parseJsonObjectInput = useCallback(
     (raw: string, fieldName: string): Record<string, unknown> | null =>

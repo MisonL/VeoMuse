@@ -37,9 +37,9 @@ const MODE_OPTIONS: Array<{ value: AppMode; label: string }> = [
 ]
 
 const MODE_RUNTIME_COPY: Record<AppMode, string> = {
-  edit: '主编排链路在线，节目单已锁定到剪辑总线',
-  color: '实验导播台在线，右席摘要可随时展开中央总控',
-  audio: '音频母带链路待命，旁白与节奏引擎可立即接入'
+  edit: '剪辑工作区在线，可继续导入素材、编排时间线与发起导出',
+  color: '实验工作区在线，可继续比对模型、治理策略与协作流程',
+  audio: '音频工作区待命，可继续接入旁白、音乐与交付校验'
 }
 
 const AppHeader = ({
@@ -72,18 +72,18 @@ const AppHeader = ({
       <div className="brand-zone">
         <div className="brand-mark">
           <div className="brand-logo">V</div>
-          <span className="brand-beacon">直播</span>
+          <span className="brand-beacon">在线</span>
         </div>
         <div className="brand-copy">
-          <span className="brand-kicker">旗舰 AI 视频总线</span>
+          <span className="brand-kicker">AI 视频工作台</span>
           <span className="brand-title">VEOMUSE PRO</span>
         </div>
       </div>
 
       <div className="header-bridge-status">
         <div className="brand-status-ribbon">
-          <span className="brand-status-pill">播出中</span>
-          <span className="brand-status-copy">导播总线稳定 / 三路节目待播</span>
+          <span className="brand-status-pill">系统在线</span>
+          <span className="brand-status-copy">工作区稳定 / 可继续处理当前项目</span>
         </div>
         <div className="mode-runtime">
           <span className="mode-runtime-label">当前工位</span>

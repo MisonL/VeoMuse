@@ -594,7 +594,7 @@ export const useCollabModeController = ({
   markJourneyStep,
   reportJourney
 }: UseCollabModeControllerOptions): CollabModePanelProps => {
-  const currentActorName = memberName.trim() || workspaceOwner.trim() || 'Owner'
+  const currentActorName = memberName.trim() || workspaceOwner.trim() || '空间管理员'
 
   const parseJsonObjectInput = useCallback(
     (raw: string, fieldName: string): Record<string, unknown> | null =>

@@ -95,8 +95,8 @@ const MultiVideoPlayer: React.FC = () => {
         )}
         {!hasPlayableVideo ? (
           <div className="player-empty-state">
-            <div className="player-empty-kicker">PREVIEW STAGE</div>
-            <div className="player-empty-title">主工作台已待命</div>
+            <div className="player-empty-kicker">主预览区</div>
+            <div className="player-empty-title">主预览区已待命</div>
             <div className="player-empty-subtitle">
               导入素材或交给 AI 导演生成首批分镜后，节目画面会在这里自动接管并进入预览。
             </div>

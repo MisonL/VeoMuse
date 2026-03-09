@@ -1,5 +1,9 @@
 import React from 'react'
-import { isPermissionUpdateDisabled, takePreviewItems } from '../collabModePanel.logic'
+import {
+  getWorkspaceRoleLabel,
+  isPermissionUpdateDisabled,
+  takePreviewItems
+} from '../collabModePanel.logic'
 import type { V4PermissionGrant, V4TimelineMergeResult, WorkspaceRole } from '../../types'
 
 const FALLBACK_TEXT = '-'
@@ -63,7 +67,7 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
 
   return (
     <section className="collab-card">
-      <h4>v4 权限与 Timeline Merge</h4>
+      <h4>v4 权限与时间线合并</h4>
       <div
         className="lab-metric-grid permission-merge-summary-grid"
         data-testid="permission-merge-watchboard"
@@ -80,13 +84,13 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
         </div>
         <div className="lab-metric-card lab-metric-card--neutral">
           <span>当前角色</span>
-          <strong>{permissionRole}</strong>
+          <strong>{getWorkspaceRoleLabel(permissionRole)}</strong>
           <small>权限键：{permissionSubjectId || FALLBACK_TEXT}</small>
         </div>
       </div>
       <div className={`collab-watch-spotlight collab-watch-spotlight--${watchTone}`}>
         <div className="collab-watch-spotlight-copy">
-          <span className="collab-advanced-group-kicker">merge watch</span>
+          <span className="collab-advanced-group-kicker">合并状态</span>
           <strong>
             {mergeConflictCount > 0 ? `${mergeConflictCount} 个冲突待处理` : '当前无冲突阻塞'}
           </strong>
@@ -98,15 +102,15 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
         </div>
         <div className="collab-watch-inline collab-watch-inline--readout">
           <div>
-            <b>Workspace</b>
+            <b>空间</b>
             <span>{workspaceId || FALLBACK_TEXT}</span>
           </div>
           <div>
-            <b>Project</b>
+            <b>项目</b>
             <span>{projectId || FALLBACK_TEXT}</span>
           </div>
           <div>
-            <b>Merge ID</b>
+            <b>合并 ID</b>
             <span>{timelineMergeResult?.id || FALLBACK_TEXT}</span>
           </div>
         </div>
@@ -133,9 +137,9 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
             value={permissionRole}
             onChange={(event) => onPermissionRoleChange(event.target.value as WorkspaceRole)}
           >
-            <option value="viewer">viewer</option>
-            <option value="editor">editor</option>
-            <option value="owner">owner</option>
+            <option value="viewer">查看者</option>
+            <option value="editor">编辑者</option>
+            <option value="owner">管理员</option>
           </select>
         </label>
       </div>
@@ -147,12 +151,12 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
           更新权限
         </button>
         <button disabled={!projectId || isV4Busy} onClick={onMergeTimeline}>
-          调用 Timeline Merge
+          执行时间线合并
         </button>
       </div>
       <div className="collab-meta">
-        <span>Merge 结果：{timelineMergeResult?.status || '-'}</span>
-        <span>Merge ID：{timelineMergeResult?.id || '-'}</span>
+        <span>合并结果：{timelineMergeResult?.status || '-'}</span>
+        <span>合并 ID：{timelineMergeResult?.id || '-'}</span>
         <span>冲突数：{timelineMergeResult ? timelineMergeResult.conflicts.length : '-'}</span>
       </div>
       {timelineMergeResult && mergeConflictCount > 0 ? (
@@ -172,7 +176,7 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
             className="collab-list-item collab-list-item--rich"
           >
             <div className="collab-list-item-head">
-              <strong>{item.role}</strong>
+              <strong>{getWorkspaceRoleLabel(item.role)}</strong>
               <span className="lab-status-badge lab-status-badge--neutral">
                 {Object.keys(item.permissions || {}).length} 项权限
               </span>

@@ -36,8 +36,8 @@ const LAB_STAGE_ORDER = [
 ] as const
 
 const LAB_STAGE_STATUS_LABEL = {
-  current: '当前工位',
-  completed: '热备工位',
+  current: '当前阶段',
+  completed: '已完成阶段',
   available: '待接入'
 } as const
 
@@ -73,12 +73,12 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
   const activeStageMeta = LAB_STAGE_META[labMode]
   const activeStageState =
     labMode === 'compare'
-      ? '适合先完成模型判断'
+      ? '先补齐两路素材，再开始本轮模型判断'
       : labMode === 'marketplace'
-        ? '优先检查路由、预算与策略命中'
+        ? '优先检查路由、预算与策略命中情况'
         : labMode === 'creative'
-          ? '把主描述、版本链和工作流收进同一工位'
-          : '先建立协作频道，再接入治理动作'
+          ? '把主描述、版本链和工作流收进同一条创意链路'
+          : '先建立协作上下文，再接入治理动作'
   const handleStageKeyDown = (
     event: React.KeyboardEvent<HTMLButtonElement>,
     stageIndex: number
@@ -108,8 +108,8 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
       <div className="lab-stage-shell">
         <aside className="lab-stage-spine">
           <div className="lab-stage-rail-head">
-            <span className="lab-stage-rail-kicker">实验总控工位</span>
-            <strong>阶段轨</strong>
+            <span className="lab-stage-rail-kicker">实验流程</span>
+            <strong>阶段导航</strong>
           </div>
           <div className="lab-stage-markers" role="tablist" aria-label="实验室阶段切换">
             {LAB_STAGE_ORDER.map((stage, stageIndex) => {
@@ -138,9 +138,9 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
                       <span className="lab-stage-marker-label">{stage.short}</span>
                       <span className={`lab-stage-state-chip lab-stage-state-chip--${status}`}>
                         {status === 'current'
-                          ? '当前工位'
+                          ? '当前'
                           : status === 'completed'
-                            ? '热备'
+                            ? '已完成'
                             : '待接入'}
                       </span>
                     </span>
@@ -159,7 +159,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
               </span>
               <div className="lab-stage-main-title-row">
                 <strong>{activeStageMeta.label}</strong>
-                <span className="lab-stage-main-chip">单主舞台</span>
+                <span className="lab-stage-main-chip">当前视图</span>
               </div>
             </div>
             <p className="lab-stage-main-state">{activeStageState}</p>

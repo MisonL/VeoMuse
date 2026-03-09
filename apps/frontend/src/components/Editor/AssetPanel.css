@@ -701,3 +701,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+.asset-search-bar {
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border-color: color-mix(in srgb, var(--ap-border) 70%, var(--ap-outline) 30%);
+}
+
+.asset-search-bar input {
+  font-size: 12px;
+  font-weight: 600;
+}

@@ -58,6 +58,12 @@ export const getBusyStatusText = (busy: boolean) => {
   return busy ? '处理中...' : '空闲'
 }
 
+export const getWorkspaceRoleLabel = (role: WorkspaceRole) => {
+  if (role === 'owner') return '管理员'
+  if (role === 'editor') return '编辑者'
+  return '查看者'
+}
+
 export const getAckLabel = (status: V4ReliabilityAlert['status']) => {
   return status === 'open' ? 'ACK' : '已 ACK'
 }

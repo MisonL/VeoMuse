@@ -195,7 +195,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
         addAsset(newAsset)
       }
 
-      showToast(`成功导入 ${list.length} 个媒体资产`, 'success')
+      showToast(`成功导入 ${list.length} 个素材`, 'success')
     },
     [addAsset, showToast]
   )
@@ -365,7 +365,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 className={`cat-btn ${activeCategory === cat ? 'active' : ''}`}
                 onClick={() => setActiveCategory(cat)}
               >
-                {cat === 'all' ? '全部' : cat === 'video' ? '视频' : '音频'}
+                {cat === 'all' ? '全部' : cat === 'video' ? '视频素材' : '音频素材'}
               </button>
             ))}
           </div>
@@ -377,7 +377,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               <small>当前素材抽屉</small>
             </div>
             <div className="asset-intel-card">
-              <span className="asset-intel-label">视频 / 音频</span>
+              <span className="asset-intel-label">视频素材 / 音频素材</span>
               <strong>
                 {assetStats.video} / {assetStats.audio}
               </strong>
@@ -395,7 +395,11 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               filteredAssets.map((asset) => {
                 const isLive = assetUsageMap.get(asset.id)
                 const assetTypeLabel =
-                  asset.type === 'video' ? '视频' : asset.type === 'audio' ? '音频' : '图像'
+                  asset.type === 'video'
+                    ? '视频素材'
+                    : asset.type === 'audio'
+                      ? '音频素材'
+                      : '图像素材'
                 const assetStateLabel = isLive
                   ? '已上轨'
                   : asset.exportSrc
@@ -438,7 +442,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 onDragOver={(e) => e.preventDefault()}
               >
                 <div className="empty-icon">📁</div>
-                <p>暂无媒体素材</p>
+                <p>暂无素材</p>
                 <span>点击此处或拖拽文件完成首批入库，中心工作台会自动承接后续编排。</span>
               </div>
             )}

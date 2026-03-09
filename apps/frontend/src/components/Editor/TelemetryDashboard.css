@@ -1632,3 +1632,142 @@
     font-size: 22px;
   }
 }
+
+/* Visual Convergence Pass */
+.telemetry-watch-stage {
+  gap: 14px;
+  padding: 16px;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 12% 0, rgba(49, 92, 192, 0.18), transparent 24%),
+    linear-gradient(180deg, var(--ap-stage-deck) 0%, var(--ap-stage-deck-strong) 100%);
+}
+
+.telemetry-watch-stage-head {
+  padding: 16px 18px;
+  border-radius: 18px;
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: none;
+}
+
+.telemetry-watch-stage-kicker {
+  color: rgba(148, 163, 184, 0.82);
+}
+
+.telemetry-watch-stage-copy strong {
+  font-size: 26px;
+  color: var(--ap-ink-inverse);
+}
+
+.telemetry-watch-stage-copy p {
+  color: rgba(226, 232, 240, 0.74);
+}
+
+.telemetry-watch-stage-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.telemetry-watch-stage-pill span {
+  color: rgba(148, 163, 184, 0.86);
+}
+
+.telemetry-watch-stage-pill strong {
+  color: var(--ap-ink-inverse);
+}
+
+.telemetry-watch-action {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(148, 163, 184, 0.24);
+  color: rgba(226, 232, 240, 0.88);
+}
+
+.telemetry-watch-action.primary {
+  box-shadow: none;
+}
+
+.telemetry-dashboard {
+  gap: 14px;
+  padding: 0;
+}
+
+.telemetry-watch-stage .telemetry-command-bar,
+.telemetry-watch-stage .metric-card,
+.telemetry-watch-stage .slo-panel,
+.telemetry-watch-stage .provider-health-panel,
+.telemetry-watch-stage .db-ops-panel,
+.telemetry-watch-stage .governance-panel,
+.telemetry-watch-stage .telemetry-panel,
+.telemetry-watch-stage .provider-health-shell,
+.telemetry-watch-stage .project-governance-shell {
+  border-radius: 18px;
+  border-color: rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: none;
+}
+
+.telemetry-watch-stage .telemetry-command-copy strong,
+.telemetry-watch-stage .telemetry-section-title,
+.telemetry-watch-stage .slo-card strong,
+.telemetry-watch-stage .api-name,
+.telemetry-watch-stage .db-filter-field span,
+.telemetry-watch-stage .provider-health-heading strong,
+.telemetry-watch-stage .governance-heading strong {
+  color: var(--ap-ink-inverse);
+}
+
+.telemetry-watch-stage .telemetry-command-copy p,
+.telemetry-watch-stage .metric-card .label,
+.telemetry-watch-stage .api-avg,
+.telemetry-watch-stage .api-empty,
+.telemetry-watch-stage .slo-summary-row,
+.telemetry-watch-stage .slo-threshold-row,
+.telemetry-watch-stage .slo-card .slo-name,
+.telemetry-watch-stage .slo-card .slo-target,
+.telemetry-watch-stage .db-search-row input,
+.telemetry-watch-stage .db-token-row input,
+.telemetry-watch-stage .db-filter-field select,
+.telemetry-watch-stage .db-load-more,
+.telemetry-watch-stage .db-actions-row button,
+.telemetry-watch-stage .db-search-row button,
+.telemetry-watch-stage .db-token-row button {
+  font-size: 12px;
+  color: rgba(226, 232, 240, 0.86);
+}
+
+.telemetry-watch-stage .db-search-row input,
+.telemetry-watch-stage .db-token-row input,
+.telemetry-watch-stage .db-filter-field select,
+.telemetry-watch-stage .db-load-more,
+.telemetry-watch-stage .db-actions-row button,
+.telemetry-watch-stage .db-search-row button,
+.telemetry-watch-stage .db-token-row button {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+.telemetry-watch-stage .telemetry-command-stat {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.telemetry-watch-brief {
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  box-shadow: none;
+}
+
+.telemetry-watch-brief-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.telemetry-watch-brief-card {
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: none;
+}

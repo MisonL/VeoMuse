@@ -1,5 +1,9 @@
 import React from 'react'
-import { isCreateInviteDisabled, takePreviewItems } from '../collabModePanel.logic'
+import {
+  getWorkspaceRoleLabel,
+  isCreateInviteDisabled,
+  takePreviewItems
+} from '../collabModePanel.logic'
 import type { WorkspaceInvite, WorkspaceRole } from '../../types'
 
 export interface InviteJoinSectionProps {
@@ -42,9 +46,9 @@ const InviteJoinSection: React.FC<InviteJoinSectionProps> = ({
             value={inviteRole}
             onChange={(event) => onInviteRoleChange(event.target.value as WorkspaceRole)}
           >
-            <option value="editor">editor</option>
-            <option value="viewer">viewer</option>
-            <option value="owner">owner</option>
+            <option value="editor">编辑者</option>
+            <option value="viewer">查看者</option>
+            <option value="owner">管理员</option>
           </select>
         </label>
         <label className="lab-field">
@@ -62,9 +66,9 @@ const InviteJoinSection: React.FC<InviteJoinSectionProps> = ({
             value={collabRole}
             onChange={(event) => onCollabRoleChange(event.target.value as WorkspaceRole)}
           >
-            <option value="editor">editor</option>
-            <option value="viewer">viewer</option>
-            <option value="owner">owner</option>
+            <option value="editor">编辑者</option>
+            <option value="viewer">查看者</option>
+            <option value="owner">管理员</option>
           </select>
         </label>
       </div>
@@ -95,8 +99,14 @@ const InviteJoinSection: React.FC<InviteJoinSectionProps> = ({
         {takePreviewItems(invites, 6).map((item) => (
           <div key={item.id} className="collab-list-item">
             <span>{item.code}</span>
-            <span>{item.role}</span>
-            <span>{item.status}</span>
+            <span>{getWorkspaceRoleLabel(item.role)}</span>
+            <span>
+              {item.status === 'accepted'
+                ? '已接受'
+                : item.status === 'revoked'
+                  ? '已失效'
+                  : '待处理'}
+            </span>
           </div>
         ))}
         {invites.length === 0 ? <div className="api-empty">暂无邀请记录</div> : null}

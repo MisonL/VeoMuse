@@ -84,10 +84,35 @@
 }
 
 .inspector-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 140px;
+}
+
+.inspector-header-badge {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--ap-accent) 26%, var(--ap-border));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.38));
+  color: color-mix(in srgb, var(--ap-text) 72%, var(--ap-accent) 28%);
+  flex: 0 0 auto;
+}
+
+.inspector-header-badge svg {
+  width: 18px;
+  height: 18px;
+}
+
+.inspector-header-copy {
   display: grid;
   gap: 4px;
   min-width: 0;
-  flex: 1 1 140px;
 }
 
 .inspector-header-kicker,
@@ -1022,4 +1047,217 @@
   color: var(--ap-text);
   font-weight: 700;
   cursor: pointer;
+}
+
+/* Visual Convergence Pass */
+.pro-inspector-inner {
+  border-radius: 22px;
+  background: linear-gradient(180deg, var(--ap-stage-shell) 0%, var(--ap-stage-shell-strong) 100%);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+}
+
+.pro-inspector-inner::before {
+  display: none;
+}
+
+.inspector-header {
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.52);
+  box-shadow: none;
+}
+
+.inspector-header-title {
+  font-size: 16px;
+  letter-spacing: 0.04em;
+}
+
+.inspector-tabs {
+  gap: 6px;
+  padding: 3px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: none;
+}
+
+.inspector-tabs button {
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.inspector-tabs button.active {
+  background: linear-gradient(135deg, var(--ap-accent) 0%, var(--ap-accent-strong) 100%);
+  box-shadow: none;
+}
+
+.clip-type-badge {
+  min-height: 28px;
+  box-shadow: none;
+}
+
+.inspector-context-bar {
+  gap: 12px;
+  padding: 12px;
+  background: transparent;
+}
+
+.inspector-context-title {
+  max-width: none;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.inspector-context-subtitle {
+  font-size: 11px;
+}
+
+.inspector-context-readouts {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.inspector-context-pill {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+  box-shadow: none;
+}
+
+.inspector-readout-card,
+.inspector-brief-card {
+  min-height: 64px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: none;
+}
+
+.inspector-readout-value,
+.inspector-brief-value {
+  font-size: 14px;
+}
+
+.inspector-body {
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
+}
+
+.pro-inspector-content,
+.inspector-lab-shell {
+  gap: 10px;
+}
+
+.inspector-section,
+.inspector-lab-banner,
+.inspector-empty,
+.inspector-lab-panel {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: none;
+}
+
+.inspector-section::before,
+.inspector-lab-banner::before,
+.inspector-empty::before,
+.inspector-lab-panel::before {
+  display: none;
+}
+
+.inspector-section,
+.inspector-lab-banner,
+.inspector-empty {
+  padding: 14px;
+}
+
+.inspector-lab-banner strong,
+.inspector-empty-copy strong {
+  font-size: 18px;
+}
+
+.inspector-activity-banner {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--ap-accent) 24%, var(--ap-border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-accent-soft) 48%, #ffffff 52%),
+    rgba(255, 255, 255, 0.72)
+  );
+}
+
+.inspector-activity-banner strong {
+  color: var(--ap-text);
+  font-size: 13px;
+}
+
+.inspector-activity-banner span {
+  color: var(--ap-text-dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.inspector-header-meta {
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.inspector-context-subtitle,
+.inspector-readout-note,
+.inspector-brief-note {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ap-text) 88%, var(--ap-text-dim) 12%);
+}
+
+.pro-inspector-content,
+.inspector-lab-shell {
+  gap: 12px;
+}
+
+.inspector-section {
+  gap: 16px;
+  padding: 16px;
+}
+
+.inspector-dual-grid {
+  gap: 14px;
+}
+
+.inspector-field-stack {
+  gap: 8px;
+}
+
+.inspector-field-stack label,
+.inspector-lab-banner-status span,
+.inspector-lab-banner-status small,
+.inspector-empty-copy p,
+.inspector-empty-footer small {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ap-text) 88%, var(--ap-text-dim) 12%);
+}
+
+.inspector-range-row,
+.inspector-toggle-card,
+.inspector-empty-step,
+.inspector-lab-banner-status {
+  border-radius: 16px;
+}
+
+.inspector-context-bar {
+  border: 1px solid color-mix(in srgb, var(--ap-border) 70%, var(--ap-outline) 30%);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.inspector-readout-card,
+.inspector-brief-card {
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.inspector-section:not(.inspector-section--hero) {
+  background: rgba(255, 255, 255, 0.72);
 }

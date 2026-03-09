@@ -90,10 +90,10 @@ const GovernanceCommentsSection: React.FC<GovernanceCommentsSectionProps> = ({
           type="text"
           id="governance-comment-mentions"
           name="governanceCommentMentions"
-          aria-label="评论 mentions"
+          aria-label="评论提醒"
           value={governanceCommentMentions}
           onChange={(event) => onGovernanceCommentMentionsChange(event.target.value)}
-          placeholder="mentions: owner,editor"
+          placeholder="提醒：管理员,编辑者"
         />
         <button disabled={governanceBusy} onClick={onCreateGovernanceComment}>
           新建评论

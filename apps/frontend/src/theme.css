@@ -25,6 +25,14 @@
   --ap-text-dim: #6b5f4d;
   --ap-monitor-bg: #08111d;
   --ap-monitor-border: rgba(231, 236, 245, 0.28);
+  --ap-stage-shell: #f4ede2;
+  --ap-stage-shell-strong: #ece2d4;
+  --ap-stage-shell-muted: #f3ecdf;
+  --ap-stage-shell-panel: #ebe2d5;
+  --ap-stage-deck: #0f1727;
+  --ap-stage-deck-strong: #131d30;
+  --ap-stage-deck-soft: #1a2740;
+  --ap-ink-inverse: #f8fafc;
 
   --ap-blur: 14px;
   --ap-saturate: 132%;
@@ -76,6 +84,14 @@
   --ap-text-dim: #c9bcab;
   --ap-monitor-bg: #070d15;
   --ap-monitor-border: rgba(230, 236, 247, 0.22);
+  --ap-stage-shell: #151d25;
+  --ap-stage-shell-strong: #101821;
+  --ap-stage-shell-muted: #17212b;
+  --ap-stage-shell-panel: #121b24;
+  --ap-stage-deck: #0a111b;
+  --ap-stage-deck-strong: #101928;
+  --ap-stage-deck-soft: #142035;
+  --ap-ink-inverse: #f8fafc;
 
   --ap-blur: 20px;
   --ap-saturate: 156%;

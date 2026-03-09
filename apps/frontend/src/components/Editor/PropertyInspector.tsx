@@ -74,6 +74,26 @@ const resolveClipFocusLabel = (clip: Clip | null) => {
   return '当前片段参数值守'
 }
 
+const STYLE_PRESET_OPTIONS = ['cinematic', 'van_gogh', 'cyberpunk'] as const
+const STYLE_MODEL_OPTIONS = ['luma-dream', 'kling-v1', 'veo-3.1'] as const
+const VFX_TYPE_OPTIONS = ['magic-particles', 'cyber-glitch', 'neon-bloom'] as const
+const TARGET_LANG_OPTIONS = ['English', 'Japanese'] as const
+
+const pickOption = <T extends readonly string[]>(
+  value: unknown,
+  options: T,
+  fallback: T[number]
+) =>
+  typeof value === 'string' && options.includes(value as T[number])
+    ? (value as T[number])
+    : fallback
+
+const pickNumeric = (value: unknown, fallback: number, min: number, max: number) => {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return fallback
+  return Math.min(max, Math.max(min, numeric))
+}
+
 type ShellMode = 'edit' | 'color' | 'audio'
 
 interface InspectorReadoutItem {
@@ -113,7 +133,7 @@ const INSPECTOR_MODE_META: Record<
     idleAction: '时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。',
     labTitle: '系统监控正在值守',
     labSubtitle: '运行态、告警与治理记录会在当前侧栏持续值守显示。',
-    labStatus: 'Ops Only'
+    labStatus: '系统值守'
   },
   color: {
     idleTitle: '实验上下文待接管',
@@ -121,7 +141,7 @@ const INSPECTOR_MODE_META: Record<
     idleAction: '上方实验室选中当前阶段后，可在这里查看上下文、切换监控并承接后续动作。',
     labTitle: '实验监控与策略值守',
     labSubtitle: 'Provider 健康、治理信号与实验告警会围绕当前实验阶段持续更新。',
-    labStatus: 'Lab Watch'
+    labStatus: '实验值守'
   },
   audio: {
     idleTitle: '母带工位待命',
@@ -129,7 +149,7 @@ const INSPECTOR_MODE_META: Record<
     idleAction: '导入素材并进入母带流程后，可在这里查看当前输入、调参并切换到系统监控。',
     labTitle: '母带监控与交付值守',
     labSubtitle: '输入健康、总线状态与交付前检查会围绕当前母带会话持续显示。',
-    labStatus: 'Mastering Ops'
+    labStatus: '母带值守'
   }
 }
 
@@ -300,6 +320,17 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   const currentTrack = parentTrackId
     ? tracks.find((track) => track.id === parentTrackId) || null
     : null
+
+  useEffect(() => {
+    const data = current?.data || {}
+    setSpatialX(pickNumeric(data.spatialX, 0, -100, 100))
+    setBgmVolume(pickNumeric(data.bgmVolume, 80, 0, 100))
+    setTargetLang(pickOption(data.targetLang, TARGET_LANG_OPTIONS, 'English'))
+    setStylePreset(pickOption(data.stylePreset, STYLE_PRESET_OPTIONS, 'cinematic'))
+    setStyleModel(pickOption(data.styleModel, STYLE_MODEL_OPTIONS, 'luma-dream'))
+    setVfxType(pickOption(data.vfxType, VFX_TYPE_OPTIONS, 'magic-particles'))
+    setVfxIntensity(pickNumeric(data.vfxIntensity, 0.8, 0.1, 1))
+  }, [current?.id, current?.data])
   const clipDuration = current
     ? Math.max(0, Number(current.end ?? 0) - Number(current.start ?? 0))
     : 0
@@ -318,7 +349,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
       {
         label: '工位',
         value: activeTab === 'lab' ? '系统值守' : '属性位',
-        note: activeTab === 'lab' ? shellMeta.labStatus : 'Clip Deck',
+        note: activeTab === 'lab' ? shellMeta.labStatus : '片段工位',
         tone: activeTab === 'lab' ? 'signal' : 'accent'
       },
       {
@@ -344,11 +375,11 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
       {
         label: '当前工位',
         value: activeTab === 'lab' ? '实验值守' : '实验总控',
-        note: activeTab === 'lab' ? shellMeta.labStatus : '四个工位共线待命',
+        note: activeTab === 'lab' ? shellMeta.labStatus : '四个阶段待接入',
         tone: activeTab === 'lab' ? 'signal' : 'accent'
       },
       {
-        label: 'Provider',
+        label: '服务通道',
         value: '待路由',
         note: '进入实验室后绑定当前实验通道',
         tone: 'muted'
@@ -356,7 +387,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
       {
         label: '下一动作',
         value: '切到实验室',
-        note: '选择当前工位并接入素材',
+        note: '选择当前阶段并接入素材',
         tone: 'accent'
       },
       {
@@ -375,7 +406,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
       },
       {
         label: '母带总线',
-        value: activeTab === 'lab' ? '值守中' : 'Standby',
+        value: activeTab === 'lab' ? '值守中' : '待命',
         note: activeTab === 'lab' ? shellMeta.labStatus : '等待输入接管',
         tone: activeTab === 'lab' ? 'signal' : 'accent'
       },
@@ -398,8 +429,8 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
     ? [
         {
           label: '工位',
-          value: activeTab === 'lab' ? 'Lab' : 'Property',
-          note: activeTab === 'lab' ? shellMeta.labStatus : 'Clip Deck',
+          value: activeTab === 'lab' ? '值守台' : '属性位',
+          note: activeTab === 'lab' ? shellMeta.labStatus : '片段工位',
           tone: activeTab === 'lab' ? 'signal' : 'accent'
         },
         {
@@ -500,8 +531,22 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
     <div className="pro-inspector-inner" data-active-tab={activeTab}>
       <header className="inspector-header">
         <div className="inspector-header-meta">
-          <span className="inspector-header-kicker">导播台右席</span>
-          <strong className="inspector-header-title">右侧值守台</strong>
+          <span className="inspector-header-badge" aria-hidden="true">
+            <svg viewBox="0 0 20 20" focusable="false">
+              <path
+                d="M4 5.5h12M4 10h12M4 14.5h8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+              />
+              <circle cx="14.5" cy="14.5" r="1.7" fill="currentColor" />
+            </svg>
+          </span>
+          <div className="inspector-header-copy">
+            <span className="inspector-header-kicker">右侧面板</span>
+            <strong className="inspector-header-title">属性与值守</strong>
+          </div>
         </div>
 
         <div className="inspector-tabs" aria-label="值守台视图切换">
@@ -522,7 +567,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             onClick={() => setActiveTab('lab')}
           >
             <span>系统监控</span>
-            <small>右席摘要</small>
+            <small>运行摘要</small>
           </button>
         </div>
 
@@ -538,7 +583,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
       <div className="inspector-context-bar">
         <div className="inspector-context-copy">
           <span className="inspector-context-kicker">
-            {activeTab === 'lab' ? '值守摘要 / 右侧席' : '片段工位 / 当前上下文'}
+            {activeTab === 'lab' ? '运行摘要 / 右侧面板' : '当前上下文 / 片段属性'}
           </span>
           {activeTab !== 'lab' ? (
             <span hidden aria-hidden="true">
@@ -558,7 +603,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
           <div className="inspector-context-pills">
             <span className="inspector-context-pill">{resolveClipTypeLabel(current?.type)}</span>
             <span className={`inspector-context-pill ${activeTab === 'lab' ? 'is-live' : ''}`}>
-              {activeTab === 'lab' ? shellMeta.labStatus : current ? 'Clip Bound' : 'Standby'}
+              {activeTab === 'lab' ? shellMeta.labStatus : current ? '已绑定' : '待命'}
             </span>
           </div>
         </div>
@@ -578,11 +623,17 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
       </div>
 
       <div className="inspector-body">
+        {isProcessing ? (
+          <div className="inspector-activity-banner" role="status" aria-live="polite">
+            <strong>炼金处理中</strong>
+            <span>正在执行上一轮任务；你仍可继续调整下一轮参数，结果会在完成后回写右栏。</span>
+          </div>
+        ) : null}
         {activeTab === 'lab' ? (
           <div className="inspector-lab-shell">
             <div className="inspector-lab-banner">
               <div className="inspector-lab-banner-copy">
-                <span className="inspector-lab-banner-kicker">中央总控联动</span>
+                <span className="inspector-lab-banner-kicker">中央联动</span>
                 <strong>{shellMeta.labTitle}</strong>
                 <span>
                   {labSurface === 'watch'
@@ -602,7 +653,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                 <div className="inspector-lab-stage-bridge">
                   <div className="inspector-lab-stage-bridge-copy">
                     <span className="inspector-lab-stage-bridge-kicker">中央值守已展开</span>
-                    <strong>主舞台已切到系统监控</strong>
+                    <strong>当前视图已切到系统监控</strong>
                     <p>右侧保留值守席，中央舞台正在承接完整监控、治理与数据库动作。</p>
                   </div>
                   <div className="inspector-lab-stage-bridge-actions">
@@ -630,7 +681,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
         ) : !current ? (
           <div className="inspector-empty">
             <div className="inspector-empty-copy">
-              <span className="inspector-empty-kicker">property deck idle</span>
+              <span className="inspector-empty-kicker">属性面板待命</span>
               <strong>{emptyCardTitle}</strong>
               <p>{shellMeta.idleSubtitle}</p>
             </div>
@@ -732,9 +783,11 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                       name="stylePreset"
                       className="pro-select-mini"
                       value={stylePreset}
-                      onChange={(event) =>
-                        setStylePreset(event.target.value as 'cinematic' | 'van_gogh' | 'cyberpunk')
-                      }
+                      onChange={(event) => {
+                        const value = event.target.value as 'cinematic' | 'van_gogh' | 'cyberpunk'
+                        setStylePreset(value)
+                        handleDataUpdate({ stylePreset: value })
+                      }}
                     >
                       <option value="cinematic">Cinematic</option>
                       <option value="van_gogh">Van Gogh</option>
@@ -748,9 +801,11 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                       name="styleModel"
                       className="pro-select-mini"
                       value={styleModel}
-                      onChange={(event) =>
-                        setStyleModel(event.target.value as 'luma-dream' | 'kling-v1' | 'veo-3.1')
-                      }
+                      onChange={(event) => {
+                        const value = event.target.value as 'luma-dream' | 'kling-v1' | 'veo-3.1'
+                        setStyleModel(value)
+                        handleDataUpdate({ styleModel: value })
+                      }}
                     >
                       <option value="luma-dream">Luma</option>
                       <option value="kling-v1">Kling</option>
@@ -764,11 +819,14 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                       name="vfxType"
                       className="pro-select-mini"
                       value={vfxType}
-                      onChange={(event) =>
-                        setVfxType(
-                          event.target.value as 'magic-particles' | 'cyber-glitch' | 'neon-bloom'
-                        )
-                      }
+                      onChange={(event) => {
+                        const value = event.target.value as
+                          | 'magic-particles'
+                          | 'cyber-glitch'
+                          | 'neon-bloom'
+                        setVfxType(value)
+                        handleDataUpdate({ vfxType: value })
+                      }}
                     >
                       <option value="magic-particles">Magic Particles</option>
                       <option value="cyber-glitch">Cyber Glitch</option>
@@ -787,7 +845,11 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                         max={1}
                         step={0.1}
                         value={vfxIntensity}
-                        onChange={(event) => setVfxIntensity(Number(event.target.value))}
+                        onChange={(event) => {
+                          const value = Number(event.target.value)
+                          setVfxIntensity(value)
+                          handleDataUpdate({ vfxIntensity: value })
+                        }}
                       />
                     </div>
                   </div>
@@ -807,7 +869,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             {current.type === 'video' && (
               <section className="inspector-section inspector-section--support">
                 <div className="inspector-panel-heading inspector-panel-heading--compact">
-                  <span className="inspector-panel-kicker">consistency and actor</span>
+                  <span className="inspector-panel-kicker">一致性 / 演员</span>
                   <strong>一致性与演员绑定</strong>
                   <p>把 world-link、演员绑定和口型同步收拢为同一条上下文链路。</p>
                 </div>
@@ -822,7 +884,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                         checked={Boolean(current.data?.worldLink)}
                         onChange={(event) => handleDataUpdate({ worldLink: event.target.checked })}
                       />
-                      <span>启用 world_link</span>
+                      <span>启用 World-Link</span>
                     </label>
                   </div>
 
@@ -887,7 +949,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             {current.type === 'video' && (
               <section className="inspector-section inspector-section--focus">
                 <div className="inspector-panel-heading inspector-panel-heading--compact">
-                  <span className="inspector-panel-kicker">spatial render bus</span>
+                  <span className="inspector-panel-kicker">空间渲染</span>
                   <strong>空间 3D 控制</strong>
                   <p>作为主控位的重型动作保留单独区块，避免被普通属性卡片稀释。</p>
                 </div>
@@ -897,8 +959,14 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                   <input
                     name="spatialX"
                     type="range"
+                    min={-100}
+                    max={100}
                     value={spatialX}
-                    onChange={(event) => setSpatialX(parseInt(event.target.value, 10))}
+                    onChange={(event) => {
+                      const value = parseInt(event.target.value, 10)
+                      setSpatialX(value)
+                      handleDataUpdate({ spatialX: value })
+                    }}
                   />
                 </div>
 
@@ -938,7 +1006,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             {current.type === 'text' && (
               <section className="inspector-section inspector-section--support">
                 <div className="inspector-panel-heading inspector-panel-heading--compact">
-                  <span className="inspector-panel-kicker">text performance bus</span>
+                  <span className="inspector-panel-kicker">文稿处理</span>
                   <strong>TTS 与翻译总线</strong>
                   <p>把文稿编辑、配音触发和翻译克隆压缩进同一工作带。</p>
                 </div>
@@ -975,9 +1043,11 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                       name="textTargetLang"
                       className="pro-select-mini"
                       value={targetLang}
-                      onChange={(event) =>
-                        setTargetLang(event.target.value as 'English' | 'Japanese')
-                      }
+                      onChange={(event) => {
+                        const value = event.target.value as 'English' | 'Japanese'
+                        setTargetLang(value)
+                        handleDataUpdate({ targetLang: value })
+                      }}
                     >
                       <option value="English">翻译为英文</option>
                       <option value="Japanese">翻译为日文</option>
@@ -998,7 +1068,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             {current.type === 'audio' && (
               <section className="inspector-section inspector-section--support">
                 <div className="inspector-panel-heading inspector-panel-heading--compact">
-                  <span className="inspector-panel-kicker">audio translation bus</span>
+                  <span className="inspector-panel-kicker">音频翻译</span>
                   <strong>音频翻译总线</strong>
                   <p>值守台会保留当前音频上下文，直接在这里做语言切换与克隆输出。</p>
                 </div>
@@ -1010,9 +1080,11 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                       name="audioTargetLang"
                       className="pro-select-mini"
                       value={targetLang}
-                      onChange={(event) =>
-                        setTargetLang(event.target.value as 'English' | 'Japanese')
-                      }
+                      onChange={(event) => {
+                        const value = event.target.value as 'English' | 'Japanese'
+                        setTargetLang(value)
+                        handleDataUpdate({ targetLang: value })
+                      }}
                     >
                       <option value="English">翻译为英文</option>
                       <option value="Japanese">翻译为日文</option>
@@ -1032,7 +1104,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
 
             <section className="inspector-section inspector-section--support">
               <div className="inspector-panel-heading inspector-panel-heading--compact">
-                <span className="inspector-panel-kicker">aux monitor</span>
+                <span className="inspector-panel-kicker">辅助监听</span>
                 <strong>辅助监听</strong>
                 <p>保留音频辅助，但改为底部值守总线，避免与主控区抢层级。</p>
               </div>
@@ -1042,8 +1114,14 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                 <input
                   name="bgmVolume"
                   type="range"
+                  min={0}
+                  max={100}
                   value={bgmVolume}
-                  onChange={(event) => setBgmVolume(parseInt(event.target.value, 10))}
+                  onChange={(event) => {
+                    const value = parseInt(event.target.value, 10)
+                    setBgmVolume(value)
+                    handleDataUpdate({ bgmVolume: value })
+                  }}
                 />
               </div>
 

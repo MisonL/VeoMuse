@@ -101,7 +101,7 @@ export const useWorkspaceCollaborationManager = ({
   const refreshWorkspaceStateSeqRef = useRef(0)
   const uploadTokenRequestSeqRef = useRef(0)
 
-  const currentActorName = memberName.trim() || workspaceOwner.trim() || 'Owner'
+  const currentActorName = memberName.trim() || workspaceOwner.trim() || '空间管理员'
   const normalizeError = useCallback((error: unknown, fallbackMessage: string) => {
     if (error instanceof Error) {
       return error.message ? error : new Error(fallbackMessage)
@@ -323,7 +323,7 @@ export const useWorkspaceCollaborationManager = ({
           method: 'POST',
           body: JSON.stringify({
             name: workspaceName.trim(),
-            ownerName: workspaceOwner.trim() || 'Owner',
+            ownerName: workspaceOwner.trim() || '空间管理员',
             organizationId: effectiveOrganizationId || undefined,
             idempotencyKey
           })
@@ -365,7 +365,7 @@ export const useWorkspaceCollaborationManager = ({
       return
     }
     if (collabRole !== 'owner') {
-      showToast('仅 owner 可生成邀请', 'warning')
+      showToast('仅空间管理员可生成邀请', 'warning')
       return
     }
     try {

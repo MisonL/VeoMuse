@@ -52,13 +52,13 @@ const StorageSnapshotsSection: React.FC<StorageSnapshotsSectionProps> = ({
         </div>
         <div className={`lab-metric-card lab-metric-card--${uploadTone}`}>
           <span>上传令牌</span>
-          <strong>{hasUploadToken ? 'ready' : 'pending'}</strong>
+          <strong>{hasUploadToken ? '已就绪' : '待生成'}</strong>
           <small>文件名：{uploadFileName || FALLBACK_TEXT}</small>
         </div>
       </div>
       <div className={`collab-watch-spotlight collab-watch-spotlight--${watchTone}`}>
         <div className="collab-watch-spotlight-copy">
-          <span className="collab-advanced-group-kicker">archive watch</span>
+          <span className="collab-advanced-group-kicker">归档状态</span>
           <strong>{latestSnapshot ? latestSnapshot.actorName : '等待首次快照'}</strong>
           <span>
             {latestSnapshot
@@ -68,11 +68,11 @@ const StorageSnapshotsSection: React.FC<StorageSnapshotsSectionProps> = ({
         </div>
         <div className="collab-watch-inline collab-watch-inline--readout">
           <div>
-            <b>Workspace</b>
+            <b>空间</b>
             <span>{workspaceId || FALLBACK_TEXT}</span>
           </div>
           <div>
-            <b>Project</b>
+            <b>项目</b>
             <span>{projectId || FALLBACK_TEXT}</span>
           </div>
           <div>
@@ -110,7 +110,7 @@ const StorageSnapshotsSection: React.FC<StorageSnapshotsSectionProps> = ({
           <div key={item.id} className="collab-list-item collab-list-item--rich">
             <div className="collab-list-item-head">
               <strong>{formatShortId(item.id, 12)}</strong>
-              <span className="lab-status-badge lab-status-badge--neutral">snapshot</span>
+              <span className="lab-status-badge lab-status-badge--neutral">快照</span>
             </div>
             <div className="collab-list-meta">
               <span>操作者：{item.actorName || FALLBACK_TEXT}</span>

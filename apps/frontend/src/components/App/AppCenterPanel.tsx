@@ -173,7 +173,7 @@ const AppCenterPanel = ({
               {!hasTimelineClips ? (
                 <div className="monitor-launchpad">
                   <div className="monitor-launchpad-kicker">
-                    <span className="monitor-ledger-label">Control Tower</span>
+                    <span className="monitor-ledger-label">中央看板</span>
                     <strong>值守概览</strong>
                   </div>
                   <div className="monitor-launchpad-stats">
@@ -193,7 +193,7 @@ const AppCenterPanel = ({
                   <div className="monitor-launchpad-note">
                     <span className="monitor-ledger-label">状态提示</span>
                     <small>
-                      主舞台已经接管首轮准备，右侧只保留值守摘要，不再平铺完整空态说明。
+                      主预览区已经完成首轮准备，右侧只保留值守摘要，不再平铺完整空态说明。
                     </small>
                   </div>
                 </div>
@@ -245,7 +245,7 @@ const AppCenterPanel = ({
         <div className="audio-master-stage">
           <section className="audio-master-hero">
             <div className="audio-master-hero-copy">
-              <span className="audio-master-kicker">Master Bus / Standby</span>
+              <span className="audio-master-kicker">音频工作区 / 待命</span>
               <strong className="audio-master-title">音频母带引擎已就绪</strong>
               <p className="audio-master-summary">
                 旁白、音乐、节奏和响度会在同一条母带链路里接管。先导入一批素材，再决定是直接进入母带，还是切到实验室做对照。
@@ -258,7 +258,7 @@ const AppCenterPanel = ({
               </div>
               <div className="audio-master-status-card">
                 <span>母带总线</span>
-                <strong>Standby</strong>
+                <strong>待命</strong>
               </div>
               <div className="audio-master-status-card">
                 <span>下一步</span>
@@ -269,17 +269,17 @@ const AppCenterPanel = ({
 
           <section className="audio-master-lanes">
             <div className="audio-master-lane">
-              <span className="audio-master-lane-kicker">VO Lane</span>
+              <span className="audio-master-lane-kicker">旁白链路</span>
               <strong>旁白链路待命</strong>
               <p>脚本、配音和语气校准会在导入素材后接管第一条旁白母线。</p>
             </div>
             <div className="audio-master-lane">
-              <span className="audio-master-lane-kicker">Music Lane</span>
+              <span className="audio-master-lane-kicker">音乐链路</span>
               <strong>音乐节奏待命</strong>
               <p>背景乐、节拍点和情绪能量会在这里锁定到当前节目节奏。</p>
             </div>
             <div className="audio-master-lane">
-              <span className="audio-master-lane-kicker">Delivery Lane</span>
+              <span className="audio-master-lane-kicker">交付校验</span>
               <strong>交付校验待命</strong>
               <p>响度、峰值和导出前检查会在最终交付前集中完成。</p>
             </div>

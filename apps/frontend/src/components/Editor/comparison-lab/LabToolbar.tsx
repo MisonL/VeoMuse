@@ -12,20 +12,20 @@ interface LabToolbarProps {
 
 const MODE_META: Record<LabMode, { status: string; actionHint: string }> = {
   compare: {
-    status: '双通道总线在线',
-    actionHint: '先补齐两路素材，再导出本轮判断结论。'
+    status: '双通道待比较',
+    actionHint: '先补齐两路素材，再生成本轮对比结论。'
   },
   marketplace: {
-    status: '治理面板待命',
-    actionHint: '先看路由和预算，再决定本轮策略是否接入。'
+    status: '治理面板待检查',
+    actionHint: '先看路由和预算，再决定这轮策略是否接入。'
   },
   creative: {
-    status: '创意总线待命',
-    actionHint: '主引擎、工作流和资产复用会围绕同一工位展开。'
+    status: '创意流程待接入',
+    actionHint: '主引擎、工作流和资产复用会围绕同一工作区展开。'
   },
   collab: {
-    status: '协作频道待命',
-    actionHint: '成员、事件与治理动作会围绕同一条协作频道汇流。'
+    status: '协作流程待接入',
+    actionHint: '成员、事件与治理动作会围绕同一条协作链路展开。'
   }
 }
 
@@ -56,7 +56,7 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
       <div className="lab-toolbar-main">
         <div className="lab-toolbar-left">
           <div className="lab-toolbar-bridge-copy">
-            <span className="lab-toolbar-bridge-tag">命令桥</span>
+            <span className="lab-toolbar-bridge-tag">当前操作</span>
             <span className="lab-toolbar-hint">{currentModeMeta.actionHint}</span>
           </div>
           <div className="lab-status-cluster">

@@ -269,31 +269,31 @@ export const buildShellLayoutVars = (params: {
   timelinePx: number
 }) =>
   ({
-    '--left-panel-w': `${params.activeMode === 'color' ? Math.min(params.leftPanelPx, 320) : params.leftPanelPx}px`,
-    '--right-panel-w': `${params.activeMode === 'color' ? Math.min(params.rightPanelPx, 280) : params.rightPanelPx}px`,
+    '--left-panel-w': `${params.activeMode === 'color' ? Math.min(params.leftPanelPx, 284) : params.leftPanelPx}px`,
+    '--right-panel-w': `${params.activeMode === 'color' ? Math.min(params.rightPanelPx, 248) : params.rightPanelPx}px`,
     '--center-panel-min-w': `${params.centerPanelMinWidth}px`,
     '--center-panel-fit-w': `${Math.round(
       params.activeMode === 'color'
-        ? Math.max(params.centerPanelFitWidth, 900)
+        ? Math.max(params.centerPanelFitWidth, 1040)
         : params.centerPanelFitWidth
     )}px`,
     '--left-panel-flex':
       params.activeMode === 'color'
         ? params.centerMode === 'focus'
-          ? '0.96fr'
-          : '1.02fr'
+          ? '0.82fr'
+          : '0.9fr'
         : params.centerMode === 'focus'
           ? '1.08fr'
           : '1.26fr',
     '--right-panel-flex':
       params.activeMode === 'color'
         ? params.centerMode === 'focus'
-          ? '0.82fr'
-          : '0.9fr'
+          ? '0.7fr'
+          : '0.78fr'
         : params.centerMode === 'focus'
           ? '0.98fr'
           : '1.14fr',
-    '--timeline-h': `${params.timelinePx}px`
+    '--timeline-h': `${params.activeMode === 'color' ? Math.min(params.timelinePx, 300) : params.timelinePx}px`
   }) as CSSProperties
 
 export type LayoutLimitsLike = typeof LAYOUT_LIMITS

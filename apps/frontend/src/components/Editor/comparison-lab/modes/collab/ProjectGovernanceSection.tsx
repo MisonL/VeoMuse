@@ -268,12 +268,12 @@ const ProjectGovernanceSection: React.FC<ProjectGovernanceSectionProps> = ({
             />
           </label>
           <label className="lab-field">
-            <span>评论 mentions</span>
+            <span>评论提醒</span>
             <input
               name="projectCommentMentions"
               value={projectCommentMentions}
               onChange={(event) => onProjectCommentMentionsChange(event.target.value)}
-              placeholder="owner,editor"
+              placeholder="管理员,编辑者"
             />
           </label>
           <button

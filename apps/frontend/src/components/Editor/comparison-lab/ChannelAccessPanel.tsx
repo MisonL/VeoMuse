@@ -453,9 +453,9 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                         onInviteOrgRoleChange(event.target.value as OrganizationRole)
                       }
                     >
-                      <option value="member">member</option>
-                      <option value="admin">admin</option>
-                      <option value="owner">owner</option>
+                      <option value="member">成员</option>
+                      <option value="admin">管理员</option>
+                      <option value="owner">所有者</option>
                     </select>
                     <div className="lab-inline-actions">
                       <button onClick={onAddOrganizationMember}>添加成员</button>
@@ -464,7 +464,12 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                     <div className="capability-meta">
                       {orgMembers.slice(0, 6).map((item) => (
                         <span key={item.id}>
-                          {item.email} · {item.role}
+                          {item.email} ·{' '}
+                          {item.role === 'owner'
+                            ? '所有者'
+                            : item.role === 'admin'
+                              ? '管理员'
+                              : '成员'}
                         </span>
                       ))}
                       {orgMembers.length === 0 ? <span>暂无成员</span> : null}

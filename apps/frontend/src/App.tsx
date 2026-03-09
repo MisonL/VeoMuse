@@ -1030,7 +1030,7 @@ function App() {
                 className={`sidebar-tab ${activeSidebar === 'assets' ? 'active' : ''}`}
                 onClick={() => setActiveSidebar('assets')}
               >
-                媒体资源
+                素材库
               </button>
               <button
                 className={`sidebar-tab ${activeSidebar === 'director' ? 'active' : ''}`}
@@ -1142,19 +1142,19 @@ function App() {
               <span className="inspector-title">
                 {activeMode === 'color'
                   ? labSurface === 'watch'
-                    ? '中央总控联动'
-                    : '实验值守席'
+                    ? '系统总览'
+                    : '实验摘要'
                   : activeMode === 'audio'
-                    ? '母带指挥台'
-                    : '属性检查器'}
+                    ? '母带总览'
+                    : '属性面板'}
               </span>
               <span className="inspector-shell-subtitle">
                 {activeMode === 'color'
                   ? labSurface === 'watch'
-                    ? '右席摘要 / 中央全幅值守'
-                    : '导播台右席 / 值守摘要'
+                    ? '全幅值守 / 运行总览'
+                    : '实验面板 / 右侧摘要'
                   : activeMode === 'audio'
-                    ? '母带值守 / 交付上下文'
+                    ? '音频上下文 / 交付校验'
                     : '片段工位 / 当前上下文'}
               </span>
             </div>

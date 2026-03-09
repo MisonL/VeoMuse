@@ -21,11 +21,11 @@
   gap: 6px;
   padding: 7px 11px;
   border-radius: 999px;
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
   color: var(--ap-text-dim);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -39,13 +39,15 @@
 .theme-btn.active {
   background: linear-gradient(
     165deg,
-    color-mix(in srgb, var(--ap-accent) 84%, #ffffff 16%),
-    color-mix(in srgb, var(--ap-accent-strong) 80%, #0d2b58 20%)
+    color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+    color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
   );
-  color: #fdf7ee;
+  border-color: color-mix(in srgb, var(--ap-accent) 38%, var(--ap-border));
+  color: color-mix(in srgb, var(--ap-text) 82%, var(--ap-accent) 18%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    0 10px 16px var(--ap-accent-glow);
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 0 0 1px color-mix(in srgb, var(--ap-accent-soft) 48%, transparent),
+    0 8px 14px rgba(62, 38, 9, 0.1);
 }
 
 .btn-dot {
@@ -63,8 +65,9 @@
 }
 
 .theme-btn.active .btn-dot {
-  background: rgba(255, 248, 238, 0.18);
-  border-color: rgba(255, 248, 238, 0.24);
+  background: color-mix(in srgb, var(--ap-accent-soft) 32%, #ffffff 68%);
+  border-color: color-mix(in srgb, var(--ap-accent) 24%, var(--ap-border));
+  color: var(--ap-accent);
 }
 
 @media (max-width: 1360px) {
