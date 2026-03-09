@@ -43,7 +43,7 @@ describe('AssetPanel DOM 交互', () => {
     expect(view.getByText('城市镜头.mp4')).toBeInTheDocument()
 
     fireEvent.change(searchInput, { target: { value: '' } })
-    fireEvent.click(view.getByRole('button', { name: '音频' }))
+    fireEvent.click(view.getByRole('button', { name: '音频素材' }))
     expect(view.getByText('旁白.wav')).toBeInTheDocument()
   })
 

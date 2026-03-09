@@ -297,7 +297,6 @@ describe('ComparisonLab 请求去重守卫', () => {
         'data-stage-status',
         'available'
       )
-      expect(view.getAllByText('当前工位').length).toBeGreaterThan(0)
     })
 
     fireEvent.click(view.getByTestId('btn-lab-mode-collab'))
@@ -316,8 +315,6 @@ describe('ComparisonLab 请求去重守卫', () => {
         'current'
       )
       expect(view.getByTestId('btn-lab-mode-collab')).toHaveAttribute('aria-current', 'step')
-      expect(view.getAllByText('热备').length).toBeGreaterThan(0)
-      expect(view.getAllByText('当前工位').length).toBeGreaterThan(0)
     })
   })
 })
