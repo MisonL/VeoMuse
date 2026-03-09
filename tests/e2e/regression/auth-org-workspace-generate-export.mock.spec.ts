@@ -72,7 +72,7 @@ test('@mock 可通过 UI 串通注册 -> 组织 -> 工作区 -> 生成 -> 导出
 
   await page
     .getByTestId('area-left-panel')
-    .getByRole('button', { name: '媒体资源', exact: true })
+    .getByRole('button', { name: '素材库', exact: true })
     .click()
   await page.locator('input[name="assetUploadFiles"]').setInputFiles(fixtureFile)
   await expect(page.locator('.asset-tile').first()).toBeVisible({ timeout: 15000 })
