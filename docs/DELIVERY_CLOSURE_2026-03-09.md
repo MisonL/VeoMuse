@@ -42,4 +42,9 @@
 ## 说明
 
 本文确认的是“当前交付收口完成”，不是“真实外部环境上线确认书”。
-如后续需要生产环境背书，可继续执行 `acceptance:deploy` 与 `acceptance:real`。
+如后续需要生产环境背书，可按两个层级执行：
+
+- 目标环境验收：执行 `acceptance:deploy` 与 `acceptance:real`
+- 完整真实渠道门禁：执行 `release:real:precheck`、`e2e:regression:real` 与 `release:gate:real`
+
+其中，`acceptance:real` 更偏向目标部署环境的实网验收留痕，`release:gate:real` 则是仓库级完整真实渠道门禁。

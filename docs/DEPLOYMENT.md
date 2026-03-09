@@ -130,7 +130,7 @@ bun run docker:smoke -- --keep-up
 
 ### 最近一次本地正式复核
 
-- 最近一次本地正式复核已于 `2026-03-08` 执行完成。
+- 最近一次本地正式复核已于 `2026-03-09` 执行完成。
 - 留痕记录：`docs/DOCKER_ACCEPTANCE_2026-03-09.md`
 - 结论：本地 Compose 基线通过，`redis/backend/frontend` 全部 `healthy`，首页/API/WebSocket/安全头/静态缓存均已验证。
 - 补充：`2026-03-09` 已完成 `format:check/lint/quality:api-contract/test/release:gate/docker:smoke/docker:ui-smoke/acceptance:deploy` 本地闭环复验，见 `docs/LOCAL_CLOSURE_2026-03-09.md`。

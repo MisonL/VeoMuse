@@ -14,7 +14,9 @@
   - 检查 `redis/backend/frontend` 健康态
   - 检查首页、安全头、静态缓存、`/api/health`、`/api/capabilities`
   - 检查前端实验室入口、系统监控入口、`/ws/generation`
-  - 检查注册 -> 工作区 -> 上传链路
+- 不覆盖：
+  - 注册/组织/工作区浏览器交互
+  - 上传持久化与重启恢复链路
 - 默认结束时会执行环境清理；调试时建议加 `--keep-up`。
 
 ### `bun run docker:ui-smoke`
@@ -47,11 +49,35 @@
 
 ## 2. 推荐执行顺序
 
-### 最小正式验收
+### CI 主线 Docker Gate
 
 ```bash
 bun run docker:smoke -- --wait-timeout 240 --keep-up
 bun run docker:ui-smoke
+bun run docker:reset
+```
+
+- 用途：对应当前 `main` push 上的 `Docker Delivery` 工作流。
+- 覆盖：
+  - `docker:smoke` 的协议级探针与健康检查
+  - `docker:ui-smoke` 的注册、工作区创建与关键值守入口浏览器链路
+
+### 本地/目标环境正式验收
+
+```bash
+bun run docker:smoke -- --wait-timeout 240 --keep-up
+bun run docker:ui-smoke
+bun run acceptance:deploy -- --base-url http://127.0.0.1:18081
+bun run docker:reset
+```
+
+- 用途：形成当前交付文档中的本地闭环或目标环境只读留痕。
+- 补充：`acceptance:deploy` 会额外生成 `artifacts/deploy-acceptance/<timestamp>/summary.json`。
+
+### 持久化与重启演练
+
+```bash
+bun run docker:smoke -- --wait-timeout 240 --keep-up
 bun run docker:drill:persistence -- --wait-timeout 240 --no-build --keep-up
 bun run docker:reset
 ```
@@ -60,8 +86,9 @@ bun run docker:reset
 
 - 第一条命令负责把最新镜像真正构建出来，并完成协议级 smoke。
 - 第二条命令在已起好的 Docker 网关上做浏览器级 smoke。
-- 第三条命令复用现有镜像与容器环境，专门做持久化与重启验证。
-- 最后一条命令清理 compose 环境但保留卷。
+- `acceptance:deploy` 属于部署协议级只读验收，不替代持久化 drill。
+- `docker:drill:persistence` 复用现有镜像与容器环境，专门做持久化与重启验证。
+- `docker:reset` 清理 compose 环境但保留卷；`docker:smoke` 默认清理则会带 `--volumes`。
 
 ## 3. `--keep-up` 与 `--no-build`
 
@@ -107,6 +134,7 @@ bun run docker:reset:volumes
 
 - `docker:smoke --build` 已真实通过
 - `docker:ui-smoke` 已真实通过
+- `acceptance:deploy` 已真实通过
 - `docker:drill:persistence` 已真实通过
 - Docker 构建层已优化：
   - backend 镜像只安装 `@veomuse/backend` 生产依赖

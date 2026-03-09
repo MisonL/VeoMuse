@@ -32,9 +32,15 @@
 2. 实网回归闭环
 
 - 前置条件：real 用例依赖调用方显式设置 `E2E_REAL_CHANNELS=true` 与 `GEMINI_API_KEYS`；如需扩展多 Provider 实网回归，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加对应渠道凭据预检。
-- 执行命令：
-  - `E2E_REAL_CHANNELS=true bun run acceptance:real -- --base-url <target_url> --api-base-url <api_url>`
-- 验收标准：外部 `@real` 用例非全 skipped，`artifacts/real-acceptance/<timestamp>/summary.json` 为 `passed`，并附带 Playwright stdout/stderr 留痕。
+- 建议按两个层级执行：
+  - 目标环境实网留痕：`E2E_REAL_CHANNELS=true bun run acceptance:real -- --base-url <target_url> --api-base-url <api_url>`
+  - 仓库级完整真实渠道门禁：`bun run release:real:precheck`、`bun run e2e:regression:real -- --workers=1`、`bun run release:gate:real`
+- 分工说明：
+  - `acceptance:real` 用于目标部署环境的实网验收与留痕
+  - `release:gate:real` 用于仓库级完整真实回归闭环
+- 验收标准：
+  - `acceptance:real`：外部 `@real` 用例非全 skipped，`artifacts/real-acceptance/<timestamp>/summary.json` 为 `passed`
+  - `release:gate:real`：`artifacts/quality-summary.json` 中 `realE2E.status=passed`
 
 ## 非阻塞优化建议
 
