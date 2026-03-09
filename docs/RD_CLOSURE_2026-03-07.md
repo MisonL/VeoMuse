@@ -7,6 +7,7 @@
 
 - 研发范围内的代码实现、结构化收口、质量门禁与本地 Docker 正式复核均已完成。
 - 当前仓库可判定为“研发结项成立”。
+- `2026-03-09` 已补充完成前端视觉层级收口、ComparisonLab/Docker UI smoke 回归修复与最新本地闭环复验。
 - `2026-03-08` 已再次完成本地闭环复验：
   - `bun run lint`
   - `bun run build`
@@ -44,8 +45,8 @@
   - `docker:drill:persistence` 已补齐并通过真实重启恢复链路
   - Docker UI smoke main-only workflow、manual persistence workflow、delivery runbook 与 reset 命令已补齐
   - `release_gate` / `real precheck` / `release:gate:real` 口径已统一
-- 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-08.md`
-- 本地闭环结项留痕已更新到 `docs/LOCAL_CLOSURE_2026-03-08.md`
+- 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-09.md`
+- 本地闭环结项留痕已更新到 `docs/LOCAL_CLOSURE_2026-03-09.md`
 
 ## 关键提交
 
@@ -74,6 +75,7 @@
 - `bun run docker:smoke -- --wait-timeout 240 --keep-up`
 - `bun run docker:ui-smoke`
 - `docs/LOCAL_CLOSURE_2026-03-08.md`
+- `docs/LOCAL_CLOSURE_2026-03-09.md`
 - `bun run docker:drill:persistence -- --wait-timeout 240 --no-build --keep-up`
 - GitHub Actions：
   - `CI Quality Gate` 成功
@@ -99,7 +101,7 @@
 1. 目标正式部署环境 Docker 留痕复核
 
 - 在目标正式环境复刻本地 Docker 正式复核项
-- 形成与 `docs/DOCKER_ACCEPTANCE_2026-03-08.md` 对应的正式环境留痕文档
+- 形成与 `docs/DOCKER_ACCEPTANCE_2026-03-09.md` 对应的正式环境留痕文档
 
 2. 真实渠道回归
 

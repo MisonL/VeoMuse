@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { MODEL_CAPABILITY_ROWS, SERVICE_CAPABILITY_ROWS } from './constants'
 import type {
   AiChannelConfig,
@@ -287,7 +288,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
 
   if (!show) return null
 
-  return (
+  const panel = (
     <div
       className="channel-panel-mask"
       role="dialog"
@@ -613,6 +614,9 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
       </section>
     </div>
   )
+
+  if (typeof document === 'undefined') return panel
+  return createPortal(panel, document.body)
 }
 
 export default ChannelAccessPanel

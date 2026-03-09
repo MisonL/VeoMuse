@@ -2,8 +2,9 @@
 
 当前研发结项总览见：`docs/RD_CLOSURE_2026-03-07.md`。
 Docker 交付验收与清理手册见：`docs/DOCKER_DELIVERY_RUNBOOK.md`。
-最新一次本地 Docker 正式复核记录见：`docs/DOCKER_ACCEPTANCE_2026-03-08.md`。
-最新一次本地闭环结项记录见：`docs/LOCAL_CLOSURE_2026-03-08.md`。
+最新一次本地 Docker 正式复核记录见：`docs/DOCKER_ACCEPTANCE_2026-03-09.md`。
+最新一次本地闭环结项记录见：`docs/LOCAL_CLOSURE_2026-03-09.md`。
+最新交付收口摘要见：`docs/DELIVERY_CLOSURE_2026-03-09.md`。
 
 ## 一键部署
 
@@ -130,9 +131,9 @@ bun run docker:smoke -- --keep-up
 ### 最近一次本地正式复核
 
 - 最近一次本地正式复核已于 `2026-03-08` 执行完成。
-- 留痕记录：`docs/DOCKER_ACCEPTANCE_2026-03-08.md`
+- 留痕记录：`docs/DOCKER_ACCEPTANCE_2026-03-09.md`
 - 结论：本地 Compose 基线通过，`redis/backend/frontend` 全部 `healthy`，首页/API/WebSocket/安全头/静态缓存均已验证。
-- 补充：同日已完成 `lint/build/test/release:gate/docker:smoke/docker:ui-smoke` 本地闭环复验，见 `docs/LOCAL_CLOSURE_2026-03-08.md`。
+- 补充：`2026-03-09` 已完成 `format:check/lint/quality:api-contract/test/release:gate/docker:smoke/docker:ui-smoke/acceptance:deploy` 本地闭环复验，见 `docs/LOCAL_CLOSURE_2026-03-09.md`。
 - 说明：该记录确认的是本地闭环通过；真实外部环境与真实凭据链路保留为后续增强验收。
 
 ## 验证命令
@@ -252,7 +253,7 @@ API 契约门禁（V4）：
 - 执行命令（本地/CI 都可）：
 
 ```bash
-bun run scripts/api_contract_guard.ts
+bun run quality:api-contract
 ```
 
 - 非 0 退出表示存在契约缺口，输出 JSON 中 `failures[]` 会标记缺失维度（`route` / `documentation` / `tests`）。
@@ -262,6 +263,7 @@ bun run scripts/api_contract_guard.ts
   - `--tests-dir` 指定测试目录
 
 ```bash
+bun run quality:api-contract:generate
 bun run scripts/api_contract_guard.ts \
   --backend apps/backend/src/index.ts \
   --docs docs/API_DOCUMENTATION.md \

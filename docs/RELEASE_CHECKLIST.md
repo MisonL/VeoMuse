@@ -1,9 +1,10 @@
 # VeoMuse 发布检查清单（2026-03-05）
 
 本清单用于发布前“短流程收口 + 实网回归”执行，不包含 24h 长测。
-最近一次本地 Docker 正式复核记录见：`docs/DOCKER_ACCEPTANCE_2026-03-08.md`。
+最近一次本地 Docker 正式复核记录见：`docs/DOCKER_ACCEPTANCE_2026-03-09.md`。
 当前研发结项总览见：`docs/RD_CLOSURE_2026-03-07.md`。
-当前本地闭环留痕见：`docs/LOCAL_CLOSURE_2026-03-08.md`。
+当前本地闭环留痕见：`docs/LOCAL_CLOSURE_2026-03-09.md`。
+当前交付收口摘要见：`docs/DELIVERY_CLOSURE_2026-03-09.md`。
 
 说明：
 
@@ -16,7 +17,7 @@
 bun run format:check
 bun run lint
 bun run quality:api-contract
-bun run docker:smoke -- --no-build --wait-timeout 240
+bun run docker:smoke -- --wait-timeout 240
 bun run docker:ui-smoke
 bun run release:gate
 ```
@@ -28,9 +29,10 @@ bun run release:gate
 - `docker:smoke` 全绿，并覆盖首页/API/WebSocket/安全头/静态缓存
 - `docker:ui-smoke` 全绿，并覆盖真实 Docker 浏览器链路
 - Docker 服务 `frontend/backend/redis` 为 `healthy`
-- 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-08.md`
+- 本地 Docker 正式复核留痕已更新到 `docs/DOCKER_ACCEPTANCE_2026-03-09.md`
 - Docker 交付与清理说明已更新到 `docs/DOCKER_DELIVERY_RUNBOOK.md`
 - 研发结项总览与当前交付状态已更新到 `docs/RD_CLOSURE_2026-03-07.md`
+- 当前交付收口摘要已更新到 `docs/DELIVERY_CLOSURE_2026-03-09.md`
 
 ## 2. 外部增强验收（有真实环境/真实凭据时执行）
 
@@ -48,7 +50,7 @@ E2E_REAL_CHANNELS=true bun run acceptance:real -- --base-url https://veomuse.exa
 - `acceptance:real` 返回 0
 - `artifacts/real-acceptance/<timestamp>/playwright.stdout.log` 中可见 `@real` 外部回归执行记录
 - 如需扩展更多 provider 凭据校验，可通过 `E2E_REAL_REQUIRED_ENV_KEYS` 追加必需环境变量列表
-- `bun run release:real:precheck` 与 `acceptance:real` 都要求调用方显式设置 `E2E_REAL_CHANNELS=true`
+- `bun run release:real:precheck` 会自行注入 `E2E_REAL_CHANNELS=true`；`acceptance:real` 仍要求调用方显式设置 `E2E_REAL_CHANNELS=true`
 - 本项属于外部增强验收，不影响当前“本地闭环完成”结论
 
 ## 3. 发布产物复核
