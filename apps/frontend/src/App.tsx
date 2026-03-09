@@ -73,6 +73,7 @@ const loadMultiVideoPlayer = () => import('./components/Editor/MultiVideoPlayer'
 const loadPropertyInspector = () => import('./components/Editor/PropertyInspector')
 const loadAssetPanel = () => import('./components/Editor/AssetPanel')
 const loadComparisonLab = () => import('./components/Editor/ComparisonLab')
+const loadTelemetryDashboard = () => import('./components/Editor/TelemetryDashboard')
 const loadToastContainer = () => import('./components/Editor/ToastContainer')
 
 const VideoEditor = lazy(loadVideoEditor)
@@ -80,6 +81,7 @@ const MultiVideoPlayer = lazy(loadMultiVideoPlayer)
 const PropertyInspector = lazy(loadPropertyInspector)
 const AssetPanel = lazy(loadAssetPanel)
 const ComparisonLab = lazy(loadComparisonLab)
+const TelemetryDashboard = lazy(loadTelemetryDashboard)
 const ToastContainer = lazy(loadToastContainer)
 
 const TimecodeDisplay = memo(() => {
@@ -183,6 +185,7 @@ function App() {
   )
 
   const [activeMode, setActiveMode] = useState<AppMode>('edit')
+  const [labSurface, setLabSurface] = useState<'stage' | 'watch'>('stage')
   const [activeTool, setActiveTool] = useState<AppTool>('select')
   const [channelPanelRequestNonce, setChannelPanelRequestNonce] = useState(0)
   const [activeSidebar, setActiveSidebar] = useState<'assets' | 'director' | 'actors' | 'motion'>(
@@ -409,25 +412,45 @@ function App() {
     }, 40)
   }, [])
 
+  const handleModeChange = useCallback(
+    (mode: AppMode, options?: { labSurface?: 'stage' | 'watch' }) => {
+      startTransition(() => {
+        setActiveMode(mode)
+        if (mode === 'color') {
+          setLabSurface(options?.labSurface ?? 'stage')
+        }
+      })
+    },
+    []
+  )
+
   const openImportFromAnywhere = useCallback(() => {
-    setActiveMode('edit')
+    handleModeChange('edit')
     setActiveSidebar('assets')
     focusImportAction()
-  }, [focusImportAction])
+  }, [focusImportAction, handleModeChange])
 
   const openDirectorFromAnywhere = useCallback(() => {
-    setActiveMode('edit')
+    handleModeChange('edit')
     setActiveSidebar('director')
-  }, [])
+  }, [handleModeChange])
 
   const openChannelAccess = useCallback(() => {
     setIsGuideOpen(false)
-    setActiveMode('color')
+    handleModeChange('color', { labSurface: 'stage' })
     setChannelPanelRequestNonce((prev) => prev + 1)
     if (IS_TEST_ENV) {
       window.dispatchEvent(new CustomEvent('veomuse:open-channel-panel'))
     }
-  }, [])
+  }, [handleModeChange])
+
+  const openLabStage = useCallback(() => {
+    handleModeChange('color', { labSurface: 'stage' })
+  }, [handleModeChange])
+
+  const openLabWatchStage = useCallback(() => {
+    handleModeChange('color', { labSurface: 'watch' })
+  }, [handleModeChange])
 
   const guideSteps = useMemo<GuideStep[]>(
     () => [
@@ -435,7 +458,7 @@ function App() {
         title: '切换工作模式',
         description: '先在这里切换剪辑、实验室和音频大师，主工作区会随模式变化。',
         target: '[data-guide="mode-selector"]',
-        onEnter: () => setActiveMode('edit')
+        onEnter: () => handleModeChange('edit')
       },
       {
         title: '先导入素材',
@@ -444,7 +467,7 @@ function App() {
         actionLabel: '聚焦导入按钮',
         onAction: () => openImportFromAnywhere(),
         onEnter: () => {
-          setActiveMode('edit')
+          handleModeChange('edit')
           setActiveSidebar('assets')
         }
       },
@@ -452,14 +475,14 @@ function App() {
         title: '拖动调整布局',
         description: '拖动这个手柄可调整左侧宽度；右侧和时间轴也有同类手柄。',
         target: '[data-guide="left-resize-handle"]',
-        onEnter: () => setActiveMode('edit')
+        onEnter: () => handleModeChange('edit')
       },
       {
         title: '时间轴工具区',
         description: '在这里执行撤销、重做、选择、切割、平移等剪辑操作。',
         target: '[data-guide="timeline-tools"]',
         onEnter: () => {
-          setActiveMode('edit')
+          handleModeChange('edit')
           ensureTimelineReady()
         }
       },
@@ -468,9 +491,9 @@ function App() {
         description: '在实验室里做模型对比、策略治理、创意闭环和协作流程。',
         target: '[data-guide="lab-toolbar"]',
         actionLabel: '切到实验室',
-        onAction: () => setActiveMode('color'),
+        onAction: () => openLabStage(),
         onEnter: () => {
-          setActiveMode('color')
+          openLabStage()
           void loadComparisonLab()
         }
       },
@@ -480,7 +503,7 @@ function App() {
         target: '#btn-export'
       }
     ],
-    [ensureTimelineReady, openImportFromAnywhere]
+    [ensureTimelineReady, handleModeChange, openImportFromAnywhere, openLabStage]
   )
 
   const handleDirector = async () => {
@@ -985,7 +1008,7 @@ function App() {
             void loadMultiVideoPlayer()
           }
         }}
-        onModeChange={setActiveMode}
+        onModeChange={(mode) => handleModeChange(mode, { labSurface: 'stage' })}
         onCenterModeChange={setCenterMode}
         onTopBarDensityChange={setTopBarDensity}
         onOpenChannelAccess={openChannelAccess}
@@ -1057,6 +1080,7 @@ function App() {
 
         <AppCenterPanel
           activeMode={activeMode}
+          labSurface={labSurface}
           assetCount={assetCount}
           hasTimelineClips={hasTimelineClips}
           previewAspect={previewAspect}
@@ -1078,13 +1102,22 @@ function App() {
               />
             </Suspense>
           }
+          labWatchPanel={
+            <Suspense fallback={<LazyFallback label="系统总控看板加载中..." />}>
+              <TelemetryDashboard
+                variant="full"
+                shellMode={activeMode}
+                onReturnToStage={openLabStage}
+              />
+            </Suspense>
+          }
           onToggleSpatialPreview={() => setSpatialPreview(!isSpatialPreview)}
           onSeekToStart={() => setCurrentTime(0)}
           onTogglePlay={togglePlay}
           onSeekToNextClip={() => setCurrentTime(getNextClipTime())}
           onOpenAssets={openImportFromAnywhere}
           onOpenDirector={openDirectorFromAnywhere}
-          onSwitchToLab={() => setActiveMode('color')}
+          onSwitchToLab={openLabStage}
         />
 
         {isDesktopLayout ? (
@@ -1108,23 +1141,32 @@ function App() {
             <div className="inspector-shell-title">
               <span className="inspector-title">
                 {activeMode === 'color'
-                  ? '实验命令塔'
+                  ? labSurface === 'watch'
+                    ? '中央总控联动'
+                    : '实验值守席'
                   : activeMode === 'audio'
                     ? '母带指挥台'
                     : '属性检查器'}
               </span>
               <span className="inspector-shell-subtitle">
                 {activeMode === 'color'
-                  ? 'Lab Context Tower'
+                  ? labSurface === 'watch'
+                    ? '右席摘要 / 中央全幅值守'
+                    : '导播台右席 / 值守摘要'
                   : activeMode === 'audio'
-                    ? 'Mastering Context Tower'
-                    : 'Inspector Shell'}
+                    ? '母带值守 / 交付上下文'
+                    : '片段工位 / 当前上下文'}
               </span>
             </div>
           </div>
           <div className="inspector-scroll">
             <Suspense fallback={<LazyFallback label="属性面板加载中..." />}>
-              <PropertyInspector shellMode={activeMode} />
+              <PropertyInspector
+                shellMode={activeMode}
+                labSurface={labSurface}
+                onOpenWatchStage={openLabWatchStage}
+                onReturnToLabStage={openLabStage}
+              />
             </Suspense>
           </div>
         </aside>

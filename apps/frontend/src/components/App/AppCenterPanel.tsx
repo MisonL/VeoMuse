@@ -5,6 +5,7 @@ type AppMode = 'edit' | 'color' | 'audio'
 
 interface AppCenterPanelProps {
   activeMode: AppMode
+  labSurface: 'stage' | 'watch'
   assetCount: number
   hasTimelineClips: boolean
   previewAspect: PreviewAspect
@@ -15,6 +16,7 @@ interface AppCenterPanelProps {
   timecodeDisplay: ReactNode
   previewPlayer: ReactNode
   comparisonLab: ReactNode
+  labWatchPanel: ReactNode
   onToggleSpatialPreview: () => void
   onSeekToStart: () => void
   onTogglePlay: () => void
@@ -26,6 +28,7 @@ interface AppCenterPanelProps {
 
 const AppCenterPanel = ({
   activeMode,
+  labSurface,
   assetCount,
   hasTimelineClips,
   previewAspect,
@@ -36,6 +39,7 @@ const AppCenterPanel = ({
   timecodeDisplay,
   previewPlayer,
   comparisonLab,
+  labWatchPanel,
   onToggleSpatialPreview,
   onSeekToStart,
   onTogglePlay,
@@ -232,7 +236,11 @@ const AppCenterPanel = ({
           </div>
         </div>
       ) : activeMode === 'color' ? (
-        comparisonLab
+        labSurface === 'watch' ? (
+          <div className="lab-watch-stage-shell">{labWatchPanel}</div>
+        ) : (
+          comparisonLab
+        )
       ) : (
         <div className="audio-master-stage">
           <section className="audio-master-hero">

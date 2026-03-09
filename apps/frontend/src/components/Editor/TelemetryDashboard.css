@@ -1415,3 +1415,220 @@
     min-height: auto;
   }
 }
+
+.telemetry-watch-stage {
+  display: grid;
+  gap: 16px;
+  height: 100%;
+  min-height: 0;
+  padding: 18px;
+  background:
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--ap-accent-soft) 20%, transparent),
+      transparent 24%
+    ),
+    radial-gradient(
+      circle at 100% 0,
+      color-mix(in srgb, var(--ap-signal-soft) 22%, transparent),
+      transparent 22%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+      color-mix(in srgb, var(--ap-panel) 84%, var(--ap-card) 16%)
+    );
+}
+
+.telemetry-watch-stage-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-accent) 28%);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.1)),
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.74),
+    0 18px 36px rgba(33, 26, 17, 0.08);
+}
+
+.telemetry-watch-stage-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.telemetry-watch-stage-kicker,
+.telemetry-watch-brief-kicker {
+  font-family: var(--ap-font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-text-dim) 66%, var(--ap-accent) 34%);
+}
+
+.telemetry-watch-stage-copy strong,
+.telemetry-watch-brief-copy strong {
+  font-size: 28px;
+  line-height: 1.04;
+  color: var(--ap-text);
+}
+
+.telemetry-watch-stage-copy p,
+.telemetry-watch-brief-copy p {
+  margin: 0;
+  max-width: 56ch;
+  color: color-mix(in srgb, var(--ap-text) 78%, var(--ap-text-dim) 22%);
+  line-height: 1.55;
+}
+
+.telemetry-watch-stage-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.telemetry-watch-stage-pill {
+  display: grid;
+  gap: 2px;
+  min-width: 132px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 66%, rgba(255, 255, 255, 0.56));
+  background: color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+}
+
+.telemetry-watch-stage-pill span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ap-text-dim);
+}
+
+.telemetry-watch-stage-pill strong {
+  font-size: 15px;
+  color: var(--ap-text);
+}
+
+.telemetry-watch-action {
+  min-height: 40px;
+  padding: 9px 14px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-accent) 28%);
+  background: color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%);
+  color: var(--ap-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.telemetry-watch-action.primary {
+  border-color: color-mix(in srgb, var(--ap-accent) 64%, var(--ap-border) 36%);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ap-accent) 88%, #ffffff 12%),
+    color-mix(in srgb, var(--ap-accent-strong) 84%, #0f3ea2 16%)
+  );
+  color: #fff;
+  box-shadow: 0 14px 26px rgba(19, 63, 150, 0.24);
+}
+
+.telemetry-dashboard--full {
+  min-height: 0;
+  overflow: auto;
+}
+
+.telemetry-watch-brief {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.16)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 18px 34px rgba(33, 26, 17, 0.08);
+}
+
+.telemetry-watch-brief-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.telemetry-watch-brief-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.telemetry-watch-brief-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 72%, rgba(255, 255, 255, 0.44));
+  background: color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%);
+}
+
+.telemetry-watch-brief-card span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ap-text-dim);
+}
+
+.telemetry-watch-brief-card strong {
+  font-size: 16px;
+  line-height: 1.25;
+  color: var(--ap-text);
+}
+
+.telemetry-watch-brief-card small {
+  color: color-mix(in srgb, var(--ap-text) 72%, var(--ap-text-dim) 28%);
+  line-height: 1.45;
+}
+
+.telemetry-watch-brief-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 920px) {
+  .telemetry-watch-stage {
+    padding: 14px;
+  }
+
+  .telemetry-watch-stage-head {
+    grid-template-columns: 1fr;
+  }
+
+  .telemetry-watch-stage-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .telemetry-watch-brief-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .telemetry-watch-stage-copy strong,
+  .telemetry-watch-brief-copy strong {
+    font-size: 22px;
+  }
+}

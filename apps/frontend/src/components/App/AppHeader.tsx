@@ -38,7 +38,7 @@ const MODE_OPTIONS: Array<{ value: AppMode; label: string }> = [
 
 const MODE_RUNTIME_COPY: Record<AppMode, string> = {
   edit: '主编排链路在线，节目单已锁定到剪辑总线',
-  color: '实验与策略工位就绪，双通道路由保持热备',
+  color: '实验导播台在线，右席摘要可随时展开中央总控',
   audio: '音频母带链路待命，旁白与节奏引擎可立即接入'
 }
 
@@ -86,7 +86,7 @@ const AppHeader = ({
           <span className="brand-status-copy">导播总线稳定 / 三路节目待播</span>
         </div>
         <div className="mode-runtime">
-          <span className="mode-runtime-label">当前总线</span>
+          <span className="mode-runtime-label">当前工位</span>
           <span className="mode-runtime-copy">{MODE_RUNTIME_COPY[activeMode]}</span>
         </div>
       </div>

@@ -12,23 +12,19 @@ import './ComparisonLab.css'
 const LAB_STAGE_META = {
   compare: {
     index: '01',
-    label: '双通道比对',
-    summary: '同一批素材在两路模型上并行接入，先判断差异，再决定是否继续放量。'
+    label: '双通道比对'
   },
   marketplace: {
     index: '02',
-    label: '策略治理',
-    summary: '把路由、预算和治理面板接到同一条实验总线，统一处理策略决策。'
+    label: '策略治理'
   },
   creative: {
     index: '03',
-    label: '创意闭环',
-    summary: '让提示词、工作流、生成结果和资产复用围绕同一创意工位形成闭环。'
+    label: '创意闭环'
   },
   collab: {
     index: '04',
-    label: '协作平台',
-    summary: '成员、事件流与治理动作汇入同一条协作频道，形成多人联动闭环。'
+    label: '协作平台'
   }
 } as const
 
@@ -113,8 +109,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
         <aside className="lab-stage-spine">
           <div className="lab-stage-rail-head">
             <span className="lab-stage-rail-kicker">实验总控工位</span>
-            <strong>工位索引</strong>
-            <p className="lab-stage-rail-note">四个工位共用同一条实验总线，按当前目标切换。</p>
+            <strong>阶段轨</strong>
           </div>
           <div className="lab-stage-markers" role="tablist" aria-label="实验室阶段切换">
             {LAB_STAGE_ORDER.map((stage, stageIndex) => {
@@ -157,25 +152,17 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
           </div>
         </aside>
         <div className="lab-stage-main">
-          <div className="lab-stage-hero">
-            <div className="lab-stage-hero-copy">
-              <span className="lab-stage-hero-kicker">实验总控工位 / 当前总线</span>
-              <div className="lab-stage-hero-headline">
+          <div className="lab-stage-main-head">
+            <div className="lab-stage-main-copy">
+              <span className="lab-stage-main-kicker">
+                {LAB_STAGE_STATUS_LABEL.current} · {activeStageMeta.index}
+              </span>
+              <div className="lab-stage-main-title-row">
                 <strong>{activeStageMeta.label}</strong>
-                <span className="lab-stage-hero-chip">总线在线</span>
-              </div>
-              <p>{activeStageMeta.summary}</p>
-            </div>
-            <div className="lab-stage-hero-status">
-              <div className="lab-stage-hero-card">
-                <span>当前工位</span>
-                <strong>{activeStageMeta.index}</strong>
-              </div>
-              <div className="lab-stage-hero-card">
-                <span>当前任务</span>
-                <strong>{activeStageState}</strong>
+                <span className="lab-stage-main-chip">单主舞台</span>
               </div>
             </div>
+            <p className="lab-stage-main-state">{activeStageState}</p>
           </div>
 
           <LabToolbar

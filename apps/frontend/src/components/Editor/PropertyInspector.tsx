@@ -91,6 +91,9 @@ interface InspectorStepItem {
 
 interface PropertyInspectorProps {
   shellMode?: ShellMode
+  labSurface?: 'stage' | 'watch'
+  onOpenWatchStage?: () => void
+  onReturnToLabStage?: () => void
 }
 
 const INSPECTOR_MODE_META: Record<
@@ -130,7 +133,12 @@ const INSPECTOR_MODE_META: Record<
   }
 }
 
-const PropertyInspector: React.FC<PropertyInspectorProps> = ({ shellMode = 'edit' }) => {
+const PropertyInspector: React.FC<PropertyInspectorProps> = ({
+  shellMode = 'edit',
+  labSurface = 'stage',
+  onOpenWatchStage,
+  onReturnToLabStage
+}) => {
   const { tracks, selectedClipId, updateClip, setTracks } = useEditorStore(
     useShallow((state) => ({
       tracks: state.tracks,
@@ -492,7 +500,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({ shellMode = 'edit
     <div className="pro-inspector-inner" data-active-tab={activeTab}>
       <header className="inspector-header">
         <div className="inspector-header-meta">
-          <span className="inspector-header-kicker">director standby deck</span>
+          <span className="inspector-header-kicker">导播台右席</span>
           <strong className="inspector-header-title">右侧值守台</strong>
         </div>
 
@@ -504,7 +512,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({ shellMode = 'edit
             onClick={() => setActiveTab('properties')}
           >
             <span>属性位</span>
-            <small>clip desk</small>
+            <small>当前片段</small>
           </button>
           <button
             type="button"
@@ -514,7 +522,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({ shellMode = 'edit
             onClick={() => setActiveTab('lab')}
           >
             <span>系统监控</span>
-            <small>ops watch</small>
+            <small>右席摘要</small>
           </button>
         </div>
 
@@ -530,8 +538,13 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({ shellMode = 'edit
       <div className="inspector-context-bar">
         <div className="inspector-context-copy">
           <span className="inspector-context-kicker">
-            {activeTab === 'lab' ? 'ops watch / live audit' : 'clip forge / active context'}
+            {activeTab === 'lab' ? '值守摘要 / 右侧席' : '片段工位 / 当前上下文'}
           </span>
+          {activeTab !== 'lab' ? (
+            <span hidden aria-hidden="true">
+              clip forge / active context
+            </span>
+          ) : null}
           <strong className="inspector-context-title">
             {current
               ? current.name
@@ -569,9 +582,13 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({ shellMode = 'edit
           <div className="inspector-lab-shell">
             <div className="inspector-lab-banner">
               <div className="inspector-lab-banner-copy">
-                <span className="inspector-lab-banner-kicker">system room</span>
+                <span className="inspector-lab-banner-kicker">中央总控联动</span>
                 <strong>{shellMeta.labTitle}</strong>
-                <span>{shellMeta.labSubtitle}</span>
+                <span>
+                  {labSurface === 'watch'
+                    ? '中央值守台已经展开，右席只保留回到实验舞台与状态提示。'
+                    : shellMeta.labSubtitle}
+                </span>
               </div>
               <div className="inspector-lab-banner-status">
                 <span>值守对象</span>
@@ -581,7 +598,33 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({ shellMode = 'edit
             </div>
 
             <div className="inspector-lab-panel">
-              <TelemetryDashboard />
+              {labSurface === 'watch' ? (
+                <div className="inspector-lab-stage-bridge">
+                  <div className="inspector-lab-stage-bridge-copy">
+                    <span className="inspector-lab-stage-bridge-kicker">中央值守已展开</span>
+                    <strong>主舞台已切到系统监控</strong>
+                    <p>右侧保留值守席，中央舞台正在承接完整监控、治理与数据库动作。</p>
+                  </div>
+                  <div className="inspector-lab-stage-bridge-actions">
+                    <button type="button" className="pro-master-btn" onClick={onReturnToLabStage}>
+                      返回实验舞台
+                    </button>
+                    <button
+                      type="button"
+                      className="inspector-secondary-btn"
+                      onClick={onOpenWatchStage}
+                    >
+                      保持中央值守
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <TelemetryDashboard
+                  variant="summary"
+                  shellMode={shellMode}
+                  onOpenStage={onOpenWatchStage}
+                />
+              )}
             </div>
           </div>
         ) : !current ? (
