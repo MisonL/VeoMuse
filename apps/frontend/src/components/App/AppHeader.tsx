@@ -106,12 +106,14 @@ const AppHeader = ({
         ))}
       </div>
       <div className="mode-runtime">
-        <span className="mode-runtime-pill">节目编排</span>
         <span className="mode-runtime-copy">{MODE_RUNTIME_COPY[activeMode]}</span>
       </div>
     </div>
     <div className="header-actions" data-testid="area-header-actions">
-      <div className="header-actions-group header-actions-layout" data-testid="group-header-layout">
+      <div
+        className="header-actions-group header-actions-group--quiet header-actions-layout"
+        data-testid="group-header-layout"
+      >
         <div className="header-segment" data-testid="group-center-mode">
           <button
             type="button"
@@ -154,7 +156,7 @@ const AppHeader = ({
         </div>
       </div>
       <div
-        className="header-actions-group header-actions-quick"
+        className="header-actions-group header-actions-group--quiet header-actions-quick"
         data-testid="group-header-quick-actions"
       >
         <button

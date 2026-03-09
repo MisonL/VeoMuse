@@ -42,6 +42,7 @@ describe('编辑器壳层空态回归', () => {
   it('底部时间轴在无片段时应渲染待命态说明', () => {
     const view = render(
       <AppTimeline
+        activeMode="edit"
         assetCount={0}
         canUndo={false}
         canRedo={false}
@@ -72,6 +73,7 @@ describe('编辑器壳层空态回归', () => {
   it('底部时间轴在有片段时应切换到 armed 状态并隐藏空态', () => {
     const view = render(
       <AppTimeline
+        activeMode="edit"
         assetCount={4}
         canUndo
         canRedo
@@ -93,5 +95,36 @@ describe('编辑器壳层空态回归', () => {
     expect(view.getByText('节目编排 / 主剪版')).toBeInTheDocument()
     expect(view.getByText('播出总线稳定 / 节目轨热更新中')).toBeInTheDocument()
     expect(view.queryByText('空轨待命')).toBeNull()
+  })
+
+  it('音频大师空态应渲染母带舞台与待命链路', () => {
+    const view = render(
+      <AppCenterPanel
+        activeMode="audio"
+        assetCount={0}
+        hasTimelineClips={false}
+        previewAspect="16:9"
+        previewHostRef={createRef<HTMLDivElement>()}
+        isSpatialPreview={false}
+        isPlaying={false}
+        timecodeDisplay={<span>00:00:00:00</span>}
+        previewPlayer={<div>preview</div>}
+        comparisonLab={<div>lab</div>}
+        onToggleSpatialPreview={mock(() => {})}
+        onSeekToStart={mock(() => {})}
+        onTogglePlay={mock(() => {})}
+        onSeekToNextClip={mock(() => {})}
+        onOpenAssets={mock(() => {})}
+        onOpenDirector={mock(() => {})}
+        onSwitchToLab={mock(() => {})}
+      />
+    )
+
+    expect(view.getByText('音频母带引擎已就绪')).toBeInTheDocument()
+    expect(view.getByText('旁白链路待命')).toBeInTheDocument()
+    expect(view.getByText('音乐节奏待命')).toBeInTheDocument()
+    expect(view.getByText('交付校验待命')).toBeInTheDocument()
+    expect(view.getByRole('button', { name: '导入素材开始处理' })).toBeInTheDocument()
+    expect(view.getByRole('button', { name: '切换到实验室对比' })).toBeInTheDocument()
   })
 })

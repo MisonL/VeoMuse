@@ -9,15 +9,15 @@ export const fps = 30
 export const DESKTOP_BREAKPOINT = 980
 export const MAIN_PANEL_MIN_WIDTH = 340
 export const MAIN_PANEL_MIN_HEIGHT = 260
-export const CENTER_PANEL_FALLBACK_WIDTH = 520
-export const CENTER_PANEL_EDIT_WIDTH = 500
+export const CENTER_PANEL_FALLBACK_WIDTH = 560
+export const CENTER_PANEL_EDIT_WIDTH = 620
 export const CENTER_PANEL_LAB_WIDTH = 720
 export const CENTER_PANEL_AUDIO_WIDTH = 620
 export const CENTER_PANEL_FRAME_GUTTER = 10
-export const CENTER_PANEL_EDIT_MAX_WIDTH = 700
+export const CENTER_PANEL_EDIT_MAX_WIDTH = 840
 export const CENTER_PANEL_AUDIO_MAX_WIDTH = 860
 export const CENTER_PANEL_LAB_MAX_WIDTH = 940
-export const CENTER_PANEL_FIT_EDIT_MIN_WIDTH = 360
+export const CENTER_PANEL_FIT_EDIT_MIN_WIDTH = 420
 export const CENTER_PANEL_FIT_AUDIO_MIN_WIDTH = 348
 export const CENTER_PANEL_FIT_LAB_MIN_WIDTH = 378
 export const HEADER_HEIGHT = 62
@@ -269,30 +269,30 @@ export const buildShellLayoutVars = (params: {
   timelinePx: number
 }) =>
   ({
-    '--left-panel-w': `${params.activeMode === 'color' ? Math.min(params.leftPanelPx, 344) : params.leftPanelPx}px`,
-    '--right-panel-w': `${params.activeMode === 'color' ? Math.min(params.rightPanelPx, 304) : params.rightPanelPx}px`,
+    '--left-panel-w': `${params.activeMode === 'color' ? Math.min(params.leftPanelPx, 320) : params.leftPanelPx}px`,
+    '--right-panel-w': `${params.activeMode === 'color' ? Math.min(params.rightPanelPx, 280) : params.rightPanelPx}px`,
     '--center-panel-min-w': `${params.centerPanelMinWidth}px`,
     '--center-panel-fit-w': `${Math.round(
       params.activeMode === 'color'
-        ? Math.max(params.centerPanelFitWidth, 816)
+        ? Math.max(params.centerPanelFitWidth, 900)
         : params.centerPanelFitWidth
     )}px`,
     '--left-panel-flex':
       params.activeMode === 'color'
         ? params.centerMode === 'focus'
-          ? '1.08fr'
-          : '1.18fr'
+          ? '0.96fr'
+          : '1.02fr'
         : params.centerMode === 'focus'
-          ? '1.36fr'
-          : '1.68fr',
+          ? '1.08fr'
+          : '1.26fr',
     '--right-panel-flex':
       params.activeMode === 'color'
         ? params.centerMode === 'focus'
-          ? '0.94fr'
-          : '1.06fr'
+          ? '0.82fr'
+          : '0.9fr'
         : params.centerMode === 'focus'
-          ? '1.24fr'
-          : '1.58fr',
+          ? '0.98fr'
+          : '1.14fr',
     '--timeline-h': `${params.timelinePx}px`
   }) as CSSProperties
 

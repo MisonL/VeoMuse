@@ -10,26 +10,22 @@ interface LabToolbarProps {
   onOpenChannelPanel: () => void
 }
 
-const MODE_META: Record<LabMode, { index: string; title: string; summary: string }> = {
+const MODE_META: Record<LabMode, { status: string; actionHint: string }> = {
   compare: {
-    index: '01',
-    title: '双通道比对',
-    summary: '同一素材在两路模型上并行播出，适合快速做节目判断。'
+    status: '双通道路由在线',
+    actionHint: '先补齐两路素材，再导出判断结论。'
   },
   marketplace: {
-    index: '02',
-    title: '策略治理',
-    summary: '把路由、预算和策略超市拉进同一块播控台，控制整个实验室。'
+    status: '治理总线待命',
+    actionHint: '策略、预算和渠道状态会在这里统一接管。'
   },
   creative: {
-    index: '03',
-    title: '创意闭环',
-    summary: '让提示词、工作流、生成结果和复用资产围绕主引擎运转。'
+    status: '创意引擎待命',
+    actionHint: '主引擎、工作流和资产复用会围绕同一工位展开。'
   },
   collab: {
-    index: '04',
-    title: '协作平台',
-    summary: 'Presence、事件流和实时频道集中到一处协作作战室。'
+    status: '协作频道待命',
+    actionHint: '成员、事件与治理动作集中在同一条协作脊柱。'
   }
 }
 
@@ -59,19 +55,9 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
     <div className="lab-toolbar" data-guide="lab-toolbar" data-testid="area-lab-toolbar">
       <div className="lab-toolbar-main">
         <div className="lab-toolbar-left">
-          <div className="lab-toolbar-identity">
-            <div className="lab-kicker">实验协议 / 四段播控</div>
-            <div className="lab-mode-deck">
-              <span className="lab-mode-index">{currentModeMeta.index}</span>
-              <div className="lab-mode-copy">
-                <strong className="lab-mode-title">{currentModeMeta.title}</strong>
-                <span className="lab-mode-summary">{currentModeMeta.summary}</span>
-              </div>
-            </div>
-          </div>
           <div className="lab-status-cluster">
             <div className="lab-status">
-              <span className="live-dot">●</span> 实验室在线
+              <span className="live-dot">●</span> {currentModeMeta.status}
             </div>
             {labMode === 'compare' ? (
               <label className="sync-toggle">
@@ -84,6 +70,7 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
                 <span>同步预览</span>
               </label>
             ) : null}
+            <span className="lab-toolbar-hint">{currentModeMeta.actionHint}</span>
           </div>
         </div>
         <div className="lab-toolbar-cta">

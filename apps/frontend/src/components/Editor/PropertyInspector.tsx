@@ -21,7 +21,50 @@ import './PropertyInspector.css'
 const resolveErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback
 
-const PropertyInspector: React.FC = () => {
+type ShellMode = 'edit' | 'color' | 'audio'
+
+interface PropertyInspectorProps {
+  shellMode?: ShellMode
+}
+
+const INSPECTOR_MODE_META: Record<
+  ShellMode,
+  {
+    idleTitle: string
+    idleSubtitle: string
+    idleAction: string
+    labTitle: string
+    labSubtitle: string
+    labStatus: string
+  }
+> = {
+  edit: {
+    idleTitle: '等待片段进入工位',
+    idleSubtitle: '属性、炼金与空间渲染动作都绑定到当前片段，不再丢失上下文。',
+    idleAction: '时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。',
+    labTitle: '系统监控正在值守',
+    labSubtitle: '运行态、告警与治理记录会在当前侧栏持续值守显示。',
+    labStatus: 'Ops Only'
+  },
+  color: {
+    idleTitle: '实验上下文待接管',
+    idleSubtitle: '实验策略、比对判断与协作动作将围绕当前实验阶段集中显示。',
+    idleAction: '上方实验室选中当前阶段后，可在这里查看上下文、切换监控并承接后续动作。',
+    labTitle: '实验监控与策略值守',
+    labSubtitle: 'Provider 健康、治理信号与实验告警会围绕当前实验阶段持续更新。',
+    labStatus: 'Lab Watch'
+  },
+  audio: {
+    idleTitle: '母带工位待命',
+    idleSubtitle: '旁白、音乐、响度与导出前校验会在这里绑定到当前母带会话。',
+    idleAction: '导入素材并进入母带流程后，可在这里查看当前输入、调参并切换到系统监控。',
+    labTitle: '母带监控与交付值守',
+    labSubtitle: '输入健康、总线状态与交付前检查会围绕当前母带会话持续显示。',
+    labStatus: 'Mastering Ops'
+  }
+}
+
+const PropertyInspector: React.FC<PropertyInspectorProps> = ({ shellMode = 'edit' }) => {
   const { tracks, selectedClipId, updateClip, setTracks } = useEditorStore(
     useShallow((state) => ({
       tracks: state.tracks,
@@ -56,6 +99,7 @@ const PropertyInspector: React.FC = () => {
   const clipContext = resolveSelectedClipContext(tracks, selectedClipId)
   const selectedClip = clipContext.selectedClip
   const parentTrackId = clipContext.parentTrackId
+  const shellMeta = INSPECTOR_MODE_META[shellMode]
 
   useEffect(() => {
     if (!getAccessToken().trim()) return
@@ -208,18 +252,18 @@ const PropertyInspector: React.FC = () => {
             {activeTab === 'lab' ? 'ops watch / live audit' : 'clip forge / active context'}
           </span>
           <strong className="inspector-context-title">
-            {current ? current.name : activeTab === 'lab' ? '系统监控正在值守' : '等待片段进入工位'}
+            {current ? current.name : activeTab === 'lab' ? shellMeta.labTitle : shellMeta.idleTitle}
           </strong>
           <span className="inspector-context-subtitle">
             {activeTab === 'lab'
-              ? '运行态、告警与治理记录会在当前侧栏持续值守显示。'
-              : '属性、炼金与空间渲染动作都绑定到当前片段，不再丢失上下文。'}
+              ? shellMeta.labSubtitle
+              : shellMeta.idleSubtitle}
           </span>
         </div>
         <div className="inspector-context-pills">
           <span className="inspector-context-pill">{current?.type || 'idle'}</span>
           <span className={`inspector-context-pill ${activeTab === 'lab' ? 'is-live' : ''}`}>
-            {activeTab === 'lab' ? 'monitor live' : 'clip live'}
+            {activeTab === 'lab' ? shellMeta.labStatus : 'clip live'}
           </span>
         </div>
       </div>
@@ -230,20 +274,20 @@ const PropertyInspector: React.FC = () => {
             <div className="inspector-lab-banner">
               <div className="inspector-lab-banner-copy">
                 <span className="inspector-lab-banner-kicker">system room</span>
-                <strong>系统监控与当前创作工位并行值守</strong>
-                <span>告警、SLO 与 Provider 健康状态将围绕当前节目上下文持续更新。</span>
+                <strong>{shellMeta.labTitle}</strong>
+                <span>{shellMeta.labSubtitle}</span>
               </div>
               <div className="inspector-lab-banner-status">
                 <span>{current ? current.name : '无活跃片段'}</span>
-                <strong>{current ? 'Clip Context Bound' : 'Ops Only'}</strong>
+                <strong>{current ? 'Clip Context Bound' : shellMeta.labStatus}</strong>
               </div>
             </div>
             <TelemetryDashboard />
           </div>
         ) : !current ? (
           <div className="inspector-empty">
-            <p>属性工位待命</p>
-            <small>时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。</small>
+            <p>{shellMeta.idleTitle}</p>
+            <small>{shellMeta.idleAction}</small>
             <button type="button" className="pro-master-btn" onClick={() => setActiveTab('lab')}>
               切到系统监控
             </button>

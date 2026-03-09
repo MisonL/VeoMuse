@@ -44,62 +44,47 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   z-index: 4;
   pointer-events: auto;
-  padding: 14px;
+  padding: 24px;
   background:
-    radial-gradient(circle at 70% 30%, rgba(11, 102, 255, 0.16), transparent 36%),
-    radial-gradient(circle at 20% 80%, rgba(22, 163, 74, 0.12), transparent 40%);
+    radial-gradient(circle at 72% 28%, rgba(11, 102, 255, 0.18), transparent 32%),
+    radial-gradient(circle at 18% 82%, rgba(22, 163, 74, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(3, 10, 20, 0.14), rgba(3, 10, 20, 0.36));
+}
+
+.player-empty-kicker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(191, 219, 254, 0.24);
+  background: rgba(7, 15, 27, 0.4);
+  color: rgba(226, 232, 240, 0.72);
+  font-family: var(--ap-font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
 }
 
 .player-empty-title {
-  font-size: 22px;
+  font-size: 26px;
+  font-family: var(--ap-font-display);
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.92);
+  text-transform: uppercase;
 }
 
 .player-empty-subtitle {
+  max-width: 420px;
   font-size: 13px;
   font-weight: 500;
-  color: rgba(226, 232, 240, 0.84);
+  line-height: 1.6;
+  color: rgba(226, 232, 240, 0.78);
   text-align: center;
-}
-
-.player-empty-actions {
-  margin-top: 4px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.player-empty-btn {
-  border: 1px solid rgba(191, 219, 254, 0.42);
-  background: rgba(10, 20, 38, 0.72);
-  color: #e2e8f0;
-  border-radius: 8px;
-  padding: 7px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    transform 150ms ease,
-    filter 150ms ease,
-    border-color 150ms ease;
-}
-
-.player-empty-btn.primary {
-  background: linear-gradient(165deg, #0b66ff, #0a4bd1);
-  border-color: rgba(191, 219, 254, 0.75);
-  color: #ffffff;
-}
-
-.player-empty-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.06);
-  border-color: rgba(191, 219, 254, 0.72);
 }
 
 /* 神经渲染 VFX 样式模拟 */

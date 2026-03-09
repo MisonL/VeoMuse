@@ -80,12 +80,14 @@ const AppCenterPanel = ({
                     <div className="preview-quality">4K | HDR</div>
                   </div>
                 </div>
-                <div className="monitor-cue-strip">
-                  <span className="monitor-cue-pill">主监 01</span>
-                  <span className="monitor-cue-copy">
-                    {isPlaying ? '节目正在播出，转场链路稳定' : '节目待播，控制台已进入预备态'}
-                  </span>
-                </div>
+                {hasTimelineClips ? (
+                  <div className="monitor-cue-strip">
+                    <span className="monitor-cue-pill">主监 01</span>
+                    <span className="monitor-cue-copy">
+                      {isPlaying ? '节目正在播出，转场链路稳定' : '节目待播，控制台已进入预备态'}
+                    </span>
+                  </div>
+                ) : null}
                 {previewPlayer}
               </div>
             </div>
@@ -211,9 +213,49 @@ const AppCenterPanel = ({
       ) : activeMode === 'color' ? (
         comparisonLab
       ) : (
-        <div className="audio-master-state">
-          <div className="audio-master-icon">🎚️</div>
-          <div className="audio-master-title">音频母带引擎已就绪</div>
+        <div className="audio-master-stage">
+          <section className="audio-master-hero">
+            <div className="audio-master-hero-copy">
+              <span className="audio-master-kicker">Master Bus / Standby</span>
+              <strong className="audio-master-title">音频母带引擎已就绪</strong>
+              <p className="audio-master-summary">
+                旁白、音乐、节奏和响度会在同一条母带链路里接管。先导入一批素材，再决定是直接进入母带，还是切到实验室做对照。
+              </p>
+            </div>
+            <div className="audio-master-status-tower">
+              <div className="audio-master-status-card">
+                <span>输入源</span>
+                <strong>待接入</strong>
+              </div>
+              <div className="audio-master-status-card">
+                <span>母带总线</span>
+                <strong>Standby</strong>
+              </div>
+              <div className="audio-master-status-card">
+                <span>下一步</span>
+                <strong>导入 / 对照</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="audio-master-lanes">
+            <div className="audio-master-lane">
+              <span className="audio-master-lane-kicker">VO Lane</span>
+              <strong>旁白链路待命</strong>
+              <p>脚本、配音和语气校准会在导入素材后接管第一条旁白母线。</p>
+            </div>
+            <div className="audio-master-lane">
+              <span className="audio-master-lane-kicker">Music Lane</span>
+              <strong>音乐节奏待命</strong>
+              <p>背景乐、节拍点和情绪能量会在这里锁定到当前节目节奏。</p>
+            </div>
+            <div className="audio-master-lane">
+              <span className="audio-master-lane-kicker">Delivery Lane</span>
+              <strong>交付校验待命</strong>
+              <p>响度、峰值和导出前检查会在最终交付前集中完成。</p>
+            </div>
+          </section>
+
           <div className="audio-master-actions">
             <button type="button" className="audio-master-btn primary" onClick={onOpenAssets}>
               导入素材开始处理

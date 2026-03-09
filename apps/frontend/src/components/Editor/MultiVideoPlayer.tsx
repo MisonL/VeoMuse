@@ -5,12 +5,7 @@ import TextOverlay from './TextOverlay'
 import { syncController } from '../../utils/SyncController'
 import './MultiVideoPlayer.css'
 
-interface MultiVideoPlayerProps {
-  onOpenAssets?: () => void
-  onOpenDirector?: () => void
-}
-
-const MultiVideoPlayer: React.FC<MultiVideoPlayerProps> = ({ onOpenAssets, onOpenDirector }) => {
+const MultiVideoPlayer: React.FC = () => {
   const { tracks, isSpatialPreview, spatialCamera, setSpatialCamera } = useEditorStore(
     useShallow((state) => ({
       tracks: state.tracks,
@@ -100,21 +95,14 @@ const MultiVideoPlayer: React.FC<MultiVideoPlayerProps> = ({ onOpenAssets, onOpe
         )}
         {!hasPlayableVideo ? (
           <div className="player-empty-state">
+            <div className="player-empty-kicker">PREVIEW STAGE</div>
             <div className="player-empty-title">主工作台已待命</div>
             <div className="player-empty-subtitle">
               导入素材或交给 AI 导演生成首批分镜后，节目画面会在这里自动接管并进入预览。
             </div>
-            <div className="player-empty-actions">
-              <button type="button" className="player-empty-btn primary" onClick={onOpenAssets}>
-                导入素材
-              </button>
-              <button type="button" className="player-empty-btn" onClick={onOpenDirector}>
-                打开 AI 导演
-              </button>
-            </div>
           </div>
         ) : null}
-        <div className="vfx-layer-overlay"></div>
+        {hasPlayableVideo ? <div className="vfx-layer-overlay"></div> : null}
         <TextOverlay />
       </div>
     </div>

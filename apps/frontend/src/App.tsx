@@ -1064,10 +1064,7 @@ function App() {
           timecodeDisplay={<TimecodeDisplay />}
           previewPlayer={
             <Suspense fallback={<LazyFallback label="预览器加载中..." />}>
-              <MultiVideoPlayer
-                onOpenAssets={openImportFromAnywhere}
-                onOpenDirector={openDirectorFromAnywhere}
-              />
+              <MultiVideoPlayer />
             </Suspense>
           }
           comparisonLab={
@@ -1102,13 +1099,29 @@ function App() {
           className="pro-panel pro-inspector-outer panel-right"
           ref={rightPanelRef}
           data-testid="area-right-panel"
+          data-active-mode={activeMode}
         >
           <div className="panel-title-bar">
-            <span className="inspector-title">属性检查器</span>
+            <div className="inspector-shell-title">
+              <span className="inspector-title">
+                {activeMode === 'color'
+                  ? '实验命令塔'
+                  : activeMode === 'audio'
+                    ? '母带指挥台'
+                    : '属性检查器'}
+              </span>
+              <span className="inspector-shell-subtitle">
+                {activeMode === 'color'
+                  ? 'Lab Context Tower'
+                  : activeMode === 'audio'
+                    ? 'Mastering Context Tower'
+                    : 'Inspector Shell'}
+              </span>
+            </div>
           </div>
           <div className="inspector-scroll">
             <Suspense fallback={<LazyFallback label="属性面板加载中..." />}>
-              <PropertyInspector />
+              <PropertyInspector shellMode={activeMode} />
             </Suspense>
           </div>
         </aside>
@@ -1126,6 +1139,7 @@ function App() {
       ) : null}
 
       <AppTimeline
+        activeMode={activeMode}
         assetCount={assetCount}
         canUndo={pastStates.length > 0}
         canRedo={futureStates.length > 0}

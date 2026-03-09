@@ -808,16 +808,7 @@
 }
 
 .inspector-header::before {
-  content: 'command bar';
-  position: absolute;
-  top: 8px;
-  right: 16px;
-  font-family: var(--ap-font-mono);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--ap-text-dim) 70%, var(--ap-accent) 30%);
+  content: none;
 }
 
 .inspector-tabs {

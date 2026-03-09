@@ -12,19 +12,23 @@ import './ComparisonLab.css'
 const LAB_STAGE_META = {
   compare: {
     index: '01',
-    label: '双通道比对'
+    label: '双通道比对',
+    summary: '同一素材在两路模型上并行播出，先判断差异，再决定是否继续扩展。'
   },
   marketplace: {
     index: '02',
-    label: '策略治理'
+    label: '策略治理',
+    summary: '把路由、预算和策略超市拉进同一块播控台，统一处理治理决策。'
   },
   creative: {
     index: '03',
-    label: '创意闭环'
+    label: '创意闭环',
+    summary: '让提示词、工作流、生成结果和资产复用围绕主引擎形成完整回路。'
   },
   collab: {
     index: '04',
-    label: '协作平台'
+    label: '协作平台',
+    summary: 'Presence、事件流与治理动作汇入一处协作指挥室，形成多人作战闭环。'
   }
 } as const
 
@@ -70,6 +74,15 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
     channelAccessPanelProps
   } = useComparisonLabController({ onOpenAssets, channelPanelRequestNonce })
   const currentStageIndex = LAB_STAGE_ORDER.findIndex((stage) => stage.mode === labMode)
+  const activeStageMeta = LAB_STAGE_META[labMode]
+  const activeStageState =
+    labMode === 'compare'
+      ? '适合快速做模型判断'
+      : labMode === 'marketplace'
+        ? '优先检查路由、预算与策略命中'
+        : labMode === 'creative'
+          ? '把主描述、版本链与工作流拉进一个工位'
+          : '先建立空间，再接入实时频道与治理动作'
   const handleStageKeyDown = (
     event: React.KeyboardEvent<HTMLButtonElement>,
     stageIndex: number
@@ -144,6 +157,29 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
           </div>
         </aside>
         <div className="lab-stage-main">
+          <div className="lab-stage-hero">
+            <div className="lab-stage-hero-copy">
+              <span className="lab-stage-hero-kicker">
+                Stage {activeStageMeta.index} / Editorial Lab Deck
+              </span>
+              <div className="lab-stage-hero-headline">
+                <strong>{activeStageMeta.label}</strong>
+                <span className="lab-stage-hero-chip">实验室在线</span>
+              </div>
+              <p>{activeStageMeta.summary}</p>
+            </div>
+            <div className="lab-stage-hero-status">
+              <div className="lab-stage-hero-card">
+                <span>当前阶段</span>
+                <strong>{activeStageMeta.index}</strong>
+              </div>
+              <div className="lab-stage-hero-card">
+                <span>主目标</span>
+                <strong>{activeStageState}</strong>
+              </div>
+            </div>
+          </div>
+
           <LabToolbar
             labMode={toolbarProps.labMode}
             syncPlayback={toolbarProps.syncPlayback}
