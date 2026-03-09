@@ -157,7 +157,7 @@ describe('docker smoke 脚本辅助逻辑', () => {
 
   it('应暴露系统监控入口标识常量', () => {
     expect(TELEMETRY_ENTRY_MARKERS).toContain('系统监控')
-    expect(TELEMETRY_ENTRY_MARKERS).toContain('ops watch / live audit')
+    expect(TELEMETRY_ENTRY_MARKERS).toContain('系统值守摘要')
     expect(TELEMETRY_ENTRY_MARKERS).toContain('切到系统监控')
   })
 
@@ -168,10 +168,10 @@ describe('docker smoke 脚本辅助逻辑', () => {
     `
     expect(resolveMissingTelemetryEntryMarkers(fullBundle)).toEqual([])
 
-    const splitBundles = ['系统监控 系统监控正在值守', '切到系统监控 ops watch / live audit']
+    const splitBundles = ['系统监控 系统监控正在值守', '切到系统监控 系统值守摘要']
     expect(resolveMissingTelemetryEntryMarkers(splitBundles)).toEqual([])
 
-    const missing = resolveMissingTelemetryEntryMarkers('系统监控 ops watch / live audit')
+    const missing = resolveMissingTelemetryEntryMarkers('系统监控 系统值守摘要')
     expect(missing).toContain('系统监控正在值守')
     expect(missing).toContain('切到系统监控')
   })
