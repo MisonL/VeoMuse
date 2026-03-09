@@ -87,7 +87,7 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
     >
       <div className="creative-section-head">
         <div className="creative-section-copy">
-          <span className="creative-section-kicker">workflow deck</span>
+          <span className="creative-section-kicker">工作流卡组</span>
           <h4>v4 Workflow</h4>
         </div>
         <div className="creative-section-chip">编排器</div>
@@ -181,7 +181,7 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
         </div>
         <aside className="workflow-stage-sidebar">
           <div className="workflow-focus-card">
-            <span className="creative-section-kicker">workflow spotlight</span>
+            <span className="creative-section-kicker">工作流聚焦</span>
             <strong>{selectedWorkflow?.name || '请选择 Workflow'}</strong>
             <span>
               {selectedWorkflow?.description ||

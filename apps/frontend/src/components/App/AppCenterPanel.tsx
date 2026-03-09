@@ -63,7 +63,7 @@ const AppCenterPanel = ({
                 data-testid="area-preview-frame"
                 data-aspect-ratio={previewAspect}
               >
-                <div className="monitor-deck-label">PROGRAM MONITOR</div>
+                <div className="monitor-deck-label">节目监看</div>
                 <div className="monitor-overlay">
                   <div className="monitor-overlay-left">
                     <div className="live-badge">● 实时</div>
@@ -81,7 +81,7 @@ const AppCenterPanel = ({
                   </div>
                 </div>
                 <div className="monitor-cue-strip">
-                  <span className="monitor-cue-pill">PGM-01</span>
+                  <span className="monitor-cue-pill">主监 01</span>
                   <span className="monitor-cue-copy">
                     {isPlaying ? '节目正在播出，转场链路稳定' : '节目待播，控制台已进入预备态'}
                   </span>
@@ -132,18 +132,18 @@ const AppCenterPanel = ({
                   <div className="monitor-ledger">
                     <div className="monitor-ledger-card">
                       <span className="monitor-ledger-label">节目单</span>
-                      <strong>Prime Cut / A-01</strong>
+                      <strong>主编排 / A-01</strong>
                       <small>主编排轨已锁定到节目总线</small>
                     </div>
                     <div className="monitor-ledger-card">
                       <span className="monitor-ledger-label">画幅</span>
                       <strong>{previewAspect}</strong>
-                      <small>{isSpatialPreview ? 'Spatial Bus 在线' : 'Flat Feed 在线'}</small>
+                      <small>{isSpatialPreview ? '空间总线在线' : '平面主画面在线'}</small>
                     </div>
                     <div className="monitor-ledger-card">
                       <span className="monitor-ledger-label">播出态</span>
-                      <strong>{isPlaying ? 'Playing' : 'Cue Ready'}</strong>
-                      <small>{isPlaying ? 'Transport 正在推进' : '等待进入下一段'}</small>
+                      <strong>{isPlaying ? '播出中' : '待切入'}</strong>
+                      <small>{isPlaying ? '播出链路正在推进' : '等待进入下一段'}</small>
                     </div>
                   </div>
                   <div className="monitor-control-band">
@@ -191,16 +191,16 @@ const AppCenterPanel = ({
                   </div>
                   <div className="monitor-readout-cluster">
                     <div className="monitor-readout">
-                      <span className="monitor-readout-label">Feed</span>
-                      <strong>{isSpatialPreview ? '3D BUS' : '2D BUS'}</strong>
+                      <span className="monitor-readout-label">画面总线</span>
+                      <strong>{isSpatialPreview ? '3D 总线' : '2D 总线'}</strong>
                     </div>
                     <div className="monitor-readout">
-                      <span className="monitor-readout-label">Aspect</span>
+                      <span className="monitor-readout-label">画幅比例</span>
                       <strong>{previewAspect}</strong>
                     </div>
                     <div className="monitor-readout">
-                      <span className="monitor-readout-label">Status</span>
-                      <strong>{isPlaying ? 'Rolling' : 'Standby'}</strong>
+                      <span className="monitor-readout-label">当前状态</span>
+                      <strong>{isPlaying ? '播出推进' : '待命'}</strong>
                     </div>
                   </div>
                 </>
@@ -213,7 +213,7 @@ const AppCenterPanel = ({
       ) : (
         <div className="audio-master-state">
           <div className="audio-master-icon">🎚️</div>
-          <div className="audio-master-title">AUDIO MASTER 引擎已就绪</div>
+          <div className="audio-master-title">音频母带引擎已就绪</div>
           <div className="audio-master-actions">
             <button type="button" className="audio-master-btn primary" onClick={onOpenAssets}>
               导入素材开始处理

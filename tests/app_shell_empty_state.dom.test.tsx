@@ -62,7 +62,7 @@ describe('编辑器壳层空态回归', () => {
     expect(view.container.querySelector('.system-telemetry')).toHaveClass('is-idle')
     expect(view.getByText('中心工作区负责给出第一步，时间轴负责承接编排。')).toBeInTheDocument()
     expect(view.getByText('空轨待命')).toBeInTheDocument()
-    expect(view.getByText('节目待命 / Waiting For First Clip')).toBeInTheDocument()
+    expect(view.getByText('节目待命 / 等待首个片段')).toBeInTheDocument()
     expect(view.getByText('主操作区')).toBeInTheDocument()
     expect(
       view.getByText('先把第一批片段送入这里，后续的剪切、编排和导出前整理都会在这里完成。')
@@ -90,7 +90,7 @@ describe('编辑器壳层空态回归', () => {
     expect(view.getByTestId('area-timeline')).toHaveClass(/is-armed/)
     expect(view.container.querySelector('.timeline-priority-band')).toHaveClass('is-armed')
     expect(view.container.querySelector('.system-telemetry')).toHaveClass('is-armed')
-    expect(view.getByText('Run of Show / Prime Cut')).toBeInTheDocument()
+    expect(view.getByText('节目编排 / 主剪版')).toBeInTheDocument()
     expect(view.getByText('播出总线稳定 / 节目轨热更新中')).toBeInTheDocument()
     expect(view.queryByText('空轨待命')).toBeNull()
   })

@@ -47,7 +47,7 @@ const AppTimeline = ({
           <span className="timeline-eyebrow">节目编排</span>
           <span className="timeline-section-title">编辑工具</span>
           <span className="timeline-running-order">
-            {hasTimelineClips ? 'Run of Show / Prime Cut' : '节目待命 / Waiting For First Clip'}
+            {hasTimelineClips ? '节目编排 / 主剪版' : '节目待命 / 等待首个片段'}
           </span>
         </div>
         <div className="timeline-control-surface">
@@ -124,7 +124,7 @@ const AppTimeline = ({
         </div>
         <div className="telemetry-item">
           <span>
-            GPU LOAD: <b className="telemetry-value success">{currentMetrics.gpu}%</b>
+            GPU 负载: <b className="telemetry-value success">{currentMetrics.gpu}%</b>
           </span>
           <div className="telemetry-sparkline">
             {telemetryHistory.map((value, index) => (
@@ -137,10 +137,10 @@ const AppTimeline = ({
           </div>
         </div>
         <div className="telemetry-item telemetry-divider">
-          RAM: <span className="telemetry-value success">{currentMetrics.ram}</span>
+          内存: <span className="telemetry-value success">{currentMetrics.ram}</span>
         </div>
         <div className="telemetry-item telemetry-divider">
-          CACHE: <span className="telemetry-value accent">{currentMetrics.cache}</span>
+          缓存: <span className="telemetry-value accent">{currentMetrics.cache}</span>
         </div>
       </div>
     </div>

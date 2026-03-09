@@ -315,7 +315,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
       <div className="video-generation-hero-head">
         <div className="video-generation-section-head">
           <div className="creative-section-copy">
-            <span className="creative-section-kicker">generation engine</span>
+            <span className="creative-section-kicker">生成引擎</span>
             <h4>统一视频生成工作台</h4>
           </div>
           <div className="creative-section-chip">主引擎</div>
@@ -344,7 +344,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
       <div className="video-generation-command-bar">
         <div className="video-generation-prompt-stage">
           <div className="video-generation-stage-lead">
-            <span className="creative-section-kicker">dispatch lane</span>
+            <span className="creative-section-kicker">分发通道</span>
             <strong>先完成主描述，再进入队列与结果调度。</strong>
             <span>{dispatchLeadText}</span>
           </div>
