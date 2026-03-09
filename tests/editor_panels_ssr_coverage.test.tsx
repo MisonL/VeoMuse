@@ -45,7 +45,7 @@ describe('编辑器聚合面板 SSR 覆盖补强', () => {
   it('TelemetryDashboard 默认应渲染治理与数据库区块', () => {
     const html = renderToString(createElement(TelemetryDashboard))
     expect(html).toContain('播放 FPS 稳定性')
-    expect(html).toContain('暂无 SLO 数据')
+    expect(html).toContain('等待管理员令牌后载入 SLO 数据')
     expect(html).toContain('project-governance-card')
     expect(html).toContain('数据库自愈中心')
     expect(html).toContain('总控链路')

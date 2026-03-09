@@ -121,7 +121,7 @@ describe('V4 实验室前端闭环对齐', () => {
 
     expect(collabPanel).toContain('运维工具')
     expect(telemetryDashboard).toContain('输入管理员令牌（x-admin-token）')
-    expect(telemetryDashboard).toContain('暂无 SLO 数据，请先保存管理员令牌')
+    expect(telemetryDashboard).toContain('等待管理员令牌后载入 SLO 数据')
     expect(collabPanel).toContain('placeholder="用于 x-admin-token 请求头，可持久化"')
   })
 
