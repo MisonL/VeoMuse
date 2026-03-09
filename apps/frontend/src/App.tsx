@@ -743,7 +743,10 @@ function App() {
       const availableHeight = Math.max(0, host.clientHeight - verticalPadding)
       const previewRatio =
         PREVIEW_ASPECT_RATIO_MAP[previewAspect] || PREVIEW_ASPECT_RATIO_MAP['16:9']
-      const fit = calcAspectFit(availableWidth, availableHeight, previewRatio)
+      const minimumPreviewHeight = Math.min(224, availableWidth / previewRatio)
+      const effectiveHeight =
+        availableHeight > 120 ? availableHeight : Math.max(availableHeight, minimumPreviewHeight)
+      const fit = calcAspectFit(availableWidth, effectiveHeight, previewRatio)
       setPreviewFrameSize((prev) =>
         prev.width === fit.width && prev.height === fit.height ? prev : fit
       )
