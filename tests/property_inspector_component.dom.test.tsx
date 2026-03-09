@@ -91,13 +91,18 @@ describe('PropertyInspector DOM 交互', () => {
     ).toBeGreaterThan(0)
   })
 
+  it('系统监控切换按钮的可访问名称应包含可见文本', () => {
+    const view = render(<PropertyInspector shellMode="edit" />)
+    expect(view.getByRole('button', { name: /系统监控\s*监控摘要/ })).toBeInTheDocument()
+  })
+
   it('应支持在属性页与监控页之间切换', () => {
     const view = render(<PropertyInspector shellMode="edit" />)
     expect(view.container.querySelector('.pro-inspector-inner')).toHaveAttribute(
       'data-active-tab',
       'properties'
     )
-    fireEvent.click(view.getByRole('button', { name: '系统监控' }))
+    fireEvent.click(view.getByRole('button', { name: /系统监控\s*监控摘要/ }))
     expect(view.container.querySelector('.pro-inspector-inner')).toHaveAttribute(
       'data-active-tab',
       'lab'

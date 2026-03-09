@@ -20,7 +20,7 @@ import { useEditorStore } from './store/editorStore'
 import { useToastStore } from './store/toastStore'
 import { useAdminMetricsPolling, useAdminMetricsStore } from './store/adminMetricsStore'
 import { useJourneyTelemetryStore } from './store/journeyTelemetryStore'
-import { useLayoutStore } from './store/layoutStore'
+import { LAYOUT_LIMITS, useLayoutStore } from './store/layoutStore'
 import { useThemeSync } from './hooks/useThemeSync'
 import { buildAuthHeaders, resolveApiBase } from './utils/eden'
 import { classifyRequestError } from './utils/requestError'
@@ -1022,7 +1022,7 @@ function App() {
         onExport={handleExport}
       />
 
-      <div className="os-main main-layout" ref={mainLayoutRef} data-testid="area-main-layout">
+      <main className="os-main main-layout" ref={mainLayoutRef} data-testid="area-main-layout">
         <aside className="pro-panel panel-left" ref={leftPanelRef} data-testid="area-left-panel">
           <div className="panel-title-bar">
             <div className="sidebar-tabs">
@@ -1074,6 +1074,10 @@ function App() {
             hint="拖动调整左侧功能区宽度"
             guideKey="left-resize-handle"
             testId="handle-left-panel"
+            valueNow={leftPanelPx}
+            valueMin={LAYOUT_LIMITS.leftPanelPx.min}
+            valueMax={LAYOUT_LIMITS.leftPanelPx.max}
+            valueText={`左侧功能区宽度 ${Math.round(leftPanelPx)} 像素`}
             onDrag={handleLeftPanelResize}
           />
         ) : null}
@@ -1127,6 +1131,10 @@ function App() {
             ariaLabel="调整右侧功能区宽度"
             hint="拖动调整右侧功能区宽度"
             testId="handle-right-panel"
+            valueNow={rightPanelPx}
+            valueMin={LAYOUT_LIMITS.rightPanelPx.min}
+            valueMax={LAYOUT_LIMITS.rightPanelPx.max}
+            valueText={`右侧功能区宽度 ${Math.round(rightPanelPx)} 像素`}
             onDrag={handleRightPanelResize}
           />
         ) : null}
@@ -1168,7 +1176,7 @@ function App() {
             </Suspense>
           </div>
         </aside>
-      </div>
+      </main>
 
       {isDesktopLayout ? (
         <ResizeHandle
@@ -1177,6 +1185,10 @@ function App() {
           ariaLabel="调整时间轴高度"
           hint="拖动调整时间轴高度"
           testId="handle-timeline"
+          valueNow={timelinePx}
+          valueMin={LAYOUT_LIMITS.timelinePx.min}
+          valueMax={LAYOUT_LIMITS.timelinePx.max}
+          valueText={`时间轴高度 ${Math.round(timelinePx)} 像素`}
           onDrag={handleTimelineResize}
         />
       ) : null}

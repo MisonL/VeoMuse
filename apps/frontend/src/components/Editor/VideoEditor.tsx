@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Timeline } from '@xzdarcy/react-timeline-editor'
 import type { TimelineAction, TimelineRow } from '@xzdarcy/timeline-engine'
 import '@xzdarcy/react-timeline-editor/dist/react-timeline-editor.css'
@@ -69,6 +69,7 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
     }))
   )
   const [containerRef, { width }] = useMeasure<HTMLDivElement>()
+  const timelineWrapperRef = useRef<HTMLDivElement | null>(null)
   const isReady = width > 0
   const [snapLine, setSnapLine] = useState<{ visible: boolean; time: number }>({
     visible: false,
@@ -78,6 +79,14 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
   const rafRef = useRef<number | null>(null)
   const lastTimeRef = useRef<number>(0)
   const snapResetTimerRef = useRef<number | null>(null)
+
+  const setTimelineWrapperRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      containerRef(node)
+      timelineWrapperRef.current = node
+    },
+    [containerRef]
+  )
 
   const shortcutMap = useMemo(
     () => ({
@@ -152,6 +161,57 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
     syncController.setPerformanceBudget(budget)
   }, [totalClipCount])
 
+  useEffect(() => {
+    if (!isReady || typeof MutationObserver === 'undefined') return
+
+    const timelineWrapper = timelineWrapperRef.current
+    if (!(timelineWrapper instanceof HTMLElement)) return
+
+    const sanitizeTimelineAccessibility = () => {
+      timelineWrapper
+        .querySelectorAll('.ReactVirtualized__Grid__innerScrollContainer[role="row"]')
+        .forEach((node) => {
+          if (node.getAttribute('role') !== 'presentation') {
+            node.setAttribute('role', 'presentation')
+          }
+        })
+
+      timelineWrapper
+        .querySelectorAll('.timeline-editor-time-area .ReactVirtualized__Grid')
+        .forEach((node) => {
+          if (node.hasAttribute('role')) node.removeAttribute('role')
+          if (node.getAttribute('aria-label') !== '时间刻度') {
+            node.setAttribute('aria-label', '时间刻度')
+          }
+          if (node.hasAttribute('aria-readonly')) node.removeAttribute('aria-readonly')
+          if (node.getAttribute('tabindex') !== '0') node.setAttribute('tabindex', '0')
+        })
+
+      timelineWrapper
+        .querySelectorAll('.timeline-editor-time-area .timeline-editor-time-unit')
+        .forEach((node) => {
+          if (node.getAttribute('role') !== 'presentation') {
+            node.setAttribute('role', 'presentation')
+          }
+        })
+    }
+
+    sanitizeTimelineAccessibility()
+
+    const observer = new MutationObserver(() => {
+      sanitizeTimelineAccessibility()
+    })
+
+    observer.observe(timelineWrapper, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['role']
+    })
+
+    return () => observer.disconnect()
+  }, [isReady, width, totalClipCount])
+
   const enableVirtualization = shouldEnableTimelineVirtualization(totalClipCount, duration)
   const { windowStart, windowEnd } = getTimelineVirtualWindow(currentTime, duration)
 
@@ -176,7 +236,7 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
 
       <div
         className="timeline-wrapper"
-        ref={containerRef}
+        ref={setTimelineWrapperRef}
         style={{ cursor: activeTool === 'cut' ? 'crosshair' : 'default' }}
       >
         {isReady && (

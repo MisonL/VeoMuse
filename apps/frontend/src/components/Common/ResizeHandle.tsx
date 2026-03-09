@@ -9,6 +9,10 @@ interface ResizeHandleProps {
   testId?: string
   className?: string
   disabled?: boolean
+  valueNow?: number
+  valueMin?: number
+  valueMax?: number
+  valueText?: string
 }
 
 const ResizeHandle: React.FC<ResizeHandleProps> = ({
@@ -19,7 +23,11 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
   guideKey,
   testId,
   className,
-  disabled = false
+  disabled = false,
+  valueNow,
+  valueMin,
+  valueMax,
+  valueText
 }) => {
   const pointerIdRef = useRef<number | null>(null)
   const lastOffsetRef = useRef(0)
@@ -79,6 +87,10 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
       role="separator"
       aria-label={ariaLabel}
       aria-orientation={axis === 'x' ? 'vertical' : 'horizontal'}
+      aria-valuenow={typeof valueNow === 'number' ? Math.round(valueNow) : undefined}
+      aria-valuemin={typeof valueMin === 'number' ? Math.round(valueMin) : undefined}
+      aria-valuemax={typeof valueMax === 'number' ? Math.round(valueMax) : undefined}
+      aria-valuetext={valueText}
       data-hint={hint || ariaLabel}
       data-guide={guideKey}
       data-testid={testId}

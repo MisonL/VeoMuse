@@ -561,7 +561,6 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
           </button>
           <button
             type="button"
-            aria-label="系统监控"
             aria-pressed={activeTab === 'lab'}
             className={activeTab === 'lab' ? 'active' : ''}
             onClick={() => setActiveTab('lab')}

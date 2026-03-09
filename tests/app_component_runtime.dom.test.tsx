@@ -43,6 +43,10 @@ describe('App 运行态关键分支（DOM/SSR）', () => {
     expect(html).toContain('data-testid="btn-mode-audio"')
     expect(html).toContain('data-testid="btn-export"')
     expect(html).toContain('data-testid="area-timeline"')
+    expect(html).toContain('<main')
+    expect(html).toContain('aria-valuenow="336"')
+    expect(html).toContain('aria-valuenow="292"')
+    expect(html).toContain('aria-valuenow="352"')
   })
 
   it('导出流程文案分支应可稳定命中', () => {

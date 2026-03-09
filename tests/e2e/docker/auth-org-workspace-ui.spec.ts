@@ -57,7 +57,10 @@ test('Docker UI smoke 应串通注册、工作区创建与关键值守入口', a
   await expect(page.getByTestId('area-creative-shell')).toBeVisible()
   await expect(page.getByText('创意闭环引擎')).toBeVisible()
 
-  await page.getByRole('button', { name: '系统监控', exact: true }).click()
+  await page
+    .getByTestId('area-right-panel')
+    .getByRole('button', { name: /^系统监控\s*(监控摘要|实验监控摘要|母带监控摘要)$/ })
+    .click()
   await expect(page.getByText('实验值守摘要')).toBeVisible()
   await expect(page.locator('.telemetry-watch-brief-card')).toHaveCount(4)
 
