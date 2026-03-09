@@ -47,7 +47,7 @@ test('可完成导演生成并导出（稳定桩）', async ({ page, request }) 
 
   await expect(page.locator('.scene-title')).toContainText('镜头 1')
 
-  await page.getByTestId('area-left-panel').getByRole('button', { name: '媒体资源' }).click()
+  await page.getByTestId('area-left-panel').getByRole('button', { name: '素材库' }).click()
   await page.locator('input[name="assetUploadFiles"]').setInputFiles(fixtureFile)
   await expect(page.locator('.asset-tile')).toHaveCount(1, { timeout: 15000 })
   await page.locator('.asset-tile .tile-actions button').first().click()
