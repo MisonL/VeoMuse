@@ -52,8 +52,8 @@ export const LAB_ENTRY_MARKERS = [
 ] as const
 export const TELEMETRY_ENTRY_MARKERS = [
   '系统监控',
-  '系统值守摘要',
-  '系统监控正在值守',
+  '系统监控摘要',
+  '展开系统监控',
   '切到系统监控'
 ] as const
 
