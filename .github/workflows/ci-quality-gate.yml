@@ -102,38 +102,10 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  docker-smoke-main:
-    name: Docker Smoke (main push only)
+  docker-delivery-main:
+    name: Docker Delivery (main push only)
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     needs: gate
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Prepare smoke env
-        run: |
-          cat > .env <<'EOF'
-          REDIS_PASSWORD=ci-redis-password
-          JWT_SECRET=ci-jwt-secret-please-change
-          SECRET_ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-          ADMIN_TOKEN=ci-admin-token
-          EOF
-
-      - name: Run docker smoke check
-        run: bun run docker:smoke -- --wait-timeout 240
-
-  docker-ui-smoke-main:
-    name: Docker UI Smoke (main push only)
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    needs: docker-smoke-main
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

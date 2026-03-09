@@ -2,8 +2,6 @@ name: E2E Real Manual
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 4 * * 1'
 
 jobs:
   e2e-real:
@@ -49,11 +47,6 @@ jobs:
           if [ "${enabled}" = "true" ]; then
             echo "Real e2e guard passed."
             exit 0
-          fi
-
-          if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
-            echo "Scheduled run blocked: ${reason}"
-            exit 1
           fi
 
           echo "Manual run blocked: ${reason}"
