@@ -185,7 +185,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
       </div>
       <div className={`collab-watch-spotlight collab-watch-spotlight--${watchTone}`}>
         <div className="collab-watch-spotlight-copy">
-          <span className="collab-advanced-group-kicker">on-call layer</span>
+          <span className="collab-advanced-group-kicker">值班总览</span>
           <strong>{watchboardMessage}</strong>
           <span>告警、错误预算和演练结果会在这一层聚合，适合作为发布前最后一道值班视图。</span>
         </div>
@@ -222,7 +222,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
       ) : null}
       <div className="collab-workflow-cluster collab-workflow-cluster--alerts">
         <div className="collab-workflow-cluster-head">
-          <span className="collab-section-kicker">alert lane</span>
+          <span className="collab-section-kicker">告警通道</span>
           <strong>告警值班</strong>
           <span>优先处理开放告警与 ACK 动作，再决定是否进入预算和回滚流程。</span>
         </div>
@@ -237,9 +237,9 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
               }
             >
               <option value="all">全部</option>
-              <option value="info">info</option>
-              <option value="warning">warning</option>
-              <option value="critical">critical</option>
+              <option value="info">信息</option>
+              <option value="warning">警告</option>
+              <option value="critical">严重</option>
             </select>
           </label>
           <label className="lab-field">
@@ -254,8 +254,8 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
               }
             >
               <option value="all">全部</option>
-              <option value="open">open</option>
-              <option value="acknowledged">acknowledged</option>
+              <option value="open">未确认</option>
+              <option value="acknowledged">已确认</option>
             </select>
           </label>
           <label className="lab-field">
@@ -316,7 +316,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
 
       <div className="collab-workflow-cluster collab-workflow-cluster--budget">
         <div className="collab-workflow-cluster-head">
-          <span className="collab-section-kicker">budget rail</span>
+          <span className="collab-section-kicker">预算轨道</span>
           <strong>错误预算</strong>
           <span>用预算余量、BurnRate 和冻结策略决定发布是否继续推进。</span>
         </div>
@@ -339,7 +339,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
             />
           </label>
           <label className="lab-field">
-            <span>targetSlo</span>
+            <span>目标 SLO</span>
             <input
               type="number"
               min={0.5}
@@ -352,7 +352,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
             />
           </label>
           <label className="lab-field">
-            <span>windowDays</span>
+            <span>统计窗口（天）</span>
             <input
               type="number"
               min={1}
@@ -365,7 +365,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
         </div>
         <div className="lab-inline-fields">
           <label className="lab-field">
-            <span>warningRatio</span>
+            <span>预警阈值</span>
             <input
               type="number"
               min={0}
@@ -378,7 +378,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
             />
           </label>
           <label className="lab-field">
-            <span>alertRatio</span>
+            <span>告警阈值</span>
             <input
               type="number"
               min={0}
@@ -422,7 +422,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
 
       <div className="collab-workflow-cluster collab-workflow-cluster--rollback">
         <div className="collab-workflow-cluster-head">
-          <span className="collab-section-kicker">rollback drill</span>
+          <span className="collab-section-kicker">回滚演练</span>
           <strong>回滚演练</strong>
           <span>把触发条件、计划和结果独立成一条守门流程，避免与告警表单混读。</span>
         </div>
@@ -433,7 +433,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
         </div>
         <div className="lab-inline-fields">
           <label className="lab-field">
-            <span>policyId</span>
+            <span>策略 ID</span>
             <input
               name="v4RollbackPolicyId"
               value={rollbackPolicyId}
@@ -442,7 +442,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
             />
           </label>
           <label className="lab-field">
-            <span>environment</span>
+            <span>演练环境</span>
             <input
               name="v4RollbackEnvironment"
               value={rollbackEnvironment}
@@ -451,7 +451,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
             />
           </label>
           <label className="lab-field">
-            <span>triggerType</span>
+            <span>触发类型</span>
             <input
               name="v4RollbackTriggerType"
               value={rollbackTriggerType}
@@ -461,7 +461,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
           </label>
         </div>
         <label className="lab-field">
-          <span>summary</span>
+          <span>演练摘要</span>
           <input
             name="v4RollbackSummary"
             value={rollbackSummary}
@@ -471,7 +471,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
         </label>
         <div className="lab-inline-fields">
           <label className="lab-field">
-            <span>plan(JSON)</span>
+            <span>计划（JSON）</span>
             <textarea
               name="v4RollbackPlan"
               value={rollbackPlan}
@@ -480,7 +480,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
             />
           </label>
           <label className="lab-field">
-            <span>result(JSON)</span>
+            <span>结果（JSON）</span>
             <textarea
               name="v4RollbackResult"
               value={rollbackResult}

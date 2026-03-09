@@ -38,7 +38,7 @@ const LAB_STAGE_ORDER = [
 const LAB_STAGE_STATUS_LABEL = {
   current: '当前阶段',
   completed: '已完成阶段',
-  available: '待接入'
+  available: '可切换阶段'
 } as const
 
 const resolveStageStatus = (stageIndex: number, currentStageIndex: number) => {
@@ -141,7 +141,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
                           ? '当前'
                           : status === 'completed'
                             ? '已完成'
-                            : '待接入'}
+                            : '可切换'}
                       </span>
                     </span>
                     <span className="lab-stage-marker-state">{LAB_STAGE_STATUS_LABEL[status]}</span>

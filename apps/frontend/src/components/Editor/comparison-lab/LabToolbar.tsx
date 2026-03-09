@@ -20,11 +20,11 @@ const MODE_META: Record<LabMode, { status: string; actionHint: string }> = {
     actionHint: '先看路由和预算，再决定这轮策略是否接入。'
   },
   creative: {
-    status: '创意流程待接入',
+    status: '创意流程已就绪',
     actionHint: '主引擎、工作流和资产复用会围绕同一工作区展开。'
   },
   collab: {
-    status: '协作流程待接入',
+    status: '协作流程已就绪',
     actionHint: '成员、事件与治理动作会围绕同一条协作链路展开。'
   }
 }

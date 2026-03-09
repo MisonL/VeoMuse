@@ -31,26 +31,26 @@ const WATCH_COPY: Record<
   edit: {
     summaryKicker: '系统值守摘要',
     summaryTitle: '右席值守保持在线',
-    summarySubtitle: '先看摘要，再决定是否展开总控看板。',
-    fullKicker: '全局态势监测',
-    fullTitle: '总控看板',
-    fullSubtitle: '性能、Provider、治理与数据库自愈动作统一收进中央值守台。'
+    summarySubtitle: '先看摘要，再决定是否展开中央监控。',
+    fullKicker: '中央监控总览',
+    fullTitle: '系统监控总控',
+    fullSubtitle: '性能、Provider、治理与数据库自愈动作统一收进中央监控台。'
   },
   color: {
     summaryKicker: '实验值守摘要',
     summaryTitle: '实验总线值守在线',
-    summarySubtitle: '右栏只保留高价值摘要，深入排障切到中央总控。',
-    fullKicker: '实验总控看板',
-    fullTitle: '全幅系统值守',
-    fullSubtitle: '把 Provider 健康、实验告警、治理信号和数据库动作集中到中央值守台。'
+    summarySubtitle: '右栏只保留高价值摘要，深入排障切到中央监控。',
+    fullKicker: '实验中央监控',
+    fullTitle: '系统监控总控',
+    fullSubtitle: '把 Provider 健康、实验告警、治理信号和数据库动作集中到中央监控台。'
   },
   audio: {
     summaryKicker: '母带值守摘要',
     summaryTitle: '母带监控保持待命',
-    summarySubtitle: '交付前校验与输入健康先看摘要，需要时再展开总控。',
-    fullKicker: '母带总控看板',
+    summarySubtitle: '交付前校验与输入健康先看摘要，需要时再展开中央监控。',
+    fullKicker: '母带中央监控',
     fullTitle: '交付值守总控',
-    fullSubtitle: '输入健康、Provider 状态与治理动作统一进入中央值守席。'
+    fullSubtitle: '输入健康、Provider 状态与治理动作统一进入中央监控席。'
   }
 }
 
@@ -69,8 +69,8 @@ const resolveSummaryStatus = ({
   hasSloSummary: boolean
   hasSloError: boolean
 }) => {
-  const metricsStatus = hasMetricsError ? '指标异常' : hasMetrics ? '指标在线' : '待接入'
-  const providerStatus = providerCount > 0 ? `${providerCount} 路在线` : '待接入'
+  const metricsStatus = hasMetricsError ? '指标异常' : hasMetrics ? '指标在线' : '待命'
+  const providerStatus = providerCount > 0 ? `${providerCount} 路在线` : '待命'
   const sloStatus = hasSloError ? 'SLO 异常' : hasSloSummary ? 'SLO 就绪' : '待令牌'
   const watchStatus = incidentCount > 0 ? `${incidentCount} 条异常待复核` : '总线稳定'
 
@@ -152,7 +152,7 @@ const TelemetryDashboard: React.FC<TelemetryDashboardProps> = ({
 
         <div className="telemetry-watch-brief-actions">
           <button type="button" className="telemetry-watch-action primary" onClick={onOpenStage}>
-            进入全幅值守
+            展开系统监控
           </button>
           <button
             type="button"
@@ -180,7 +180,7 @@ const TelemetryDashboard: React.FC<TelemetryDashboardProps> = ({
             <strong>{incidentCount > 0 ? '待复核' : '稳定'}</strong>
           </div>
           <button type="button" className="telemetry-watch-action" onClick={onReturnToStage}>
-            返回实验舞台
+            返回监控摘要
           </button>
         </div>
       </header>
@@ -191,7 +191,7 @@ const TelemetryDashboard: React.FC<TelemetryDashboardProps> = ({
       >
         <header className={`telemetry-command-bar ${commandBarModel.tone}`}>
           <div className="telemetry-command-copy">
-            <span className="telemetry-command-kicker">全局态势 / 中央值守</span>
+            <span className="telemetry-command-kicker">全局态势 / 中央监控</span>
             <strong>{commandBarModel.headline}</strong>
             <p>{commandBarModel.subtitle}</p>
           </div>

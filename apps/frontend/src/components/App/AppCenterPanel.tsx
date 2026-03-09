@@ -254,7 +254,7 @@ const AppCenterPanel = ({
             <div className="audio-master-status-tower">
               <div className="audio-master-status-card">
                 <span>输入源</span>
-                <strong>待接入</strong>
+                <strong>待导入</strong>
               </div>
               <div className="audio-master-status-card">
                 <span>母带总线</span>

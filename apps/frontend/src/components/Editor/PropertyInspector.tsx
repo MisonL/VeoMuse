@@ -375,7 +375,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
       {
         label: '当前工位',
         value: activeTab === 'lab' ? '实验值守' : '实验总控',
-        note: activeTab === 'lab' ? shellMeta.labStatus : '四个阶段待接入',
+        note: activeTab === 'lab' ? shellMeta.labStatus : '四个阶段已可切换',
         tone: activeTab === 'lab' ? 'signal' : 'accent'
       },
       {
@@ -400,7 +400,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
     audio: [
       {
         label: '输入源',
-        value: '待接入',
+        value: '待导入',
         note: '导入素材后建立母带会话',
         tone: 'muted'
       },
@@ -637,7 +637,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                 <strong>{shellMeta.labTitle}</strong>
                 <span>
                   {labSurface === 'watch'
-                    ? '中央值守台已经展开，右席只保留回到实验舞台与状态提示。'
+                    ? '中央监控台已经展开，右席只保留摘要与状态提示。'
                     : shellMeta.labSubtitle}
                 </span>
               </div>
@@ -652,20 +652,20 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
               {labSurface === 'watch' ? (
                 <div className="inspector-lab-stage-bridge">
                   <div className="inspector-lab-stage-bridge-copy">
-                    <span className="inspector-lab-stage-bridge-kicker">中央值守已展开</span>
-                    <strong>当前视图已切到系统监控</strong>
-                    <p>右侧保留值守席，中央舞台正在承接完整监控、治理与数据库动作。</p>
+                    <span className="inspector-lab-stage-bridge-kicker">中央监控已展开</span>
+                    <strong>当前视图已切到系统监控总控</strong>
+                    <p>右侧保留摘要席，中央舞台正在承接完整监控、治理与数据库动作。</p>
                   </div>
                   <div className="inspector-lab-stage-bridge-actions">
                     <button type="button" className="pro-master-btn" onClick={onReturnToLabStage}>
-                      返回实验舞台
+                      返回监控摘要
                     </button>
                     <button
                       type="button"
                       className="inspector-secondary-btn"
                       onClick={onOpenWatchStage}
                     >
-                      保持中央值守
+                      保持监控展开
                     </button>
                   </div>
                 </div>
@@ -707,7 +707,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
           <div className="pro-inspector-content">
             <section className="inspector-section inspector-section--hero">
               <div className="inspector-panel-heading">
-                <span className="inspector-panel-kicker">active cue</span>
+                <span className="inspector-panel-kicker">当前片段</span>
                 <strong>主控面板已接管当前片段</strong>
                 <p>{resolveClipStationSummary(current, currentTrack?.name || null)}</p>
               </div>
@@ -771,7 +771,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             {current.type === 'video' && (
               <section className="inspector-section inspector-section--support">
                 <div className="inspector-panel-heading inspector-panel-heading--compact">
-                  <span className="inspector-panel-kicker">style and fx bus</span>
+                  <span className="inspector-panel-kicker">风格与特效</span>
                   <strong>风格与特效总线</strong>
                   <p>把风格路由、渲染模型和神经特效集中到一个值守面板里，避免平铺切换。</p>
                 </div>

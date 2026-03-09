@@ -1141,9 +1141,7 @@ function App() {
             <div className="inspector-shell-title">
               <span className="inspector-title">
                 {activeMode === 'color'
-                  ? labSurface === 'watch'
-                    ? '系统总览'
-                    : '实验摘要'
+                  ? '系统监控'
                   : activeMode === 'audio'
                     ? '母带总览'
                     : '属性面板'}
@@ -1151,8 +1149,8 @@ function App() {
               <span className="inspector-shell-subtitle">
                 {activeMode === 'color'
                   ? labSurface === 'watch'
-                    ? '全幅值守 / 运行总览'
-                    : '实验面板 / 右侧摘要'
+                    ? '中央监控 / 全幅值守'
+                    : '右席摘要 / 系统监控'
                   : activeMode === 'audio'
                     ? '音频上下文 / 交付校验'
                     : '片段工位 / 当前上下文'}

@@ -285,7 +285,7 @@ test('右侧系统监控面板应展示关键区块与值守动作', async ({ pa
   await expect(page.getByText('系统值守摘要')).toBeVisible()
   await expect(page.locator('.telemetry-watch-brief-card')).toHaveCount(4)
 
-  await page.getByRole('button', { name: '进入全幅值守', exact: true }).click()
+  await page.getByRole('button', { name: '展开系统监控', exact: true }).click()
 
   const telemetryDashboard = page.locator('.telemetry-dashboard')
   await expect(telemetryDashboard).toBeVisible()
