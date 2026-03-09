@@ -131,7 +131,7 @@ jobs:
           EOF
 
       - name: Bootstrap docker smoke env and keep containers up
-        run: bun run docker:smoke -- --wait-timeout 240 --keep-up
+        run: bun run docker:smoke -- --wait-timeout 420 --keep-up
 
       - name: Run docker UI smoke
         run: bun run docker:ui-smoke

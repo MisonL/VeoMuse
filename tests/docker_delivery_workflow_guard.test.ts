@@ -20,7 +20,7 @@ describe('docker 交付 workflow 守卫', () => {
       "if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}"
     )
     expect(workflow).toContain('bunx playwright install --with-deps chromium')
-    expect(workflow).toContain('bun run docker:smoke -- --wait-timeout 240 --keep-up')
+    expect(workflow).toContain('bun run docker:smoke -- --wait-timeout 420 --keep-up')
     expect(workflow).toContain('run: bun run docker:ui-smoke')
     expect(workflow).toContain('docker-ui-smoke-artifacts')
     expect(workflow).toContain('test-results/playwright-docker/')

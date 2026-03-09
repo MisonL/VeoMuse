@@ -158,7 +158,7 @@ describe('docker smoke 脚本辅助逻辑', () => {
   it('应暴露系统监控入口标识常量', () => {
     expect(TELEMETRY_ENTRY_MARKERS).toContain('系统监控')
     expect(TELEMETRY_ENTRY_MARKERS).toContain('ops watch / live audit')
-    expect(TELEMETRY_ENTRY_MARKERS).toContain('系统监控与当前创作工位并行值守')
+    expect(TELEMETRY_ENTRY_MARKERS).toContain('切到系统监控')
   })
 
   it('应识别系统监控入口标识缺失与 split bundle 拼接通过', () => {
@@ -170,13 +170,13 @@ describe('docker smoke 脚本辅助逻辑', () => {
 
     const splitBundles = [
       '系统监控 系统监控正在值守',
-      '系统监控与当前创作工位并行值守 ops watch / live audit'
+      '切到系统监控 ops watch / live audit'
     ]
     expect(resolveMissingTelemetryEntryMarkers(splitBundles)).toEqual([])
 
     const missing = resolveMissingTelemetryEntryMarkers('系统监控 ops watch / live audit')
     expect(missing).toContain('系统监控正在值守')
-    expect(missing).toContain('系统监控与当前创作工位并行值守')
+    expect(missing).toContain('切到系统监控')
   })
 
   it('应从入口脚本中递归识别拆包 JS 依赖', () => {
