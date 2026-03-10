@@ -5,14 +5,14 @@ describe('ThemeStore 状态管理验证 (Phase 2)', () => {
   beforeEach(() => {
     // 每次测试前重置 Store 状态 (由于 Zustand persist 可能影响测试，需手动重置)
     useThemeStore.setState({
-      mode: 'light',
+      mode: 'dark',
       customPalette: {}
     })
   })
 
   it('Store 应能正确初始化默认状态', () => {
     const state = useThemeStore.getState()
-    expect(state.mode).toBe('light')
+    expect(state.mode).toBe('dark')
     expect(state.customPalette).toEqual({})
   })
 

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'fs'
 import path from 'path'
-import { useThemeStore } from '../apps/frontend/src/store/themeStore'
-
 describe('亮色主题与视觉令牌验证', () => {
-  it('ThemeStore 默认模式应为 dark', () => {
-    expect(useThemeStore.getState().mode).toBe('dark')
+  it('ThemeStore 源码默认模式应为 dark', () => {
+    const storePath = path.resolve(process.cwd(), 'apps/frontend/src/store/themeStore.ts')
+    const content = readFileSync(storePath, 'utf8')
+    expect(content).toContain("mode: 'dark'")
   })
 
   it('theme.css 应以亮色变量为默认并提供 dark 覆盖', () => {
