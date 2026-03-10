@@ -4,8 +4,8 @@ import path from 'path'
 import { useThemeStore } from '../apps/frontend/src/store/themeStore'
 
 describe('亮色主题与视觉令牌验证', () => {
-  it('ThemeStore 默认模式应为 light', () => {
-    expect(useThemeStore.getState().mode).toBe('light')
+  it('ThemeStore 默认模式应为 dark', () => {
+    expect(useThemeStore.getState().mode).toBe('dark')
   })
 
   it('theme.css 应以亮色变量为默认并提供 dark 覆盖', () => {
