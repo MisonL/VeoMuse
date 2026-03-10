@@ -146,12 +146,12 @@ const AppTimeline = ({
             sectionTitle: '音频工位',
             runningOrder: '音频大师 / 母带待命',
             priorityPill: '母带主轴',
-            priorityCopy: '上方工作区负责导入、旁白与母带编排，下方保留状态、输入待机与节奏摘要。',
+            priorityCopy: '上方负责导入与母带编排，下方保留输入、总线和节奏摘要。',
             telemetryLabel: '母带状态',
             telemetryCopy: '母带链路待命 / 旁白、音乐与响度流程可随时接入',
             emptyTitle: '音频轨待命',
-            emptyLead: '上方母带舞台负责推进导入与调度，下方承接输入健康、总线状态与交付摘要。',
-            emptySummary: '素材接入后，这里会承接母带流程、输入状态和导出前检查。',
+            emptyLead: '上方负责导入与调度，下方承接输入、总线与交付摘要。',
+            emptySummary: '素材接入后，这里接管母带流程与交付前检查。',
             emptyTrackStatus: '母带摘要待命',
             emptyFocus: '导入 / 母带'
           }
@@ -161,15 +161,15 @@ const AppTimeline = ({
             runningOrder: hasTimelineClips ? '节目编排 / 主剪版' : '节目待命 / 等待首个片段',
             priorityPill: '主操作区',
             priorityCopy: hasTimelineClips
-              ? '继续在这里完成剪切、对齐与回退，节目轨会优先承接你的操作。'
-              : '先把第一批片段送入这里，后续的剪切、编排和导出前整理都会在这里完成。',
+              ? '继续在这里完成剪切、对齐与回退，节目轨优先承接当前操作。'
+              : '先让首批片段入轨。剪切、编排与导出前整理都在这里完成。',
             telemetryLabel: '系统状态',
             telemetryCopy: hasTimelineClips
               ? '播出总线稳定 / 节目轨热更新中'
               : `时间轴待命 / 素材库 ${assetCount} 项，等待首个片段入轨`,
             emptyTitle: '轨道待命',
-            emptyLead: '中心工作区负责给出第一步，时间轴负责承接编排。',
-            emptySummary: '素材入轨后，这里会接管节奏、剪切、分段与导出前编排。',
+            emptyLead: '中心工位给出第一步，时间轴接管编排。',
+            emptySummary: '素材入轨后，这里接管节奏、剪切与导出前编排。',
             emptyTrackStatus: '空轨待命',
             emptyFocus: '首批入轨'
           }

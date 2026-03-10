@@ -52,8 +52,8 @@ const AppCenterPanel = ({
     assetCount > 0 ? '素材已就绪，下一步把画面送上节目轨' : '先把首批素材送上导播台'
   const launchpadSummary =
     assetCount > 0
-      ? `素材抽屉里已有 ${assetCount} 个资产，下一步把它们送入时间轴，或交给 AI 导演生成首批分镜。`
-      : '从左侧素材抽屉导入资源，或打开 AI 导演自动生成第一批分镜，中心工作区会自动接管节目画面。'
+      ? `素材抽屉已有 ${assetCount} 个资产。下一步：入轨，或交给 AI 导演起首批分镜。`
+      : '从左侧导入素材，或直接交给 AI 导演起首轮分镜。主监看会自动接管节目画面。'
 
   return (
     <section className="pro-panel monitor-core panel-center" data-testid="area-center-panel">
@@ -64,7 +64,11 @@ const AppCenterPanel = ({
               <div className="preview-host" ref={previewHostRef} data-testid="area-preview-host">
                 <div
                   className="preview-frame"
-                  style={previewFrameStyle}
+                  style={
+                    previewFrameStyle
+                      ? { ...previewFrameStyle, minHeight: 0 }
+                      : { width: '100%', aspectRatio: '16 / 9', minHeight: 0 }
+                  }
                   data-testid="area-preview-frame"
                   data-aspect-ratio={previewAspect}
                 >

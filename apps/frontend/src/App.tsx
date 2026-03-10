@@ -690,7 +690,6 @@ function App() {
     const hasOnboarded = window.localStorage.getItem(GUIDE_STORAGE_KEY) === 'done'
     if (!hasOnboarded) {
       setGuideStepIndex(0)
-      setIsGuideOpen(true)
     }
   }, [])
 
@@ -1077,7 +1076,7 @@ function App() {
             valueNow={leftPanelPx}
             valueMin={LAYOUT_LIMITS.leftPanelPx.min}
             valueMax={LAYOUT_LIMITS.leftPanelPx.max}
-            valueText={`左侧功能区宽度 ${Math.round(leftPanelPx)} 像素`}
+            valueText={`Left panel width ${Math.round(leftPanelPx)} px`}
             onDrag={handleLeftPanelResize}
           />
         ) : null}
@@ -1134,7 +1133,7 @@ function App() {
             valueNow={rightPanelPx}
             valueMin={LAYOUT_LIMITS.rightPanelPx.min}
             valueMax={LAYOUT_LIMITS.rightPanelPx.max}
-            valueText={`右侧功能区宽度 ${Math.round(rightPanelPx)} 像素`}
+            valueText={`Right panel width ${Math.round(rightPanelPx)} px`}
             onDrag={handleRightPanelResize}
           />
         ) : null}
@@ -1188,7 +1187,7 @@ function App() {
           valueNow={timelinePx}
           valueMin={LAYOUT_LIMITS.timelinePx.min}
           valueMax={LAYOUT_LIMITS.timelinePx.max}
-          valueText={`时间轴高度 ${Math.round(timelinePx)} 像素`}
+          valueText={`Timeline height ${Math.round(timelinePx)} px`}
           onDrag={handleTimelineResize}
         />
       ) : null}

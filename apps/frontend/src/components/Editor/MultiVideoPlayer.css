@@ -137,3 +137,246 @@
   background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
   z-index: 5;
 }
+
+/* Broadcast Console Pass 2026-03-10 */
+.player-empty-state {
+  gap: 16px;
+  padding: 30px;
+  align-items: stretch;
+  justify-content: center;
+  background:
+    linear-gradient(180deg, rgba(1, 6, 13, 0.34), rgba(1, 6, 13, 0.64)),
+    repeating-linear-gradient(180deg, rgba(111, 201, 255, 0.04) 0 1px, transparent 1px 4px),
+    radial-gradient(circle at 70% 24%, rgba(40, 118, 255, 0.16), transparent 30%),
+    radial-gradient(circle at 14% 78%, rgba(255, 146, 64, 0.12), transparent 28%);
+}
+
+.player-empty-state::before,
+.player-empty-state::after {
+  content: '';
+  position: absolute;
+  inset: 22px;
+  pointer-events: none;
+}
+
+.player-empty-state::before {
+  border: 1px solid rgba(125, 180, 255, 0.18);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 0 28px rgba(63, 140, 255, 0.08);
+}
+
+.player-empty-state::after {
+  inset: 13% 9%;
+  border: 1px dashed rgba(125, 180, 255, 0.18);
+  opacity: 0.54;
+}
+
+.player-empty-frame {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.player-empty-corner {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-color: rgba(143, 189, 255, 0.46);
+}
+
+.player-empty-corner--tl {
+  top: 22px;
+  left: 22px;
+  border-top: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  color: rgba(143, 189, 255, 0.46);
+}
+
+.player-empty-corner--tr {
+  top: 22px;
+  right: 22px;
+  border-top: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  color: rgba(143, 189, 255, 0.46);
+}
+
+.player-empty-corner--bl {
+  bottom: 22px;
+  left: 22px;
+  border-bottom: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  color: rgba(143, 189, 255, 0.46);
+}
+
+.player-empty-corner--br {
+  right: 22px;
+  bottom: 22px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  color: rgba(143, 189, 255, 0.46);
+}
+
+.player-empty-statusline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: center;
+  padding: 7px 11px;
+  border: 1px solid rgba(95, 155, 255, 0.24);
+  border-radius: 6px;
+  background: rgba(5, 12, 20, 0.88);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 24px rgba(0, 0, 0, 0.22);
+}
+
+.player-empty-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ff8d3a;
+  box-shadow: 0 0 10px rgba(255, 141, 58, 0.8);
+}
+
+.player-empty-kicker {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(196, 219, 255, 0.86);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+}
+
+.player-empty-title {
+  font-family: var(--ap-font-ui);
+  font-size: clamp(22px, 2.1vw, 34px);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.player-empty-subtitle {
+  max-width: 500px;
+  font-size: 12px;
+  line-height: 1.72;
+  color: rgba(214, 228, 246, 0.76);
+  text-align: center;
+  align-self: center;
+}
+
+.player-empty-readouts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: min(560px, 100%);
+  align-self: center;
+}
+
+.player-empty-readouts div {
+  display: grid;
+  gap: 8px;
+  padding: 11px 12px;
+  border: 1px solid rgba(105, 152, 219, 0.18);
+  border-radius: 6px;
+  background: rgba(7, 13, 20, 0.8);
+}
+
+.player-empty-readouts b,
+.player-empty-readouts span {
+  font-family: var(--ap-font-mono);
+}
+
+.player-empty-readouts b {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: rgba(161, 183, 214, 0.64);
+  text-transform: uppercase;
+}
+
+.player-empty-readouts span {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(240, 248, 255, 0.88);
+}
+
+@media (max-width: 960px) {
+  .player-empty-readouts {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Broadcast Console Pass 2026-03-10 v2 */
+.player-empty-state {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: 58px;
+}
+
+.player-empty-bars {
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  width: 180px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(
+    90deg,
+    #c6d4e1 0 14.28%,
+    #d4bb52 14.28% 28.56%,
+    #2cb8f6 28.56% 42.84%,
+    #3fd16f 42.84% 57.12%,
+    #e86b72 57.12% 71.4%,
+    #355cff 71.4% 85.68%,
+    #0e131a 85.68% 100%
+  );
+  box-shadow: 0 0 18px rgba(63, 140, 255, 0.12);
+  opacity: 0.86;
+}
+
+.player-empty-statusline,
+.player-empty-title,
+.player-empty-subtitle,
+.player-empty-readouts {
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+}
+
+.player-empty-title,
+.player-empty-subtitle {
+  max-width: 420px;
+  text-align: left;
+}
+
+.player-empty-subtitle {
+  margin-top: -4px;
+}
+
+.player-empty-readouts {
+  width: min(420px, 100%);
+}
+
+@media (max-width: 960px) {
+  .player-empty-bars {
+    position: static;
+    width: min(220px, 100%);
+    margin-bottom: 4px;
+  }
+
+  .player-empty-state {
+    padding-top: 32px;
+  }
+
+  .player-empty-title,
+  .player-empty-subtitle {
+    text-align: center;
+    align-self: center;
+  }
+
+  .player-empty-statusline,
+  .player-empty-readouts {
+    align-self: center;
+  }
+}

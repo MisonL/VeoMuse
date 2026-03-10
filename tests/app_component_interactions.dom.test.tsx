@@ -125,6 +125,9 @@ describe('App DOM 运行态交互补测', () => {
 
     try {
       const view = await act(async () => render(<App />))
+      expect(view.queryByTestId('area-guide-overlay')).toBeNull()
+
+      await click(view.getByTestId('btn-open-guide'))
       const guideOverlay = await view.findByTestId('area-guide-overlay')
       expect(guideOverlay).toBeInTheDocument()
 

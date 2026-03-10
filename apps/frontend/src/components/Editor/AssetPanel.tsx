@@ -337,7 +337,25 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
         <>
           <div className="asset-header-actions">
             <div className="asset-search-bar">
-              <span className="search-icon">🔍</span>
+              <span className="search-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" focusable="false">
+                  <circle
+                    cx="8.5"
+                    cy="8.5"
+                    r="4.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  />
+                  <path
+                    d="m12 12 4 4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
               <input
                 id="asset-search-input"
                 name="assetSearch"
@@ -354,7 +372,18 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               onClick={handleImportClick}
               data-testid="btn-import-assets"
             >
-              <span>➕</span> 导入
+              <span className="import-btn-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" focusable="false">
+                  <path
+                    d="M10 4v12M4 10h12"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+              导入
             </button>
           </div>
 
@@ -441,7 +470,24 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
               >
-                <div className="empty-icon">📁</div>
+                <div className="empty-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path
+                      d="M3 7.5h6l2 2H21v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
                 <p>暂无素材</p>
                 <span>点击此处或拖拽文件完成首批入库，中心工作台会自动承接后续编排。</span>
               </div>

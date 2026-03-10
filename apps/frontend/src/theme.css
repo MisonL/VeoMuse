@@ -63,12 +63,12 @@
 
 [data-theme='dark'] {
   color-scheme: dark;
-  --ap-bg: #081019;
-  --ap-surface: #0d1825;
-  --ap-card: #122132;
-  --ap-panel: #0a131e;
-  --ap-panel-soft: #152434;
-  --pro-surface: #142231;
+  --ap-bg: #04070d;
+  --ap-surface: #091019;
+  --ap-card: #0e1824;
+  --ap-panel: #070d15;
+  --ap-panel-soft: #111b28;
+  --pro-surface: #101a27;
 
   --ap-accent: #3f8cff;
   --ap-accent-soft: rgba(63, 140, 255, 0.18);

@@ -61,12 +61,12 @@ describe('编辑器壳层空态回归', () => {
     expect(view.getByTestId('area-timeline')).toHaveClass(/is-idle/)
     expect(view.container.querySelector('.timeline-priority-band')).toHaveClass('is-idle')
     expect(view.container.querySelector('.system-telemetry')).toHaveClass('is-idle')
-    expect(view.getByText('中心工作区负责给出第一步，时间轴负责承接编排。')).toBeInTheDocument()
+    expect(view.getByText('中心工位给出第一步，时间轴接管编排。')).toBeInTheDocument()
     expect(view.getByText('空轨待命')).toBeInTheDocument()
     expect(view.getByText('节目待命 / 等待首个片段')).toBeInTheDocument()
     expect(view.getByText('主操作区')).toBeInTheDocument()
     expect(
-      view.getByText('先把第一批片段送入这里，后续的剪切、编排和导出前整理都会在这里完成。')
+      view.getByText('先让首批片段入轨。剪切、编排与导出前整理都在这里完成。')
     ).toBeInTheDocument()
   })
 

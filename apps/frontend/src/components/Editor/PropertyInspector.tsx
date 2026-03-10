@@ -129,24 +129,24 @@ const INSPECTOR_MODE_META: Record<
 > = {
   edit: {
     idleTitle: '等待片段进入工位',
-    idleSubtitle: '属性、炼金与空间渲染动作都绑定到当前片段，不再丢失上下文。',
-    idleAction: '时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。',
+    idleSubtitle: '等待时间轴片段接管右席参数位。',
+    idleAction: '片段接管后可调参、触发炼金，或切到系统监控。',
     labTitle: '系统监控摘要在线',
     labSubtitle: '运行态、告警与治理记录会在当前侧栏持续值守显示。',
     labStatus: '系统监控摘要'
   },
   color: {
     idleTitle: '实验上下文待接管',
-    idleSubtitle: '实验策略、比对判断与协作动作将围绕当前实验阶段集中显示。',
-    idleAction: '上方实验室选中当前阶段后，可在这里查看上下文、切换监控并承接后续动作。',
+    idleSubtitle: '等待实验阶段接管当前右席。',
+    idleAction: '阶段接管后可查看上下文并切到实验监控。',
     labTitle: '实验室系统监控',
     labSubtitle: 'Provider 健康、治理信号与实验告警会围绕当前实验阶段持续更新。',
     labStatus: '实验监控摘要'
   },
   audio: {
     idleTitle: '母带工位待命',
-    idleSubtitle: '旁白、音乐、响度与导出前校验会在这里绑定到当前母带会话。',
-    idleAction: '导入素材并进入母带流程后，可在这里查看当前输入、调参并切换到系统监控。',
+    idleSubtitle: '等待母带会话接管当前右席。',
+    idleAction: '会话接管后可查看输入、调参并切到系统监控。',
     labTitle: '母带系统监控',
     labSubtitle: '输入健康、总线状态与交付前检查会围绕当前母带会话持续显示。',
     labStatus: '母带监控摘要'
@@ -682,7 +682,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             <div className="inspector-empty-copy">
               <span className="inspector-empty-kicker">属性面板待命</span>
               <strong>{emptyCardTitle}</strong>
-              <p>{shellMeta.idleSubtitle}</p>
+              <p>{shellMeta.idleAction}</p>
             </div>
 
             <div className="inspector-empty-steps">
@@ -699,7 +699,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
               <button type="button" className="pro-master-btn" onClick={() => setActiveTab('lab')}>
                 切到系统监控
               </button>
-              <small>没有片段上下文时，值守台会优先显示空态引导而不是平铺控件。</small>
+              <small>空态优先保留值守入口与接管提示。</small>
             </div>
           </div>
         ) : (

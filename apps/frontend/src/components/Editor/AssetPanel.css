@@ -713,3 +713,44 @@
   font-size: 12px;
   font-weight: 600;
 }
+
+/* Broadcast Console Pass 2026-03-10 */
+.search-icon,
+.import-btn-icon,
+.empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-icon svg,
+.import-btn-icon svg,
+.empty-icon svg {
+  display: block;
+}
+
+.search-icon {
+  color: color-mix(in srgb, var(--ap-text-dim) 72%, var(--ap-accent) 28%);
+}
+
+.search-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.import-btn-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.empty-icon {
+  width: 40px;
+  height: 40px;
+  color: color-mix(in srgb, var(--ap-text-dim) 68%, var(--ap-accent) 32%);
+  opacity: 0.88;
+}
+
+.empty-icon svg {
+  width: 28px;
+  height: 28px;
+}

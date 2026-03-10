@@ -86,8 +86,7 @@ describe('PropertyInspector DOM 交互', () => {
     expect(view.getByText('先把当前片段接进工位')).toBeInTheDocument()
     expect(view.getByText('clip forge / active context')).toBeInTheDocument()
     expect(
-      view.queryAllByText('时间轴选中片段后，可在这里查看参数、触发炼金，并切换到系统监控值守。')
-        .length
+      view.queryAllByText('片段接管后可调参、触发炼金，或切到系统监控。').length
     ).toBeGreaterThan(0)
   })
 
