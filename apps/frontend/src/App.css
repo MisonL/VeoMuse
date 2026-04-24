@@ -6990,3 +6990,106 @@ body {
   min-height: 44px !important;
   border-radius: 14px !important;
 }
+
+/* Desktop no-scroll fit correction 2026-04-24 */
+@media (min-width: 1181px) {
+  .pro-master-shell,
+  .pro-master-shell[data-topbar-density='compact'] {
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+    --timeline-h: 170px !important;
+    grid-template-rows: 150px minmax(0, 1fr) 0 var(--timeline-h) !important;
+  }
+
+  .os-header {
+    min-height: 150px !important;
+    max-height: 150px !important;
+    grid-template-columns: minmax(360px, 1fr) auto !important;
+    align-items: center !important;
+  }
+
+  .os-header-deck {
+    grid-template-columns: auto auto auto auto auto !important;
+    grid-template-rows: none !important;
+    align-items: center !important;
+    justify-content: end !important;
+    gap: 14px !important;
+  }
+
+  .header-center-stack {
+    justify-self: center !important;
+  }
+
+  .header-actions {
+    flex-wrap: nowrap !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+  }
+
+  .os-main {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    grid-template-columns: minmax(280px, 0.78fr) 0 minmax(0, 1.72fr) 0 minmax(300px, 0.72fr) !important;
+  }
+
+  .panel-left,
+  .panel-center,
+  .panel-right,
+  .monitor-core,
+  .monitor-content,
+  .monitor-stage-shell,
+  .monitor-stage-shell.is-idle,
+  .monitor-stage-primary,
+  .monitor-stage-shell.is-idle .monitor-stage-primary {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .monitor-stage-shell,
+  .monitor-stage-shell.is-idle,
+  .monitor-stage-primary,
+  .monitor-stage-shell.is-idle .monitor-stage-primary {
+    grid-template-rows: minmax(0, 1fr) 56px !important;
+  }
+
+  .preview-host,
+  .monitor-stage-shell.is-idle .preview-host,
+  .preview-frame,
+  .monitor-stage-shell.is-idle .preview-frame {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .preview-frame {
+    aspect-ratio: auto !important;
+  }
+
+  .transport-controls {
+    height: 56px !important;
+    margin-top: 8px !important;
+  }
+
+  .timeline-container {
+    height: var(--timeline-h) !important;
+    min-height: 0 !important;
+    max-height: var(--timeline-h) !important;
+  }
+
+  .timeline-actions {
+    height: 48px !important;
+  }
+
+  .timeline-body {
+    min-height: 0 !important;
+    height: calc(var(--timeline-h) - 48px) !important;
+  }
+
+  .timeline-empty-state {
+    min-height: 0 !important;
+  }
+}
