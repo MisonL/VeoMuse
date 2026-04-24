@@ -1,4 +1,3 @@
-import path from 'path'
 import { cleanupGeneratedFiles, startCleanupScheduler } from '../services/CleanupSchedulerService'
 import { LocalDatabaseService } from '../services/LocalDatabaseService'
 import { ModelMarketplaceService } from '../services/ModelMarketplaceService'
@@ -6,6 +5,7 @@ import { SloService } from '../services/SloService'
 import { VideoGenerationService } from '../services/VideoGenerationService'
 import { isDevRuntime, parseBooleanEnv } from '../http/context'
 import { resolveErrorMessage } from '../http/errors'
+import { resolveUploadsPath } from './paths'
 
 type StartableApp = {
   listen: (options: { port: number; hostname: string }) => unknown
@@ -31,10 +31,7 @@ const isWeakSecret = (value: string | undefined, placeholders: string[]) => {
 }
 
 const resolveGeneratedDir = () => {
-  const baseUploadsDir = process.env.UPLOADS_PATH
-    ? path.resolve(process.env.UPLOADS_PATH)
-    : path.resolve(process.cwd(), '../../uploads')
-  return path.join(baseUploadsDir, 'generated')
+  return resolveUploadsPath('generated')
 }
 
 const assertProductionSecrets = () => {

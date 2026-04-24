@@ -103,7 +103,7 @@ const InviteJoinSection: React.FC<InviteJoinSectionProps> = ({
             <span>
               {item.status === 'accepted'
                 ? '已接受'
-                : item.status === 'revoked'
+                : item.status === 'expired'
                   ? '已失效'
                   : '待处理'}
             </span>

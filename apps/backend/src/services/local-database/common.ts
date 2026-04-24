@@ -2,6 +2,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import type { Database } from 'bun:sqlite'
+import { resolveRepoPath } from '../../runtime/paths'
 
 export const CORRUPTION_KEYWORDS = [
   'database disk image is malformed',
@@ -92,7 +93,7 @@ export const resolveDbPath = () => {
   if (isTestRuntime) {
     return path.join(os.tmpdir(), `veomuse-test-${process.pid}.sqlite`)
   }
-  return path.resolve(process.cwd(), '../../data/veomuse.sqlite')
+  return resolveRepoPath('data', 'veomuse.sqlite')
 }
 
 export const ensureDbDirectory = (dbPath: string) => {

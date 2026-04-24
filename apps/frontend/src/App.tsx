@@ -437,6 +437,7 @@ function App() {
 
   const openChannelAccess = useCallback(() => {
     setIsGuideOpen(false)
+    void loadComparisonLab()
     handleModeChange('color', { labSurface: 'stage' })
     setChannelPanelRequestNonce((prev) => prev + 1)
     if (IS_TEST_ENV) {

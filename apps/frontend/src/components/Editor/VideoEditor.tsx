@@ -82,7 +82,7 @@ const VideoEditor: React.FC<VideoEditorProps> = ({ activeTool = 'select' }) => {
 
   const setTimelineWrapperRef = useCallback(
     (node: HTMLDivElement | null) => {
-      containerRef(node)
+      if (node) containerRef(node)
       timelineWrapperRef.current = node
     },
     [containerRef]

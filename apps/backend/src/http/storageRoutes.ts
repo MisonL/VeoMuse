@@ -10,6 +10,7 @@ import {
   resolveRequestBytes
 } from './context'
 import { resolveErrorMessage } from './errors'
+import { resolveUploadsPath } from '../runtime/paths'
 
 interface UploadTokenIssuer {
   issueUploadToken: (body: {
@@ -29,10 +30,7 @@ interface UploadTokenIssuer {
 }
 
 const resolveImportDir = () => {
-  const baseUploadsDir = process.env.UPLOADS_PATH
-    ? path.resolve(process.env.UPLOADS_PATH)
-    : path.resolve(process.cwd(), '../../uploads')
-  return path.join(baseUploadsDir, 'imports')
+  return resolveUploadsPath('imports')
 }
 
 const sanitizeImportFileName = (fileName: string) => {

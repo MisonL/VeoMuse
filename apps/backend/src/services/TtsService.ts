@@ -3,6 +3,7 @@ import fs from 'fs/promises'
 import { BaseAiService } from './BaseAiService'
 import type { ChannelRuntimeContext } from './ChannelConfigService'
 import { ChannelConfigService } from './ChannelConfigService'
+import { resolveUploadsPath } from '../runtime/paths'
 
 interface TtsSynthesizeResponse {
   audioBase64?: string
@@ -37,7 +38,7 @@ export class TtsService extends BaseAiService {
 
     const timestamp = Date.now()
     const fileName = `voice_${timestamp}.mp3`
-    const outputDir = path.resolve(process.cwd(), '../../uploads/audio')
+    const outputDir = resolveUploadsPath('audio')
 
     try {
       await fs.mkdir(outputDir, { recursive: true })

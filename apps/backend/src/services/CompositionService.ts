@@ -2,15 +2,14 @@ import ffmpeg from 'fluent-ffmpeg'
 import path from 'path'
 import fs from 'fs/promises'
 import type { TimelineData } from '@veomuse/shared'
+import { resolveUploadsRoot } from '../runtime/paths'
 
 type ExportQuality = NonNullable<TimelineData['exportConfig']>['quality']
 type ClipWithExportData = { data?: { exportSrc?: string } }
 
 export class CompositionService {
   private static getBaseUploadsDir() {
-    return process.env.UPLOADS_PATH
-      ? path.resolve(process.env.UPLOADS_PATH)
-      : path.resolve(process.cwd(), '../../uploads')
+    return resolveUploadsRoot()
   }
 
   private static getAllowedRemoteHosts() {

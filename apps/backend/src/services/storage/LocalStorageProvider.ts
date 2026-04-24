@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import type { StorageProvider, UploadTokenRequest, UploadTokenResult } from './StorageProvider'
+import { resolveLocalStorageRoot } from '../../runtime/paths'
 
 const sanitizeSegment = (value: string) => value.replace(/[^a-zA-Z0-9._-]/g, '_')
 const now = () => new Date().toISOString()
@@ -11,10 +12,7 @@ export class LocalStorageProvider implements StorageProvider {
   private readonly rootDir: string
 
   constructor(rootDir?: string) {
-    this.rootDir =
-      rootDir ||
-      process.env.LOCAL_STORAGE_ROOT?.trim() ||
-      path.resolve(process.cwd(), '../../uploads/workspace')
+    this.rootDir = rootDir ? path.resolve(rootDir) : resolveLocalStorageRoot()
     if (!fs.existsSync(this.rootDir)) {
       fs.mkdirSync(this.rootDir, { recursive: true })
     }
