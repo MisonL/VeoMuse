@@ -307,6 +307,83 @@
   }
 }
 
+/* Cinematica Light empty preview */
+.player-empty-state {
+  inset: 0;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 14px !important;
+  padding: clamp(24px, 4vw, 48px) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.94), rgba(242, 225, 202, 0.82)),
+    radial-gradient(circle at 86% 18%, rgba(27, 95, 117, 0.14), transparent 32%) !important;
+}
+
+.player-empty-state::before,
+.player-empty-state::after,
+.player-empty-frame,
+.player-empty-bars {
+  display: none !important;
+}
+
+.player-empty-statusline {
+  align-self: flex-start !important;
+  border-radius: 999px !important;
+  border-color: rgba(27, 95, 117, 0.14) !important;
+  background: rgba(27, 95, 117, 0.1) !important;
+  box-shadow: none !important;
+}
+
+.player-empty-indicator {
+  background: var(--ap-signal) !important;
+  box-shadow: 0 0 0 5px rgba(230, 95, 43, 0.12) !important;
+}
+
+.player-empty-kicker {
+  color: var(--ap-accent-strong) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.12em !important;
+}
+
+.player-empty-title {
+  max-width: 12ch;
+  color: var(--ap-text) !important;
+  font-family: var(--ap-font-display) !important;
+  font-size: clamp(42px, 5vw, 76px) !important;
+  line-height: 0.9 !important;
+  letter-spacing: 0.02em !important;
+  text-align: left !important;
+  text-transform: none !important;
+}
+
+.player-empty-subtitle {
+  max-width: 46ch !important;
+  color: var(--ap-text-dim) !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+  text-align: left !important;
+}
+
+.player-empty-readouts {
+  width: min(520px, 100%) !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.player-empty-readouts div {
+  border-radius: 18px !important;
+  border-color: rgba(56, 45, 31, 0.12) !important;
+  background: rgba(255, 250, 240, 0.78) !important;
+}
+
+.player-empty-readouts b {
+  color: var(--ap-text-dim) !important;
+}
+
+.player-empty-readouts span {
+  color: var(--ap-accent) !important;
+}
+
 /* Broadcast Console Pass 2026-03-10 v2 */
 .player-empty-state {
   align-items: flex-start;
@@ -379,4 +456,110 @@
   .player-empty-readouts {
     align-self: center;
   }
+}
+
+/* Cinematica Light final empty state guard */
+.player-empty-state {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas:
+    'status status'
+    'title readouts'
+    'subtitle readouts' !important;
+  align-content: center !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  column-gap: clamp(20px, 4vw, 48px) !important;
+  row-gap: 12px !important;
+  padding: clamp(20px, 3vw, 34px) !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 88% 20%, rgba(27, 95, 117, 0.1), transparent 28%),
+    linear-gradient(135deg, rgba(255, 250, 240, 0.96), rgba(242, 225, 202, 0.84)) !important;
+}
+
+.player-empty-statusline {
+  grid-area: status !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+.player-empty-title {
+  grid-area: title !important;
+  max-width: 14ch !important;
+  margin: 0 !important;
+  font-size: clamp(28px, 3.4vw, 54px) !important;
+  line-height: 1.02 !important;
+  overflow: visible !important;
+}
+
+.player-empty-subtitle {
+  grid-area: subtitle !important;
+  max-width: 48ch !important;
+  margin: 0 !important;
+  font-size: clamp(12px, 1vw, 14px) !important;
+}
+
+.player-empty-readouts {
+  grid-area: readouts !important;
+  width: min(320px, 34vw) !important;
+  grid-template-columns: 1fr !important;
+  align-self: center !important;
+}
+
+.player-empty-readouts div {
+  min-width: 0 !important;
+  padding: 10px 12px !important;
+}
+
+@media (max-width: 960px) {
+  .player-empty-state {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      'status'
+      'title'
+      'subtitle'
+      'readouts' !important;
+    justify-items: start !important;
+    overflow: auto !important;
+  }
+
+  .player-empty-readouts {
+    width: 100% !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Cinematica Light compact monitor fallback */
+.player-empty-state {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: clamp(16px, 2.4vw, 26px) !important;
+  overflow: hidden !important;
+}
+
+.player-empty-statusline {
+  flex: 0 0 auto !important;
+}
+
+.player-empty-title {
+  width: 100% !important;
+  max-width: 100% !important;
+  font-size: clamp(24px, 2.6vw, 40px) !important;
+  line-height: 1.05 !important;
+  white-space: normal !important;
+}
+
+.player-empty-subtitle {
+  max-width: 42ch !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.player-empty-readouts {
+  display: none !important;
 }

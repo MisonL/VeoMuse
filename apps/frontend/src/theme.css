@@ -126,3 +126,62 @@ textarea {
 button {
   transition: var(--ap-spring-button);
 }
+
+/* Cinematica Light redesign tokens */
+:root,
+[data-theme='dark'],
+[data-theme='light'] {
+  color-scheme: light;
+  --ap-font-ui: 'Noto Sans SC', 'Avenir Next', 'Segoe UI', sans-serif;
+  --ap-font-display: 'Barlow Condensed', 'Noto Sans SC', sans-serif;
+  --ap-font-mono: 'Chakra Petch', 'JetBrains Mono', 'SF Mono', monospace;
+
+  --ap-bg: #f3eee4;
+  --ap-surface: #fffaf0;
+  --ap-card: #f6ead8;
+  --ap-panel: #fff3df;
+  --ap-panel-soft: #eadcc8;
+  --pro-surface: #fff7ea;
+
+  --ap-accent: #1b5f75;
+  --ap-accent-soft: rgba(27, 95, 117, 0.14);
+  --ap-accent-glow: rgba(27, 95, 117, 0.22);
+  --ap-accent-strong: #093844;
+  --ap-signal: #e65f2b;
+  --ap-signal-soft: rgba(230, 95, 43, 0.16);
+
+  --ap-border: rgba(56, 45, 31, 0.16);
+  --ap-outline: rgba(27, 95, 117, 0.18);
+  --ap-grid-line: rgba(84, 71, 50, 0.08);
+  --ap-text: #1d1b17;
+  --ap-text-dim: #6f6559;
+  --ap-monitor-bg: #f9efe0;
+  --ap-monitor-border: rgba(56, 45, 31, 0.14);
+  --ap-stage-shell: #f3eee4;
+  --ap-stage-shell-strong: #e9dfcf;
+  --ap-stage-shell-muted: #fff7ea;
+  --ap-stage-shell-panel: #f8ebd8;
+  --ap-stage-deck: #fdf4e6;
+  --ap-stage-deck-strong: #f2e1ca;
+  --ap-stage-deck-soft: #ead7bd;
+  --ap-ink-inverse: #fffaf0;
+
+  --ap-blur: 0px;
+  --ap-saturate: 100%;
+  --ap-glass-bg: rgba(255, 250, 240, 0.94);
+  --ap-radius: 28px;
+  --ap-radius-inner: 18px;
+  --ap-shadow-subtle: 0 12px 30px rgba(59, 45, 28, 0.08);
+  --ap-shadow-panel: 0 24px 54px rgba(59, 45, 28, 0.12), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  --danger-color: #c5412e;
+  --success-color: #267a55;
+
+  --bg-color: var(--ap-bg);
+  --panel-bg: var(--ap-glass-bg);
+  --glass-border: var(--ap-border);
+  --glass-shadow: var(--ap-shadow-subtle);
+  --text-main: var(--ap-text);
+  --text-sub: var(--ap-text-dim);
+  --accent-color: var(--ap-accent);
+  --accent-glow: var(--ap-accent-glow);
+}

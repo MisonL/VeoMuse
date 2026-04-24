@@ -2775,6 +2775,141 @@ body.resizing-y {
   }
 }
 
+/* Cinematica Light layout correction */
+.pro-master-shell,
+.pro-master-shell[data-topbar-density='compact'] {
+  --header-h: 188px;
+}
+
+.os-header {
+  min-height: 172px;
+}
+
+.os-header-deck {
+  align-content: end;
+}
+
+.header-actions {
+  flex-wrap: wrap;
+  row-gap: 10px !important;
+}
+
+.header-actions-layout,
+.header-actions-quick,
+.header-actions-export {
+  flex: 0 1 auto;
+}
+
+.monitor-content,
+.monitor-stage-shell {
+  min-height: 0;
+}
+
+.monitor-stage-shell.is-idle {
+  display: grid;
+  grid-template-columns: minmax(0, 1.34fr) minmax(260px, 0.66fr) !important;
+  align-items: stretch;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-primary {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+  min-height: 0;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-aside {
+  grid-column: auto;
+}
+
+.monitor-stage-shell.is-idle .preview-host {
+  padding: 0;
+  min-height: 0;
+}
+
+.monitor-stage-shell.is-idle .preview-frame {
+  min-height: 0 !important;
+  aspect-ratio: auto;
+  height: 100%;
+  border-radius: 24px !important;
+  background:
+    linear-gradient(145deg, rgba(255, 250, 240, 0.86), rgba(242, 225, 202, 0.78)),
+    radial-gradient(circle at 12% 12%, rgba(230, 95, 43, 0.16), transparent 34%) !important;
+  border-color: rgba(56, 45, 31, 0.14) !important;
+  box-shadow: none !important;
+}
+
+.monitor-stage-shell.is-idle .preview-frame .multi-video-player {
+  min-height: 100%;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-intro {
+  display: none !important;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-aside .monitor-launchpad {
+  height: 100%;
+}
+
+.monitor-stage-intro-actions,
+.monitor-action-strip {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1440px) {
+  .pro-master-shell,
+  .pro-master-shell[data-topbar-density='compact'] {
+    --header-h: 208px;
+  }
+
+  .os-header {
+    min-height: 194px;
+    grid-template-columns: 1fr !important;
+  }
+
+  .header-bridge-status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) {
+  .monitor-stage-shell.is-idle {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Cinematica Light final density pass */
+.pro-master-shell,
+.pro-master-shell[data-topbar-density='compact'] {
+  --header-h: 174px;
+}
+
+.os-header {
+  min-height: 158px;
+}
+
+.brand-status-ribbon,
+.mode-runtime {
+  min-height: 42px;
+  overflow: hidden;
+}
+
+.brand-status-copy,
+.mode-runtime-copy {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.monitor-stage-shell.is-idle .preview-frame {
+  padding: 18px;
+}
+
+.monitor-stage-shell.is-idle .monitor-deck-label,
+.monitor-stage-shell.is-idle .monitor-overlay {
+  display: none !important;
+}
+
 @media (max-width: 980px) {
   .brand-zone {
     grid-template-columns: auto 1fr;
@@ -5820,4 +5955,377 @@ body.resizing-y {
 .telemetry-dock-head::after {
   position: static;
   justify-self: end;
+}
+
+/* Cinematica Light redesign */
+html,
+body,
+#root {
+  background: #f3eee4;
+}
+
+body {
+  color: var(--ap-text);
+}
+
+.pro-master-shell,
+.pro-master-shell[data-topbar-density='compact'] {
+  --header-h: 152px;
+  --timeline-h: 300px;
+  --split-handle-w: 14px;
+  --split-handle-h: 12px;
+  gap: 14px;
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.94), rgba(233, 223, 207, 0.88)),
+    radial-gradient(760px 380px at 12% 0%, rgba(230, 95, 43, 0.13), transparent 58%),
+    radial-gradient(760px 420px at 86% 8%, rgba(27, 95, 117, 0.16), transparent 58%),
+    repeating-linear-gradient(90deg, rgba(56, 45, 31, 0.035) 0 1px, transparent 1px 96px),
+    var(--ap-bg);
+}
+
+.pro-master-shell::before,
+.pro-master-shell::after,
+.system-telemetry::after,
+.timeline-editor-slot::before,
+.timeline-body::before,
+.telemetry-item::after {
+  display: none !important;
+}
+
+.pro-panel,
+.os-header,
+.panel-left,
+.panel-right,
+.monitor-core,
+.timeline-container {
+  border: 1px solid rgba(56, 45, 31, 0.14) !important;
+  border-radius: 30px !important;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 250, 240, 0.96),
+    rgba(248, 235, 216, 0.92)
+  ) !important;
+  box-shadow: var(--ap-shadow-panel) !important;
+  color: var(--ap-text);
+}
+
+.os-header {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.6fr);
+  align-items: stretch;
+  gap: 18px;
+  padding: 18px !important;
+  overflow: hidden;
+}
+
+.os-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(230, 95, 43, 0.16), transparent 34%),
+    radial-gradient(circle at 92% 0%, rgba(27, 95, 117, 0.18), transparent 34%);
+  opacity: 0.9;
+}
+
+.os-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+.os-header-bridge,
+.os-header-deck {
+  grid-template-columns: 1fr !important;
+  gap: 14px !important;
+  min-width: 0;
+}
+
+.brand-zone {
+  align-items: center;
+  gap: 18px;
+}
+
+.brand-mark {
+  padding-right: 18px;
+  border-right: 1px solid rgba(56, 45, 31, 0.14);
+}
+
+.brand-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  color: #fffaf0;
+  background: linear-gradient(145deg, #e65f2b, #1b5f75);
+  box-shadow: 0 18px 30px rgba(230, 95, 43, 0.24);
+  font-family: var(--ap-font-display);
+  font-size: 32px;
+  letter-spacing: 0.02em;
+}
+
+.brand-beacon,
+.brand-status-pill,
+.mode-runtime-label,
+.monitor-ledger-label,
+.timeline-eyebrow,
+.timeline-priority-pill {
+  color: var(--ap-accent-strong) !important;
+  background: rgba(27, 95, 117, 0.1) !important;
+  border: 1px solid rgba(27, 95, 117, 0.16) !important;
+  box-shadow: none !important;
+}
+
+.brand-kicker,
+.brand-status-copy,
+.mode-runtime-copy,
+.timeline-running-order,
+.timeline-priority-copy,
+.monitor-cue-copy,
+.monitor-launchpad-note small {
+  color: var(--ap-text-dim) !important;
+  text-shadow: none !important;
+}
+
+.brand-title {
+  color: var(--ap-text);
+  font-size: clamp(34px, 3.5vw, 52px) !important;
+  line-height: 0.9;
+  letter-spacing: 0.1em !important;
+  text-shadow: none;
+}
+
+.header-bridge-status {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 12px;
+}
+
+.brand-status-ribbon,
+.mode-runtime,
+.mode-selector,
+.header-actions-group,
+.header-segment,
+.header-actions-export,
+.monitor-launchpad,
+.monitor-stage-intro,
+.monitor-readout,
+.timeline-command-deck,
+.timeline-control-surface,
+.timeline-priority-band,
+.timeline-tools,
+.system-telemetry,
+.timeline-editor-slot,
+.timeline-empty-state {
+  border-radius: 20px !important;
+  border: 1px solid rgba(56, 45, 31, 0.12) !important;
+  background: rgba(255, 250, 240, 0.72) !important;
+  box-shadow: 0 10px 26px rgba(59, 45, 28, 0.06) !important;
+}
+
+.mode-selector,
+.header-actions-group,
+.header-segment {
+  padding: 6px !important;
+  gap: 6px !important;
+}
+
+.mode-tab,
+.header-segment-btn,
+.layout-reset-btn,
+.guide-toggle-btn,
+.channel-entry-btn,
+.header-select,
+.export-btn,
+.sidebar-tab,
+.cat-btn,
+.monitor-action-btn,
+.tool-icon,
+.transport-btn,
+.preview-mode-toggle,
+.preview-quality {
+  min-height: 42px !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(56, 45, 31, 0.12) !important;
+  background: rgba(255, 250, 240, 0.72) !important;
+  color: var(--ap-text) !important;
+  font-family: var(--ap-font-ui) !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+}
+
+.mode-tab.active,
+.header-segment-btn.active,
+.sidebar-tab.active,
+.cat-btn.active,
+.tool-icon.active,
+.preview-mode-toggle.active {
+  color: #fffaf0 !important;
+  background: linear-gradient(145deg, var(--ap-accent), var(--ap-accent-strong)) !important;
+  border-color: rgba(27, 95, 117, 0.4) !important;
+  box-shadow: 0 16px 30px rgba(27, 95, 117, 0.2) !important;
+}
+
+.mode-tab.active::before,
+.mode-tab.active::after,
+.tool-icon.active::after,
+.preview-mode-toggle.active::after,
+.monitor-action-btn--signal::after {
+  display: none !important;
+}
+
+.channel-entry-btn,
+.export-btn,
+.monitor-action-btn--signal,
+.transport-btn.play {
+  color: #fffaf0 !important;
+  background: linear-gradient(145deg, var(--ap-signal), #b94721) !important;
+  border-color: rgba(230, 95, 43, 0.32) !important;
+  box-shadow: 0 18px 32px rgba(230, 95, 43, 0.22) !important;
+}
+
+.header-actions {
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px !important;
+}
+
+.os-main {
+  gap: 0;
+}
+
+.panel-left,
+.panel-right {
+  overflow: hidden;
+}
+
+.panel-title-bar {
+  min-height: 58px;
+  padding: 0 18px !important;
+  border-bottom: 1px solid rgba(56, 45, 31, 0.1);
+  background: rgba(255, 250, 240, 0.66);
+}
+
+.sidebar-content {
+  padding: 16px !important;
+}
+
+.resize-handle::before {
+  background: rgba(56, 45, 31, 0.22) !important;
+}
+
+.monitor-core {
+  padding: 16px;
+}
+
+.monitor-stage-shell {
+  gap: 16px !important;
+}
+
+.monitor-stage-primary {
+  border-radius: 26px !important;
+  border: 1px solid rgba(56, 45, 31, 0.14);
+  background:
+    linear-gradient(145deg, rgba(33, 31, 27, 0.92), rgba(63, 51, 38, 0.92)),
+    radial-gradient(circle at 12% 16%, rgba(230, 95, 43, 0.22), transparent 34%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.monitor-stage-primary .timecode,
+.monitor-deck-label,
+.monitor-overlay,
+.monitor-cue-strip,
+.preview-quality {
+  color: rgba(255, 250, 240, 0.9) !important;
+}
+
+.monitor-stage-intro strong,
+.monitor-launchpad strong,
+.timeline-section-title,
+.timeline-empty-copy strong {
+  color: var(--ap-text) !important;
+  font-family: var(--ap-font-display);
+  letter-spacing: 0.03em;
+}
+
+.monitor-stage-aside {
+  gap: 14px !important;
+}
+
+.timeline-container {
+  padding: 16px !important;
+}
+
+.timeline-actions {
+  gap: 14px !important;
+  padding: 0 0 14px !important;
+}
+
+.timeline-body {
+  margin-top: 0 !important;
+  padding-top: 14px !important;
+  border-top: 1px solid rgba(56, 45, 31, 0.12) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.64), rgba(246, 234, 216, 0.56)),
+    repeating-linear-gradient(90deg, rgba(56, 45, 31, 0.06) 0 1px, transparent 1px 86px) !important;
+}
+
+.timeline-empty-state {
+  color: var(--ap-text) !important;
+}
+
+.telemetry-dock-head::after {
+  content: 'RUNNING ORDER';
+  color: rgba(111, 101, 89, 0.62) !important;
+}
+
+.telemetry-item {
+  border-radius: 16px !important;
+  border-color: rgba(56, 45, 31, 0.1) !important;
+  background: rgba(255, 250, 240, 0.66) !important;
+}
+
+.telemetry-value {
+  color: var(--ap-accent) !important;
+  text-shadow: none !important;
+}
+
+@media (max-width: 1180px) {
+  .pro-master-shell,
+  .pro-master-shell[data-topbar-density='compact'] {
+    --header-h: auto;
+    min-height: 100vh;
+    height: auto;
+    grid-template-rows: auto auto var(--split-handle-h) auto;
+  }
+
+  .os-header,
+  .header-bridge-status,
+  .os-header-deck {
+    grid-template-columns: 1fr !important;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* Cinematica Light compact monitor host guard */
+.monitor-stage-shell.is-idle .preview-host {
+  overflow: visible !important;
+}
+
+.monitor-stage-shell.is-idle .preview-frame {
+  width: 100% !important;
+  max-width: none !important;
+  height: clamp(154px, 15vw, 210px) !important;
+  padding: 12px !important;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-primary {
+  grid-template-rows: minmax(154px, 1fr) auto !important;
 }

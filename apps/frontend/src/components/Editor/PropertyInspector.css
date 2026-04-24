@@ -1535,3 +1535,164 @@
 .clip-type-badge {
   text-shadow: 0 0 8px rgba(63, 140, 255, 0.14);
 }
+
+/* Cinematica Light inspector */
+.pro-inspector-inner {
+  border: 1px solid rgba(56, 45, 31, 0.12) !important;
+  border-radius: 26px !important;
+  background: rgba(255, 250, 240, 0.78) !important;
+  box-shadow: 0 16px 34px rgba(59, 45, 28, 0.08) !important;
+}
+
+.pro-inspector-inner::before,
+.inspector-context-bar::before,
+.inspector-readout-card::before,
+.inspector-brief-card::before,
+.inspector-empty::before,
+.inspector-toggle-card::before,
+.inspector-lab-banner-status::before {
+  display: none !important;
+}
+
+.inspector-header {
+  padding: 18px !important;
+  border-bottom: 1px solid rgba(56, 45, 31, 0.1) !important;
+  background: rgba(255, 250, 240, 0.82) !important;
+}
+
+.inspector-header-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  border-color: rgba(27, 95, 117, 0.18);
+  background: rgba(27, 95, 117, 0.1);
+  color: var(--ap-accent);
+}
+
+.inspector-header-kicker,
+.inspector-panel-kicker,
+.inspector-context-kicker,
+.inspector-lab-banner-kicker,
+.inspector-empty-kicker {
+  color: var(--ap-accent-strong) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.12em !important;
+  text-shadow: none !important;
+}
+
+.inspector-header-title {
+  color: var(--ap-text) !important;
+  font-size: 22px !important;
+  letter-spacing: 0.04em !important;
+  text-shadow: none !important;
+}
+
+.inspector-tabs {
+  gap: 8px !important;
+  padding: 6px !important;
+  border-radius: 20px !important;
+  border-color: rgba(56, 45, 31, 0.12) !important;
+  background: rgba(246, 234, 216, 0.72) !important;
+  box-shadow: none !important;
+}
+
+.inspector-tabs button {
+  min-height: 58px !important;
+  border-radius: 16px !important;
+  color: var(--ap-text-dim) !important;
+  background: rgba(255, 250, 240, 0.7) !important;
+  box-shadow: none !important;
+}
+
+.inspector-tabs button.active {
+  color: #fffaf0 !important;
+  border-color: var(--ap-accent) !important;
+  background: linear-gradient(145deg, var(--ap-accent), var(--ap-accent-strong)) !important;
+  box-shadow: 0 16px 30px rgba(27, 95, 117, 0.18) !important;
+}
+
+.inspector-tabs button.active::after {
+  display: none !important;
+}
+
+.clip-type-badge {
+  color: var(--ap-text-dim) !important;
+  border-color: rgba(56, 45, 31, 0.12) !important;
+  background: rgba(255, 250, 240, 0.76) !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.inspector-context-bar,
+.inspector-readout-card,
+.inspector-brief-card,
+.inspector-empty,
+.inspector-empty-step,
+.inspector-toggle-card,
+.inspector-lab-banner-status,
+.inspector-section,
+.inspector-command-board,
+.inspector-lab-banner,
+.inspector-lab-panel {
+  border-radius: 22px !important;
+  border-color: rgba(56, 45, 31, 0.12) !important;
+  background: rgba(255, 250, 240, 0.78) !important;
+  box-shadow: 0 12px 26px rgba(59, 45, 28, 0.07) !important;
+}
+
+.inspector-context-bar {
+  padding: 18px !important;
+}
+
+.inspector-context-title {
+  max-width: none;
+  color: var(--ap-text) !important;
+  font-size: clamp(26px, 2.2vw, 34px) !important;
+  letter-spacing: 0.03em !important;
+  text-shadow: none !important;
+}
+
+.inspector-context-subtitle,
+.inspector-readout-note,
+.inspector-empty-copy p,
+.inspector-empty-step small {
+  color: var(--ap-text-dim) !important;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.inspector-context-pill,
+.inspector-readout-label,
+.inspector-empty-step span {
+  color: var(--ap-accent-strong) !important;
+  background: rgba(27, 95, 117, 0.08) !important;
+  border-color: rgba(27, 95, 117, 0.14) !important;
+}
+
+.inspector-readout-value {
+  color: var(--ap-text) !important;
+  font-size: 18px !important;
+  text-shadow: none !important;
+}
+
+.inspector-body {
+  background: transparent !important;
+}
+
+.inspector-field-stack input,
+.inspector-field-stack select,
+.inspector-field-stack textarea,
+.inspector-range-row input,
+.inspector-command-board button,
+.inspector-secondary-btn {
+  border-radius: 14px !important;
+  border-color: rgba(56, 45, 31, 0.12) !important;
+  background: rgba(255, 250, 240, 0.86) !important;
+  color: var(--ap-text) !important;
+}
+
+.inspector-command-board button,
+.inspector-secondary-btn {
+  min-height: 42px;
+  font-weight: 800;
+}
