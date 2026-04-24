@@ -1696,3 +1696,18 @@
   min-height: 42px;
   font-weight: 800;
 }
+
+/* Compact inspector headline correction 2026-04-24 */
+.inspector-context-title,
+.inspector-panel-title,
+.inspector-card-title,
+.property-inspector h2,
+.property-inspector h3 {
+  word-break: keep-all !important;
+  overflow-wrap: anywhere !important;
+}
+
+.inspector-context-title {
+  font-size: clamp(26px, 2.2vw, 38px) !important;
+  line-height: 1.04 !important;
+}

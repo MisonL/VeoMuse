@@ -563,3 +563,145 @@
 .player-empty-readouts {
   display: none !important;
 }
+
+/* Workbench layout reset 2026-04-24 */
+.multi-video-player {
+  background: transparent !important;
+}
+
+.player-stage {
+  align-items: stretch !important;
+  justify-content: stretch !important;
+}
+
+.player-empty-state {
+  position: absolute !important;
+  inset: 18px !important;
+  width: auto !important;
+  height: auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-content: center !important;
+  justify-items: start !important;
+  gap: 16px !important;
+  padding: clamp(28px, 4vw, 54px) !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(73, 61, 44, 0.18) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 250, 240, 0.92),
+    rgba(223, 211, 190, 0.72)
+  ) !important;
+  box-shadow: none !important;
+}
+
+.player-empty-statusline {
+  margin: 0 !important;
+}
+
+.player-empty-title {
+  max-width: 18ch !important;
+  font-size: clamp(40px, 5vw, 76px) !important;
+  line-height: 0.96 !important;
+  letter-spacing: 0.01em !important;
+}
+
+.player-empty-subtitle {
+  max-width: 44ch !important;
+  font-size: clamp(14px, 1.15vw, 17px) !important;
+  line-height: 1.7 !important;
+}
+
+/* Clean studio empty state correction 2026-04-24 */
+.player-empty-frame,
+.player-empty-bars,
+.player-empty-corner,
+.player-empty-state::before,
+.player-empty-state::after {
+  display: none !important;
+}
+
+.player-empty-state {
+  inset: 0 !important;
+  border: none !important;
+  border-radius: 30px !important;
+  background: transparent !important;
+  padding: clamp(44px, 6vw, 86px) !important;
+}
+
+.player-empty-statusline {
+  background: rgba(17, 91, 108, 0.1) !important;
+  border-color: rgba(17, 91, 108, 0.18) !important;
+}
+
+.player-empty-title {
+  max-width: 16ch !important;
+  font-size: clamp(52px, 6.5vw, 92px) !important;
+  line-height: 0.92 !important;
+}
+
+.player-empty-subtitle {
+  color: rgba(82, 75, 65, 0.78) !important;
+}
+
+/* First viewport empty-copy correction 2026-04-24 */
+.player-empty-state {
+  align-content: center !important;
+  justify-content: start !important;
+  justify-items: start !important;
+  padding: clamp(32px, 4.6vw, 64px) !important;
+}
+
+.player-empty-title {
+  max-width: min(100%, 14em) !important;
+  font-size: clamp(42px, 4.8vw, 72px) !important;
+  line-height: 0.98 !important;
+  white-space: normal !important;
+}
+
+.player-empty-subtitle {
+  max-width: 46ch !important;
+  font-size: clamp(13px, 1vw, 16px) !important;
+}
+
+/* Visible first-frame message correction 2026-04-24 */
+.player-empty-state {
+  align-content: start !important;
+  justify-content: start !important;
+  justify-items: start !important;
+  padding-top: clamp(42px, 5vw, 72px) !important;
+}
+
+.player-empty-title {
+  max-width: 15ch !important;
+  font-size: clamp(36px, 4vw, 62px) !important;
+  line-height: 1 !important;
+}
+
+.player-empty-subtitle {
+  max-width: 42ch !important;
+  font-size: clamp(13px, 0.95vw, 15px) !important;
+}
+
+/* Hard viewport empty-state fit 2026-04-24 */
+.player-empty-state {
+  inset: 0 !important;
+  height: 100% !important;
+  max-height: 484px !important;
+  padding: 54px 64px !important;
+}
+
+.player-empty-title {
+  max-width: 14ch !important;
+  font-size: clamp(38px, 3.4vw, 58px) !important;
+}
+
+/* Final empty state alignment 2026-04-24 */
+.player-empty-state {
+  padding: 48px 58px !important;
+}
+
+.player-empty-title {
+  max-width: 12ch !important;
+  font-size: clamp(40px, 3.6vw, 60px) !important;
+}
