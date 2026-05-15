@@ -118,7 +118,7 @@ const MarketplaceModePanel: React.FC<MarketplaceModePanelProps> = ({
             <option value="">未选择（使用默认策略）</option>
             {policies.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.name} · {item.priority} · ${item.maxBudgetUsd}
+                {item.name} / {item.priority} / ${item.maxBudgetUsd}
               </option>
             ))}
           </select>
@@ -255,7 +255,7 @@ const MarketplaceModePanel: React.FC<MarketplaceModePanelProps> = ({
                 <div className="policy-budget-head">
                   <strong>{POLICY_BUDGET_GUARD_LABELS[policyDecision.budgetGuard.status]}</strong>
                   <span>
-                    预算 ${policyDecision.budgetGuard.budgetUsd.toFixed(4)} · 阈值{' '}
+                    预算 ${policyDecision.budgetGuard.budgetUsd.toFixed(4)} / 阈值{' '}
                     {(policyDecision.budgetGuard.alertThresholdRatio * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -331,7 +331,7 @@ const MarketplaceModePanel: React.FC<MarketplaceModePanelProps> = ({
             {policyExecutions.map((row) => (
               <div key={row.id} className="execution-item">
                 <div className="execution-title">
-                  {row.recommendedModelId} · {row.priority}
+                  {row.recommendedModelId} / {row.priority}
                 </div>
                 <div className="execution-meta">
                   <span>${row.estimatedCostUsd}</span>

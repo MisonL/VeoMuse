@@ -20,7 +20,7 @@ const summarizeConflict = (value: Record<string, unknown>) => {
   return entries
     .slice(0, 3)
     .map(([key, conflictValue]) => `${key}:${String(conflictValue)}`)
-    .join(' · ')
+    .join(' / ')
 }
 
 export interface PermissionMergeSectionProps {
@@ -96,7 +96,7 @@ const PermissionMergeSection: React.FC<PermissionMergeSectionProps> = ({
           </strong>
           <span>
             {timelineMergeResult
-              ? `源修订 ${timelineMergeResult.sourceRevision} → 目标修订 ${timelineMergeResult.targetRevision}`
+              ? `源修订 ${timelineMergeResult.sourceRevision} -> 目标修订 ${timelineMergeResult.targetRevision}`
               : '权限更新和 Timeline Merge 的最新结果会在这里汇总展示。'}
           </span>
         </div>

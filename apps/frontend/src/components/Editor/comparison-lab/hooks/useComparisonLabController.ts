@@ -17,11 +17,13 @@ interface ModelSummary {
 interface UseComparisonLabControllerOptions {
   onOpenAssets?: ComparisonLabProps['onOpenAssets']
   channelPanelRequestNonce?: number
+  onChannelPanelClosed?: ComparisonLabProps['onChannelPanelClosed']
 }
 
 export const useComparisonLabController = ({
   onOpenAssets,
-  channelPanelRequestNonce
+  channelPanelRequestNonce,
+  onChannelPanelClosed
 }: UseComparisonLabControllerOptions) => {
   const allAssets = useEditorStore((state) => state.assets)
   const { showToast } = useToastStore()
@@ -71,8 +73,9 @@ export const useComparisonLabController = ({
   }, [captureChannelPanelTrigger])
   const closeChannelPanel = useCallback(() => {
     setShowChannelPanel(false)
+    onChannelPanelClosed?.()
     restoreChannelPanelTriggerFocus()
-  }, [restoreChannelPanelTriggerFocus])
+  }, [onChannelPanelClosed, restoreChannelPanelTriggerFocus])
 
   const {
     leftAssetId,

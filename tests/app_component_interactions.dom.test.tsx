@@ -117,59 +117,40 @@ describe('App DOM 运行态交互补测', () => {
     globalThis.fetch = originalFetch
   })
 
-  it('应覆盖引导流程、模式切换与 AI 接入入口事件', async () => {
-    localStorage.removeItem('veomuse-onboarding-v1')
-    const onOpenChannel = mock(() => {})
-    const listener = () => onOpenChannel()
-    window.addEventListener('veomuse:open-channel-panel', listener)
-
-    try {
-      const view = await act(async () => render(<App />))
-      expect(view.queryByTestId('area-guide-overlay')).toBeNull()
-
-      await click(view.getByTestId('btn-open-guide'))
-      const guideOverlay = await view.findByTestId('area-guide-overlay')
-      expect(guideOverlay).toBeInTheDocument()
-
-      const nextGuideButton = await view.findByRole('button', { name: '下一步' })
-      await waitFor(() => {
-        expect(nextGuideButton).toHaveFocus()
-      })
-
-      await click(nextGuideButton)
-      await click(await view.findByRole('button', { name: '聚焦导入按钮' }))
-      await click(await view.findByRole('button', { name: '跳过' }))
-      await waitFor(() => {
-        expect(view.queryByTestId('area-guide-overlay')).toBeNull()
-      })
-      expect(localStorage.getItem('veomuse-onboarding-v1')).toBe('done')
-
-      await click(view.getByTestId('btn-open-channel-access'))
-      await waitFor(() => {
-        expect(onOpenChannel).toHaveBeenCalledTimes(1)
-        expect(view.getByTestId('area-channel-panel')).toBeInTheDocument()
-      })
-
-      await click(view.getByTestId('btn-mode-audio'))
-      expect(view.getByText('音频母带引擎已就绪')).toBeInTheDocument()
-      expect(view.getByTestId('btn-mode-audio')).toHaveAttribute('aria-pressed', 'true')
-      await click(view.getByRole('button', { name: '导入素材开始处理' }))
-      expect(view.getByTestId('btn-mode-edit').className).toContain('active')
-      expect(view.getByTestId('btn-mode-edit')).toHaveAttribute('aria-pressed', 'true')
-    } finally {
-      window.removeEventListener('veomuse:open-channel-panel', listener)
-    }
-  }, 30_000)
-
-  it('应覆盖导出守卫、成功导出、播放器与布局控制分支', async () => {
-    localStorage.setItem('veomuse-onboarding-v1', 'done')
+  it('应覆盖模式切换与基础入口事件', async () => {
     const view = await act(async () => render(<App />))
 
-    await click(view.getByTestId('btn-center-mode-focus'))
-    await click(view.getByTestId('btn-density-compact'))
-    await click(view.getByTestId('btn-reset-layout'))
-    expect(useLayoutStore.getState().centerMode).toBe('fit')
-    expect(useLayoutStore.getState().topBarDensity).toBe('comfortable')
+    await click(view.getByTestId('btn-mode-audio'))
+    expect(view.getByText('音频母带引擎已就绪')).toBeInTheDocument()
+    expect(view.getByTestId('btn-mode-audio')).toHaveAttribute('aria-pressed', 'true')
+
+    await click(view.getByRole('button', { name: '导入音频素材' }))
+    expect(view.getByTestId('btn-mode-edit').className).toContain('active')
+    expect(view.getByTestId('btn-mode-edit')).toHaveAttribute('aria-pressed', 'true')
+  }, 30_000)
+
+  it('切换主工作模式时应回到素材库，避免保留不相关的左侧工具态', async () => {
+    const view = await act(async () => render(<App />))
+
+    await click(view.getByRole('button', { name: '动捕实验室' }))
+    await waitFor(() => {
+      expect(view.container.querySelector('.pro-asset-panel[data-mode="motion"]')).not.toBeNull()
+    })
+
+    await click(view.getByTestId('btn-mode-audio'))
+
+    await waitFor(() => {
+      expect(view.container.querySelector('.pro-asset-panel[data-mode="assets"]')).not.toBeNull()
+    })
+    expect(view.getByRole('button', { name: '素材库' })).toHaveAttribute('aria-pressed', 'true')
+    expect(view.queryByRole('button', { name: 'AI 导演' })).toBeNull()
+    expect(view.queryByRole('button', { name: '演员库' })).toBeNull()
+    expect(view.queryByRole('button', { name: '动捕实验室' })).toBeNull()
+  }, 30_000)
+
+  it('应覆盖导出守卫、成功导出、播放器与画幅控制', async () => {
+    localStorage.setItem('veomuse-onboarding-v1', 'done')
+    const view = await act(async () => render(<App />))
 
     await click(view.getByTestId('btn-export'))
     await waitFor(() => {
@@ -202,33 +183,24 @@ describe('App DOM 运行态交互补测', () => {
       useEditorStore.getState().setCurrentTime(1)
     })
 
-    await click(view.getByTestId('btn-preview-mode-toggle'))
-    expect(useEditorStore.getState().isSpatialPreview).toBe(true)
-
     // DOM 环境下开启播放会启动 requestAnimationFrame 循环，可能导致 act() 等待过久而 flaky。
     // 这里验证播放切换后立即暂停，避免持续的 60fps 循环拖慢整套用例。
-    await click(view.getByTestId('btn-player-play'))
+    // 使用 title 因为我们现在使用了 SVG
+    const playBtn = view.getByTitle('播放')
+    await click(playBtn)
     await waitFor(() => {
       expect(useEditorStore.getState().isPlaying).toBe(true)
     })
-    await click(view.getByTestId('btn-player-play'))
+    const pauseBtn = view.getByTitle('暂停')
+    await click(pauseBtn)
     await waitFor(() => {
       expect(useEditorStore.getState().isPlaying).toBe(false)
     })
-    await click(view.getByTestId('btn-player-next'))
-    expect(useEditorStore.getState().currentTime).toBeCloseTo(3, 3)
-    await click(view.getByTestId('btn-player-prev'))
-    expect(useEditorStore.getState().currentTime).toBeCloseTo(0, 3)
 
-    await click(view.getByTestId('btn-tool-cut'))
-    await click(view.getByTestId('btn-tool-hand'))
-    await click(view.getByTestId('btn-tool-select'))
-    await change(view.getByTestId('select-export-quality'), {
-      target: { value: '4k-hdr' }
-    })
-    await change(view.getByTestId('select-preview-aspect'), {
-      target: { value: '21:9' }
-    })
+    await click(view.getByTitle('下一片段'))
+    expect(useEditorStore.getState().currentTime).toBeCloseTo(3, 3)
+    await click(view.getByTitle('跳转至开始'))
+    expect(useEditorStore.getState().currentTime).toBeCloseTo(0, 3)
 
     await click(view.getByTestId('btn-export'))
     await waitFor(() => {

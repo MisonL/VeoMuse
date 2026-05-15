@@ -42,6 +42,7 @@ export type PolicyPriority = 'quality' | 'speed' | 'cost'
 export interface ComparisonLabProps {
   onOpenAssets?: () => void
   channelPanelRequestNonce?: number
+  onChannelPanelClosed?: () => void
 }
 
 export interface CapabilityPayload {

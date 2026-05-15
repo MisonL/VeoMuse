@@ -243,7 +243,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
         <strong>{focusVideoGenerationJob?.id || '暂无焦点任务'}</strong>
         <span>
           {focusVideoGenerationJob
-            ? `${focusVideoGenerationJob.generationMode} · ${focusVideoGenerationJob.modelId} · ${resolveVideoGenerationStatusText(
+            ? `${focusVideoGenerationJob.generationMode} / ${focusVideoGenerationJob.modelId} / ${resolveVideoGenerationStatusText(
                 focusVideoGenerationJob.status
               )}`
             : '提交或选中一个任务后，这里会聚合输出、耗时与同步状态。'}
@@ -285,7 +285,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
               <span>执行窗口</span>
               <strong>{formatDurationMs(focusVideoGenerationJob.durationMs)}</strong>
               <small>
-                创建 {formatLocalDateTime(focusVideoGenerationJob.createdAt)} · 开始{' '}
+                创建 {formatLocalDateTime(focusVideoGenerationJob.createdAt)} / 开始{' '}
                 {formatLocalDateTime(focusVideoGenerationJob.startedAt)}
               </small>
             </div>
@@ -293,7 +293,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
               <span>渠道同步</span>
               <strong>{focusProviderStatus}</strong>
               <small>
-                完成 {formatLocalDateTime(focusVideoGenerationJob.finishedAt)} · 最近同步{' '}
+                完成 {formatLocalDateTime(focusVideoGenerationJob.finishedAt)} / 最近同步{' '}
                 {formatLocalDateTime(focusVideoGenerationJob.lastSyncedAt)}
               </small>
             </div>
@@ -552,7 +552,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
                 <code className="video-generation-pagination-value">
                   {videoGenerationCursor || '-'}
                 </code>
-                <span className="video-generation-pagination-sep">·</span>
+                <span className="video-generation-pagination-sep">/</span>
                 <span className="video-generation-pagination-label">hasMore</span>
                 <strong>{videoGenerationHasMore ? 'true' : 'false'}</strong>
               </div>
@@ -609,7 +609,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
             <span>异常回收</span>
             <strong>{failedVideoGenerationJobs.length + canceledVideoGenerationJobs.length}</strong>
             <small>
-              失败 {failedVideoGenerationJobs.length} · 取消 {canceledVideoGenerationJobs.length}
+              失败 {failedVideoGenerationJobs.length} / 取消 {canceledVideoGenerationJobs.length}
             </small>
           </div>
           <div className="lab-metric-card lab-metric-card--neutral">
@@ -674,7 +674,7 @@ const VideoGenerationWorkbench: React.FC<VideoGenerationWorkbenchProps> = ({
                   >
                     <span>{job.id}</span>
                     <span>
-                      {job.generationMode} · {job.modelId}
+                      {job.generationMode} / {job.modelId}
                     </span>
                   </button>
                   <span className={`video-generation-status-badge ${statusBadgeModifier}`}>

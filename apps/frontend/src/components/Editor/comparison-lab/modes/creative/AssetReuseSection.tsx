@@ -106,7 +106,7 @@ const AssetReuseSection: React.FC<AssetReuseSectionProps> = ({
           <div className="asset-reuse-route-spotlight">
             <span className="creative-section-kicker">路径预览</span>
             <strong>
-              {(assetReuseSourceId || 'asset_xxx').trim() || 'asset_xxx'} →{' '}
+              {(assetReuseSourceId || 'asset_xxx').trim() || 'asset_xxx'} {'->'}{' '}
               {(assetReuseTargetId || 'project_xxx').trim() || 'project_xxx'}
             </strong>
             <span>{assetReuseNote || '补充说明后，复用动机会和结果一起沉淀到历史轨迹。'}</span>

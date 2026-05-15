@@ -23,7 +23,7 @@ const CreativeVersionChainSection: React.FC<CreativeVersionChainSectionProps> = 
             onClick={() => onSwitchCreativeRunVersion(version)}
           >
             <span>
-              v{version.version || 1} · {version.status}
+              v{version.version || 1} / {version.status}
             </span>
             <span>{new Date(version.updatedAt).toLocaleString()}</span>
           </button>

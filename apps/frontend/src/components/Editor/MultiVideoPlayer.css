@@ -705,3 +705,20 @@
   max-width: 12ch !important;
   font-size: clamp(40px, 3.6vw, 60px) !important;
 }
+
+/* Light theme monitor surface correction 2026-04-29 */
+html[data-theme='light'] body .preview-frame .player-empty-state,
+html[data-theme='light'] body .monitor-stage-shell.is-idle .preview-frame .player-empty-state {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(35, 124, 133, 0.22), transparent 46%),
+    linear-gradient(rgba(168, 207, 199, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168, 207, 199, 0.08) 1px, transparent 1px),
+    #2a3f3f !important;
+  background-size:
+    100% 100%,
+    88px 88px,
+    88px 88px,
+    auto !important;
+  border: 1px solid rgba(10, 62, 73, 0.42) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 252, 244, 0.05) !important;
+}

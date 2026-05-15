@@ -110,7 +110,7 @@ const GovernanceCommentsSection: React.FC<GovernanceCommentsSectionProps> = ({
           <option value="">选择评论后可 Resolve</option>
           {governanceComments.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.id.slice(0, 8)} · {item.status}
+              {item.id.slice(0, 8)} / {item.status}
             </option>
           ))}
         </select>

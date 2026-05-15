@@ -173,7 +173,7 @@ export const resolveAlchemyOutcome = (
   }
   return {
     toastLevel: 'success' as const,
-    toastMessage: `✨ ${type} 炼金成功`,
+    toastMessage: `${type} 炼金成功`,
     dataUpdate
   }
 }

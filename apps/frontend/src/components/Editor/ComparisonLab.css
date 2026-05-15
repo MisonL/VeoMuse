@@ -6669,3 +6669,663 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Compact compare ordering guard 2026-04-26 */
+@media (max-width: 1180px) {
+  .comparison-lab-pro[data-lab-mode='compare'] .lab-stage-main {
+    grid-template-rows: auto auto auto !important;
+    overflow: visible !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .lab-panel-stack,
+  .comparison-lab-pro[data-lab-mode='compare'] .lab-panel-slot {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .lab-panel-slot {
+    flex: 0 0 auto !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .compare-mode-shell {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "results"
+      "command" !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .lab-split-engine {
+    grid-area: results !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: minmax(240px, auto) 36px minmax(240px, auto) !important;
+    align-items: stretch !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .model-pane {
+    min-height: 240px !important;
+    height: auto !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .lab-axis {
+    width: 100% !important;
+    height: 36px !important;
+    min-height: 36px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .axis-line {
+    width: 100% !important;
+    height: 2px !important;
+    margin: 17px 0 0 !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .axis-handle {
+    top: 18px !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .compare-command-deck {
+    grid-area: command !important;
+  }
+}
+
+/* Compare workspace layout repair 2026-04-28 */
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-main {
+  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+  padding: 10px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-main-head {
+  min-height: 0 !important;
+  padding: 8px 10px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-main-title-row strong {
+  font-size: clamp(20px, 1.6vw, 24px) !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-main-state {
+  max-width: 34ch !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-toolbar {
+  min-height: 0 !important;
+  padding: 7px 9px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-toolbar-main,
+.comparison-lab-pro[data-lab-mode='compare'] .lab-toolbar-left {
+  gap: 8px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-toolbar-main {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-toolbar-left {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  min-width: 0 !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-toolbar-bridge-copy {
+  display: none !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-status-cluster {
+  min-height: 0 !important;
+  padding: 4px 6px !important;
+  gap: 6px !important;
+  flex-wrap: nowrap !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-status {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .sync-toggle {
+  flex: 0 0 auto !important;
+  min-height: 40px !important;
+  padding: 5px 8px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-toolbar-cta {
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-btn,
+.comparison-lab-pro[data-lab-mode='compare'] .lab-btn--secondary {
+  min-height: 40px !important;
+  padding: 0 12px !important;
+  white-space: nowrap !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-panel-stack {
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  gap: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-panel-slot {
+  display: grid !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-mode-shell {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  grid-template-areas:
+    "command"
+    "results" !important;
+  gap: 6px !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-deck {
+  grid-area: command !important;
+  display: grid !important;
+  grid-template-columns: minmax(116px, 0.36fr) minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 6px 8px !important;
+  min-height: 0 !important;
+  padding: 4px 7px !important;
+  overflow: hidden !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-copy {
+  gap: 2px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-copy strong {
+  font-size: 16px !important;
+  line-height: 1.08 !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-copy p,
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-link {
+  display: none !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-group {
+  display: grid !important;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr) auto !important;
+  gap: 5px !important;
+  align-items: center !important;
+  min-width: 0 !important;
+  padding: 3px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-label {
+  grid-column: auto !important;
+  font-size: 10px !important;
+  letter-spacing: 0.08em !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-group select,
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-group button {
+  min-height: 40px !important;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .compare-command-group select {
+  padding-inline: 10px 30px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-split-engine {
+  grid-area: results !important;
+  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr) !important;
+  gap: 8px !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .model-pane {
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .pane-head {
+  padding: 7px 9px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .pane-overlay,
+.comparison-lab-pro[data-lab-mode='compare'] .pane-title-stack {
+  gap: 5px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .model-name {
+  padding: 5px 8px !important;
+  font-size: 12px !important;
+  -webkit-line-clamp: 1 !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .pane-meta-row {
+  gap: 5px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .pane-meta-chip,
+.comparison-lab-pro[data-lab-mode='compare'] .pane-meta-copy {
+  min-height: 20px !important;
+  padding-inline: 8px !important;
+  font-size: 10px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .pane-viewport,
+.comparison-lab-pro[data-lab-mode='compare'] .empty-pane {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .empty-pane {
+  gap: 6px !important;
+  padding: 10px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .empty-pane strong {
+  max-width: none !important;
+  font-size: 16px !important;
+  line-height: 1.12 !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .empty-pane p {
+  display: -webkit-box !important;
+  max-width: none !important;
+  overflow: hidden !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  line-height: 1.35 !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-axis {
+  width: 42px !important;
+  min-width: 42px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .axis-handle {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 14px !important;
+}
+
+@container lab-frame (max-width: 760px) {
+  .comparison-lab-pro[data-lab-mode='compare'] .lab-stage-spine {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    align-content: start !important;
+    gap: 8px !important;
+    padding: 10px !important;
+    border: 1px solid var(--lab-shell-border) !important;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.12)),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--lab-shell-floor) 96%, #ffffff 4%),
+        color-mix(in srgb, var(--lab-shell-panel) 84%, var(--ap-panel) 16%)
+      ) !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .lab-stage-rail-head {
+    display: grid !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .lab-stage-markers {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .lab-stage-marker {
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+    min-height: 62px !important;
+    padding: 8px 9px !important;
+  }
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-spine {
+  gap: 5px !important;
+  padding: 7px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-rail-head {
+  gap: 1px !important;
+  padding: 0 2px 4px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-rail-kicker {
+  font-size: 7px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-rail-head strong {
+  font-size: 12px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-markers {
+  gap: 5px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-marker {
+  grid-template-columns: 32px minmax(0, 1fr) !important;
+  min-height: 54px !important;
+  gap: 6px !important;
+  padding: 6px 7px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-marker-index {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 10px !important;
+  font-size: 9px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-marker-copy {
+  gap: 2px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-marker-header {
+  flex-wrap: nowrap !important;
+  gap: 4px !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-marker-label,
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-marker-state {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-marker-label {
+  font-size: 12px !important;
+  line-height: 1.08 !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-marker-state {
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+}
+
+.comparison-lab-pro[data-lab-mode='compare'] .lab-stage-state-chip {
+  min-width: 42px !important;
+  padding-inline: 5px !important;
+  font-size: 8px !important;
+}
+
+@media (max-height: 820px) {
+  .comparison-lab-pro[data-lab-mode='compare'] .compare-mode-shell {
+    gap: 4px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .compare-command-deck {
+    gap: 4px 6px !important;
+    padding: 4px 6px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .compare-command-grid {
+    gap: 3px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .compare-command-group {
+    gap: 4px !important;
+    padding: 2px 3px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .compare-command-group select,
+  .comparison-lab-pro[data-lab-mode='compare'] .compare-command-group button {
+    min-height: 40px !important;
+    font-size: 11px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .pane-head {
+    padding: 6px 8px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .pane-overlay,
+  .comparison-lab-pro[data-lab-mode='compare'] .pane-title-stack {
+    gap: 3px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .pane-meta-row {
+    display: none !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .model-name {
+    padding: 4px 7px !important;
+    font-size: 11px !important;
+    line-height: 1.08 !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .metric-chip {
+    padding: 2px 7px !important;
+    font-size: 9px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .empty-pane {
+    justify-content: center !important;
+    gap: 3px !important;
+    padding: 6px 8px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .empty-pane p,
+  .comparison-lab-pro[data-lab-mode='compare'] .empty-pane-cta {
+    display: none !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .empty-pane-kicker {
+    padding: 2px 7px !important;
+    font-size: 9px !important;
+  }
+
+  .comparison-lab-pro[data-lab-mode='compare'] .empty-pane strong {
+    display: -webkit-box !important;
+    overflow: hidden !important;
+    font-size: 13px !important;
+    line-height: 1.1 !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 1 !important;
+  }
+}
+
+/* Long flow viewport repair 2026-04-28 */
+@media (max-height: 820px) {
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-main {
+    grid-template-rows: minmax(48px, auto) minmax(48px, auto) minmax(240px, 1fr) !important;
+    gap: 8px !important;
+    padding: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-spine {
+    grid-template-columns: 1fr !important;
+    align-content: start !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    overflow: hidden !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-markers {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-marker {
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+    min-height: 62px !important;
+    gap: 7px !important;
+    padding: 7px 8px !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-marker-copy {
+    min-width: 0 !important;
+    gap: 3px !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-marker-header {
+    flex-wrap: nowrap !important;
+    gap: 5px !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-marker-label,
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-marker-state {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-main-head {
+    align-items: center !important;
+    min-height: 0 !important;
+    gap: 6px 10px !important;
+    padding: 8px 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-main-copy {
+    gap: 2px !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-main-kicker {
+    display: none !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-main-title-row {
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-main-title-row strong {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    font-size: 18px !important;
+    line-height: 1.05 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-main-chip {
+    min-height: 22px !important;
+    padding: 4px 8px !important;
+    font-size: 9px !important;
+    white-space: nowrap !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-stage-main-state {
+    display: -webkit-box !important;
+    max-width: 24ch !important;
+    overflow: hidden !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    text-align: right !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-toolbar {
+    min-height: 0 !important;
+    padding: 5px 8px !important;
+    border-radius: 14px !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-toolbar-main {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+    min-height: 0 !important;
+    align-items: center !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-toolbar-left {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    gap: 0 !important;
+    min-height: 0 !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-toolbar-bridge-copy {
+    display: none !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-status-cluster {
+    min-height: 0 !important;
+    gap: 6px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-status {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 40px !important;
+    max-width: 100% !important;
+    padding: 0 10px !important;
+    overflow: hidden !important;
+    border-radius: 12px !important;
+    background: color-mix(in srgb, var(--ap-accent-soft) 34%, transparent) !important;
+    font-size: 11px !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-toolbar-cta {
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-btn,
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-btn--secondary {
+    min-height: 40px !important;
+    padding: 7px 11px !important;
+    border-radius: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-panel-stack,
+  .comparison-lab-pro:not([data-lab-mode='compare']) .lab-panel-slot {
+    min-height: 240px !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .comparison-lab-pro:not([data-lab-mode='compare']) .marketplace-shell,
+  .comparison-lab-pro:not([data-lab-mode='compare']) .creative-shell,
+  .comparison-lab-pro:not([data-lab-mode='compare']) .collab-shell {
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow: auto !important;
+  }
+}

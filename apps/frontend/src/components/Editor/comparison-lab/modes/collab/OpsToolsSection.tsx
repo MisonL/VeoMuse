@@ -288,7 +288,7 @@ const OpsToolsSection: React.FC<OpsToolsSectionProps> = ({
                 <span
                   className={`lab-status-badge lab-status-badge--${resolveOpsTone(item.status)}`}
                 >
-                  {item.level} · {item.status}
+                  {item.level} / {item.status}
                 </span>
               </div>
               <div className="collab-list-item-copy">

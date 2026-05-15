@@ -102,28 +102,6 @@ const MultiVideoPlayer: React.FC = () => {
               <span className="player-empty-corner player-empty-corner--br" />
             </div>
             <div className="player-empty-bars" aria-hidden="true" />
-            <div className="player-empty-statusline">
-              <span className="player-empty-indicator" aria-hidden="true" />
-              <div className="player-empty-kicker">NO SIGNAL / STANDBY</div>
-            </div>
-            <div className="player-empty-title">节目监看等待输入</div>
-            <div className="player-empty-subtitle">
-              导入素材或交给 AI 导演生成首批分镜后，主监看会自动接管信号并进入预览。
-            </div>
-            <div className="player-empty-readouts">
-              <div>
-                <b>输入</b>
-                <span>空闲</span>
-              </div>
-              <div>
-                <b>总线</b>
-                <span>PGM-A</span>
-              </div>
-              <div>
-                <b>状态</b>
-                <span>READY</span>
-              </div>
-            </div>
           </div>
         ) : null}
         {hasPlayableVideo ? <div className="vfx-layer-overlay"></div> : null}

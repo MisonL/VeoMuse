@@ -18,8 +18,6 @@ test('Docker UI smoke 应串通注册、工作区创建与关键值守入口', a
 
   await page.goto('/')
   await dismissGuideIfPresent(page)
-  await page.getByTestId('btn-reset-layout').click()
-  await page.getByTestId('btn-center-mode-fit').click()
 
   await page.getByTestId('btn-mode-color').click()
   await expect(page.getByTestId('area-comparison-lab')).toBeVisible()
@@ -57,21 +55,18 @@ test('Docker UI smoke 应串通注册、工作区创建与关键值守入口', a
   await expect(page.getByTestId('area-creative-shell')).toBeVisible()
   await expect(page.getByText('创意闭环引擎')).toBeVisible()
 
-  await page
-    .getByTestId('area-right-panel')
-    .getByRole('button', { name: /^系统监控\s*(监控摘要|实验监控摘要|母带监控摘要)$/ })
-    .click()
+  await page.getByTestId('area-right-panel').getByRole('button', { name: '监控' }).click()
   await expect(page.getByText('实验值守摘要')).toBeVisible()
   await expect(page.locator('.telemetry-watch-brief-card')).toHaveCount(4)
 
   await page.getByRole('button', { name: '展开系统监控', exact: true }).click()
   await expect(page.locator('.telemetry-dashboard')).toBeVisible()
   await expect(page.locator('.telemetry-command-bar')).toBeVisible()
-  await expect(page.locator('.telemetry-command-stat')).toHaveCount(3)
+  await expect(page.locator('.telemetry-command-stat')).toHaveCount(6)
   await expect(page.getByRole('heading', { name: 'Provider 健康检查' })).toBeVisible()
   await expect(page.getByText('数据库自愈中心')).toBeVisible()
 
   await page.getByTestId('btn-mode-color').click()
-  await page.getByTestId('btn-open-channel-access').click()
+  await page.getByTestId('btn-open-channel-panel').click()
   await expect(page.getByTestId('area-channel-panel')).toBeVisible()
 })

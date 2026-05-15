@@ -12,7 +12,7 @@ export class MotionSyncManager {
 
   static async startCapture(onData: (data: MotionData) => void) {
     if (this.isActive) return
-    console.log('📹 AI 实时动捕引擎：正在初始化高频 60fps 采样流...')
+    console.log('AI 实时动捕引擎：正在初始化高频 60fps 采样流...')
     this.isActive = true
 
     // 提升采样频率至 16ms (约 60fps)
@@ -45,7 +45,7 @@ export class MotionSyncManager {
       this.intervalId = null
     }
     this.isActive = false
-    console.log('🛑 动捕引擎已停止')
+    console.log('动捕引擎已停止')
   }
 
   static getStatus() {

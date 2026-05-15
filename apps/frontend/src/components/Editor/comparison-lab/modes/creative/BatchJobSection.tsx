@@ -150,7 +150,7 @@ const BatchJobSection: React.FC<BatchJobSectionProps> = ({
             {handledItems}/{totalItems || 0}
           </strong>
           <small>
-            完成 {completedItems} · 失败 {failedItems}
+            完成 {completedItems} / 失败 {failedItems}
           </small>
         </div>
         <div className="lab-metric-card lab-metric-card--neutral">

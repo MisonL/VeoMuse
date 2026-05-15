@@ -75,7 +75,7 @@ export class SyncController {
         const timeToStart = clip.start - time
         if (timeToStart > 0 && timeToStart <= 5 && !this.preloadedSet.has(clip.id)) {
           if (import.meta.env?.DEV) {
-            console.log(`🚀 [Pro Preload] 预加载片段: ${clip.name || clip.id}`)
+            console.log(`[Pro Preload] 预加载片段: ${clip.name || clip.id}`)
           }
           media.load()
           this.preloadedSet.add(clip.id)

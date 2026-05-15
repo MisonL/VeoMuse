@@ -129,7 +129,6 @@ button {
 
 /* Cinematica Light redesign tokens */
 :root,
-[data-theme='dark'],
 [data-theme='light'] {
   color-scheme: light;
   --ap-font-ui: 'Noto Sans SC', 'Avenir Next', 'Segoe UI', sans-serif;
@@ -169,12 +168,64 @@ button {
   --ap-blur: 0px;
   --ap-saturate: 100%;
   --ap-glass-bg: rgba(255, 250, 240, 0.94);
-  --ap-radius: 28px;
-  --ap-radius-inner: 18px;
+  --ap-radius: 16px;
+  --ap-radius-inner: 10px;
   --ap-shadow-subtle: 0 12px 30px rgba(59, 45, 28, 0.08);
   --ap-shadow-panel: 0 24px 54px rgba(59, 45, 28, 0.12), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
   --danger-color: #c5412e;
   --success-color: #267a55;
+
+  --bg-color: var(--ap-bg);
+  --panel-bg: var(--ap-glass-bg);
+  --glass-border: var(--ap-border);
+  --glass-shadow: var(--ap-shadow-subtle);
+  --text-main: var(--ap-text);
+  --text-sub: var(--ap-text-dim);
+  --accent-color: var(--ap-accent);
+  --accent-glow: var(--ap-accent-glow);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --ap-bg: #080a0c;
+  --ap-surface: #121416;
+  --ap-card: #171a1d;
+  --ap-panel: #101315;
+  --ap-panel-soft: #1b2023;
+  --pro-surface: #141719;
+
+  --ap-accent: #1f7284;
+  --ap-accent-soft: rgba(31, 114, 132, 0.22);
+  --ap-accent-glow: rgba(31, 114, 132, 0.26);
+  --ap-accent-strong: #9fd6de;
+  --ap-signal: #df6a37;
+  --ap-signal-soft: rgba(223, 106, 55, 0.18);
+
+  --ap-border: rgba(219, 229, 226, 0.12);
+  --ap-outline: rgba(159, 214, 222, 0.18);
+  --ap-grid-line: rgba(219, 229, 226, 0.07);
+  --ap-text: #edf3f1;
+  --ap-text-dim: #9aa9a6;
+  --ap-monitor-bg: #050607;
+  --ap-monitor-border: rgba(219, 229, 226, 0.16);
+  --ap-stage-shell: #0e1112;
+  --ap-stage-shell-strong: #0a0c0d;
+  --ap-stage-shell-muted: #171b1e;
+  --ap-stage-shell-panel: #121618;
+  --ap-stage-deck: #060809;
+  --ap-stage-deck-strong: #0c1012;
+  --ap-stage-deck-soft: #142226;
+  --ap-ink-inverse: #f5faf8;
+
+  --ap-blur: 12px;
+  --ap-saturate: 128%;
+  --ap-glass-bg: rgba(16, 19, 21, 0.96);
+  --ap-radius: 16px;
+  --ap-radius-inner: 10px;
+  --ap-shadow-subtle: none;
+  --ap-shadow-panel: none;
+  --danger-color: #ff8068;
+  --success-color: #62c99a;
 
   --bg-color: var(--ap-bg);
   --panel-bg: var(--ap-glass-bg);

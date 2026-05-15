@@ -109,6 +109,8 @@
 .pro-empty-state-v2 {
   grid-column: span 2;
   height: 200px;
+  width: 100%;
+  appearance: none;
   border: 2px dashed color-mix(in srgb, var(--ap-border) 82%, #ffffff 18%);
   border-radius: 14px;
   display: flex;
@@ -117,6 +119,9 @@
   justify-content: center;
   gap: 12px;
   cursor: pointer;
+  color: inherit;
+  font: inherit;
+  text-align: center;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--ap-surface) 82%, transparent),
@@ -347,9 +352,18 @@
   flex-shrink: 0;
 }
 
+.scene-add-btn:disabled {
+  color: rgba(29, 27, 23, 0.52);
+  border-color: rgba(56, 45, 31, 0.12);
+  background: rgba(221, 216, 202, 0.72);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
 .motion-controls {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 8px;
 }
 
@@ -815,12 +829,31 @@
 .asset-tile,
 .pro-empty-state-v2,
 .analysis-card,
-.hub-primary-btn,
 .actor-card,
 .motion-card {
   border-color: rgba(56, 45, 31, 0.12) !important;
   background: rgba(255, 250, 240, 0.78) !important;
   box-shadow: 0 12px 26px rgba(59, 45, 28, 0.07) !important;
+}
+
+.hub-primary-btn,
+.motion-btn {
+  color: #fffaf0 !important;
+  border-color: rgba(14, 97, 112, 0.62) !important;
+  background-color: #0e6170 !important;
+  background-image: linear-gradient(145deg, #1a7384, #0a4a56) !important;
+  box-shadow: 0 14px 24px rgba(14, 97, 112, 0.22) !important;
+}
+
+.hub-primary-btn:disabled,
+.motion-btn:disabled {
+  color: rgba(29, 27, 23, 0.72) !important;
+  border-color: rgba(56, 45, 31, 0.16) !important;
+  background-color: rgba(221, 216, 202, 0.96) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+  opacity: 0.68 !important;
 }
 
 .pro-empty-state-v2 {
@@ -862,4 +895,70 @@
 
 .tile-duration {
   font-size: 11px;
+}
+
+@media (min-width: 1181px) {
+  .pro-asset-panel {
+    gap: 14px;
+  }
+
+  .asset-header-actions {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .asset-search-bar {
+    min-height: 46px;
+    padding: 0 14px;
+    border-radius: 16px;
+  }
+
+  .asset-search-bar input {
+    font-size: 13px;
+  }
+
+  .import-btn-pro {
+    min-height: 46px;
+    min-width: 108px;
+    padding: 0 18px;
+    border-radius: 16px;
+  }
+
+  .asset-categories {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .cat-btn {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .asset-intel-strip {
+    gap: 8px;
+  }
+
+  .asset-intel-card {
+    min-height: 84px;
+    padding: 12px 14px;
+    border-radius: 18px;
+  }
+
+  .asset-intel-card strong {
+    font-size: 20px;
+  }
+
+  .pro-asset-grid {
+    gap: 12px;
+  }
+
+  .pro-empty-state-v2 {
+    min-height: 176px;
+    border-radius: 20px;
+  }
+
+  .pro-empty-state-v2 p {
+    font-size: 16px;
+  }
 }

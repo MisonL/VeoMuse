@@ -137,7 +137,7 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
               <option value="">请选择</option>
               {workflows.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.name} · {new Date(item.updatedAt).toLocaleString()}
+                  {item.name} / {new Date(item.updatedAt).toLocaleString()}
                 </option>
               ))}
             </select>
@@ -206,7 +206,7 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
           <span>运行完成</span>
           <strong>{completedWorkflowRuns.length}</strong>
           <small>
-            失败 {failedWorkflowRuns.length} · 可继续翻页 {workflowRunsHasMore ? '是' : '否'}
+            失败 {failedWorkflowRuns.length} / 可继续翻页 {workflowRunsHasMore ? '是' : '否'}
           </small>
         </div>
         <div className="lab-metric-card lab-metric-card--neutral">

@@ -58,7 +58,8 @@ const focusStageButton = (mode: (typeof LAB_STAGE_ORDER)[number]['mode']) => {
 
 const ComparisonLab: React.FC<ComparisonLabProps> = ({
   onOpenAssets,
-  channelPanelRequestNonce
+  channelPanelRequestNonce,
+  onChannelPanelClosed
 }) => {
   const {
     labMode,
@@ -68,7 +69,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
     creativeContainerProps,
     collabContainerProps,
     channelAccessPanelProps
-  } = useComparisonLabController({ onOpenAssets, channelPanelRequestNonce })
+  } = useComparisonLabController({ onOpenAssets, channelPanelRequestNonce, onChannelPanelClosed })
   const currentStageIndex = LAB_STAGE_ORDER.findIndex((stage) => stage.mode === labMode)
   const activeStageMeta = LAB_STAGE_META[labMode]
   const activeStageState =
@@ -155,7 +156,7 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
           <div className="lab-stage-main-head">
             <div className="lab-stage-main-copy">
               <span className="lab-stage-main-kicker">
-                {LAB_STAGE_STATUS_LABEL.current} · {activeStageMeta.index}
+                {LAB_STAGE_STATUS_LABEL.current} / {activeStageMeta.index}
               </span>
               <div className="lab-stage-main-title-row">
                 <strong>{activeStageMeta.label}</strong>

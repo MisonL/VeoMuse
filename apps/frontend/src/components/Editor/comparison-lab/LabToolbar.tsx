@@ -61,7 +61,7 @@ const LabToolbar: React.FC<LabToolbarProps> = ({
           </div>
           <div className="lab-status-cluster">
             <div className="lab-status">
-              <span className="live-dot">●</span> {currentModeMeta.status}
+              <span className="live-dot">LIVE</span> {currentModeMeta.status}
             </div>
             {labMode === 'compare' ? (
               <label className="sync-toggle">

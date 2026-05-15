@@ -36,10 +36,9 @@ describe('编辑器聚合面板 SSR 覆盖补强', () => {
 
   it('PropertyInspector 默认应渲染空态', () => {
     const html = renderToString(createElement(PropertyInspector, { shellMode: 'edit' }))
-    expect(html).toContain('等待片段进入工位')
-    expect(html).toContain('片段接管后可调参、触发炼金，或切到系统监控。')
-    expect(html).toContain('系统监控')
-    expect(html).toContain('切到系统监控')
+    expect(html).toContain('未选中轨道片段')
+    expect(html).toContain('在下方时间轴选中任意片段以调节属性')
+    expect(html).toContain('监控')
   })
 
   it('TelemetryDashboard 默认应渲染治理与数据库区块', () => {

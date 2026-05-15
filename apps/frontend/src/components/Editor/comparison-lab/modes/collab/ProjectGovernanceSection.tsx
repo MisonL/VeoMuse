@@ -181,7 +181,7 @@ const ProjectGovernanceSection: React.FC<ProjectGovernanceSectionProps> = ({
           <span>批量更新</span>
           <strong>{batchAccepted}</strong>
           <small>
-            请求 {batchRequested} · 拒绝 {batchRejected}
+            请求 {batchRequested} / 拒绝 {batchRejected}
           </small>
         </div>
       </div>
@@ -295,7 +295,7 @@ const ProjectGovernanceSection: React.FC<ProjectGovernanceSectionProps> = ({
               <option value="">选择评论</option>
               {projectComments.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {formatShortId(item.id, 8)} · {item.status}
+                  {formatShortId(item.id, 8)} / {item.status}
                 </option>
               ))}
             </select>

@@ -464,7 +464,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                     <div className="capability-meta">
                       {orgMembers.slice(0, 6).map((item) => (
                         <span key={item.id}>
-                          {item.email} ·{' '}
+                          {item.email} /{' '}
                           {item.role === 'owner'
                             ? '所有者'
                             : item.role === 'admin'

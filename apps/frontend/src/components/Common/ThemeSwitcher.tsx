@@ -17,9 +17,13 @@ const ThemeSwitcher: React.FC = () => {
       {modes.map((m) => (
         <button
           key={m.id}
+          id={`btn-theme-${m.id}`}
+          type="button"
           className={`theme-btn ${mode === m.id ? 'active' : ''}`}
           onClick={() => setMode(m.id)}
           title={m.label}
+          aria-label={m.label}
+          aria-pressed={mode === m.id}
         >
           <span className="btn-dot" aria-hidden>
             {m.shortLabel}

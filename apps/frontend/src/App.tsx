@@ -35,14 +35,10 @@ import WorkspaceShell from './components/Layout/WorkspaceShell'
 // type imports are handled via appHelpers below or are not needed here if unused
 import {
   formatTimecode,
-  getExportButtonLabel,
   resolveExportStageByProgress,
   hasRenderableClipsFromTracks,
   deriveCurrentMetrics,
   getNextClipTimeFromTracks,
-  resolveExportQualityLabel,
-  resolveExportFeedbackTitle,
-  resolveExportFeedbackSubtitle,
   computeCenterPanelMinWidth,
   computeCenterPanelFitWidth,
   buildShellLayoutVars,
@@ -91,6 +87,14 @@ const TimecodeDisplay = memo(() => {
 
 type AppMode = 'edit' | 'color' | 'audio'
 type AppTool = 'select' | 'cut' | 'hand'
+type SidebarMode = 'assets' | 'director' | 'actors' | 'motion'
+
+const SIDEBAR_TABS: Array<{ value: SidebarMode; label: string }> = [
+  { value: 'assets', label: '素材库' },
+  { value: 'director', label: 'AI 导演' },
+  { value: 'actors', label: '演员库' },
+  { value: 'motion', label: '动捕实验室' }
+]
 
 const LazyFallback = memo(({ label = '加载中...' }: { label?: string }) => (
   <div
@@ -128,7 +132,6 @@ function App() {
   const markJourneyStep = useJourneyTelemetryStore((state) => state.markStep)
   const reportJourney = useJourneyTelemetryStore((state) => state.reportJourney)
   const metrics = useAdminMetricsStore((state) => state.metrics)
-  const renderLoadHistory = useAdminMetricsStore((state) => state.renderLoadHistory)
 
   const { assets, isPlaying, togglePlay, setCurrentTime, tracks, setTracks } = useEditorStore(
     useShallow((state) => ({
@@ -153,11 +156,8 @@ function App() {
     centerMode,
     topBarDensity,
     previewAspect,
-    setCenterMode,
-    setTopBarDensity,
     setPreviewAspect,
-    setTimelinePx,
-    resetLayout
+    setTimelinePx
   } = useLayoutStore(
     useShallow((state) => ({
       leftPanelPx: state.leftPanelPx,
@@ -166,11 +166,8 @@ function App() {
       centerMode: state.centerMode,
       topBarDensity: state.topBarDensity,
       previewAspect: state.previewAspect,
-      setCenterMode: state.setCenterMode,
-      setTopBarDensity: state.setTopBarDensity,
       setPreviewAspect: state.setPreviewAspect,
-      setTimelinePx: state.setTimelinePx,
-      resetLayout: state.resetLayout
+      setTimelinePx: state.setTimelinePx
     }))
   )
 
@@ -188,10 +185,8 @@ function App() {
   const [labSurface, setLabSurface] = useState<'stage' | 'watch'>('stage')
   const [activeTool, setActiveTool] = useState<AppTool>('select')
   const [channelPanelRequestNonce, setChannelPanelRequestNonce] = useState(0)
-  const [activeSidebar, setActiveSidebar] = useState<'assets' | 'director' | 'actors' | 'motion'>(
-    'assets'
-  )
-  const [exportQuality, setExportQuality] = useState<ExportQuality>('standard')
+  const [activeSidebar, setActiveSidebar] = useState<SidebarMode>('assets')
+  const [exportQuality] = useState<ExportQuality>('standard')
   const [directorPrompt, setDirectorPrompt] = useState('')
   const [directorScenes, setDirectorScenes] = useState<DirectorScene[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
@@ -213,10 +208,6 @@ function App() {
     directorScenes,
     (_prev, next) => next
   )
-  const [optimisticExportStatus, setOptimisticExportStatus] = useOptimistic<
-    ExportUiStatus,
-    ExportUiStatus
-  >('idle', (_prev, next) => next)
   const shellRef = useRef<HTMLDivElement | null>(null)
   const mainLayoutRef = useRef<HTMLDivElement | null>(null)
   const leftPanelRef = useRef<HTMLElement | null>(null)
@@ -270,11 +261,14 @@ function App() {
     { status: 'idle' }
   )
   const [exportUiStatus, setExportUiStatus] = useState<ExportUiStatus>('idle')
+  const [, setOptimisticExportStatus] = useOptimistic<ExportUiStatus, ExportUiStatus>(
+    exportUiStatus,
+    (_prev, next) => next
+  )
   const [exportProgress, setExportProgress] = useState(0)
-  const [exportStage, setExportStage] = useState<ExportProgressStage>('idle')
-  const [lastExportOutput, setLastExportOutput] = useState('')
+  const [, setExportStage] = useState<ExportProgressStage>('idle')
+  const [, setLastExportOutput] = useState('')
 
-  const telemetryHistory = useMemo(() => renderLoadHistory.slice(-10), [renderLoadHistory])
   const hasRenderableClips = useMemo(() => hasRenderableClipsFromTracks(tracks), [tracks])
   const currentMetrics = useMemo(() => deriveCurrentMetrics(metrics ?? undefined), [metrics])
 
@@ -416,6 +410,9 @@ function App() {
     (mode: AppMode, options?: { labSurface?: 'stage' | 'watch' }) => {
       startTransition(() => {
         setActiveMode(mode)
+        if (mode !== 'edit') {
+          setActiveSidebar('assets')
+        }
         if (mode === 'color') {
           setLabSurface(options?.labSurface ?? 'stage')
         }
@@ -435,15 +432,9 @@ function App() {
     setActiveSidebar('director')
   }, [handleModeChange])
 
-  const openChannelAccess = useCallback(() => {
-    setIsGuideOpen(false)
-    void loadComparisonLab()
-    handleModeChange('color', { labSurface: 'stage' })
-    setChannelPanelRequestNonce((prev) => prev + 1)
-    if (IS_TEST_ENV) {
-      window.dispatchEvent(new CustomEvent('veomuse:open-channel-panel'))
-    }
-  }, [handleModeChange])
+  const resetChannelPanelRequest = useCallback(() => {
+    setChannelPanelRequestNonce(0)
+  }, [])
 
   const openLabStage = useCallback(() => {
     handleModeChange('color', { labSurface: 'stage' })
@@ -666,18 +657,6 @@ function App() {
   ])
 
   useEffect(() => () => clearExportFeedbackTimers(), [clearExportFeedbackTimers])
-
-  const exportQualityLabel = useMemo(
-    () => resolveExportQualityLabel(exportQuality),
-    [exportQuality]
-  )
-
-  const exportFeedbackTitle = useMemo(() => resolveExportFeedbackTitle(exportStage), [exportStage])
-
-  const exportFeedbackSubtitle = useMemo(
-    () => resolveExportFeedbackSubtitle(exportUiStatus, exportQualityLabel, exportState.message),
-    [exportQualityLabel, exportState.message, exportUiStatus]
-  )
 
   useEffect(() => {
     const handleResize = () => setIsDesktopLayout(window.innerWidth > DESKTOP_BREAKPOINT)
@@ -946,6 +925,10 @@ function App() {
   }, [])
 
   const currentGuideStep = guideSteps[guideStepIndex]
+  const visibleSidebarTabs = useMemo(
+    () => SIDEBAR_TABS.filter((tab) => activeMode === 'edit' || tab.value === 'assets'),
+    [activeMode]
+  )
 
   const goGuidePrev = () => {
     setGuideStepIndex((prev) => Math.max(0, prev - 1))
@@ -985,20 +968,9 @@ function App() {
 
       <AppHeader
         activeMode={activeMode}
-        centerMode={centerMode}
-        topBarDensity={topBarDensity}
-        exportQuality={exportQuality}
         previewAspect={previewAspect}
         exportUiStatus={exportUiStatus}
-        exportButtonLabel={getExportButtonLabel(
-          isExportPending,
-          optimisticExportStatus,
-          exportProgress
-        )}
-        exportFeedbackTitle={exportFeedbackTitle}
-        exportFeedbackSubtitle={exportFeedbackSubtitle}
         exportProgress={exportProgress}
-        lastExportOutput={lastExportOutput}
         isProcessing={isProcessing}
         isExportPending={isExportPending}
         onModeHover={(mode) => {
@@ -1009,15 +981,6 @@ function App() {
           }
         }}
         onModeChange={(mode) => handleModeChange(mode, { labSurface: 'stage' })}
-        onCenterModeChange={setCenterMode}
-        onTopBarDensityChange={setTopBarDensity}
-        onOpenChannelAccess={openChannelAccess}
-        onOpenGuide={() => {
-          setGuideStepIndex(0)
-          setIsGuideOpen(true)
-        }}
-        onResetLayout={resetLayout}
-        onExportQualityChange={setExportQuality}
         onPreviewAspectChange={setPreviewAspect}
         onExport={handleExport}
       />
@@ -1026,30 +989,17 @@ function App() {
         <aside className="pro-panel panel-left" ref={leftPanelRef} data-testid="area-left-panel">
           <div className="panel-title-bar">
             <div className="sidebar-tabs">
-              <button
-                className={`sidebar-tab ${activeSidebar === 'assets' ? 'active' : ''}`}
-                onClick={() => setActiveSidebar('assets')}
-              >
-                素材库
-              </button>
-              <button
-                className={`sidebar-tab ${activeSidebar === 'director' ? 'active' : ''}`}
-                onClick={() => setActiveSidebar('director')}
-              >
-                AI 导演
-              </button>
-              <button
-                className={`sidebar-tab ${activeSidebar === 'actors' ? 'active' : ''}`}
-                onClick={() => setActiveSidebar('actors')}
-              >
-                演员库
-              </button>
-              <button
-                className={`sidebar-tab ${activeSidebar === 'motion' ? 'active' : ''}`}
-                onClick={() => setActiveSidebar('motion')}
-              >
-                动捕实验室
-              </button>
+              {visibleSidebarTabs.map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  className={`sidebar-tab ${activeSidebar === tab.value ? 'active' : ''}`}
+                  aria-pressed={activeSidebar === tab.value}
+                  onClick={() => setActiveSidebar(tab.value)}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
           <div className="sidebar-content">
@@ -1103,6 +1053,7 @@ function App() {
               <ComparisonLab
                 onOpenAssets={openImportFromAnywhere}
                 channelPanelRequestNonce={channelPanelRequestNonce}
+                onChannelPanelClosed={resetChannelPanelRequest}
               />
             </Suspense>
           }
@@ -1167,12 +1118,7 @@ function App() {
           </div>
           <div className="inspector-scroll">
             <Suspense fallback={<LazyFallback label="属性面板加载中..." />}>
-              <PropertyInspector
-                shellMode={activeMode}
-                labSurface={labSurface}
-                onOpenWatchStage={openLabWatchStage}
-                onReturnToLabStage={openLabStage}
-              />
+              <PropertyInspector shellMode={activeMode} onOpenWatchStage={openLabWatchStage} />
             </Suspense>
           </div>
         </aside>
@@ -1195,13 +1141,11 @@ function App() {
 
       <AppTimeline
         activeMode={activeMode}
-        assetCount={assetCount}
         canUndo={pastStates.length > 0}
         canRedo={futureStates.length > 0}
         activeTool={activeTool}
         hasTimelineClips={hasTimelineClips}
         currentMetrics={currentMetrics}
-        telemetryHistory={telemetryHistory}
         timelineContent={
           isTimelineReady ? (
             <Suspense fallback={<LazyFallback label="时间轴加载中..." />}>
@@ -1215,6 +1159,8 @@ function App() {
         onUndo={undo}
         onRedo={redo}
         onActiveToolChange={setActiveTool}
+        onOpenAssets={openImportFromAnywhere}
+        onOpenDirector={openDirectorFromAnywhere}
       />
 
       {isGuideOpen && currentGuideStep ? (

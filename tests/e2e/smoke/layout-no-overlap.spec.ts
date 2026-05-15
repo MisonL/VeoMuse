@@ -27,9 +27,6 @@ test('主布局三区域在常见桌面分辨率不重叠且关键操作可达',
     await page.goto('/')
     await dismissGuideIfPresent(page)
 
-    await page.getByTestId('btn-reset-layout').click()
-    await page.getByTestId('btn-center-mode-fit').click()
-
     const left = page.getByTestId('area-left-panel')
     const center = page.getByTestId('area-center-panel')
     const right = page.getByTestId('area-right-panel')
@@ -41,9 +38,7 @@ test('主布局三区域在常见桌面分辨率不重叠且关键操作可达',
     await expect(right).toBeVisible()
     await expect(headerActions).toBeVisible()
     await expect(timeline).toBeVisible()
-    await expect(page.getByTestId('btn-center-mode-fit')).toHaveClass(/active/)
-    await expect(page.getByTestId('btn-open-channel-access')).toBeVisible()
-    await expect(page.getByTestId('select-export-quality')).toBeVisible()
+    await expect(page.getByTestId('select-preview-aspect')).toBeVisible()
     await expect(page.getByTestId('btn-export')).toBeVisible()
 
     const leftBox = await left.boundingBox()
@@ -63,7 +58,7 @@ test('主布局三区域在常见桌面分辨率不重叠且关键操作可达',
     await expect(page.getByTestId('handle-right-panel')).toBeVisible()
     await expect(page.getByTestId('handle-timeline')).toBeVisible()
 
-    const timelineBody = page.locator('.timeline-body')
+    const timelineBody = page.locator('.timeline-body-refined')
     await expect(timelineBody).toBeVisible()
     const timelineBodyBox = await timelineBody.boundingBox()
     expect(timelineBodyBox?.height ?? 0).toBeGreaterThan(80)
@@ -181,9 +176,6 @@ test('creative telemetry strip 在紧凑宽度下应切回单列且不横向溢�
     attachPageDebug(page, `creative-compact-${viewport.width}x${viewport.height}`)
     await page.goto('/')
     await dismissGuideIfPresent(page)
-
-    await page.getByTestId('btn-reset-layout').click()
-    await page.getByTestId('btn-center-mode-fit').click()
     await page.getByTestId('btn-mode-color').click()
     await page.getByTestId('btn-lab-mode-creative').click()
 
@@ -229,9 +221,6 @@ test('compare 模式在紧凑宽度下应切回单列并优先呈现 A/B 结果�
     attachPageDebug(page, `compare-compact-${viewport.width}x${viewport.height}`)
     await page.goto('/')
     await dismissGuideIfPresent(page)
-
-    await page.getByTestId('btn-reset-layout').click()
-    await page.getByTestId('btn-center-mode-fit').click()
     await page.getByTestId('btn-mode-color').click()
 
     const stageShell = page.locator('.comparison-lab-pro .lab-stage-shell')
@@ -281,9 +270,6 @@ test('移动端头部关键操作与预览叠层在窄屏下应保持可达', as
   await page.goto('/')
   await dismissGuideIfPresent(page)
 
-  await expect(page.getByTestId('btn-open-channel-access')).toBeVisible()
-  await expect(page.getByTestId('btn-open-guide')).toBeVisible()
-  await expect(page.getByTestId('select-export-quality')).toBeVisible()
   await expect(page.getByTestId('select-preview-aspect')).toBeVisible()
   await expect(page.getByTestId('btn-export')).toBeVisible()
 
@@ -321,10 +307,7 @@ test('右侧系统监控面板应展示关键区块与值守动作', async ({ pa
   await page.goto('/')
   await dismissGuideIfPresent(page)
 
-  await page
-    .getByTestId('area-right-panel')
-    .getByRole('button', { name: /^系统监控\s*(监控摘要|实验监控摘要|母带监控摘要)$/ })
-    .click()
+  await page.getByTestId('area-right-panel').getByRole('button', { name: '监控' }).click()
   await expect(page.getByText('系统值守摘要')).toBeVisible()
   await expect(page.locator('.telemetry-watch-brief-card')).toHaveCount(4)
 
@@ -333,12 +316,12 @@ test('右侧系统监控面板应展示关键区块与值守动作', async ({ pa
   const telemetryDashboard = page.locator('.telemetry-dashboard')
   await expect(telemetryDashboard).toBeVisible()
   await expect(page.locator('.telemetry-command-bar')).toBeVisible()
-  await expect(page.locator('.telemetry-command-stat')).toHaveCount(3)
-  await expect(page.getByText('播放 FPS 稳定性')).toBeVisible()
+  await expect(page.locator('.telemetry-command-stat')).toHaveCount(6)
+  await expect(page.getByRole('heading', { name: '播放 FPS 稳定性' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Provider 健康检查' })).toBeVisible()
-  await expect(page.getByText('北极星 SLO（24h）')).toBeVisible()
-  await expect(page.getByText('项目治理卡片（第二入口）')).toBeVisible()
-  await expect(page.getByText('数据库自愈中心')).toBeVisible()
+  await expect(page.getByRole('heading', { name: '北极星 SLO（24h）' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '项目治理卡片（第二入口）' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '数据库自愈中心' })).toBeVisible()
   await expect(page.getByRole('button', { name: '刷新 Provider 状态' })).toBeVisible()
   await expect(page.getByRole('button', { name: '健康检查' })).toBeVisible()
   await expect(page.getByRole('button', { name: '运行配置' })).toBeVisible()

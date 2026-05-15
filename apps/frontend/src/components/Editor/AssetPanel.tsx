@@ -209,7 +209,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
     e.target.value = ''
   }
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent<HTMLElement>) => {
     e.preventDefault()
     if (e.dataTransfer.files?.length) {
       void importFiles(e.dataTransfer.files)
@@ -318,6 +318,12 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
 
   const filteredAssets = filterAssetsByQueryAndCategory(assets, searchQuery, activeCategory)
   const assetCategories: AssetCategory[] = ['all', 'video', 'audio']
+  const accessToken = getAccessToken().trim()
+  const canRunDirector = directorPrompt.trim().length > 0 && !isAiWorking
+  const actorCreateValidation = validateActorCreateInput(actorName, actorRefImage, accessToken)
+  const canCreateActor = !isActorLoading && !isActorCreating && !actorCreateValidation
+  const motionSyncValidation = validateMotionSyncInput(motionActorId, latestMotionData, accessToken)
+  const canSyncMotion = !isMotionSyncing && !motionSyncValidation
 
   return (
     <div className="pro-asset-panel" data-mode={mode}>
@@ -401,21 +407,18 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
 
           <div className="asset-intel-strip">
             <div className="asset-intel-card">
-              <span className="asset-intel-label">总素材</span>
+              <span className="asset-intel-label">总数</span>
               <strong>{assetStats.total}</strong>
-              <small>当前素材抽屉</small>
             </div>
             <div className="asset-intel-card">
-              <span className="asset-intel-label">视频素材 / 音频素材</span>
+              <span className="asset-intel-label">分类</span>
               <strong>
-                {assetStats.video} / {assetStats.audio}
+                {assetStats.video}V / {assetStats.audio}A
               </strong>
-              <small>按节目类型分层</small>
             </div>
             <div className="asset-intel-card">
               <span className="asset-intel-label">已上轨</span>
               <strong>{assetStats.live}</strong>
-              <small>正在参与编排</small>
             </div>
           </div>
 
@@ -441,9 +444,14 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                     className={`asset-tile ${asset.type} ${isLive ? 'is-live' : ''}`}
                   >
                     <div className="tile-preview">
-                      {asset.type === 'video' ? '🎬' : '🎵'}
+                      {asset.type === 'video' ? 'VIDEO' : 'AUDIO'}
                       <div className="tile-actions">
-                        <button onClick={() => handleAddToTimeline(asset)}>➕</button>
+                        <button
+                          aria-label={`添加${asset.name}到时间轴`}
+                          onClick={() => handleAddToTimeline(asset)}
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
                     <div className="tile-footer">
@@ -464,7 +472,8 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 )
               })
             ) : (
-              <div
+              <button
+                type="button"
                 className="pro-empty-state-v2"
                 onClick={handleImportClick}
                 onDrop={handleDrop}
@@ -473,14 +482,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 <div className="empty-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24" focusable="false">
                     <path
-                      d="M3 7.5h6l2 2H21v7.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5"
+                      d="M12 5v14M5 12h14"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.6"
@@ -489,8 +491,8 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                   </svg>
                 </div>
                 <p>暂无素材</p>
-                <span>点击此处或拖拽文件完成首批入库，中心工作台会自动承接后续编排。</span>
-              </div>
+                <span>点击或拖拽文件导入</span>
+              </button>
             )}
           </div>
         </>
@@ -519,7 +521,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               id="btn-run-director"
               className="import-btn-pro hub-primary-btn"
               onClick={() => onRunDirector?.()}
-              disabled={isAiWorking}
+              disabled={!canRunDirector}
               data-testid="btn-run-director"
             >
               {isAiWorking ? '分析中...' : '生成分镜并编排'}
@@ -530,7 +532,9 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             <h4 className="section-label">分镜流</h4>
             <div className="scene-card-list">
               {(directorScenes.length ? directorScenes : [{ title: '等待生成', duration: 0 }]).map(
-                (scene, idx) => (
+                (scene, idx) => {
+                  const scenePrompt = scene.videoPrompt?.trim() || ''
+                  return (
                   <div className="scene-card" key={`${scene.title || 'scene'}-${idx}`}>
                     <div className="scene-index">{idx + 1}</div>
                     <div className="scene-info">
@@ -538,15 +542,16 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                       <div className="scene-meta">{scene.duration || 0}s</div>
                     </div>
                     <button
+                      type="button"
                       className="scene-add-btn"
-                      onClick={() =>
-                        scene.videoPrompt && onDirectorPromptChange?.(scene.videoPrompt)
-                      }
+                      disabled={!scenePrompt}
+                      onClick={() => onDirectorPromptChange?.(scenePrompt)}
                     >
                       填入提示词
                     </button>
                   </div>
-                )
+                  )
+                }
               )}
             </div>
           </div>
@@ -566,6 +571,8 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
           <div className="hub-section hub-section-tight">
             <input
               name="actorName"
+              type="text"
+              aria-label="演员名称"
               className="pro-textarea-mini actor-input"
               placeholder="演员名称，例如：都市女主角"
               value={actorName}
@@ -573,6 +580,8 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             />
             <input
               name="actorRefImage"
+              type="url"
+              aria-label="演员参考图 URL"
               className="pro-textarea-mini actor-input actor-input-spaced"
               placeholder="参考图 URL，例如：https://..."
               value={actorRefImage}
@@ -581,7 +590,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
             <button
               className="import-btn-pro hub-primary-btn"
               onClick={handleCreateActor}
-              disabled={isActorLoading || isActorCreating}
+              disabled={!canCreateActor}
             >
               {isActorCreating ? '提交中...' : isActorLoading ? '加载中...' : '新增演员'}
             </button>
@@ -627,7 +636,7 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
               </button>
               <button
                 className="import-btn-pro motion-btn"
-                disabled={isMotionSyncing}
+                disabled={!canSyncMotion}
                 onClick={syncMotionToActor}
               >
                 {isMotionSyncing ? '同步中...' : '同步至演员'}

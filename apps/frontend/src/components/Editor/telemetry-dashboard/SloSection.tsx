@@ -60,14 +60,14 @@ const SloSection: React.FC<SloSectionProps> = ({
               <span className="slo-name">主链路成功率</span>
               <strong>{formatPercent(sloSummary.current.primaryFlowSuccessRate, 2)}</strong>
               <span className="slo-target">
-                目标 ≥ {formatPercent(sloSummary.targets.primaryFlowSuccessRate, 2)}
+                目标 &gt;= {formatPercent(sloSummary.targets.primaryFlowSuccessRate, 2)}
               </span>
             </div>
             <div className={`slo-card ${sloSummary.passFlags.nonAiApiP95Ms ? 'pass' : 'fail'}`}>
               <span className="slo-name">非 AI API P95</span>
               <strong>{formatMs(sloSummary.current.nonAiApiP95Ms, 0)}</strong>
               <span className="slo-target">
-                目标 ≤ {formatMs(sloSummary.targets.nonAiApiP95Ms, 0)}
+                目标 &lt;= {formatMs(sloSummary.targets.nonAiApiP95Ms, 0)}
               </span>
             </div>
             <div
@@ -76,7 +76,7 @@ const SloSection: React.FC<SloSectionProps> = ({
               <span className="slo-name">首次成功平均步数</span>
               <strong>{formatSteps(sloSummary.current.firstSuccessAvgSteps)}</strong>
               <span className="slo-target">
-                目标 ≤ {sloSummary.targets.firstSuccessAvgSteps.toFixed(2)} 步
+                目标 &lt;= {sloSummary.targets.firstSuccessAvgSteps.toFixed(2)} 步
               </span>
             </div>
           </div>

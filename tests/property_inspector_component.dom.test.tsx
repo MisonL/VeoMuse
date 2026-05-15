@@ -82,17 +82,13 @@ describe('PropertyInspector DOM 交互', () => {
 
   it('未选中片段时应展示空态', () => {
     const view = render(<PropertyInspector shellMode="edit" />)
-    expect(view.getByText('等待片段进入工位')).toBeInTheDocument()
-    expect(view.getByText('先把当前片段接进工位')).toBeInTheDocument()
-    expect(view.getByText('clip forge / active context')).toBeInTheDocument()
-    expect(
-      view.queryAllByText('片段接管后可调参、触发炼金，或切到系统监控。').length
-    ).toBeGreaterThan(0)
+    expect(view.getByText('未选中轨道片段')).toBeInTheDocument()
+    expect(view.getByText('在下方时间轴选中任意片段以调节属性')).toBeInTheDocument()
   })
 
-  it('系统监控切换按钮的可访问名称应包含可见文本', () => {
+  it('监控切换按钮的可访问名称应包含可见文本', () => {
     const view = render(<PropertyInspector shellMode="edit" />)
-    expect(view.getByRole('button', { name: /系统监控\s*监控摘要/ })).toBeInTheDocument()
+    expect(view.getByRole('button', { name: '监控' })).toBeInTheDocument()
   })
 
   it('应支持在属性页与监控页之间切换', () => {
@@ -101,19 +97,11 @@ describe('PropertyInspector DOM 交互', () => {
       'data-active-tab',
       'properties'
     )
-    fireEvent.click(view.getByRole('button', { name: /系统监控\s*监控摘要/ }))
+    fireEvent.click(view.getByRole('button', { name: '监控' }))
     expect(view.container.querySelector('.pro-inspector-inner')).toHaveAttribute(
       'data-active-tab',
       'lab'
     )
-    expect(view.container.querySelector('.inspector-lab-banner')).toBeInTheDocument()
-    expect(view.container.querySelectorAll('.telemetry-command-stat')).toHaveLength(3)
-    expect(view.getByText('播放 FPS 稳定性')).toBeInTheDocument()
-  })
-
-  it('空态下应可直接切换到系统监控', () => {
-    const view = render(<PropertyInspector shellMode="edit" />)
-    fireEvent.click(view.getByRole('button', { name: '切到系统监控' }))
     expect(view.getByText('播放 FPS 稳定性')).toBeInTheDocument()
   })
 
@@ -176,7 +164,7 @@ describe('PropertyInspector DOM 交互', () => {
 
     const view = render(<PropertyInspector shellMode="edit" />)
     setValidAccessToken()
-    fireEvent.click(view.getByRole('button', { name: '画面修复' }))
+    fireEvent.click(view.getByRole('button', { name: '修复' }))
 
     await waitFor(() => {
       const hasSuccessToast = useToastStore

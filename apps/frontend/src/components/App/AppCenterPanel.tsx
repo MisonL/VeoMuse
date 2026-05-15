@@ -48,13 +48,6 @@ const AppCenterPanel = ({
   onOpenDirector,
   onSwitchToLab
 }: AppCenterPanelProps) => {
-  const launchpadTitle =
-    assetCount > 0 ? '素材已就绪，下一步把画面送上节目轨' : '先把首批素材送上导播台'
-  const launchpadSummary =
-    assetCount > 0
-      ? `素材抽屉已有 ${assetCount} 个资产。下一步：入轨，或交给 AI 导演起首批分镜。`
-      : '从左侧导入素材，或直接交给 AI 导演起首轮分镜。主监看会自动接管节目画面。'
-
   return (
     <section className="pro-panel monitor-core panel-center" data-testid="area-center-panel">
       {activeMode === 'edit' ? (
@@ -72,171 +65,92 @@ const AppCenterPanel = ({
                   data-testid="area-preview-frame"
                   data-aspect-ratio={previewAspect}
                 >
-                  <div className="monitor-deck-label">节目监看</div>
                   <div className="monitor-overlay">
                     <div className="monitor-overlay-left">
-                      <div className="live-badge">● 实时</div>
+                      <div className="live-badge">REALTIME 实时预览</div>
                       {timecodeDisplay}
                     </div>
                     <div className="preview-meta">
                       <button
                         onClick={onToggleSpatialPreview}
                         className={`preview-mode-toggle ${isSpatialPreview ? 'active' : ''}`}
-                        data-testid="btn-preview-mode-toggle"
                       >
-                        {isSpatialPreview ? '3D 模式' : '2D 模式'}
+                        {isSpatialPreview ? '3D' : '2D'}
                       </button>
-                      <div className="preview-quality">4K | HDR</div>
+                      <div className="preview-quality">REC 4K HDR</div>
                     </div>
                   </div>
-                  {hasTimelineClips ? (
-                    <div className="monitor-cue-strip">
-                      <span className="monitor-cue-pill">主监 01</span>
-                      <span className="monitor-cue-copy">
-                        {isPlaying ? '节目正在播出，转场链路稳定' : '节目待播，控制台已进入预备态'}
-                      </span>
-                    </div>
-                  ) : null}
                   {previewPlayer}
                 </div>
+
+                {!hasTimelineClips && (
+                  <div className="monitor-empty-overlay">
+                    <div className="empty-hero">
+                      <div className="empty-icon">PRO</div>
+                      <strong>{assetCount > 0 ? '素材已就绪' : '开启创作流'}</strong>
+                      <p>
+                        {assetCount > 0
+                          ? '拖入素材或使用 AI 导演生成智能片段'
+                          : '导入本地素材或通过 AI 导演快速构建首个分镜'}
+                      </p>
+                      <div className="empty-actions">
+                        <button onClick={onOpenAssets} className="empty-btn primary">
+                          导入素材
+                        </button>
+                        <button onClick={onOpenDirector} className="empty-btn">
+                          AI 导演
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {!hasTimelineClips ? (
-                <div className="monitor-stage-intro">
-                  <div className="monitor-stage-intro-copy">
-                    <span className="monitor-ledger-label">首轮编排</span>
-                    <strong>{launchpadTitle}</strong>
-                    <small>{launchpadSummary}</small>
-                  </div>
-                  <div className="monitor-stage-intro-actions">
-                    <button
-                      type="button"
-                      className="monitor-action-btn monitor-action-btn--signal"
-                      onClick={onOpenAssets}
-                    >
-                      {assetCount > 0 ? '打开素材抽屉' : '导入素材'}
+              <div className="monitor-bottom-bar">
+                <div className="monitor-controls-group">
+                  <div className="transport-controls-compact">
+                    <button className="transport-btn-small" onClick={onSeekToStart} title="跳转至开始" aria-label="跳转到开头" data-testid="btn-player-prev">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
+                      </svg>
                     </button>
-                    <button type="button" className="monitor-action-btn" onClick={onOpenDirector}>
-                      打开 AI 导演
+                    <button className="transport-btn-main" onClick={onTogglePlay} title={isPlaying ? '暂停' : '播放'} aria-label={isPlaying ? '暂停' : '播放'} data-testid="btn-player-play">
+                      {isPlaying ? (
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      )}
                     </button>
-                    <button type="button" className="monitor-action-btn" onClick={onSwitchToLab}>
-                      切到实验室
+                    <button className="transport-btn-small" onClick={onSeekToNextClip} title="下一片段" aria-label="跳转到下一片段" data-testid="btn-player-next">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                      </svg>
                     </button>
                   </div>
                 </div>
-              ) : null}
 
-              {hasTimelineClips ? (
-                <div className="monitor-control-band">
-                  <div className="transport-controls">
-                    <button
-                      id="tool-prev"
-                      aria-label="跳转到开头"
-                      className="transport-btn"
-                      onClick={onSeekToStart}
-                      data-testid="btn-player-prev"
-                    >
-                      ⏮
-                    </button>
-                    <button
-                      id="tool-play"
-                      aria-label={isPlaying ? '暂停播放' : '开始播放'}
-                      className="transport-btn play"
-                      onClick={onTogglePlay}
-                      data-testid="btn-player-play"
-                    >
-                      {isPlaying ? '⏸' : '▶'}
-                    </button>
-                    <button
-                      id="tool-next"
-                      aria-label="跳转到下一片段"
-                      className="transport-btn"
-                      onClick={onSeekToNextClip}
-                      data-testid="btn-player-next"
-                    >
-                      ⏭
-                    </button>
+                <div className="monitor-info-group">
+                  <div className="monitor-stat">
+                    <span className="label">片段</span>
+                    <strong className="value">{assetCount}</strong>
                   </div>
-                  <div className="monitor-action-strip">
-                    <button type="button" className="monitor-action-btn" onClick={onOpenAssets}>
-                      打开素材抽屉
-                    </button>
-                    <button
-                      type="button"
-                      className="monitor-action-btn monitor-action-btn--signal"
-                      onClick={onSwitchToLab}
-                    >
-                      切到实验室
-                    </button>
+                  <div className="monitor-stat">
+                    <span className="label">输出画幅</span>
+                    <strong className="value">{previewAspect}</strong>
                   </div>
                 </div>
-              ) : null}
+
+                <div className="monitor-actions-group">
+                  <button onClick={onSwitchToLab} className="action-pill">
+                    视频实验室
+                  </button>
+                </div>
+              </div>
             </div>
-
-            <aside className="monitor-stage-aside">
-              {!hasTimelineClips ? (
-                <div className="monitor-launchpad">
-                  <div className="monitor-launchpad-kicker">
-                    <span className="monitor-ledger-label">中央看板</span>
-                    <strong>值守概览</strong>
-                  </div>
-                  <div className="monitor-launchpad-stats">
-                    <div className="monitor-readout">
-                      <span className="monitor-readout-label">素材库</span>
-                      <strong>{assetCount}</strong>
-                    </div>
-                    <div className="monitor-readout">
-                      <span className="monitor-readout-label">节目轨</span>
-                      <strong>待入轨</strong>
-                    </div>
-                    <div className="monitor-readout">
-                      <span className="monitor-readout-label">下一步</span>
-                      <strong>导入 / 导演</strong>
-                    </div>
-                  </div>
-                  <div className="monitor-launchpad-note">
-                    <span className="monitor-ledger-label">状态提示</span>
-                    <small>
-                      主预览区已经完成首轮准备，右侧只保留值守摘要，不再平铺完整空态说明。
-                    </small>
-                  </div>
-                </div>
-              ) : (
-                <div className="monitor-stage-aside-stack">
-                  <div className="monitor-ledger">
-                    <div className="monitor-ledger-card">
-                      <span className="monitor-ledger-label">节目单</span>
-                      <strong>主编排 / A-01</strong>
-                      <small>主编排轨已锁定到节目总线</small>
-                    </div>
-                    <div className="monitor-ledger-card">
-                      <span className="monitor-ledger-label">画幅</span>
-                      <strong>{previewAspect}</strong>
-                      <small>{isSpatialPreview ? '空间总线在线' : '平面主画面在线'}</small>
-                    </div>
-                    <div className="monitor-ledger-card">
-                      <span className="monitor-ledger-label">播出态</span>
-                      <strong>{isPlaying ? '播出中' : '待切入'}</strong>
-                      <small>{isPlaying ? '播出链路正在推进' : '等待进入下一段'}</small>
-                    </div>
-                  </div>
-                  <div className="monitor-readout-cluster">
-                    <div className="monitor-readout">
-                      <span className="monitor-readout-label">画面总线</span>
-                      <strong>{isSpatialPreview ? '3D 总线' : '2D 总线'}</strong>
-                    </div>
-                    <div className="monitor-readout">
-                      <span className="monitor-readout-label">画幅比例</span>
-                      <strong>{previewAspect}</strong>
-                    </div>
-                    <div className="monitor-readout">
-                      <span className="monitor-readout-label">当前状态</span>
-                      <strong>{isPlaying ? '播出推进' : '待命'}</strong>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </aside>
           </div>
         </div>
       ) : activeMode === 'color' ? (
@@ -247,55 +161,52 @@ const AppCenterPanel = ({
         )
       ) : (
         <div className="audio-master-stage">
-          <section className="audio-master-hero">
+          <div className="audio-master-hero" data-testid="audio-master-hero">
             <div className="audio-master-hero-copy">
-              <span className="audio-master-kicker">音频工作区 / 待命</span>
+              <span className="audio-master-kicker">Audio Mastering</span>
               <strong className="audio-master-title">音频母带引擎已就绪</strong>
               <p className="audio-master-summary">
-                旁白、音乐、节奏和响度会在同一条母带链路里接管。先导入一批素材，再决定是直接进入母带，还是切到实验室做对照。
+                旁白、音乐与节奏感应分析会在同一工作区对齐，导入音频后即可进入母带链路。
               </p>
-            </div>
-            <div className="audio-master-status-tower">
-              <div className="audio-master-status-card">
-                <span>输入源</span>
-                <strong>待导入</strong>
-              </div>
-              <div className="audio-master-status-card">
-                <span>母带总线</span>
-                <strong>待命</strong>
-              </div>
-              <div className="audio-master-status-card">
-                <span>下一步</span>
-                <strong>导入 / 对照</strong>
+              <div className="audio-master-actions">
+                <button type="button" onClick={onOpenAssets} className="empty-btn primary">
+                  导入音频素材
+                </button>
               </div>
             </div>
-          </section>
 
-          <section className="audio-master-lanes">
-            <div className="audio-master-lane">
-              <span className="audio-master-lane-kicker">旁白链路</span>
-              <strong>旁白链路待命</strong>
-              <p>脚本、配音和语气校准会在导入素材后接管第一条旁白母线。</p>
+            <div className="audio-master-status-tower" data-testid="audio-master-status-tower">
+              <div className="audio-master-status-card">
+                <span>母带输入</span>
+                <strong>等待音频</strong>
+              </div>
+              <div className="audio-master-status-card">
+                <span>节拍栅格</span>
+                <strong>未分析</strong>
+              </div>
+              <div className="audio-master-status-card">
+                <span>交付校验</span>
+                <strong>待确认</strong>
+              </div>
             </div>
-            <div className="audio-master-lane">
-              <span className="audio-master-lane-kicker">音乐链路</span>
-              <strong>音乐节奏待命</strong>
-              <p>背景乐、节拍点和情绪能量会在这里锁定到当前节目节奏。</p>
-            </div>
-            <div className="audio-master-lane">
-              <span className="audio-master-lane-kicker">交付校验</span>
-              <strong>交付校验待命</strong>
-              <p>响度、峰值和导出前检查会在最终交付前集中完成。</p>
-            </div>
-          </section>
+          </div>
 
-          <div className="audio-master-actions">
-            <button type="button" className="audio-master-btn primary" onClick={onOpenAssets}>
-              导入素材开始处理
-            </button>
-            <button type="button" className="audio-master-btn" onClick={onSwitchToLab}>
-              切换到实验室对比
-            </button>
+          <div className="audio-master-lanes" data-testid="audio-master-lanes">
+            <div className="audio-master-lane">
+              <span className="audio-master-lane-kicker">Input</span>
+              <strong>母带输入</strong>
+              <p>导入旁白、配乐或现场收音后，系统会建立统一素材基线。</p>
+            </div>
+            <div className="audio-master-lane">
+              <span className="audio-master-lane-kicker">Rhythm</span>
+              <strong>节拍栅格</strong>
+              <p>自动提取节奏、停顿与能量段落，为剪辑点提供可复核参照。</p>
+            </div>
+            <div className="audio-master-lane">
+              <span className="audio-master-lane-kicker">Delivery</span>
+              <strong>交付校验</strong>
+              <p>统一响度、峰值和对话清晰度检查，减少导出前返工。</p>
+            </div>
           </div>
         </div>
       )}

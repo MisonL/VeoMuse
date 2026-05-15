@@ -104,7 +104,7 @@ export const getExportButtonLabel = (
     }
     return '导出中...'
   }
-  return '导出'
+  return '导出项目'
 }
 
 export const resolveExportStageByProgress = (progress: number): ExportProgressStage => {

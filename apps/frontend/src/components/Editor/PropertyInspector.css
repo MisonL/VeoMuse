@@ -1711,3 +1711,50 @@
   font-size: clamp(26px, 2.2vw, 38px) !important;
   line-height: 1.04 !important;
 }
+
+@media (min-width: 1181px) {
+  .pro-inspector-inner {
+    border-radius: 18px !important;
+  }
+
+  .inspector-header-compact {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+
+  .inspector-tabs-lite {
+    gap: 6px !important;
+    padding: 4px !important;
+  }
+
+  .inspector-tabs-lite button {
+    min-height: 38px !important;
+    padding: 0 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .inspector-body-refined {
+    padding: 10px 12px 12px !important;
+  }
+
+  .inspector-empty-lite {
+    min-height: 0 !important;
+    padding: 16px 14px !important;
+    border-radius: 16px !important;
+  }
+
+  .empty-hint {
+    gap: 6px !important;
+  }
+
+  .empty-hint strong {
+    font-size: clamp(20px, 1.65vw, 28px) !important;
+    line-height: 1 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  .empty-hint p {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+}

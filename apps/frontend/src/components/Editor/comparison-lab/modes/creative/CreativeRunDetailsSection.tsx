@@ -44,7 +44,7 @@ const CreativeRunDetailsSection: React.FC<CreativeRunDetailsSectionProps> = ({
                     {scene.order + 1}. {scene.title}
                   </strong>
                   <span>
-                    rev {scene.revision || 1} · {scene.status}
+                    rev {scene.revision || 1} / {scene.status}
                   </span>
                 </div>
                 <div className="scene-meta-line">

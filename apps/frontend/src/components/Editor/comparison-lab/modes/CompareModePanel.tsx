@@ -142,8 +142,8 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
               <div className="pane-title-stack">
                 <span className="model-name">{resolveModelLabel(availableModels, leftModel)}</span>
                 <div className="pane-meta-row">
-                  <span className="pane-meta-chip">模型 ID · {resolveModelVersion(leftModel)}</span>
-                  <span className="pane-meta-copy">素材 · {resolveAssetSummary(leftAsset)}</span>
+                  <span className="pane-meta-chip">模型 ID / {resolveModelVersion(leftModel)}</span>
+                  <span className="pane-meta-copy">素材 / {resolveAssetSummary(leftAsset)}</span>
                 </div>
               </div>
               <div className="metric-chip">A 通道</div>
@@ -179,9 +179,9 @@ const CompareModePanel: React.FC<CompareModePanelProps> = ({
                 <span className="model-name">{resolveModelLabel(availableModels, rightModel)}</span>
                 <div className="pane-meta-row">
                   <span className="pane-meta-chip">
-                    模型 ID · {resolveModelVersion(rightModel)}
+                    模型 ID / {resolveModelVersion(rightModel)}
                   </span>
-                  <span className="pane-meta-copy">素材 · {resolveAssetSummary(rightAsset)}</span>
+                  <span className="pane-meta-copy">素材 / {resolveAssetSummary(rightAsset)}</span>
                 </div>
               </div>
               <div className="metric-chip secondary">B 通道</div>

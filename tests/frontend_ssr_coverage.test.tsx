@@ -20,7 +20,7 @@ describe('前端 SSR 覆盖补强', () => {
   it('导出按钮文案应按状态返回', () => {
     expect(getExportButtonLabel(true, 'idle')).toBe('导出中...')
     expect(getExportButtonLabel(false, 'pending', 38)).toContain('38%')
-    expect(getExportButtonLabel(false, 'done')).toBe('导出')
+    expect(getExportButtonLabel(false, 'done')).toBe('导出项目')
   })
 
   it('常用组件应可在 SSR 下正常输出', () => {

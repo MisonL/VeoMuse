@@ -152,7 +152,7 @@ const CommentThreadsSection: React.FC<CommentThreadsSectionProps> = ({
                 <option value="">选择线程</option>
                 {commentThreads.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {formatShortId(item.id, 8)} · {item.status}
+                    {formatShortId(item.id, 8)} / {item.status}
                   </option>
                 ))}
               </select>
@@ -204,7 +204,7 @@ const CommentThreadsSection: React.FC<CommentThreadsSectionProps> = ({
             </div>
             <span>
               {selectedThread
-                ? `${selectedThread.status} · 最近更新 ${formatLocalTime(selectedThread.updatedAt)}`
+                ? `${selectedThread.status} / 最近更新 ${formatLocalTime(selectedThread.updatedAt)}`
                 : '选择线程后可直接回复或 Resolve。'}
             </span>
           </div>

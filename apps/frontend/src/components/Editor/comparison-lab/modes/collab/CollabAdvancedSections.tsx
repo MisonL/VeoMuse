@@ -106,7 +106,7 @@ const CollabAdvancedSections: React.FC<CollabAdvancedSectionsProps> = ({
             <span>值班告警</span>
             <strong>{openReliabilityAlerts}</strong>
             <small>
-              critical {criticalReliabilityAlerts} 条 · 令牌 {hasAdminToken ? '已就绪' : '缺失'}
+              critical {criticalReliabilityAlerts} 条 / 令牌 {hasAdminToken ? '已就绪' : '缺失'}
             </small>
           </div>
           <div className={`lab-metric-card lab-metric-card--${mergeTone}`}>

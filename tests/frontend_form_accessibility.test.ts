@@ -83,8 +83,7 @@ describe('前端表单可访问性回归', () => {
     expect(content).toContain('name="dbRepairRange"')
     expect(content).toContain('name="dbRepairStatus"')
     expect(content).toContain('name="dbRepairReason"')
-    expect(content).toContain('系统监控')
-    expect(content).toContain('切到系统监控')
+    expect(content).toContain('监控')
   })
 
   it('App 关键按钮应具备 aria-label 语义', () => {
@@ -92,8 +91,8 @@ describe('前端表单可访问性回归', () => {
     expect(
       files.some((file) => file.includes(`${path.sep}components${path.sep}App${path.sep}`))
     ).toBe(true)
-    expect(content).toContain('id="export-quality"')
-    expect(content).toContain('name="exportQuality"')
+    expect(content).toContain('id="preview-aspect-select"')
+    expect(content).toContain('name="previewAspect"')
     expect(content).toContain('aria-pressed={activeMode === mode.value}')
     expect(content).toContain('role="dialog"')
     expect(content).toContain('aria-modal="true"')
@@ -101,6 +100,20 @@ describe('前端表单可访问性回归', () => {
     expect(content).toContain('aria-label="跳转到下一片段"')
     expect(content).toContain('aria-label="撤销"')
     expect(content).toContain('aria-label="重做"')
+    expect(content).toContain('aria-label="选择工具"')
+    expect(content).toContain('aria-label="剪切工具"')
+    expect(content).toContain('aria-label="手形工具"')
+  })
+
+  it('ThemeSwitcher 主题按钮应暴露互斥切换语义', () => {
+    const content = readFileSync(
+      path.resolve(process.cwd(), 'apps/frontend/src/components/Common/ThemeSwitcher.tsx'),
+      'utf8'
+    )
+    expect(content).toContain('type="button"')
+    expect(content).toContain('id={`btn-theme-${m.id}`}')
+    expect(content).toContain('aria-label={m.label}')
+    expect(content).toContain('aria-pressed={mode === m.id}')
   })
 
   it('AssetPanel 搜索输入应具备 id/name 属性', () => {

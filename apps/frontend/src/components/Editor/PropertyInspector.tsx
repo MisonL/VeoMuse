@@ -21,18 +21,6 @@ import './PropertyInspector.css'
 const resolveErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback
 
-const formatTimelineValue = (value: number | string | undefined) => {
-  const numeric = Number(value)
-  if (!Number.isFinite(numeric)) return '--:--'
-
-  const totalTenths = Math.max(0, Math.round(numeric * 10))
-  const minutes = Math.floor(totalTenths / 600)
-  const seconds = Math.floor(totalTenths / 10) % 60
-  const tenths = totalTenths % 10
-
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${tenths}`
-}
-
 const formatDurationValue = (value: number) => {
   if (!Number.isFinite(value)) return '--'
   return `${value.toFixed(value >= 10 ? 0 : 1)}s`
@@ -51,34 +39,10 @@ const resolveClipTypeLabel = (type: string | undefined) => {
   }
 }
 
-const resolveClipStationSummary = (clip: Clip, trackName: string | null) => {
-  const trackLabel = trackName || '未绑定轨道'
-
-  switch (clip.type) {
-    case 'video':
-      return `当前镜头已挂入 ${trackLabel}，可直接调度风格、特效、一致性与空间渲染总线。`
-    case 'text':
-      return `当前文稿已挂入 ${trackLabel}，可在这里完成配音、翻译克隆与交付前校验。`
-    case 'audio':
-      return `当前音频已挂入 ${trackLabel}，适合继续做翻译克隆、节奏分析与母带辅助。`
-    default:
-      return `当前片段已挂入 ${trackLabel}，值守台已切到可编辑状态。`
-  }
-}
-
-const resolveClipFocusLabel = (clip: Clip | null) => {
-  if (!clip) return '等待片段接管'
-  if (clip.type === 'video') return '视觉炼金与一致性'
-  if (clip.type === 'text') return '文稿配音与翻译'
-  if (clip.type === 'audio') return '翻译克隆与节奏分析'
-  return '当前片段参数值守'
-}
-
 const STYLE_PRESET_OPTIONS = ['cinematic', 'van_gogh', 'cyberpunk'] as const
 const STYLE_MODEL_OPTIONS = ['luma-dream', 'kling-v1', 'veo-3.1'] as const
 const VFX_TYPE_OPTIONS = ['magic-particles', 'cyber-glitch', 'neon-bloom'] as const
 const TARGET_LANG_OPTIONS = ['English', 'Japanese'] as const
-
 const pickOption = <T extends readonly string[]>(
   value: unknown,
   options: T,
@@ -96,68 +60,14 @@ const pickNumeric = (value: unknown, fallback: number, min: number, max: number)
 
 type ShellMode = 'edit' | 'color' | 'audio'
 
-interface InspectorReadoutItem {
-  label: string
-  value: string
-  note: string
-  tone?: 'accent' | 'signal' | 'live' | 'hot' | 'muted'
-}
-
-interface InspectorStepItem {
-  index: string
-  title: string
-  detail: string
-}
-
 interface PropertyInspectorProps {
   shellMode?: ShellMode
-  labSurface?: 'stage' | 'watch'
   onOpenWatchStage?: () => void
-  onReturnToLabStage?: () => void
-}
-
-const INSPECTOR_MODE_META: Record<
-  ShellMode,
-  {
-    idleTitle: string
-    idleSubtitle: string
-    idleAction: string
-    labTitle: string
-    labSubtitle: string
-    labStatus: string
-  }
-> = {
-  edit: {
-    idleTitle: '等待片段进入工位',
-    idleSubtitle: '等待时间轴片段接管右席参数位。',
-    idleAction: '片段接管后可调参、触发炼金，或切到系统监控。',
-    labTitle: '系统监控摘要在线',
-    labSubtitle: '运行态、告警与治理记录会在当前侧栏持续值守显示。',
-    labStatus: '系统监控摘要'
-  },
-  color: {
-    idleTitle: '实验上下文待接管',
-    idleSubtitle: '等待实验阶段接管当前右席。',
-    idleAction: '阶段接管后可查看上下文并切到实验监控。',
-    labTitle: '实验室系统监控',
-    labSubtitle: 'Provider 健康、治理信号与实验告警会围绕当前实验阶段持续更新。',
-    labStatus: '实验监控摘要'
-  },
-  audio: {
-    idleTitle: '母带工位待命',
-    idleSubtitle: '等待母带会话接管当前右席。',
-    idleAction: '会话接管后可查看输入、调参并切到系统监控。',
-    labTitle: '母带系统监控',
-    labSubtitle: '输入健康、总线状态与交付前检查会围绕当前母带会话持续显示。',
-    labStatus: '母带监控摘要'
-  }
 }
 
 const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   shellMode = 'edit',
-  labSurface = 'stage',
-  onOpenWatchStage,
-  onReturnToLabStage
+  onOpenWatchStage
 }) => {
   const { tracks, selectedClipId, updateClip, setTracks } = useEditorStore(
     useShallow((state) => ({
@@ -192,7 +102,6 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   const clipContext = resolveSelectedClipContext(tracks, selectedClipId)
   const selectedClip = clipContext.selectedClip
   const parentTrackId = clipContext.parentTrackId
-  const shellMeta = INSPECTOR_MODE_META[shellMode]
 
   useEffect(() => {
     if (!getAccessToken().trim()) return
@@ -257,7 +166,6 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
     setIsProcessing(true)
     try {
       const sourceText = resolveTranslationSourceText(selectedClip as Clip)
-
       const data = await callAuthJson<{
         translatedText?: string
         detectedLang?: string
@@ -277,7 +185,6 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
         Date.now()
       )
       cloneSelectedClip(cloned)
-
       showToast(`已翻译并克隆为 ${translation.targetLang}`, 'success')
     } catch (error: unknown) {
       showToast(resolveErrorMessage(error, '翻译失败'), 'error')
@@ -289,7 +196,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   const handleAlchemy = async (type: AlchemyActionType) => {
     if (!selectedClip) return
     setIsProcessing(true)
-    showToast(`🧬 正在执行高级炼金: ${type}`, 'info')
+    showToast(`正在执行高级炼金: ${type}`, 'info')
 
     try {
       const request = buildAlchemyRequest(type, selectedClip as Clip, {
@@ -317,10 +224,6 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
   }
 
   const current = selectedClip as Clip | null
-  const currentTrack = parentTrackId
-    ? tracks.find((track) => track.id === parentTrackId) || null
-    : null
-
   useEffect(() => {
     const data = current?.data || {}
     setSpatialX(pickNumeric(data.spatialX, 0, -100, 100))
@@ -331,514 +234,142 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
     setVfxType(pickOption(data.vfxType, VFX_TYPE_OPTIONS, 'magic-particles'))
     setVfxIntensity(pickNumeric(data.vfxIntensity, 0.8, 0.1, 1))
   }, [current?.id, current?.data])
+
   const clipDuration = current
     ? Math.max(0, Number(current.end ?? 0) - Number(current.start ?? 0))
     : 0
-  const clipWindow = current
-    ? `${formatTimelineValue(current.start)} - ${formatTimelineValue(current.end)}`
-    : '--:--'
-  const currentStateLabel = isProcessing ? '处理中' : current ? '在线值守' : '待接管'
-  const currentStateNote = isProcessing
-    ? '已有动作正在执行'
-    : current
-      ? '参数与上下文已锁定'
-      : '等待时间轴选中片段'
-
-  const idleContextReadoutsByMode: Record<ShellMode, InspectorReadoutItem[]> = {
-    edit: [
-      {
-        label: '工位',
-        value: activeTab === 'lab' ? '系统值守' : '属性位',
-        note: activeTab === 'lab' ? shellMeta.labStatus : '片段工位',
-        tone: activeTab === 'lab' ? 'signal' : 'accent'
-      },
-      {
-        label: '素材上下文',
-        value: '待绑定',
-        note: '尚未选中片段',
-        tone: 'muted'
-      },
-      {
-        label: '时间窗',
-        value: '--:--',
-        note: '等待片段进入',
-        tone: 'muted'
-      },
-      {
-        label: '下一动作',
-        value: '选中片段',
-        note: '先让当前片段接管右侧工位',
-        tone: 'accent'
-      }
-    ],
-    color: [
-      {
-        label: '当前工位',
-        value: activeTab === 'lab' ? '实验值守' : '实验总控',
-        note: activeTab === 'lab' ? shellMeta.labStatus : '四个阶段已可切换',
-        tone: activeTab === 'lab' ? 'signal' : 'accent'
-      },
-      {
-        label: '服务通道',
-        value: '待路由',
-        note: '进入实验室后绑定当前实验通道',
-        tone: 'muted'
-      },
-      {
-        label: '下一动作',
-        value: '切到实验室',
-        note: '选择当前阶段并接入素材',
-        tone: 'accent'
-      },
-      {
-        label: '告警',
-        value: '无活跃上下文',
-        note: '未发现实验任务接管',
-        tone: 'muted'
-      }
-    ],
-    audio: [
-      {
-        label: '输入源',
-        value: '待导入',
-        note: '导入素材后建立母带会话',
-        tone: 'muted'
-      },
-      {
-        label: '母带总线',
-        value: activeTab === 'lab' ? '值守中' : '待命',
-        note: activeTab === 'lab' ? shellMeta.labStatus : '等待输入接管',
-        tone: activeTab === 'lab' ? 'signal' : 'accent'
-      },
-      {
-        label: '交付状态',
-        value: '待校验',
-        note: '响度与导出前检查尚未开始',
-        tone: 'muted'
-      },
-      {
-        label: '下一动作',
-        value: '导入 / 对照',
-        note: '先导入素材，再决定是否进入实验室',
-        tone: 'accent'
-      }
-    ]
-  }
-
-  const contextReadouts: InspectorReadoutItem[] = current
-    ? [
-        {
-          label: '工位',
-          value: activeTab === 'lab' ? '值守台' : '属性位',
-          note: activeTab === 'lab' ? shellMeta.labStatus : '片段工位',
-          tone: activeTab === 'lab' ? 'signal' : 'accent'
-        },
-        {
-          label: '轨道',
-          value: currentTrack?.name || '待绑定',
-          note: currentTrack ? `绑定 ${currentTrack.id}` : '未发现有效上下文',
-          tone: currentTrack ? 'live' : 'muted'
-        },
-        {
-          label: '时间窗',
-          value: clipWindow,
-          note: `时长 ${formatDurationValue(clipDuration)}`,
-          tone: 'live'
-        },
-        {
-          label: '状态',
-          value: currentStateLabel,
-          note: currentStateNote,
-          tone: isProcessing ? 'hot' : 'live'
-        }
-      ]
-    : idleContextReadoutsByMode[shellMode]
-
-  const propertyReadouts: InspectorReadoutItem[] = [
-    {
-      label: '片段类型',
-      value: resolveClipTypeLabel(current?.type),
-      note: current ? `ID ${current.id}` : '无活跃片段',
-      tone: 'accent'
-    },
-    {
-      label: '挂载轨道',
-      value: currentTrack?.name || '未分配',
-      note: currentTrack ? currentTrack.id : '等待绑定',
-      tone: currentTrack ? 'signal' : 'muted'
-    },
-    {
-      label: '值守窗口',
-      value: clipWindow,
-      note: current ? '当前上下文时间范围' : '待接管',
-      tone: current ? 'live' : 'muted'
-    },
-    {
-      label: '当前焦点',
-      value: resolveClipFocusLabel(current),
-      note: current ? '主控面板已同步切换' : '选中片段后自动刷新',
-      tone: current ? 'accent' : 'muted'
-    }
-  ]
-
-  const idleStepsByMode: Record<ShellMode, InspectorStepItem[]> = {
-    edit: [
-      {
-        index: '01',
-        title: '先导入素材或选中片段',
-        detail: '右栏会立即绑定轨道、时间窗与片段类型。'
-      },
-      {
-        index: '02',
-        title: '再进入属性位或系统值守',
-        detail: shellMeta.idleAction
-      }
-    ],
-    color: [
-      {
-        index: '01',
-        title: '先切到实验室选择当前工位',
-        detail: '从比对、治理、创意或协作里选定这轮实验的主工位。'
-      },
-      {
-        index: '02',
-        title: '接入素材或通道后回到右栏值守',
-        detail: shellMeta.idleAction
-      }
-    ],
-    audio: [
-      {
-        index: '01',
-        title: '先导入素材并建立母带会话',
-        detail: '输入接入后，右栏会开始绑定母带总线与交付状态。'
-      },
-      {
-        index: '02',
-        title: '再盯输入、总线与交付检查',
-        detail: shellMeta.idleAction
-      }
-    ]
-  }
-
-  const emptyCardTitle =
-    shellMode === 'edit'
-      ? '先把当前片段接进工位'
-      : shellMode === 'color'
-        ? '先让实验工位接管上下文'
-        : '先建立母带会话'
 
   return (
     <div className="pro-inspector-inner" data-active-tab={activeTab}>
-      <header className="inspector-header">
-        <div className="inspector-header-meta">
-          <span className="inspector-header-badge" aria-hidden="true">
-            <svg viewBox="0 0 20 20" focusable="false">
-              <path
-                d="M4 5.5h12M4 10h12M4 14.5h8"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-              />
-              <circle cx="14.5" cy="14.5" r="1.7" fill="currentColor" />
-            </svg>
-          </span>
-          <div className="inspector-header-copy">
-            <span className="inspector-header-kicker">右侧面板</span>
-            <strong className="inspector-header-title">属性与值守</strong>
-          </div>
-        </div>
-
-        <div className="inspector-tabs" aria-label="值守台视图切换">
+      <header className="inspector-header-compact">
+        <div className="inspector-tabs-lite">
           <button
             type="button"
-            aria-pressed={activeTab === 'properties'}
             className={activeTab === 'properties' ? 'active' : ''}
+            aria-pressed={activeTab === 'properties'}
             onClick={() => setActiveTab('properties')}
           >
-            <span>属性位</span>
-            <small>当前片段</small>
+            属性
           </button>
           <button
             type="button"
-            aria-pressed={activeTab === 'lab'}
             className={activeTab === 'lab' ? 'active' : ''}
+            aria-pressed={activeTab === 'lab'}
             onClick={() => setActiveTab('lab')}
           >
-            <span>系统监控</span>
-            <small>监控摘要</small>
+            监控
           </button>
         </div>
-
-        <div className="inspector-header-state">
-          <span
-            className={`inspector-status-dot ${isProcessing ? 'is-busy' : current ? 'is-live' : ''}`}
-            aria-hidden="true"
-          />
-          <span className="clip-type-badge">{resolveClipTypeLabel(current?.type)}</span>
+        <div className="inspector-header-status">
+          {current ? <span className="badge-live">在线</span> : <span className="badge-idle">待命</span>}
         </div>
       </header>
 
-      <div className="inspector-context-bar">
-        <div className="inspector-context-copy">
-          <span className="inspector-context-kicker">
-            {activeTab === 'lab' ? '系统监控 / 右侧摘要' : '当前上下文 / 片段属性'}
-          </span>
-          {activeTab !== 'lab' ? (
-            <span hidden aria-hidden="true">
-              clip forge / active context
-            </span>
-          ) : null}
-          <strong className="inspector-context-title">
-            {current
-              ? current.name
-              : activeTab === 'lab'
-                ? shellMeta.labTitle
-                : shellMeta.idleTitle}
-          </strong>
-          <span className="inspector-context-subtitle">
-            {activeTab === 'lab' ? shellMeta.labSubtitle : shellMeta.idleSubtitle}
-          </span>
-          <div className="inspector-context-pills">
-            <span className="inspector-context-pill">{resolveClipTypeLabel(current?.type)}</span>
-            <span className={`inspector-context-pill ${activeTab === 'lab' ? 'is-live' : ''}`}>
-              {activeTab === 'lab' ? shellMeta.labStatus : current ? '已绑定' : '待命'}
-            </span>
-          </div>
-        </div>
-
-        <div className="inspector-context-readouts">
-          {contextReadouts.map((item) => (
-            <div
-              key={item.label}
-              className={`inspector-readout-card ${item.tone ? `tone-${item.tone}` : ''}`}
-            >
-              <span className="inspector-readout-label">{item.label}</span>
-              <strong className="inspector-readout-value">{item.value}</strong>
-              <span className="inspector-readout-note">{item.note}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="inspector-body">
-        {isProcessing ? (
-          <div className="inspector-activity-banner" role="status" aria-live="polite">
-            <strong>炼金处理中</strong>
-            <span>正在执行上一轮任务；你仍可继续调整下一轮参数，结果会在完成后回写右栏。</span>
-          </div>
-        ) : null}
+      <div className="inspector-body-refined">
         {activeTab === 'lab' ? (
-          <div className="inspector-lab-shell">
-            <div className="inspector-lab-banner">
-              <div className="inspector-lab-banner-copy">
-                <span className="inspector-lab-banner-kicker">系统联动</span>
-                <strong>{shellMeta.labTitle}</strong>
-                <span>
-                  {labSurface === 'watch'
-                    ? '中央监控台已经展开，右席只保留系统监控摘要与状态提示。'
-                    : shellMeta.labSubtitle}
-                </span>
-              </div>
-              <div className="inspector-lab-banner-status">
-                <span>值守对象</span>
-                <strong>{current ? current.name : '无活跃片段'}</strong>
-                <small>{currentTrack?.name || shellMeta.labStatus}</small>
-              </div>
-            </div>
-
-            <div className="inspector-lab-panel">
-              {labSurface === 'watch' ? (
-                <div className="inspector-lab-stage-bridge">
-                  <div className="inspector-lab-stage-bridge-copy">
-                    <span className="inspector-lab-stage-bridge-kicker">中央监控已展开</span>
-                    <strong>当前视图已切到系统监控总控</strong>
-                    <p>右侧保留系统监控摘要，中央舞台正在承接完整监控、治理与数据库动作。</p>
-                  </div>
-                  <div className="inspector-lab-stage-bridge-actions">
-                    <button type="button" className="pro-master-btn" onClick={onReturnToLabStage}>
-                      返回系统监控摘要
-                    </button>
-                    <button
-                      type="button"
-                      className="inspector-secondary-btn"
-                      onClick={onOpenWatchStage}
-                    >
-                      保持监控展开
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <TelemetryDashboard
-                  variant="summary"
-                  shellMode={shellMode}
-                  onOpenStage={onOpenWatchStage}
-                />
-              )}
-            </div>
+          <div className="inspector-lab-lite">
+            <TelemetryDashboard variant="summary" shellMode={shellMode} onOpenStage={onOpenWatchStage} />
           </div>
         ) : !current ? (
-          <div className="inspector-empty">
-            <div className="inspector-empty-copy">
-              <span className="inspector-empty-kicker">属性面板待命</span>
-              <strong>{emptyCardTitle}</strong>
-              <p>{shellMeta.idleAction}</p>
-            </div>
-
-            <div className="inspector-empty-steps">
-              {idleStepsByMode[shellMode].map((step) => (
-                <div key={step.index} className="inspector-empty-step">
-                  <span>{step.index}</span>
-                  <strong>{step.title}</strong>
-                  <small>{step.detail}</small>
-                </div>
-              ))}
-            </div>
-
-            <div className="inspector-empty-footer">
-              <button type="button" className="pro-master-btn" onClick={() => setActiveTab('lab')}>
-                切到系统监控
-              </button>
-              <small>空态优先保留值守入口与接管提示。</small>
+          <div className="inspector-empty-lite">
+            <div className="empty-hint">
+              <strong>未选中轨道片段</strong>
+              <p>在下方时间轴选中任意片段以调节属性</p>
             </div>
           </div>
         ) : (
-          <div className="pro-inspector-content">
-            <section className="inspector-section inspector-section--hero">
-              <div className="inspector-panel-heading">
-                <span className="inspector-panel-kicker">当前片段</span>
-                <strong>主控面板已接管当前片段</strong>
-                <p>{resolveClipStationSummary(current, currentTrack?.name || null)}</p>
+          <div className="pro-inspector-content-refined">
+            <section className="inspector-section-lite">
+              <div className="section-head">
+                <span className="kicker">基础属性</span>
+                <strong>{current.name}</strong>
               </div>
 
-              <div className="inspector-readout-grid">
-                {propertyReadouts.map((item) => (
-                  <div
-                    key={item.label}
-                    className={`inspector-readout-card ${item.tone ? `tone-${item.tone}` : ''}`}
-                  >
-                    <span className="inspector-readout-label">{item.label}</span>
-                    <strong className="inspector-readout-value">{item.value}</strong>
-                    <span className="inspector-readout-note">{item.note}</span>
-                  </div>
-                ))}
+              <div className="inspector-grid-lite">
+                <div className="readout-lite">
+                  <span className="label">类型</span>
+                  <strong className="value">{resolveClipTypeLabel(current.type)}</strong>
+                </div>
+                <div className="readout-lite">
+                  <span className="label">时长</span>
+                  <strong className="value">{formatDurationValue(clipDuration)}</strong>
+                </div>
               </div>
 
-              <div className="inspector-field-stack">
-                <label>片段名称</label>
+              <div className="field-group-lite">
+                <label>片段重命名</label>
                 <input
-                  name="clipName"
                   type="text"
                   value={current.name}
                   onChange={(event) => handleUpdate({ name: event.target.value })}
-                  className="pro-input-mini"
+                  className="pro-input-refined"
                 />
               </div>
 
-              <div className="inspector-command-board">
-                <button
-                  type="button"
-                  className="alchemy-mini-btn"
-                  onClick={() => handleAlchemy('repair')}
-                >
-                  画面修复
-                </button>
-                <button
-                  type="button"
-                  className="alchemy-mini-btn"
-                  onClick={() => handleAlchemy('style')}
-                >
-                  风格迁移
-                </button>
-                <button
-                  type="button"
-                  className="alchemy-mini-btn"
-                  onClick={() => handleAlchemy('lip')}
-                >
-                  口型同步
-                </button>
-                <button
-                  type="button"
-                  className="alchemy-mini-btn"
-                  onClick={() => handleAlchemy('enhance')}
-                >
-                  画质增强
-                </button>
+              <div className="quick-actions-refined">
+                <button onClick={() => handleAlchemy('repair')}>修复</button>
+                <button onClick={() => handleAlchemy('enhance')}>增强</button>
+                <button onClick={() => handleAlchemy('lip')}>口型同步</button>
               </div>
             </section>
 
             {current.type === 'video' && (
-              <section className="inspector-section inspector-section--support">
-                <div className="inspector-panel-heading inspector-panel-heading--compact">
-                  <span className="inspector-panel-kicker">风格与特效</span>
-                  <strong>风格与特效总线</strong>
-                  <p>把风格路由、渲染模型和神经特效集中到一个值守面板里，避免平铺切换。</p>
+              <section className="inspector-section-lite">
+                <div className="section-head">
+                  <span className="kicker">视觉炼金</span>
+                  <strong>风格与模型</strong>
                 </div>
 
-                <div className="inspector-dual-grid">
-                  <div className="inspector-field-stack">
-                    <label>风格预设</label>
+                <div className="field-grid-lite">
+                  <div className="field-item">
+                    <label>预设风格</label>
                     <select
-                      name="stylePreset"
-                      className="pro-select-mini"
                       value={stylePreset}
                       onChange={(event) => {
-                        const value = event.target.value as 'cinematic' | 'van_gogh' | 'cyberpunk'
+                        const value = event.target.value as (typeof STYLE_PRESET_OPTIONS)[number]
                         setStylePreset(value)
                         handleDataUpdate({ stylePreset: value })
                       }}
                     >
-                      <option value="cinematic">Cinematic</option>
-                      <option value="van_gogh">Van Gogh</option>
-                      <option value="cyberpunk">Cyberpunk</option>
+                      <option value="cinematic">电影感</option>
+                      <option value="cyberpunk">赛博朋克</option>
+                      <option value="van_gogh">梵高</option>
                     </select>
                   </div>
-
-                  <div className="inspector-field-stack">
-                    <label>渲染模型</label>
+                  <div className="field-item">
+                    <label>渲染引擎</label>
                     <select
-                      name="styleModel"
-                      className="pro-select-mini"
                       value={styleModel}
                       onChange={(event) => {
-                        const value = event.target.value as 'luma-dream' | 'kling-v1' | 'veo-3.1'
+                        const value = event.target.value as (typeof STYLE_MODEL_OPTIONS)[number]
                         setStyleModel(value)
                         handleDataUpdate({ styleModel: value })
                       }}
                     >
-                      <option value="luma-dream">Luma</option>
-                      <option value="kling-v1">Kling</option>
-                      <option value="veo-3.1">Veo</option>
+                      <option value="luma-dream">Luma Dream</option>
+                      <option value="kling-v1">Kling V1</option>
+                      <option value="veo-3.1">Veo 3.1</option>
                     </select>
                   </div>
-
-                  <div className="inspector-field-stack">
-                    <label>神经特效</label>
+                  <div className="field-item">
+                    <label>特效类型</label>
                     <select
-                      name="vfxType"
-                      className="pro-select-mini"
                       value={vfxType}
                       onChange={(event) => {
-                        const value = event.target.value as
-                          | 'magic-particles'
-                          | 'cyber-glitch'
-                          | 'neon-bloom'
+                        const value = event.target.value as (typeof VFX_TYPE_OPTIONS)[number]
                         setVfxType(value)
                         handleDataUpdate({ vfxType: value })
                       }}
                     >
-                      <option value="magic-particles">Magic Particles</option>
-                      <option value="cyber-glitch">Cyber Glitch</option>
-                      <option value="neon-bloom">Neon Bloom</option>
+                      <option value="magic-particles">粒子</option>
+                      <option value="cyber-glitch">故障</option>
+                      <option value="neon-bloom">霓虹</option>
                     </select>
                   </div>
-
-                  <div className="inspector-field-stack">
+                  <div className="field-item field-item--range">
                     <label>特效强度</label>
-                    <div className="inspector-range-row">
-                      <span>{vfxIntensity.toFixed(1)}</span>
+                    <div className="range-inline">
                       <input
-                        name="vfxIntensity"
                         type="range"
                         min={0.1}
                         max={1}
@@ -850,64 +381,56 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                           handleDataUpdate({ vfxIntensity: value })
                         }}
                       />
+                      <span>{vfxIntensity.toFixed(1)}</span>
                     </div>
                   </div>
                 </div>
 
                 <button
-                  type="button"
-                  className="pro-master-btn"
+                  className="pro-btn-primary"
                   onClick={() => handleAlchemy('vfx')}
                   disabled={isProcessing}
                 >
-                  {isProcessing ? '特效处理中...' : '应用特效层'}
+                  {isProcessing ? '处理中...' : '应用高级特效'}
                 </button>
               </section>
             )}
 
             {current.type === 'video' && (
-              <section className="inspector-section inspector-section--support">
-                <div className="inspector-panel-heading inspector-panel-heading--compact">
-                  <span className="inspector-panel-kicker">一致性 / 演员</span>
-                  <strong>一致性与演员绑定</strong>
-                  <p>把 world-link、演员绑定和口型同步收拢为同一条上下文链路。</p>
+              <section className="inspector-section-lite">
+                <div className="section-head">
+                  <span className="kicker">一致性</span>
+                  <strong>角色与世界设定</strong>
                 </div>
-
-                <div className="inspector-dual-grid">
-                  <div className="inspector-toggle-card">
-                    <span className="inspector-toggle-title">World-Link</span>
-                    <label className="inspector-check-row">
+                <div className="field-grid-lite">
+                  <div className="field-item field-item--checkbox">
+                    <label>World-Link</label>
+                    <label className="toggle-chip">
                       <input
-                        name="worldLinkEnabled"
                         type="checkbox"
                         checked={Boolean(current.data?.worldLink)}
                         onChange={(event) => handleDataUpdate({ worldLink: event.target.checked })}
                       />
-                      <span>启用 World-Link</span>
+                      <span>启用世界上下文</span>
                     </label>
                   </div>
-
-                  <div className="inspector-field-stack">
+                  <div className="field-item">
                     <label>World ID</label>
                     <input
-                      name="worldId"
                       type="text"
-                      className="pro-input-mini"
-                      placeholder="world-id，例如 w-abc123"
-                      value={current.data?.worldId || ''}
+                      value={String(current.data?.worldId || '')}
                       onChange={(event) => handleDataUpdate({ worldId: event.target.value })}
+                      className="pro-input-refined"
+                      placeholder="w-abc123"
                     />
                   </div>
-
-                  <div className="inspector-field-stack">
+                  <div className="field-item">
                     <label>虚拟演员</label>
                     <select
-                      name="actorId"
-                      className="pro-select-mini"
-                      value={current.data?.actorId || ''}
+                      value={String(current.data?.actorId || '')}
                       onChange={(event) => handleDataUpdate({ actorId: event.target.value })}
                     >
-                      <option value="">不绑定演员</option>
+                      <option value="">不绑定</option>
                       {actors.map((actor) => (
                         <option key={actor.id} value={actor.id}>
                           {actor.name}
@@ -915,63 +438,56 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                       ))}
                     </select>
                   </div>
-
-                  <div className="inspector-field-stack">
+                  <div className="field-item">
                     <label>一致性强度</label>
                     <select
-                      name="consistencyStrength"
-                      className="pro-select-mini"
                       value={String(current.data?.consistencyStrength ?? 1)}
                       onChange={(event) =>
                         handleDataUpdate({ consistencyStrength: Number(event.target.value) })
                       }
                     >
-                      <option value="0.6">一致性 0.6</option>
-                      <option value="0.8">一致性 0.8</option>
-                      <option value="1">一致性 1.0</option>
+                      <option value="0.6">0.6</option>
+                      <option value="0.8">0.8</option>
+                      <option value="1">1.0</option>
                     </select>
                   </div>
                 </div>
-
-                <label className="inspector-check-row inspector-check-row--wide">
+                <label className="toggle-chip toggle-chip--wide">
                   <input
-                    name="syncLip"
                     type="checkbox"
                     checked={Boolean(current.data?.syncLip)}
                     onChange={(event) => handleDataUpdate({ syncLip: event.target.checked })}
                   />
-                  <span>启用口型同步</span>
+                  <span>启用口型同步约束</span>
                 </label>
               </section>
             )}
 
             {current.type === 'video' && (
-              <section className="inspector-section inspector-section--focus">
-                <div className="inspector-panel-heading inspector-panel-heading--compact">
-                  <span className="inspector-panel-kicker">空间渲染</span>
-                  <strong>空间 3D 控制</strong>
-                  <p>作为主控位的重型动作保留单独区块，避免被普通属性卡片稀释。</p>
+              <section className="inspector-section-lite">
+                <div className="section-head">
+                  <span className="kicker">空间渲染</span>
+                  <strong>3D 景深与机位</strong>
                 </div>
-
-                <div className="inspector-range-row">
-                  <span>水平轴 {spatialX}</span>
-                  <input
-                    name="spatialX"
-                    type="range"
-                    min={-100}
-                    max={100}
-                    value={spatialX}
-                    onChange={(event) => {
-                      const value = parseInt(event.target.value, 10)
-                      setSpatialX(value)
-                      handleDataUpdate({ spatialX: value })
-                    }}
-                  />
+                <div className="field-item field-item--range">
+                  <label>水平轴</label>
+                  <div className="range-inline">
+                    <input
+                      type="range"
+                      min={-100}
+                      max={100}
+                      value={spatialX}
+                      onChange={(event) => {
+                        const value = Number.parseInt(event.target.value, 10)
+                        setSpatialX(value)
+                        handleDataUpdate({ spatialX: value })
+                      }}
+                    />
+                    <span>{spatialX}</span>
+                  </div>
                 </div>
-
                 <button
-                  type="button"
-                  className="pro-master-btn"
+                  className="pro-btn-primary"
                   onClick={async () => {
                     setIsProcessing(true)
                     try {
@@ -985,7 +501,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                       if (data?.status === 'not_implemented') {
                         showToast(data.message || '3D 重构服务未配置', 'warning')
                       } else if (data?.success) {
-                        showToast('✨ 3D 重构完成', 'success')
+                        showToast('3D 重构完成', 'success')
                       } else {
                         showToast('3D 重构执行失败', 'error')
                       }
@@ -997,64 +513,46 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
                   }}
                   disabled={isProcessing}
                 >
-                  {isProcessing ? '正在重构...' : '执行 NeRF 3D 渲染'}
+                  {isProcessing ? '处理中...' : '执行 3D 重构'}
                 </button>
               </section>
             )}
 
             {current.type === 'text' && (
-              <section className="inspector-section inspector-section--support">
-                <div className="inspector-panel-heading inspector-panel-heading--compact">
-                  <span className="inspector-panel-kicker">文稿处理</span>
-                  <strong>TTS 与翻译总线</strong>
-                  <p>把文稿编辑、配音触发和翻译克隆压缩进同一工作带。</p>
+              <section className="inspector-section-lite">
+                <div className="section-head">
+                  <span className="kicker">文稿处理</span>
+                  <strong>AI 语音合成</strong>
                 </div>
-
-                <div className="inspector-field-stack">
-                  <label>文稿内容</label>
+                <div className="field-group-lite">
                   <textarea
-                    name="ttsContent"
                     value={current.data?.content || ''}
                     onChange={(event) => handleDataUpdate({ content: event.target.value })}
-                    className="pro-textarea-mini"
+                    className="pro-textarea-refined"
                   />
                 </div>
-
-                <div className="inspector-dual-grid">
-                  <div className="inspector-field-stack">
-                    <label>TTS 声线</label>
-                    <select name="ttsVoice" className="pro-select-mini">
-                      <option>自然男声 (中文)</option>
-                      <option>甜美女声 (中文)</option>
-                    </select>
-                  </div>
-                  <button
-                    type="button"
-                    className="alchemy-mini-btn"
-                    onClick={() => handleAlchemy('tts')}
-                  >
-                    生成配音
-                  </button>
-
-                  <div className="inspector-field-stack">
+                <div className="field-grid-lite">
+                  <div className="field-item">
                     <label>翻译目标</label>
                     <select
-                      name="textTargetLang"
-                      className="pro-select-mini"
                       value={targetLang}
                       onChange={(event) => {
-                        const value = event.target.value as 'English' | 'Japanese'
+                        const value = event.target.value as (typeof TARGET_LANG_OPTIONS)[number]
                         setTargetLang(value)
                         handleDataUpdate({ targetLang: value })
                       }}
                     >
-                      <option value="English">翻译为英文</option>
-                      <option value="Japanese">翻译为日文</option>
+                      <option value="English">英文</option>
+                      <option value="Japanese">日文</option>
                     </select>
                   </div>
+                </div>
+                <div className="action-row-lite">
+                  <button className="pro-btn-primary" onClick={() => handleAlchemy('tts')}>
+                    生成配音
+                  </button>
                   <button
-                    type="button"
-                    className="alchemy-mini-btn"
+                    className="pro-btn-secondary"
                     onClick={handleTranslateAndClone}
                     disabled={isProcessing}
                   >
@@ -1065,72 +563,69 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             )}
 
             {current.type === 'audio' && (
-              <section className="inspector-section inspector-section--support">
-                <div className="inspector-panel-heading inspector-panel-heading--compact">
-                  <span className="inspector-panel-kicker">音频翻译</span>
-                  <strong>音频翻译总线</strong>
-                  <p>值守台会保留当前音频上下文，直接在这里做语言切换与克隆输出。</p>
+              <section className="inspector-section-lite">
+                <div className="section-head">
+                  <span className="kicker">音频处理</span>
+                  <strong>翻译与节奏分析</strong>
                 </div>
-
-                <div className="inspector-dual-grid">
-                  <div className="inspector-field-stack">
+                <div className="field-grid-lite">
+                  <div className="field-item">
                     <label>翻译目标</label>
                     <select
-                      name="audioTargetLang"
-                      className="pro-select-mini"
                       value={targetLang}
                       onChange={(event) => {
-                        const value = event.target.value as 'English' | 'Japanese'
+                        const value = event.target.value as (typeof TARGET_LANG_OPTIONS)[number]
                         setTargetLang(value)
                         handleDataUpdate({ targetLang: value })
                       }}
                     >
-                      <option value="English">翻译为英文</option>
-                      <option value="Japanese">翻译为日文</option>
+                      <option value="English">英文</option>
+                      <option value="Japanese">日文</option>
                     </select>
                   </div>
+                </div>
+                <div className="action-row-lite">
                   <button
-                    type="button"
-                    className="alchemy-mini-btn"
+                    className="pro-btn-primary"
                     onClick={handleTranslateAndClone}
                     disabled={isProcessing}
                   >
                     {isProcessing ? '翻译中...' : '翻译并克隆'}
                   </button>
+                  <button className="pro-btn-secondary" onClick={() => handleAlchemy('audio')}>
+                    节奏感应分析
+                  </button>
                 </div>
               </section>
             )}
 
-            <section className="inspector-section inspector-section--support">
-              <div className="inspector-panel-heading inspector-panel-heading--compact">
-                <span className="inspector-panel-kicker">辅助监听</span>
-                <strong>辅助监听</strong>
-                <p>保留音频辅助，但改为底部值守总线，避免与主控区抢层级。</p>
+            <section className="inspector-section-lite">
+              <div className="section-head">
+                <span className="kicker">辅助监听</span>
+                <strong>背景与节奏参考</strong>
               </div>
-
-              <div className="inspector-range-row">
-                <span>BGM 匹配 {bgmVolume}</span>
-                <input
-                  name="bgmVolume"
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={bgmVolume}
-                  onChange={(event) => {
-                    const value = parseInt(event.target.value, 10)
-                    setBgmVolume(value)
-                    handleDataUpdate({ bgmVolume: value })
-                  }}
-                />
+              <div className="field-item field-item--range">
+                <label>BGM 匹配</label>
+                <div className="range-inline">
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={bgmVolume}
+                    onChange={(event) => {
+                      const value = Number.parseInt(event.target.value, 10)
+                      setBgmVolume(value)
+                      handleDataUpdate({ bgmVolume: value })
+                    }}
+                  />
+                  <span>{bgmVolume}</span>
+                </div>
               </div>
-
-              <button
-                type="button"
-                className="alchemy-mini-btn"
-                onClick={() => handleAlchemy('audio')}
-              >
-                节奏感应分析
-              </button>
+              {current.type !== 'audio' ? (
+                <button className="pro-btn-secondary" onClick={() => handleAlchemy('audio')}>
+                  节奏感应分析
+                </button>
+              ) : null}
             </section>
           </div>
         )}
