@@ -1,15 +1,8 @@
 # VeoMuse 核心功能清单（V3.2）
 
-本文用于快速审阅当前项目已经接线完成、并已通过本地/Mock 回归验证的核心能力。
+本文用于快速审阅当前项目已经接线完成、并通过仓库门禁覆盖的核心能力。
+工程执行流程见 `docs/ENGINEERING_WORKFLOW.md`，测试约束见 `docs/TDD_WORKFLOW.md`。
 涉及真实第三方 Provider 的链路，仍需在配置真实凭据后执行 `release:gate:real` 做最终确认。
-
-## 当前研发状态（2026-03-07）
-
-- 当前仓库已满足“研发结项”口径，详见 `docs/RD_CLOSURE_2026-03-07.md`。
-- 本地代码、质量门禁与 Docker Compose 正式复核均已完成。
-- 当前仍未完成的事项仅包括：
-  - 目标正式部署环境的 Docker 留痕复核
-  - 真实凭据就绪后的 `release:gate:real`
 
 ## 1. AI 创作引擎
 

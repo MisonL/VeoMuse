@@ -1,43 +1,43 @@
 # VeoMuse
 
-VeoMuse 是一个基于 Bun Monorepo 的 AI 视频创作与协作平台，面向团队化视频生产场景，覆盖素材编辑、模型路由、创意工作流、协作评审、可观测性与发布门禁。
+VeoMuse 是一个基于 Bun Monorepo 的 AI 视频创作与协作平台，覆盖素材编辑、模型路由、协作治理、可观测性和 Docker 部署链路。
 
-当前研发结项总览见 [docs/RD_CLOSURE_2026-03-07.md](docs/RD_CLOSURE_2026-03-07.md)。
+## 主入口
 
-## 项目范围
-
-- 创意生产：文本/图片转视频、导演分析、提示词增强、镜头建议、智能剪辑。
-- 协作治理：组织、工作区、成员权限、评论/评审、模板应用、批量治理动作。
-- 模型路由：多模型总线、渠道配置、策略治理、预算告警与降级。
-- 可靠性：SLO、Provider 健康检查、数据库自愈、回归门禁、质量汇总。
-- 编辑体验：时间轴、播放器同步、多面板工作台、任务闭环追踪。
-
-详细能力见 [docs/CORE_FEATURES.md](docs/CORE_FEATURES.md)。
+- 工程工作流：[docs/ENGINEERING_WORKFLOW.md](docs/ENGINEERING_WORKFLOW.md)
+- TDD 工作流：[docs/TDD_WORKFLOW.md](docs/TDD_WORKFLOW.md)
+- Superpowers 入口：[docs/superpowers/README.md](docs/superpowers/README.md)
+- 部署说明：[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+- 发布检查清单：[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
+- 核心能力清单：[docs/CORE_FEATURES.md](docs/CORE_FEATURES.md)
+- API 说明：[docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
+- 前端测试策略：[docs/FRONTEND_TEST_STRATEGY.md](docs/FRONTEND_TEST_STRATEGY.md)
+- 需求文档：[docs/requirements/PROJECT_REQUIREMENTS.md](docs/requirements/PROJECT_REQUIREMENTS.md)
 
 ## 技术栈
 
-| 领域     | 选型                   |
-| -------- | ---------------------- |
-| Runtime  | Bun `1.3.9`            |
-| Frontend | React `19` + Vite      |
-| Backend  | Elysia                 |
-| Data     | SQLite + Redis         |
-| Testing  | Bun Test + Playwright  |
-| Deploy   | Docker Compose + Nginx |
+| 领域 | 选型 |
+| --- | --- |
+| Runtime | Bun `1.3.9` |
+| Frontend | React `19` + Vite |
+| Backend | Elysia |
+| Data | SQLite + Redis |
+| Testing | Bun Test + Playwright |
+| Deploy | Docker Compose + Nginx |
 
 ## 仓库结构
 
 ```text
 .
 ├─ apps/
-│  ├─ backend/          # 后端 API、服务实现、runtime 启动逻辑
-│  └─ frontend/         # 编辑器、实验室与前端面板
+│  ├─ backend/
+│  └─ frontend/
 ├─ packages/
-│  └─ shared/           # 共享类型与公共定义
-├─ tests/               # API / DOM / 对齐守卫 / E2E 回归
-├─ scripts/             # 质量门禁、部署与运维脚本
-├─ config/              # Docker、Nginx 与部署配置
-└─ docs/                # 部署、API、测试、需求与路线文档
+│  └─ shared/
+├─ tests/
+├─ scripts/
+├─ config/
+└─ docs/
 ```
 
 ## 快速开始
@@ -45,8 +45,8 @@ VeoMuse 是一个基于 Bun Monorepo 的 AI 视频创作与协作平台，面向
 ### 1. 环境要求
 
 - Bun `>= 1.3.9`
-- Node.js（仅用于少量生态工具）
-- Docker（用于容器部署与烟测，可选）
+- Node.js
+- Docker
 
 ### 2. 安装依赖
 
@@ -60,10 +60,7 @@ bun install
 cp .env.example .env
 ```
 
-生产环境至少需要补齐：`JWT_SECRET`、`SECRET_ENCRYPTION_KEY`、`REDIS_PASSWORD`、`ADMIN_TOKEN`。
-如需真实 Provider 回归，还需要配置 `GEMINI_API_KEYS` 等外部凭据。
-
-### 4. 启动本地开发
+### 4. 启动开发环境
 
 ```bash
 bun run dev
@@ -72,15 +69,22 @@ bun run dev
 - Frontend: `http://127.0.0.1:42873`
 - Backend: `http://127.0.0.1:33117`
 
-## Docker 部署
+## 常用命令
 
-推荐优先使用一键脚本：
+| 目标 | 命令 |
+| --- | --- |
+| 本地开发 | `bun run dev` |
+| 构建 | `bun run build` |
+| Lint | `bun run lint` |
+| 测试 | `bun run test` |
+| 覆盖率门禁 | `bun run test:coverage` |
+| API 契约守卫 | `bun run quality:api-contract` |
+| Docker 烟测 | `bun run docker:smoke` |
+| Docker UI 烟测 | `bun run docker:ui-smoke` |
+| 发布门禁 | `bun run release:gate` |
+| 工作区清理 | `bun run clean` |
 
-```bash
-bash scripts/one-click-deploy.sh
-```
-
-备用手动方式：
+## 发布与部署
 
 ```bash
 docker compose -f config/docker/docker-compose.yml up -d --build --wait --wait-timeout 180
@@ -88,82 +92,14 @@ docker compose -f config/docker/docker-compose.yml ps
 ```
 
 - 网关地址：`http://127.0.0.1:18081`
-- 网关/API 联通检查：`http://127.0.0.1:18081/api/health`
-- 详细部署说明见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
-- Docker 交付验收与清理手册见 [docs/DOCKER_DELIVERY_RUNBOOK.md](docs/DOCKER_DELIVERY_RUNBOOK.md)
+- 健康检查：`http://127.0.0.1:18081/api/health`
 
-## 常用命令
+## 工程约定
 
-### 开发与质量
-
-| 目标              | 命令                               |
-| ----------------- | ---------------------------------- |
-| 本地开发          | `bun run dev`                      |
-| 构建              | `bun run build`                    |
-| 类型检查与 Lint   | `bun run lint`                     |
-| 格式化            | `bun run format:prettier`          |
-| 格式检查          | `bun run format:check`             |
-| 单元与集成测试    | `bun run test`                     |
-| 覆盖率门禁        | `bun run test:coverage`            |
-| API 契约守卫      | `bun run quality:api-contract`     |
-| Docker 烟测       | `bun run docker:smoke`             |
-| Docker UI 烟测    | `bun run docker:ui-smoke`          |
-| Docker 持久化演练 | `bun run docker:drill:persistence` |
-| Docker 清理       | `bun run docker:reset`             |
-| 全链路质量入口    | `bun run quality:full`             |
-
-### 发布与回归
-
-| 目标         | 命令                            |
-| ------------ | ------------------------------- |
-| E2E 冒烟     | `bun run e2e:smoke`             |
-| 标准回归     | `bun run e2e:regression`        |
-| 标准发布门禁 | `bun run release:gate`          |
-| 真实凭据预检 | `bun run release:real:precheck` |
-| 真实渠道门禁 | `bun run release:gate:real`     |
-
-## 推荐发布流程
-
-```bash
-bun run format:check
-bun run lint
-bun run test
-bun run quality:api-contract
-bun run release:gate
-
-# 仅在真实 Provider 凭据齐全时执行
-bun run release:real:precheck
-bun run release:gate:real
-```
-
-说明：
-
-- `release:gate` 是标准本地发布门禁，覆盖 security/build/unit/e2e/slo。
-- `release:gate:real` 额外验证真实第三方渠道，不会替代标准门禁。
-- 质量汇总输出：`artifacts/quality-summary.json`
-- SLO 报告输出：`artifacts/slo-report.json`
-
-## 当前状态
-
-- 当前仓库已达到“研发结项”状态，详见 [docs/RD_CLOSURE_2026-03-07.md](docs/RD_CLOSURE_2026-03-07.md)。
-- 本地代码、结构化收口、质量门禁与 Docker Compose 正式复核已完成。
-- 当前仍保留的事项仅为外部后置验收，见 [docs/REMAINING_TASKS.md](docs/REMAINING_TASKS.md)。
-
-## 已知限制
-
-- 真实 Provider 成功率取决于外部凭据、额度和上游稳定性；未配置凭据时 `release:gate:real` 无法完成。
-- 当前质量基线以本地/Mock 回归与 Docker 烟测为主，尚未把长时间连续压测纳入当前验收清单。
-
-## 文档导航
-
-- 部署说明：[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
-- 研发结项总览：[docs/RD_CLOSURE_2026-03-07.md](docs/RD_CLOSURE_2026-03-07.md)
-- 发布检查清单：[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
-- API 说明：[docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
-- 核心能力清单：[docs/CORE_FEATURES.md](docs/CORE_FEATURES.md)
-- 前端测试策略：[docs/FRONTEND_TEST_STRATEGY.md](docs/FRONTEND_TEST_STRATEGY.md)
-- 剩余任务与路线图：[docs/REMAINING_TASKS.md](docs/REMAINING_TASKS.md)
-- 需求文档：[docs/requirements/PROJECT_REQUIREMENTS.md](docs/requirements/PROJECT_REQUIREMENTS.md)
+- 任何任务都先写 `spec` 和 `plan`，再进入实现。
+- 所有实现都遵守 TDD，先写失败测试，再补最小实现。
+- 阶段性 closure、acceptance、remaining 记录不再作为仓库主入口。
+- `docs/api-routes.generated.json` 这类 generated 契约文件仍属于受保护资产，不作为历史垃圾清理。
 
 ## License
 
