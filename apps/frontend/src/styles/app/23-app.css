@@ -1,0 +1,144 @@
+.timeline-control-surface,
+.system-telemetry,
+.timeline-editor-slot {
+  border-radius: 18px;
+  box-shadow: none;
+}
+
+.timeline-priority-band {
+  min-height: 64px;
+}
+
+.timeline-body {
+  padding: 12px 14px 14px;
+}
+
+@media (max-width: 1180px) {
+  .os-header {
+    padding: 12px;
+  }
+
+  .panel-left,
+  .panel-right {
+    max-height: none;
+  }
+}
+
+@media (max-width: 980px) {
+  .pro-master-shell {
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+  }
+
+  .panel-left,
+  .panel-center,
+  .panel-right {
+    max-height: none;
+  }
+
+  .panel-center {
+    min-height: 520px;
+  }
+
+  .timeline-container {
+    min-height: 300px;
+  }
+}
+
+.timeline-empty-glyph {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  align-self: start;
+  border-radius: 18px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 66%, var(--ap-accent) 34%);
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      color-mix(in srgb, var(--ap-accent-soft) 36%, transparent),
+      transparent 68%
+    ),
+    color-mix(in srgb, var(--ap-surface) 90%, #ffffff 10%);
+}
+
+.timeline-empty-glyph span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ap-text-dim) 44%, var(--ap-accent) 56%);
+}
+
+.timeline-empty-glyph span:nth-child(2) {
+  width: 24px;
+}
+
+.timeline-empty-glyph span:nth-child(3) {
+  width: 14px;
+}
+
+.telemetry-value {
+  font-family: var(--ap-font-mono);
+  letter-spacing: 0.04em;
+}
+
+.telemetry-dock-copy,
+.timeline-priority-copy,
+.timeline-empty-copy span:last-child {
+  color: color-mix(in srgb, var(--ap-text) 82%, var(--ap-text-dim) 18%);
+}
+
+.timeline-empty-copy {
+  gap: 5px;
+}
+
+.timeline-empty-copy span:last-child {
+  line-height: 1.42;
+}
+
+.timeline-tools {
+  gap: 10px;
+  padding: 10px 14px;
+}
+
+.timeline-tools .undo-group {
+  display: flex;
+  gap: 6px;
+  padding-right: 12px;
+}
+
+.tool-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.panel-center {
+  border-color: color-mix(in srgb, var(--ap-border) 58%, var(--ap-accent) 42%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.84),
+    0 22px 38px rgba(15, 23, 42, 0.12);
+}
+
+.panel-left,
+.panel-right {
+  opacity: 1;
+}
+
+.preview-mode-toggle,
+.preview-quality {
+  min-width: 62px;
+  font-weight: 700;
+}
+
+.timecode {
+  color: color-mix(in srgb, #9ec5ff 88%, #eff6ff 12%);
+  text-shadow: 0 0 18px rgba(59, 103, 206, 0.16);
+}
+
+.tool-icon svg {
+  width: 18px;
+  height: 18px;
+}

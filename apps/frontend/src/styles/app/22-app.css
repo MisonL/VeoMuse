@@ -1,0 +1,233 @@
+@media (max-width: 860px) {
+  .pro-master-shell {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .os-header {
+    padding: 14px;
+  }
+
+  .os-header-bridge,
+  .os-header-deck {
+    gap: 12px;
+  }
+
+  .brand-title {
+    font-size: 22px;
+    letter-spacing: 0.12em;
+  }
+
+  .monitor-content,
+  .audio-master-stage {
+    padding: 14px;
+  }
+
+  .monitor-stage-shell {
+    gap: 14px;
+  }
+
+  .preview-frame {
+    min-height: 300px;
+  }
+
+  .monitor-launchpad-copy strong,
+  .monitor-stage-intro-copy strong,
+  .audio-master-stage .audio-master-title {
+    font-size: 22px;
+  }
+
+  .header-actions-layout,
+  .header-actions-quick,
+  .header-actions-export {
+    width: 100%;
+  }
+
+  .monitor-action-strip,
+  .monitor-stage-intro-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.lab-watch-stage-shell {
+  height: 100%;
+  min-height: 0;
+}
+
+@media (max-width: 860px) {
+  .os-header {
+    grid-template-columns: 1fr;
+    align-content: start;
+  }
+
+  .header-bridge-status {
+    gap: 8px;
+  }
+
+  .mode-runtime-label {
+    min-width: 0;
+  }
+
+  .header-actions {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .header-actions-layout,
+  .header-actions-quick,
+  .header-actions-export {
+    width: max-content;
+    min-width: max-content;
+  }
+}
+
+@media (max-width: 640px) {
+  .pro-master-shell {
+    --header-h: auto;
+    grid-template-rows: auto minmax(0, 1fr) var(--split-handle-h) var(--timeline-h);
+  }
+
+  .os-header {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .brand-zone {
+    gap: 10px;
+  }
+
+  .brand-title {
+    font-size: 18px;
+    letter-spacing: 0.08em;
+  }
+
+  .brand-kicker,
+  .brand-status-copy,
+  .mode-runtime-copy {
+    font-size: 11px;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .header-actions-group {
+    padding: 2px;
+  }
+
+  .header-select,
+  .export-btn {
+    min-height: 38px;
+  }
+}
+
+/* Visual Convergence Pass */
+.pro-master-shell {
+  --header-h: 146px;
+  background:
+    radial-gradient(820px 260px at 18% -8%, rgba(32, 73, 149, 0.08), transparent 72%),
+    linear-gradient(180deg, var(--ap-stage-shell) 0%, var(--ap-stage-shell-strong) 100%);
+  gap: 10px;
+  padding: 10px;
+}
+
+.pro-master-shell[data-topbar-density='compact'] {
+  --header-h: 130px;
+}
+
+.os-header {
+  padding: 0 14px;
+  border-radius: 24px;
+}
+
+.os-header-bridge {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.72fr);
+  gap: 10px;
+  padding-bottom: 8px;
+}
+
+.brand-title {
+  font-size: 24px;
+  letter-spacing: 0.12em;
+}
+
+.brand-kicker,
+.brand-status-copy,
+.mode-runtime-copy {
+  font-size: 11px;
+  line-height: 1.42;
+  color: color-mix(in srgb, var(--ap-text) 68%, var(--ap-text-dim) 32%);
+}
+
+.brand-status-ribbon {
+  padding: 6px 10px;
+  box-shadow: none;
+}
+
+.mode-selector {
+  min-height: 42px;
+  padding: 3px;
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+.mode-tab,
+.header-select,
+.export-btn,
+.layout-reset-btn,
+.guide-toggle-btn,
+.channel-entry-btn,
+.header-segment-btn {
+  min-height: 34px;
+}
+
+.mode-tab {
+  border-radius: 12px;
+  padding-inline: 13px;
+}
+
+.header-actions {
+  gap: 8px;
+}
+
+.header-actions-export,
+.header-actions-group--quiet .header-segment {
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.panel-left,
+.panel-right {
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.3)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-stage-shell-muted) 78%, var(--ap-surface) 22%) 0%,
+      color-mix(in srgb, var(--ap-stage-shell-panel) 82%, var(--ap-panel) 18%) 100%
+    );
+}
+
+.panel-title-bar {
+  height: 48px;
+  padding: 0 14px;
+}
+
+.sidebar-content {
+  padding: 12px;
+}
+
+.timeline-container {
+  border-radius: 24px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.84),
+    0 16px 28px rgba(31, 41, 55, 0.08);
+}
+
+.timeline-actions {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.72fr);
+  gap: 12px;
+  padding: 12px 14px 10px;
+}

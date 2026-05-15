@@ -1,0 +1,226 @@
+/* Desktop no-scroll fit correction 2026-04-24 */
+@media (min-width: 1181px) {
+  .pro-master-shell,
+  .pro-master-shell[data-topbar-density='compact'] {
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+    --timeline-h: 170px !important;
+    grid-template-rows: 150px minmax(0, 1fr) 0 var(--timeline-h) !important;
+    background:
+      radial-gradient(circle at 12% 12%, rgba(233, 122, 57, 0.16), transparent 24%),
+      radial-gradient(circle at 88% 10%, rgba(27, 95, 117, 0.14), transparent 26%),
+      linear-gradient(180deg, #efe3ce 0%, #e7d9c1 100%) !important;
+  }
+
+  .os-header {
+    min-height: 150px !important;
+    max-height: 150px !important;
+    grid-template-columns: minmax(360px, 1fr) auto !important;
+    align-items: center !important;
+    padding: 20px 28px !important;
+    border-radius: 34px !important;
+    background:
+      linear-gradient(135deg, rgba(255, 244, 226, 0.92), rgba(240, 233, 220, 0.84)),
+      radial-gradient(circle at 88% 18%, rgba(27, 95, 117, 0.12), transparent 24%) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.76),
+      0 18px 48px rgba(91, 68, 39, 0.12) !important;
+  }
+
+  .os-header-deck {
+    display: grid !important;
+    grid-template-columns: auto auto auto auto auto !important;
+    grid-template-rows: none !important;
+    align-items: center !important;
+    justify-content: end !important;
+    gap: 14px !important;
+  }
+
+  .header-center-stack {
+    justify-self: center !important;
+  }
+
+  .header-actions {
+    flex-wrap: nowrap !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+  }
+
+  .header-actions-layout,
+  .header-actions-quick,
+  .header-actions-export {
+    border-radius: 22px !important;
+    background: rgba(255, 250, 240, 0.72) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.82),
+      0 10px 24px rgba(91, 68, 39, 0.08) !important;
+  }
+
+  .header-actions-layout .header-segment,
+  .header-actions-export {
+    border-color: rgba(77, 59, 38, 0.1) !important;
+  }
+
+  .os-main {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    grid-template-columns: minmax(280px, 0.78fr) 0 minmax(0, 1.72fr) 0 minmax(300px, 0.72fr) !important;
+    gap: 22px !important;
+  }
+
+  .panel-left,
+  .panel-center,
+  .panel-right,
+  .monitor-core,
+  .monitor-content,
+  .monitor-stage-shell,
+  .monitor-stage-shell.is-idle,
+  .monitor-stage-primary,
+  .monitor-stage-shell.is-idle .monitor-stage-primary {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  .panel-left,
+  .panel-right,
+  .monitor-core {
+    border-radius: 30px !important;
+    background:
+      linear-gradient(180deg, rgba(255, 249, 238, 0.96), rgba(245, 237, 223, 0.92)) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.82),
+      0 18px 42px rgba(91, 68, 39, 0.1) !important;
+    border: 1px solid rgba(77, 59, 38, 0.08) !important;
+  }
+
+  .monitor-core {
+    padding: 18px !important;
+  }
+
+  .monitor-content {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    background: transparent !important;
+  }
+
+  .monitor-stage-shell,
+  .monitor-stage-shell.is-idle,
+  .monitor-stage-primary,
+  .monitor-stage-shell.is-idle .monitor-stage-primary {
+    min-height: 0 !important;
+  }
+
+  .monitor-stage-shell,
+  .monitor-stage-shell.is-idle {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  .monitor-stage-primary,
+  .monitor-stage-shell.is-idle .monitor-stage-primary {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .preview-host,
+  .monitor-stage-shell.is-idle .preview-host {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .preview-frame,
+  .monitor-stage-shell.is-idle .preview-frame {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    aspect-ratio: auto !important;
+    padding: 0 !important;
+    border-radius: 32px !important;
+    border: 1px solid rgba(77, 59, 38, 0.08) !important;
+    background:
+      linear-gradient(135deg, rgba(255, 249, 240, 0.98), rgba(238, 230, 216, 0.92)),
+      radial-gradient(circle at 18% 20%, rgba(233, 122, 57, 0.1), transparent 30%) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.82),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.44),
+      0 26px 56px rgba(91, 68, 39, 0.12) !important;
+    overflow: hidden !important;
+  }
+
+  .preview-frame::before {
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    pointer-events: none !important;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 18%),
+      radial-gradient(circle at 80% 78%, rgba(27, 95, 117, 0.08), transparent 24%) !important;
+  }
+
+  .preview-frame::after {
+    display: none !important;
+  }
+
+  .preview-frame .multi-video-player,
+  .player-stage {
+    height: 100% !important;
+    min-height: 100% !important;
+  }
+
+  .transport-controls {
+    height: 56px !important;
+    margin-top: 8px !important;
+    border-radius: 22px !important;
+    background: rgba(255, 249, 238, 0.78) !important;
+    border: 1px solid rgba(77, 59, 38, 0.08) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      0 10px 24px rgba(91, 68, 39, 0.08) !important;
+  }
+
+  .timeline-container {
+    height: var(--timeline-h) !important;
+    min-height: 0 !important;
+    max-height: var(--timeline-h) !important;
+    border-radius: 30px !important;
+    background:
+      linear-gradient(180deg, rgba(255, 249, 238, 0.94), rgba(242, 234, 219, 0.9)) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.82),
+      0 16px 38px rgba(91, 68, 39, 0.08) !important;
+  }
+
+  .timeline-actions {
+    height: 48px !important;
+  }
+
+  .timeline-body {
+    min-height: 0 !important;
+    height: calc(var(--timeline-h) - 48px) !important;
+  }
+
+  .timeline-empty-state {
+    min-height: 0 !important;
+  }
+}

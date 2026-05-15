@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 import { readFileSync } from 'fs'
 import path from 'path'
+import { readAppCssBundle } from './css_bundle'
 describe('亮色主题与视觉令牌验证', () => {
   const readThemeCss = () =>
     readFileSync(path.resolve(process.cwd(), 'apps/frontend/src/theme.css'), 'utf8')
-
-  const readAppCss = () =>
-    readFileSync(path.resolve(process.cwd(), 'apps/frontend/src/App.css'), 'utf8')
 
   const readAssetPanelCss = () =>
     readFileSync(path.resolve(process.cwd(), 'apps/frontend/src/components/Editor/AssetPanel.css'), 'utf8')
@@ -16,9 +14,16 @@ describe('亮色主题与视觉令牌验证', () => {
     if (start < 0) return ''
     const bodyStart = content.indexOf('{', start)
     if (bodyStart < 0) return ''
-    const bodyEnd = content.indexOf('}', bodyStart)
-    if (bodyEnd < 0) return ''
-    return content.slice(bodyStart + 1, bodyEnd)
+    let depth = 0
+    for (let index = bodyStart; index < content.length; index += 1) {
+      const char = content[index]
+      if (char === '{') depth += 1
+      if (char === '}') {
+        depth -= 1
+        if (depth === 0) return content.slice(bodyStart + 1, index)
+      }
+    }
+    return ''
   }
 
   const readCssVariable = (block: string, variableName: string) => {
@@ -44,7 +49,7 @@ describe('亮色主题与视觉令牌验证', () => {
 
   it('light 与 dark 主题应使用一致的 Pro 工作台圆角比例', () => {
     const content = readThemeCss()
-    const lightBlock = readThemeBlock(content, ":root,\n[data-theme='light']")
+    const lightBlock = readThemeBlock(content, "[data-theme='light']")
     const darkBlock = readThemeBlock(content, "[data-theme='dark']")
 
     expect(readCssVariable(lightBlock, '--ap-radius')).toBe('16px')
@@ -54,7 +59,7 @@ describe('亮色主题与视觉令牌验证', () => {
   })
 
   it('light 主题必须显式覆盖桌面工作台的深色硬编码表面', () => {
-    const content = readAppCss()
+    const content = readAppCssBundle()
     const lightCorrectionStart = content.indexOf('Graphite studio light correction 2026-04-27')
     expect(lightCorrectionStart).toBeGreaterThan(0)
 
@@ -83,7 +88,7 @@ describe('亮色主题与视觉令牌验证', () => {
   })
 
   it('light 主题时间轴必须显式提供刻度与网格对比', () => {
-    const content = readAppCss()
+    const content = readAppCssBundle()
     const readabilityStart = content.indexOf('Studio readability correction 2026-04-27')
     expect(readabilityStart).toBeGreaterThan(0)
 
@@ -109,7 +114,7 @@ describe('亮色主题与视觉令牌验证', () => {
   })
 
   it('light 主题时间轴编辑区覆盖必须高于后加载组件样式', () => {
-    const content = readAppCss()
+    const content = readAppCssBundle()
     const readabilityStart = content.indexOf('Studio readability correction 2026-04-27')
     expect(readabilityStart).toBeGreaterThan(0)
 
@@ -125,7 +130,7 @@ describe('亮色主题与视觉令牌验证', () => {
   })
 
   it('桌面主工作台关键点击目标不应低于 40px', () => {
-    const content = readAppCss()
+    const content = readAppCssBundle()
     const readabilityStart = content.indexOf('Studio readability correction 2026-04-27')
     expect(readabilityStart).toBeGreaterThan(0)
 
@@ -155,7 +160,7 @@ describe('亮色主题与视觉令牌验证', () => {
   })
 
   it('light 主题左侧选中页签不应被通用浅色按钮规则覆盖', () => {
-    const content = readAppCss()
+    const content = readAppCssBundle()
     const readabilityStart = content.indexOf('Studio readability correction 2026-04-27')
     expect(readabilityStart).toBeGreaterThan(0)
 
@@ -170,7 +175,7 @@ describe('亮色主题与视觉令牌验证', () => {
   })
 
   it('dark 主题必须显式加强监看空态与时间轴层级', () => {
-    const content = readAppCss()
+    const content = readAppCssBundle()
     const readabilityStart = content.indexOf('Studio readability correction 2026-04-27')
     expect(readabilityStart).toBeGreaterThan(0)
 
@@ -200,7 +205,7 @@ describe('亮色主题与视觉令牌验证', () => {
   })
 
   it('Claude 视觉审查修复应降低暗色素材区割裂、容器噪声与时间轴浮层感', () => {
-    const content = readAppCss()
+    const content = readAppCssBundle()
     const correctionStart = content.indexOf('Claude visual audit correction 2026-04-28')
     expect(correctionStart).toBeGreaterThan(0)
 
@@ -245,7 +250,7 @@ describe('亮色主题与视觉令牌验证', () => {
   })
 
   it('Gemini 视觉审查修复应覆盖禁用态与窄侧栏布局密度', () => {
-    const appCss = readAppCss()
+    const appCss = readAppCssBundle()
     const assetPanelCss = readAssetPanelCss()
     const correctionStart = appCss.indexOf('Gemini UI audit correction 2026-04-29')
     expect(correctionStart).toBeGreaterThan(0)

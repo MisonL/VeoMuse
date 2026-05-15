@@ -1,0 +1,235 @@
+.timeline-running-order {
+  color: color-mix(in srgb, var(--ap-text) 82%, var(--ap-signal) 18%);
+  background: color-mix(in srgb, var(--ap-signal-soft) 54%, #ffffff 46%);
+}
+
+.timeline-tools {
+  width: auto;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-card) 84%, var(--ap-panel) 16%)
+    ),
+    radial-gradient(
+      circle at 14% 20%,
+      color-mix(in srgb, var(--ap-accent-soft) 16%, transparent),
+      transparent 26%
+    );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.timeline-tools .undo-group {
+  margin-right: 0;
+  padding-right: 10px;
+  border-right: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
+}
+
+.system-telemetry {
+  flex: 0 0 330px;
+  max-width: 360px;
+  align-items: stretch !important;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 20px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-outline) 30%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+    color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+  );
+}
+
+.system-telemetry.is-idle {
+  border-color: color-mix(in srgb, var(--ap-border) 68%, var(--ap-accent) 32%);
+}
+
+.system-telemetry.is-armed {
+  border-color: color-mix(in srgb, var(--ap-border) 66%, var(--ap-signal) 34%);
+}
+
+.telemetry-dock-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+}
+
+.telemetry-dock-copy {
+  font-size: 11px;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--ap-text) 72%, var(--ap-text-dim) 28%);
+}
+
+.telemetry-item {
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 76%, var(--ap-outline) 24%);
+  background: color-mix(in srgb, var(--ap-surface) 88%, #ffffff 12%);
+}
+
+@media (max-width: 1440px) {
+  .os-header {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-zone {
+    grid-template-columns: auto auto 1fr;
+  }
+
+  .header-actions {
+    grid-template-columns: repeat(3, minmax(0, max-content));
+    justify-content: start;
+  }
+
+  .monitor-control-band,
+  .monitor-launchpad-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .monitor-launchpad-stats,
+  .timeline-empty-readout {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-priority-band {
+    align-items: flex-start;
+  }
+
+  .system-telemetry {
+    width: 100%;
+    max-width: none;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 1180px) {
+  .timeline-actions,
+  .timeline-control-surface {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .timeline-priority-band {
+    align-items: flex-start;
+  }
+
+  .system-telemetry {
+    width: 100%;
+    max-width: none;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+/* Cinematica Light layout correction */
+.pro-master-shell,
+.pro-master-shell[data-topbar-density='compact'] {
+  --header-h: 188px;
+}
+
+.os-header {
+  min-height: 172px;
+}
+
+.os-header-deck {
+  align-content: end;
+}
+
+.header-actions {
+  flex-wrap: wrap;
+  row-gap: 10px !important;
+}
+
+.header-actions-layout,
+.header-actions-quick,
+.header-actions-export {
+  flex: 0 1 auto;
+}
+
+.monitor-content,
+.monitor-stage-shell {
+  min-height: 0;
+}
+
+.monitor-stage-shell.is-idle {
+  display: grid;
+  grid-template-columns: minmax(0, 1.34fr) minmax(260px, 0.66fr) !important;
+  align-items: stretch;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-primary {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+  min-height: 0;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-aside {
+  grid-column: auto;
+}
+
+.monitor-stage-shell.is-idle .preview-host {
+  padding: 0;
+  min-height: 0;
+}
+
+.monitor-stage-shell.is-idle .preview-frame {
+  min-height: 0 !important;
+  aspect-ratio: auto;
+  height: 100%;
+  border-radius: 24px !important;
+  background:
+    linear-gradient(145deg, rgba(255, 250, 240, 0.86), rgba(242, 225, 202, 0.78)),
+    radial-gradient(circle at 12% 12%, rgba(230, 95, 43, 0.16), transparent 34%) !important;
+  border-color: rgba(56, 45, 31, 0.14) !important;
+  box-shadow: none !important;
+}
+
+.monitor-stage-shell.is-idle .preview-frame .multi-video-player {
+  min-height: 100%;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-intro {
+  display: none !important;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-aside .monitor-launchpad {
+  height: 100%;
+}
+
+.monitor-stage-intro-actions,
+.monitor-action-strip {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1440px) {
+  .pro-master-shell,
+  .pro-master-shell[data-topbar-density='compact'] {
+    --header-h: 208px;
+  }
+
+  .os-header {
+    min-height: 194px;
+    grid-template-columns: 1fr !important;
+  }
+
+  .header-bridge-status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) {
+  .monitor-stage-shell.is-idle {
+    grid-template-columns: 1fr !important;
+  }
+}

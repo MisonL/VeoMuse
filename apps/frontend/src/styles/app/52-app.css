@@ -1,0 +1,180 @@
+.audio-master-stage .audio-master-status-tower,
+.audio-master-stage .audio-master-lanes {
+  min-height: 0 !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.audio-master-stage .audio-master-status-card {
+  min-height: 72px !important;
+  padding: 10px 12px !important;
+}
+
+.audio-master-stage .audio-master-lane {
+  min-height: 104px !important;
+  padding: 12px !important;
+}
+
+.audio-master-stage .audio-master-lane p {
+  display: -webkit-box !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+@media (max-height: 820px) {
+  .audio-master-stage {
+    gap: 10px !important;
+    padding: 14px !important;
+  }
+
+  .audio-master-stage .audio-master-hero {
+    gap: 10px !important;
+    padding: 14px !important;
+  }
+
+  .audio-master-stage .audio-master-summary {
+    display: -webkit-box !important;
+    overflow: hidden !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+  }
+
+  .audio-master-stage .audio-master-lane {
+    min-height: 92px !important;
+  }
+}
+
+/* Claude visual audit correction 2026-04-28 */
+@media (min-width: 1181px) {
+  [data-theme='dark'] .panel-left,
+  [data-theme='dark'] .panel-right,
+  [data-theme='dark'] .timeline-container,
+  [data-theme='dark'] .os-header,
+  [data-theme='light'] .panel-left,
+  [data-theme='light'] .panel-right,
+  [data-theme='light'] .timeline-container,
+  [data-theme='light'] .os-header {
+    box-shadow: none !important;
+  }
+
+  [data-theme='dark'] .panel-left,
+  [data-theme='dark'] .panel-right,
+  [data-theme='light'] .panel-left,
+  [data-theme='light'] .panel-right {
+    border-radius: 10px !important;
+  }
+
+  [data-theme='dark'] .panel-left .pro-asset-panel,
+  [data-theme='dark'] .panel-left .pro-asset-grid,
+  [data-theme='dark'] .panel-left .asset-search-bar,
+  [data-theme='dark'] .panel-left .asset-intel-strip,
+  [data-theme='dark'] .panel-left .asset-intel-card,
+  [data-theme='dark'] .panel-left .asset-tile,
+  [data-theme='dark'] .panel-left .pro-empty-state-v2,
+  [data-theme='dark'] .panel-left .asset-empty-state,
+  [data-theme='dark'] .panel-left .analysis-card,
+  [data-theme='dark'] .panel-left .actor-card,
+  [data-theme='dark'] .panel-left .motion-card {
+    background-color: rgba(9, 13, 14, 0.76) !important;
+    background-image: none !important;
+    border-color: rgba(159, 214, 222, 0.12) !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme='dark'] .panel-left .cat-btn:not(.active),
+  [data-theme='dark'] .panel-left .sidebar-tab:not(.active) {
+    background-color: rgba(9, 13, 14, 0.54) !important;
+    border-color: rgba(159, 214, 222, 0.12) !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme='light'] .panel-left .pro-asset-panel,
+  [data-theme='light'] .panel-left .pro-asset-grid,
+  [data-theme='light'] .panel-left .asset-search-bar,
+  [data-theme='light'] .panel-left .asset-intel-strip,
+  [data-theme='light'] .panel-left .asset-intel-card,
+  [data-theme='light'] .panel-left .asset-tile,
+  [data-theme='light'] .panel-left .pro-empty-state-v2,
+  [data-theme='light'] .panel-left .asset-empty-state,
+  [data-theme='light'] .panel-left .analysis-card,
+  [data-theme='light'] .panel-left .actor-card,
+  [data-theme='light'] .panel-left .motion-card {
+    background-color: rgba(255, 250, 240, 0.78) !important;
+    background-image: none !important;
+    border-color: rgba(56, 45, 31, 0.13) !important;
+    box-shadow: none !important;
+  }
+
+  .timeline-empty-hint,
+  .timeline-body.is-idle .timeline-empty-state {
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  [data-theme='dark'] .timeline-empty-hint,
+  [data-theme='dark'] .timeline-body.is-idle .timeline-empty-state {
+    background-color: rgba(9, 13, 14, 0.74) !important;
+    border-color: rgba(159, 214, 222, 0.13) !important;
+  }
+
+  [data-theme='light'] .timeline-empty-hint,
+  [data-theme='light'] .timeline-body.is-idle .timeline-empty-state {
+    background-color: rgba(255, 250, 240, 0.76) !important;
+    border-color: rgba(56, 45, 31, 0.13) !important;
+  }
+
+  html[data-theme='light'] body .timeline-empty-hint,
+  html[data-theme='dark'] body .timeline-empty-hint,
+  html[data-theme='light'] body .timeline-body.is-idle .timeline-empty-state,
+  html[data-theme='dark'] body .timeline-body.is-idle .timeline-empty-state {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  html[data-theme='light'] body .timeline-empty-hint,
+  html[data-theme='dark'] body .timeline-empty-hint {
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: 50% !important;
+    width: min(88%, 440px) !important;
+    min-height: 0 !important;
+    padding: 10px 18px !important;
+    transform: translate(-50%, -50%) !important;
+    pointer-events: none !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-style: dashed !important;
+  }
+
+  html[data-theme='light'] body .timeline-empty-hint {
+    border-color: rgba(10, 62, 73, 0.24) !important;
+  }
+
+  html[data-theme='dark'] body .timeline-empty-hint {
+    border-color: rgba(159, 214, 222, 0.2) !important;
+  }
+
+  html[data-theme='light'] body .monitor-core {
+    background-color: rgba(236, 232, 218, 0.78) !important;
+  }
+
+  html[data-theme='light'] body .preview-frame,
+  html[data-theme='light'] body .monitor-stage-shell.is-idle .preview-frame {
+    background-color: rgba(242, 238, 224, 0.92) !important;
+    border-color: rgba(10, 62, 73, 0.18) !important;
+  }
+
+  html[data-theme='light'] body .timeline-container {
+    background-color: rgba(255, 250, 240, 0.92) !important;
+    border-top: 2px solid rgba(10, 62, 73, 0.48) !important;
+  }
+
+  .timeline-empty-hint strong,
+  .timeline-body.is-idle .timeline-empty-copy strong {
+    font-size: clamp(17px, 1.35vw, 22px) !important;
+    line-height: 1.12 !important;
+  }
+}

@@ -1,0 +1,204 @@
+/* Compact desktop guard 2026-04-25 */
+@media (min-width: 1181px) and (max-width: 1599px) {
+  .pro-master-shell,
+  .pro-master-shell[data-topbar-density='compact'] {
+    --timeline-h: 260px !important;
+    gap: 8px !important;
+    padding: 10px !important;
+    grid-template-rows: 88px minmax(0, 1fr) 0 var(--timeline-h) !important;
+  }
+
+  .os-header {
+    min-height: 88px !important;
+    max-height: 88px !important;
+    grid-template-columns: 260px minmax(0, 1fr) !important;
+    gap: 10px !important;
+    padding: 8px 12px !important;
+    overflow: hidden !important;
+  }
+
+  .os-header-bridge {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  .header-bridge-status {
+    display: none !important;
+  }
+
+  .brand-zone {
+    gap: 10px !important;
+  }
+
+  .brand-logo {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+  }
+
+  .brand-title {
+    font-size: 26px !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  .brand-kicker {
+    font-size: 10px !important;
+  }
+
+  .os-header-deck {
+    grid-template-columns: max-content minmax(0, 1fr) !important;
+    gap: 8px !important;
+    align-items: center !important;
+  }
+
+  .mode-selector {
+    min-height: 36px !important;
+    padding: 3px !important;
+    border-radius: 14px !important;
+  }
+
+  .mode-tab {
+    min-height: 32px !important;
+    padding: 0 12px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+  }
+
+  .header-actions {
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+
+  .header-actions-layout .header-segment:nth-child(2) {
+    display: none !important;
+  }
+
+  .header-actions-group,
+  .header-actions-group--quiet .header-segment,
+  .header-actions-export {
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+    padding: 3px !important;
+    border-radius: 14px !important;
+  }
+
+  .header-segment-btn,
+  .layout-reset-btn,
+  .channel-entry-btn,
+  .export-btn {
+    min-height: 34px !important;
+    padding-inline: 10px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  .header-select {
+    width: 108px !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+  }
+
+  .preview-aspect-select {
+    width: 104px !important;
+  }
+
+  .os-main {
+    grid-template-columns: 300px 0 minmax(0, 1fr) 0 280px !important;
+    gap: 10px !important;
+  }
+
+  .panel-left .sidebar-tabs {
+    gap: 6px !important;
+  }
+
+  .panel-left .sidebar-tab {
+    min-height: 36px !important;
+    padding-inline: 10px !important;
+    font-size: 11px !important;
+  }
+
+  .panel-right .inspector-header-title,
+  .panel-right .inspector-context-title {
+    font-size: 24px !important;
+    line-height: 1.04 !important;
+  }
+
+  .preview-frame .player-empty-state,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-state {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "status"
+      "title"
+      "subtitle" !important;
+    align-content: center !important;
+    justify-items: start !important;
+    padding: 28px 34px !important;
+  }
+
+  .preview-frame .player-empty-statusline {
+    width: max-content !important;
+    max-width: 100% !important;
+  }
+
+  .preview-frame .player-empty-title {
+    max-width: 10ch !important;
+    font-size: clamp(32px, 3.4vw, 40px) !important;
+    line-height: 0.95 !important;
+  }
+
+  .preview-frame .player-empty-subtitle {
+    max-width: 32ch !important;
+  }
+
+  .preview-frame .player-empty-readouts {
+    display: none !important;
+  }
+
+  .timeline-container {
+    grid-template-rows: 42px minmax(0, 1fr) !important;
+    padding: 9px 12px 12px !important;
+  }
+
+  .timeline-container.is-idle .timeline-actions {
+    height: 42px !important;
+    min-height: 42px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state {
+    grid-template-columns: 54px minmax(360px, 1fr) minmax(330px, 420px) !important;
+    grid-template-rows: 84px minmax(0, 1fr) !important;
+    gap: 14px !important;
+    padding: 16px 18px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state::after {
+    left: 88px !important;
+    right: 18px !important;
+    bottom: 18px !important;
+    height: 70px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-glyph {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-copy strong {
+    font-size: 22px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-readout {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .timeline-empty-readout > div {
+    padding: 8px 10px !important;
+  }
+}

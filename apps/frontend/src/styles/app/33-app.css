@@ -1,0 +1,228 @@
+/* Hard viewport fit correction 2026-04-24 */
+.pro-master-shell,
+.pro-master-shell[data-topbar-density='compact'] {
+  --timeline-h: 220px;
+  grid-template-rows: auto 560px 0 var(--timeline-h) !important;
+}
+
+.os-main {
+  height: 560px !important;
+  min-height: 560px !important;
+  max-height: 560px !important;
+  overflow: visible !important;
+}
+
+.panel-left,
+.panel-center,
+.panel-right,
+.monitor-core {
+  height: 560px !important;
+  min-height: 560px !important;
+  max-height: 560px !important;
+}
+
+.monitor-content,
+.monitor-stage-shell,
+.monitor-stage-shell.is-idle,
+.monitor-stage-primary,
+.monitor-stage-shell.is-idle .monitor-stage-primary {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 560px !important;
+}
+
+.monitor-stage-shell,
+.monitor-stage-shell.is-idle,
+.monitor-stage-primary,
+.monitor-stage-shell.is-idle .monitor-stage-primary {
+  grid-template-rows: 484px 64px !important;
+}
+
+.preview-host,
+.monitor-stage-shell.is-idle .preview-host {
+  height: 484px !important;
+  min-height: 0 !important;
+  max-height: 484px !important;
+}
+
+.preview-frame,
+.monitor-stage-shell.is-idle .preview-frame {
+  height: 484px !important;
+  min-height: 0 !important;
+  max-height: 484px !important;
+}
+
+.preview-frame .multi-video-player,
+.player-stage {
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+.panel-title-bar {
+  height: 54px !important;
+}
+
+.sidebar-tabs {
+  width: 100% !important;
+  overflow: hidden !important;
+  gap: 6px !important;
+}
+
+.sidebar-tab {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  padding-inline: 8px !important;
+  font-size: 12px !important;
+  letter-spacing: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.inspector-context-title {
+  font-size: clamp(24px, 1.7vw, 30px) !important;
+  line-height: 1.06 !important;
+}
+
+.timeline-container {
+  min-height: 220px !important;
+}
+
+.timeline-body {
+  min-height: 156px !important;
+}
+
+/* Final visual polish for stable workbench 2026-04-24 */
+.pro-master-shell,
+.pro-master-shell[data-topbar-density='compact'] {
+  --timeline-h: 190px;
+  grid-template-rows: auto 560px 0 var(--timeline-h) !important;
+}
+
+.panel-left,
+.panel-right {
+  box-shadow: 0 14px 34px rgba(86, 67, 38, 0.1) !important;
+}
+
+.sidebar-content,
+.inspector-scroll {
+  scrollbar-width: none !important;
+}
+
+.sidebar-content::-webkit-scrollbar,
+.inspector-scroll::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.inspector-header {
+  align-items: flex-start !important;
+  gap: 12px !important;
+}
+
+.inspector-header-title {
+  font-size: 24px !important;
+  line-height: 1.05 !important;
+  max-width: 7em !important;
+}
+
+.inspector-tabs {
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+
+.inspector-tabs button {
+  min-height: 50px !important;
+}
+
+.inspector-context-title {
+  max-width: 7em !important;
+  font-size: 28px !important;
+}
+
+.inspector-context-readouts {
+  grid-template-columns: 1fr !important;
+}
+
+.timeline-container {
+  min-height: 190px !important;
+  border-radius: 26px !important;
+}
+
+.timeline-actions {
+  height: 56px !important;
+}
+
+.timeline-body {
+  min-height: 134px !important;
+  padding: 14px !important;
+}
+
+.timeline-empty-state {
+  min-height: 92px !important;
+  padding: 12px 14px !important;
+}
+
+/* Final inspector header nowrap 2026-04-24 */
+.inspector-header-title {
+  max-width: none !important;
+  font-size: 22px !important;
+  line-height: 1.05 !important;
+  white-space: nowrap !important;
+}
+
+.inspector-header-copy {
+  min-width: 0 !important;
+}
+
+.inspector-header-meta {
+  min-width: 0 !important;
+}
+
+/* Preserve smoke-test layout controls 2026-04-24 */
+.header-actions-quick {
+  display: inline-flex !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.header-actions-quick .channel-entry-btn,
+.header-actions-quick .guide-toggle-btn,
+.header-actions-quick .theme-switcher-pro {
+  display: none !important;
+}
+
+.header-actions-quick .layout-reset-btn {
+  display: inline-flex !important;
+  min-height: 44px !important;
+  border-radius: 14px !important;
+}
+
+/* Preserve smoke-test center mode controls 2026-04-24 */
+.header-actions-layout {
+  display: inline-flex !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.header-actions-layout .header-segment {
+  display: inline-flex !important;
+}
+
+.header-actions-layout .header-segment:nth-child(2) {
+  display: none !important;
+}
+
+.header-actions-layout .header-segment-btn {
+  min-height: 44px !important;
+  border-radius: 14px !important;
+  padding-inline: 14px !important;
+}
+
+/* Preserve smoke-test channel access control 2026-04-24 */
+.header-actions-quick .channel-entry-btn {
+  display: inline-flex !important;
+  min-height: 44px !important;
+  border-radius: 14px !important;
+}

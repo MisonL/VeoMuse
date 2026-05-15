@@ -4,6 +4,7 @@ import path from 'path'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import App from '../apps/frontend/src/App'
+import { readAppCssBundle } from './css_bundle'
 import {
   buildGuideCardStyle,
   buildGuideHighlightStyle,
@@ -135,8 +136,7 @@ describe('App 运行态关键分支（DOM/SSR）', () => {
   })
 
   it('主壳样式应避免默认横向溢出并压缩移动端时间轴', () => {
-    const cssPath = path.resolve(process.cwd(), 'apps/frontend/src/App.css')
-    const css = readFileSync(cssPath, 'utf8')
+    const css = readAppCssBundle()
     expect(css).toContain('width: 100%;')
     expect(css).toContain('box-sizing: border-box;')
     expect(css).not.toContain('width: 100vw;')

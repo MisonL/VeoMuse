@@ -1,0 +1,237 @@
+.status-item .dot {
+  width: 6px;
+  height: 6px;
+  background: var(--ap-accent);
+  border-radius: 50%;
+}
+
+.telemetry-lite {
+  display: flex;
+  gap: 12px;
+}
+
+.timeline-body-refined {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--ap-bg);
+}
+
+.timeline-empty-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--ap-bg) 80%, transparent);
+  z-index: 2;
+  text-align: center;
+}
+
+.timeline-empty-hint strong {
+  font-size: 14px;
+  color: var(--ap-text);
+  margin-bottom: 4px;
+}
+
+.timeline-empty-hint p {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+}
+
+.inspector-grid-lite {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.readout-lite {
+  background: var(--ap-panel);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ap-border);
+}
+
+.readout-lite .label {
+  display: block;
+  font-size: 9px;
+  color: var(--ap-text-dim);
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.readout-lite .value {
+  font-size: 13px;
+  color: var(--ap-text);
+}
+
+.pro-input-refined, .pro-textarea-refined {
+  width: 100%;
+  background: var(--ap-surface);
+  border: 1px solid var(--ap-border);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 12px;
+  color: var(--ap-text);
+  box-sizing: border-box;
+}
+
+.quick-actions-refined {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.quick-actions-refined button {
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid var(--ap-border);
+  background: var(--ap-panel);
+  cursor: pointer;
+}
+
+.field-grid-lite {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.field-item label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.field-item select {
+  width: 100%;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid var(--ap-border);
+  font-size: 12px;
+}
+
+.field-item input[type='text'] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.field-item--checkbox {
+  display: grid;
+  align-content: start;
+}
+
+.field-item--range {
+  grid-column: span 2;
+}
+
+.range-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.range-inline input[type='range'] {
+  flex: 1;
+}
+
+.range-inline span {
+  min-width: 36px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ap-text);
+}
+
+.pro-btn-primary {
+  width: 100%;
+  background: var(--ap-accent);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pro-btn-secondary {
+  width: 100%;
+  background: var(--ap-panel);
+  color: var(--ap-text);
+  border: 1px solid var(--ap-border);
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.action-row-lite {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.toggle-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--ap-border);
+  border-radius: 8px;
+  background: var(--ap-panel);
+  font-size: 12px;
+  color: var(--ap-text);
+}
+
+.toggle-chip--wide {
+  margin-top: 4px;
+}
+
+.toggle-chip input {
+  margin: 0;
+}
+
+.inspector-empty-lite {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.empty-hint {
+  max-width: 200px;
+}
+
+.empty-hint .icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.empty-hint strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.empty-hint p {
+  font-size: 11px;
+  color: var(--ap-text-dim);
+}
+
+.pro-master-shell::before,
+.pro-master-shell::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 999px;
+  filter: blur(48px);
+}

@@ -1,0 +1,108 @@
+/* Timeline track composition 2026-04-25 */
+@media (min-width: 1181px) {
+  .timeline-body.is-idle .timeline-empty-state {
+    grid-template-columns: 62px minmax(460px, 1fr) minmax(460px, 520px) !important;
+    grid-template-rows: 82px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "glyph copy readout"
+      "tracks tracks tracks" !important;
+    padding: 16px 22px 18px !important;
+    align-items: start !important;
+    background:
+      linear-gradient(180deg, rgba(255, 251, 244, 0.98), rgba(246, 238, 224, 0.96)) !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state > * {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state::before {
+    content: "" !important;
+    position: absolute !important;
+    z-index: 0 !important;
+    left: 22px !important;
+    right: 22px !important;
+    top: 106px !important;
+    height: 24px !important;
+    border: 1px solid rgba(77, 59, 38, 0.1) !important;
+    border-bottom: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    background:
+      linear-gradient(90deg, rgba(15, 86, 107, 0.14) 0 2px, transparent 2px 100%) 0 0 / 152px 100%,
+      linear-gradient(90deg, rgba(77, 59, 38, 0.1) 0 1px, transparent 1px 100%) 0 0 / 76px 100%,
+      linear-gradient(180deg, rgba(255, 250, 240, 0.78), rgba(232, 226, 211, 0.54)) !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state::after {
+    z-index: 0 !important;
+    left: 22px !important;
+    right: 22px !important;
+    top: 130px !important;
+    bottom: 18px !important;
+    height: auto !important;
+    border-radius: 0 0 16px 16px !important;
+    background:
+      linear-gradient(180deg, transparent 0 28px, rgba(15, 86, 107, 0.14) 28px 29px, transparent 29px 100%),
+      linear-gradient(180deg, transparent 0 56px, rgba(15, 86, 107, 0.11) 56px 57px, transparent 57px 100%),
+      linear-gradient(90deg, rgba(77, 59, 38, 0.1) 0 1px, transparent 1px 100%) 0 0 / 76px 100%,
+      linear-gradient(180deg, rgba(255, 250, 240, 0.58), rgba(232, 226, 211, 0.42)) !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-glyph {
+    margin-top: 4px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-copy {
+    padding-top: 4px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-copy strong {
+    font-size: clamp(21px, 1.45vw, 28px) !important;
+    line-height: 1.04 !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-copy span:last-child {
+    max-width: 54ch !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-readout {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    align-self: start !important;
+    padding-top: 2px !important;
+  }
+
+  .timeline-empty-readout > div {
+    min-height: 52px !important;
+  }
+}
+
+@media (min-width: 1181px) and (max-width: 1599px) {
+  .timeline-body.is-idle .timeline-empty-state {
+    grid-template-columns: 52px minmax(350px, 1fr) minmax(330px, 380px) !important;
+    grid-template-rows: 74px minmax(0, 1fr) !important;
+    padding: 14px 18px 16px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state::before {
+    left: 18px !important;
+    right: 18px !important;
+    top: 94px !important;
+    height: 22px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state::after {
+    left: 18px !important;
+    right: 18px !important;
+    top: 116px !important;
+    bottom: 16px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-copy strong {
+    font-size: 20px !important;
+  }
+
+  .timeline-empty-readout > div {
+    min-height: 50px !important;
+  }
+}

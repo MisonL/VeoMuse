@@ -1,0 +1,238 @@
+/* Studio surface detail pass 2026-04-26 */
+@media (min-width: 1181px) {
+  .preview-frame .player-empty-state,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-state {
+    display: grid !important;
+    grid-template-columns: minmax(320px, 0.9fr) minmax(260px, 0.72fr) !important;
+    grid-template-rows: max-content max-content max-content 1fr 38px !important;
+    grid-template-areas:
+      "status readouts"
+      "title readouts"
+      "subtitle readouts"
+      "space readouts"
+      "footer footer" !important;
+    align-content: stretch !important;
+    justify-content: stretch !important;
+    align-items: start !important;
+    column-gap: clamp(40px, 8vw, 120px) !important;
+    row-gap: 12px !important;
+    inset: 18px !important;
+    padding: 34px 40px 24px !important;
+    background:
+      linear-gradient(90deg, rgba(10, 44, 52, 0.24) 0 72px, transparent 72px calc(100% - 72px), rgba(10, 44, 52, 0.2) calc(100% - 72px) 100%),
+      linear-gradient(180deg, rgba(255, 252, 246, 0.08), rgba(7, 44, 52, 0.1)) !important;
+    border-radius: 16px !important;
+  }
+
+  .preview-frame .player-empty-state::before,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-state::before {
+    content: "STANDBY" !important;
+    position: absolute !important;
+    z-index: 1 !important;
+    right: clamp(220px, 23vw, 360px) !important;
+    bottom: 54px !important;
+    color: rgba(15, 86, 107, 0.1) !important;
+    font-family: var(--ap-font-display) !important;
+    font-size: clamp(54px, 6vw, 96px) !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.12em !important;
+    line-height: 0.8 !important;
+    pointer-events: none !important;
+  }
+
+  .preview-frame .player-empty-state::after,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-state::after {
+    content: "00:00:00:00  |  PGM-A  |  16:9 SAFE" !important;
+    position: absolute !important;
+    z-index: 3 !important;
+    inset: auto 18px 10px 18px !important;
+    top: auto !important;
+    left: 18px !important;
+    right: 18px !important;
+    bottom: 10px !important;
+    height: 30px !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 18px !important;
+    border-top: 1px solid rgba(8, 52, 63, 0.18) !important;
+    border-radius: 999px !important;
+    background:
+      linear-gradient(90deg, rgba(8, 52, 63, 0.76), rgba(8, 52, 63, 0.42) 52%, rgba(255, 248, 235, 0.38)) !important;
+    color: rgba(255, 248, 235, 0.86) !important;
+    font-family: var(--ap-font-mono) !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.14em !important;
+    box-shadow: 0 -12px 34px rgba(9, 38, 45, 0.12) !important;
+  }
+
+  .preview-frame .player-empty-frame,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-frame {
+    inset: 0 !important;
+    z-index: 2 !important;
+    border-radius: 16px !important;
+    background:
+      linear-gradient(90deg, transparent 0 calc(50% - 1px), rgba(8, 52, 63, 0.18) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+      linear-gradient(180deg, transparent 0 calc(50% - 1px), rgba(8, 52, 63, 0.18) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)) !important;
+  }
+
+  .preview-frame .player-empty-corner {
+    width: 42px !important;
+    height: 42px !important;
+    color: rgba(9, 74, 88, 0.44) !important;
+  }
+
+  .preview-frame .player-empty-corner--tl {
+    top: 16px !important;
+    left: 16px !important;
+  }
+
+  .preview-frame .player-empty-corner--tr {
+    top: 16px !important;
+    right: 16px !important;
+  }
+
+  .preview-frame .player-empty-corner--bl {
+    bottom: 54px !important;
+    left: 16px !important;
+  }
+
+  .preview-frame .player-empty-corner--br {
+    right: 16px !important;
+    bottom: 54px !important;
+  }
+
+  .preview-frame .player-empty-bars,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-bars {
+    top: auto !important;
+    right: 24px !important;
+    bottom: 58px !important;
+    width: 260px !important;
+    height: 22px !important;
+    z-index: 4 !important;
+    border-radius: 999px !important;
+    border-color: rgba(8, 52, 63, 0.18) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.48),
+      0 14px 26px rgba(11, 44, 52, 0.14) !important;
+  }
+
+  .preview-frame .player-empty-statusline {
+    grid-area: status !important;
+    z-index: 4 !important;
+    align-self: start !important;
+  }
+
+  .preview-frame .player-empty-title {
+    grid-area: title !important;
+    z-index: 4 !important;
+    max-width: 10ch !important;
+    text-shadow: 0 2px 0 rgba(255, 248, 235, 0.54) !important;
+  }
+
+  .preview-frame .player-empty-subtitle {
+    grid-area: subtitle !important;
+    z-index: 4 !important;
+    max-width: 44ch !important;
+  }
+
+  .preview-frame .player-empty-readouts {
+    grid-area: readouts !important;
+    z-index: 4 !important;
+    width: min(100%, 330px) !important;
+    align-self: start !important;
+    justify-self: end !important;
+    gap: 10px !important;
+  }
+
+  .preview-frame .player-empty-readouts div {
+    min-height: 58px !important;
+    border-radius: 12px !important;
+    background:
+      linear-gradient(180deg, rgba(255, 250, 240, 0.92), rgba(244, 235, 218, 0.86)) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      0 18px 30px rgba(20, 47, 49, 0.1) !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state {
+    overflow: hidden !important;
+    background:
+      linear-gradient(180deg, rgba(255, 251, 244, 0.98), rgba(239, 232, 218, 0.98)) !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state::before {
+    height: 30px !important;
+    border-color: rgba(8, 52, 63, 0.18) !important;
+    background:
+      linear-gradient(90deg, rgba(8, 52, 63, 0.86) 0 74px, rgba(255, 249, 238, 0.78) 74px 100%),
+      linear-gradient(90deg, rgba(255, 248, 235, 0.18) 0 2px, transparent 2px 100%) 74px 0 / 152px 100% !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.44),
+      0 10px 18px rgba(36, 40, 34, 0.08) !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state::after {
+    top: 128px !important;
+    border-color: rgba(8, 52, 63, 0.16) !important;
+    background:
+      linear-gradient(90deg, rgba(8, 52, 63, 0.78) 0 74px, transparent 74px 100%),
+      linear-gradient(180deg, transparent 0 28px, rgba(8, 52, 63, 0.14) 28px 29px, transparent 29px 100%),
+      linear-gradient(180deg, transparent 0 56px, rgba(8, 52, 63, 0.1) 56px 57px, transparent 57px 100%),
+      linear-gradient(90deg, rgba(77, 59, 38, 0.11) 0 1px, transparent 1px 100%) 74px 0 / 76px 100%,
+      linear-gradient(180deg, rgba(255, 250, 240, 0.68), rgba(222, 218, 207, 0.46)) !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state .timeline-empty-glyph {
+    z-index: 3 !important;
+    border-color: rgba(8, 52, 63, 0.28) !important;
+    background: rgba(255, 250, 240, 0.88) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.74),
+      0 12px 24px rgba(8, 52, 63, 0.12) !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-copy {
+    z-index: 3 !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-readout {
+    z-index: 3 !important;
+  }
+}
+
+@media (min-width: 1181px) and (max-width: 1599px) {
+  .preview-frame .player-empty-state,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-state {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: max-content max-content max-content 1fr 34px !important;
+    grid-template-areas:
+      "status"
+      "title"
+      "subtitle"
+      "space"
+      "footer" !important;
+    padding: 28px 30px 22px !important;
+  }
+
+  .preview-frame .player-empty-readouts,
+  .preview-frame .player-empty-bars {
+    display: none !important;
+  }
+
+  .preview-frame .player-empty-state::before {
+    right: 30px !important;
+    bottom: 50px !important;
+    font-size: clamp(40px, 7vw, 72px) !important;
+  }
+
+  .preview-frame .player-empty-state::after {
+    height: 28px !important;
+    bottom: 8px !important;
+    font-size: 10px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state::after {
+    top: 118px !important;
+  }
+}

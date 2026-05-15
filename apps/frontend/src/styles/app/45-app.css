@@ -1,0 +1,208 @@
+/* Studio polish pass 2026-04-27 */
+@media (min-width: 1181px) {
+  .os-header {
+    background:
+      linear-gradient(90deg, rgba(255, 238, 216, 0.92), rgba(238, 232, 210, 0.82) 46%, rgba(191, 213, 199, 0.74)),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0)) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      inset 0 -1px 0 rgba(8, 52, 63, 0.1),
+      0 12px 30px rgba(48, 42, 30, 0.12) !important;
+  }
+
+  .brand-status-ribbon,
+  .mode-runtime {
+    display: none !important;
+  }
+
+  .brand-zone {
+    min-width: 260px !important;
+    width: 260px !important;
+  }
+
+  .brand-title {
+    letter-spacing: 0.11em !important;
+  }
+
+  .panel-left,
+  .panel-right {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.62),
+      0 14px 34px rgba(47, 39, 27, 0.1) !important;
+  }
+
+  .monitor-core {
+    background:
+      radial-gradient(circle at 50% 18%, rgba(255, 248, 235, 0.95), rgba(234, 226, 207, 0.92) 45%, rgba(210, 214, 198, 0.78)),
+      linear-gradient(180deg, rgba(255, 252, 244, 0.8), rgba(230, 224, 211, 0.92)) !important;
+  }
+
+  .preview-frame .player-empty-state,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-state {
+    grid-template-columns: minmax(360px, 0.95fr) minmax(230px, 0.52fr) !important;
+    column-gap: clamp(36px, 5vw, 86px) !important;
+    padding: 28px 36px 22px !important;
+    background:
+      linear-gradient(90deg, rgba(8, 52, 63, 0.28) 0 86px, transparent 86px calc(100% - 86px), rgba(8, 52, 63, 0.24) calc(100% - 86px) 100%),
+      linear-gradient(180deg, rgba(255, 252, 245, 0.12), rgba(7, 42, 49, 0.14)) !important;
+  }
+
+  .preview-frame .player-empty-statusline {
+    padding: 7px 12px !important;
+    border-radius: 999px !important;
+    background: rgba(8, 52, 63, 0.14) !important;
+    color: rgba(8, 52, 63, 0.9) !important;
+    letter-spacing: 0.16em !important;
+  }
+
+  .preview-frame .player-empty-title,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-title {
+    max-width: 12ch !important;
+    font-size: clamp(34px, 3.4vw, 52px) !important;
+    line-height: 0.94 !important;
+    letter-spacing: -0.05em !important;
+  }
+
+  .preview-frame .player-empty-subtitle,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-subtitle {
+    max-width: 38ch !important;
+    font-size: clamp(12px, 0.76vw, 14px) !important;
+    line-height: 1.55 !important;
+    color: rgba(30, 45, 43, 0.72) !important;
+  }
+
+  .preview-frame .player-empty-readouts {
+    width: min(100%, 280px) !important;
+    gap: 8px !important;
+    margin-top: 20px !important;
+  }
+
+  .preview-frame .player-empty-readouts div {
+    min-height: 50px !important;
+    border-radius: 9px !important;
+    background: rgba(255, 249, 237, 0.76) !important;
+    box-shadow:
+      inset 3px 0 0 rgba(8, 52, 63, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.62),
+      0 12px 22px rgba(20, 47, 49, 0.08) !important;
+  }
+
+  .preview-frame .player-empty-state::before,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-state::before {
+    right: clamp(180px, 18vw, 300px) !important;
+    bottom: 56px !important;
+    font-size: clamp(46px, 4.6vw, 78px) !important;
+    opacity: 0.82 !important;
+  }
+
+  .pro-asset-panel .asset-empty-state,
+  .panel-right .inspector-empty {
+    background:
+      linear-gradient(180deg, rgba(255, 250, 240, 0.9), rgba(242, 234, 218, 0.78)) !important;
+    border-color: rgba(8, 52, 63, 0.12) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      0 10px 22px rgba(48, 42, 30, 0.07) !important;
+  }
+}
+
+/* Deployment visual balance pass 2026-04-27 */
+@media (min-width: 1181px) {
+  .preview-frame .player-empty-state,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-state {
+    grid-template-columns: minmax(320px, 0.86fr) minmax(208px, 0.44fr) !important;
+    column-gap: clamp(28px, 3vw, 56px) !important;
+    padding: 24px 32px 18px !important;
+  }
+
+  .preview-frame .player-empty-title,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-title {
+    max-width: 9ch !important;
+    font-size: clamp(30px, 2.2vw, 42px) !important;
+    line-height: 0.92 !important;
+    letter-spacing: -0.04em !important;
+    text-wrap: balance !important;
+  }
+
+  .preview-frame .player-empty-subtitle,
+  .monitor-stage-shell.is-idle .preview-frame .player-empty-subtitle {
+    max-width: 34ch !important;
+    font-size: clamp(11px, 0.68vw, 13px) !important;
+    line-height: 1.48 !important;
+  }
+
+  .preview-frame .player-empty-readouts {
+    width: min(100%, 248px) !important;
+    gap: 7px !important;
+    margin-top: 14px !important;
+  }
+
+  .preview-frame .player-empty-readouts div {
+    min-height: 44px !important;
+    padding: 8px 12px !important;
+  }
+
+  .panel-right .inspector-context-bar {
+    gap: 10px !important;
+    padding: 10px 12px 12px !important;
+  }
+
+  .panel-right .inspector-context-copy {
+    gap: 4px !important;
+  }
+
+  .panel-right .inspector-context-title {
+    max-width: 10ch !important;
+    font-size: clamp(30px, 1.9vw, 34px) !important;
+    line-height: 0.94 !important;
+    letter-spacing: -0.03em !important;
+    text-transform: none !important;
+    text-wrap: balance !important;
+  }
+
+  .panel-right .inspector-context-subtitle {
+    max-width: 28ch !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+  .panel-right .inspector-context-readouts,
+  .panel-right .inspector-brief-grid {
+    gap: 8px !important;
+  }
+
+  .panel-right .inspector-readout-card,
+  .panel-right .inspector-brief-card {
+    min-height: 54px !important;
+    padding: 10px 12px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-state {
+    grid-template-columns: 54px minmax(420px, 1fr) minmax(390px, 450px) !important;
+    grid-template-rows: 76px minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 14px 18px 16px !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-copy strong {
+    max-width: 30ch !important;
+    font-size: clamp(19px, 1.2vw, 24px) !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.02em !important;
+    text-wrap: balance !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-copy span:last-child {
+    max-width: 44ch !important;
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+
+  .timeline-body.is-idle .timeline-empty-readout {
+    padding-top: 0 !important;
+  }
+
+  .timeline-empty-readout > div {
+    min-height: 48px !important;
+  }
+}

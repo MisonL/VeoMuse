@@ -1,0 +1,229 @@
+/* Graphite studio correction 2026-04-27 */
+@media (min-width: 1181px) {
+.pro-master-shell,
+  .pro-master-shell[data-topbar-density='compact'] {
+    grid-template-rows: 54px minmax(0, 1fr) 0 clamp(184px, var(--timeline-h), 204px) !important;
+    gap: 8px !important;
+    padding: 8px !important;
+    background-color: var(--ap-bg) !important;
+    background-image:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px) !important;
+    background-size: 32px 32px !important;
+  }
+
+.os-header {
+    min-height: 54px !important;
+    max-height: 54px !important;
+    padding: 6px 12px !important;
+    column-gap: 12px !important;
+    border-radius: 12px !important;
+    background-color: #111518 !important;
+    background-image: linear-gradient(90deg, rgba(31, 114, 132, 0.16), rgba(223, 106, 55, 0.08), transparent 70%) !important;
+    border-color: rgba(219, 229, 226, 0.12) !important;
+    box-shadow: none !important;
+  }
+
+.brand-logo {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    background: linear-gradient(145deg, #293034, #111518) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  }
+
+.brand-mark {
+    width: 44px !important;
+    min-width: 44px !important;
+  }
+
+.brand-title {
+    font-size: 24px !important;
+    letter-spacing: 0.08em !important;
+    color: var(--ap-text) !important;
+  }
+
+.header-status-lite {
+    min-height: 30px !important;
+    padding: 0 10px !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--ap-text-dim) !important;
+    border: 1px solid rgba(219, 229, 226, 0.08) !important;
+  }
+
+.mode-selector,
+  .header-actions-group,
+  .header-actions-export,
+  .theme-switcher-pro {
+    min-height: 38px !important;
+    padding: 3px !important;
+    gap: 3px !important;
+    border-radius: 10px !important;
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(219, 229, 226, 0.1) !important;
+    box-shadow: none !important;
+  }
+
+.mode-tab,
+  .theme-btn,
+  .header-select-compact,
+  .export-btn-compact {
+    min-height: 32px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    letter-spacing: 0 !important;
+  }
+
+.mode-tab.active,
+  .theme-btn.active {
+    background-color: var(--ap-accent) !important;
+    color: #f6fbfa !important;
+  }
+
+.header-select-compact {
+    min-width: 140px !important;
+    background-color: #171b1e !important;
+    color: var(--ap-text) !important;
+    border-color: rgba(219, 229, 226, 0.12) !important;
+  }
+
+.export-btn-compact,
+  .empty-btn.primary {
+    background-color: var(--ap-accent) !important;
+    border-color: rgba(159, 214, 222, 0.28) !important;
+    color: #f6fbfa !important;
+  }
+
+.os-main {
+    grid-template-columns:
+      minmax(264px, clamp(264px, var(--left-panel-w), 292px))
+      var(--split-handle-w)
+      minmax(0, 1fr)
+      var(--split-handle-w)
+      minmax(220px, clamp(220px, var(--right-panel-w), 248px)) !important;
+    min-height: 0 !important;
+  }
+
+.panel-left,
+  .panel-right,
+  .timeline-container {
+    border-radius: 12px !important;
+    background-color: #101315 !important;
+    background-image: none !important;
+    border-color: rgba(219, 229, 226, 0.1) !important;
+    box-shadow: none !important;
+  }
+
+.panel-title-bar,
+  .sidebar-content,
+  .inspector-scroll,
+  .timeline-header-refined {
+    background-color: transparent !important;
+  }
+
+.monitor-core {
+    padding: 8px !important;
+    border-radius: 12px !important;
+    background-color: #0d1011 !important;
+    background-image: none !important;
+    border-color: rgba(219, 229, 226, 0.1) !important;
+    box-shadow: none !important;
+  }
+
+.monitor-content {
+    background: transparent !important;
+  }
+
+.monitor-stage-shell,
+  .monitor-stage-primary,
+  .monitor-stage-shell.is-idle .monitor-stage-primary {
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+.preview-host,
+  .monitor-stage-shell.is-idle .preview-host {
+    min-height: 0 !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+.preview-frame,
+  .monitor-stage-shell.is-idle .preview-frame {
+    position: relative !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    border-radius: 10px !important;
+    border-color: rgba(219, 229, 226, 0.14) !important;
+    background-color: #040506 !important;
+    background-image:
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px) !important;
+    background-size: 96px 96px !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035) !important;
+    overflow: hidden !important;
+  }
+
+.preview-frame[data-aspect-ratio='21:9'],
+  .monitor-stage-shell.is-idle .preview-frame[data-aspect-ratio='21:9'] {
+    aspect-ratio: 21 / 9 !important;
+  }
+
+.preview-frame .multi-video-player {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    background: transparent !important;
+    border-radius: inherit !important;
+  }
+
+.preview-frame .player-stage,
+  .preview-frame .player-empty-state {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+
+.monitor-empty-overlay {
+    padding: 24px !important;
+    background: rgba(4, 5, 6, 0.72) !important;
+    backdrop-filter: none !important;
+  }
+
+.empty-hero {
+    max-width: 280px !important;
+    color: var(--ap-text) !important;
+    text-align: left !important;
+  }
+
+.empty-hero .empty-icon {
+    font-size: 48px !important;
+    line-height: 1 !important;
+    color: rgba(255, 255, 255, 0.12) !important;
+    opacity: 1 !important;
+  }
+
+.empty-hero strong {
+    font-size: 24px !important;
+    line-height: 1.1 !important;
+    letter-spacing: 0 !important;
+  }
+
+.empty-hero p {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+    color: var(--ap-text-dim) !important;
+  }
+}

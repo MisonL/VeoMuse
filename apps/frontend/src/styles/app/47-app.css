@@ -1,0 +1,95 @@
+@media (min-width: 1181px) {
+.panel-right .pro-inspector-inner {
+    border-radius: 18px !important;
+  }
+
+.panel-right .inspector-header-compact {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+
+.panel-right .inspector-tabs-lite {
+    padding: 4px !important;
+    gap: 6px !important;
+  }
+
+.panel-right .inspector-tabs-lite button {
+    min-height: 38px !important;
+    padding: 0 14px !important;
+  }
+
+.panel-right .inspector-body-refined {
+    padding: 10px 12px 12px !important;
+  }
+
+.panel-right .inspector-empty-lite {
+    min-height: 0 !important;
+    padding: 16px 14px !important;
+    border-radius: 16px !important;
+  }
+
+.panel-right .empty-hint {
+    gap: 6px !important;
+  }
+
+.panel-right .empty-hint strong {
+    font-size: clamp(18px, 1.2vw, 22px) !important;
+    line-height: 1 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+.panel-right .empty-hint p {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+
+.timeline-container {
+    height: clamp(172px, var(--timeline-h), 192px) !important;
+    min-height: clamp(172px, var(--timeline-h), 192px) !important;
+    max-height: clamp(172px, var(--timeline-h), 192px) !important;
+    padding: 6px 10px 10px !important;
+    border-radius: 18px !important;
+  }
+
+.timeline-header-refined {
+    min-height: 34px !important;
+    padding: 0 2px 4px !important;
+  }
+
+.timeline-tools-refined {
+    gap: 8px !important;
+  }
+
+.tool-btn-lite {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+.timeline-status-refined {
+    gap: 12px !important;
+  }
+
+.timeline-body-refined {
+    min-height: 0 !important;
+    padding-top: 4px !important;
+  }
+
+.timeline-empty-hint {
+    left: 50% !important;
+    bottom: 14px !important;
+    width: min(100%, 520px) !important;
+    transform: translateX(-50%) !important;
+    gap: 4px !important;
+    padding: 0 16px !important;
+  }
+
+.timeline-empty-hint strong {
+    font-size: clamp(18px, 1.15vw, 22px) !important;
+    line-height: 1.02 !important;
+  }
+
+.timeline-empty-hint p {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+}

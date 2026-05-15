@@ -1,0 +1,233 @@
+@media (max-width: 1180px) {
+  .pro-master-shell,
+  .pro-master-shell[data-topbar-density='compact'] {
+    --header-h: auto;
+    min-height: 100vh;
+    height: auto;
+    grid-template-rows: auto auto var(--split-handle-h) auto;
+  }
+
+  .os-header,
+  .header-bridge-status,
+  .os-header-deck {
+    grid-template-columns: 1fr !important;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* Cinematica Light compact monitor host guard */
+.monitor-stage-shell.is-idle .preview-host {
+  overflow: visible !important;
+}
+
+.monitor-stage-shell.is-idle .preview-frame {
+  width: 100% !important;
+  max-width: none !important;
+  height: clamp(154px, 15vw, 210px) !important;
+  padding: 12px !important;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-primary {
+  grid-template-rows: minmax(154px, 1fr) auto !important;
+}
+
+/* Workbench layout reset 2026-04-24 */
+.pro-master-shell,
+.pro-master-shell[data-topbar-density='compact'] {
+  --header-h: auto;
+  --timeline-h: 240px;
+  height: auto !important;
+  min-height: 100vh !important;
+  grid-template-rows: auto minmax(620px, auto) 0 var(--timeline-h) !important;
+  gap: 16px !important;
+  padding: 18px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  background:
+    linear-gradient(135deg, rgba(238, 97, 43, 0.1), transparent 30%),
+    linear-gradient(180deg, #f6efe4 0%, #eee4d2 100%) !important;
+}
+
+.os-header {
+  display: grid !important;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(680px, 1.18fr) !important;
+  align-items: stretch !important;
+  min-height: 118px !important;
+  padding: 18px 22px !important;
+  gap: 22px !important;
+  border-radius: 28px !important;
+  overflow: visible !important;
+}
+
+.os-header-bridge {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+}
+
+.brand-zone {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.brand-mark {
+  display: grid !important;
+  justify-items: center !important;
+  gap: 8px !important;
+}
+
+.brand-logo {
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 16px !important;
+  font-size: 28px !important;
+}
+
+.brand-beacon,
+.brand-status-ribbon,
+.mode-runtime {
+  display: none !important;
+}
+
+.brand-copy {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.brand-kicker {
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.18em !important;
+  color: rgba(73, 61, 44, 0.7) !important;
+}
+
+.brand-title {
+  font-size: clamp(44px, 3.8vw, 64px) !important;
+  line-height: 0.86 !important;
+  letter-spacing: 0.09em !important;
+}
+
+.os-header-deck {
+  display: grid !important;
+  grid-template-rows: auto auto !important;
+  align-content: center !important;
+  gap: 14px !important;
+  min-width: 0 !important;
+}
+
+.header-center-stack {
+  justify-self: start !important;
+}
+
+.mode-selector {
+  padding: 5px !important;
+  border-radius: 18px !important;
+}
+
+.mode-tab {
+  min-height: 42px !important;
+  padding: 0 22px !important;
+  border-radius: 14px !important;
+  font-size: 14px !important;
+}
+
+.header-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+.header-actions-layout,
+.header-actions-quick {
+  display: none !important;
+}
+
+.header-actions-export {
+  margin-left: 0 !important;
+}
+
+.header-select,
+.export-btn {
+  min-height: 44px !important;
+  border-radius: 14px !important;
+  font-size: 13px !important;
+}
+
+.os-main {
+  display: grid !important;
+  grid-template-columns: minmax(300px, 0.82fr) 0 minmax(640px, 1.86fr) 0 minmax(300px, 0.78fr) !important;
+  gap: 18px !important;
+  min-height: 620px !important;
+  height: auto !important;
+  align-items: stretch !important;
+}
+
+.main-resize-handle,
+.timeline-resize-handle {
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  pointer-events: none !important;
+}
+
+.main-resize-handle::before,
+.main-resize-handle::after,
+.timeline-resize-handle::before,
+.timeline-resize-handle::after {
+  display: none !important;
+}
+
+.pro-panel {
+  border-radius: 24px !important;
+  min-height: 0 !important;
+  box-shadow: 0 18px 48px rgba(79, 65, 42, 0.14) !important;
+}
+
+.panel-left,
+.panel-right {
+  max-height: 620px !important;
+}
+
+.panel-title-bar {
+  height: 58px !important;
+  padding: 0 18px !important;
+}
+
+.sidebar-tabs {
+  gap: 10px !important;
+}
+
+.sidebar-tab {
+  min-height: 40px !important;
+  padding: 0 16px !important;
+  border-radius: 14px !important;
+  font-size: 13px !important;
+}
+
+.sidebar-content,
+.inspector-scroll {
+  overflow: auto !important;
+}
+
+.monitor-core {
+  min-height: 620px !important;
+  padding: 18px !important;
+  overflow: hidden !important;
+  background: #fffaf0 !important;
+}
+
+.monitor-content {
+  height: 100% !important;
+  background: transparent !important;
+}

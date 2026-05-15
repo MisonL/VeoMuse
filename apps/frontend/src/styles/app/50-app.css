@@ -1,0 +1,140 @@
+/* Graphite studio light correction 2026-04-27 */
+@media (min-width: 1181px) {
+  [data-theme='light'] .pro-master-shell,
+  [data-theme='light'] .pro-master-shell[data-topbar-density='compact'] {
+    background-color: var(--ap-bg) !important;
+    background-image:
+      linear-gradient(90deg, rgba(84, 71, 50, 0.06) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(84, 71, 50, 0.05) 1px, transparent 1px) !important;
+  }
+
+  [data-theme='light'] .os-header {
+    background-color: var(--ap-surface) !important;
+    background-image: linear-gradient(90deg, rgba(27, 95, 117, 0.12), rgba(230, 95, 43, 0.08), transparent 72%) !important;
+    border-color: var(--ap-border) !important;
+    color: var(--ap-text) !important;
+  }
+
+  [data-theme='light'] .brand-logo {
+    background: linear-gradient(145deg, #315562, #1b5f75) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 250, 240, 0.26) !important;
+  }
+
+  [data-theme='light'] .mode-selector,
+  [data-theme='light'] .header-actions-group,
+  [data-theme='light'] .header-actions-export,
+  [data-theme='light'] .theme-switcher-pro,
+  [data-theme='light'] .header-status-lite {
+    background-color: rgba(255, 250, 240, 0.78) !important;
+    border-color: var(--ap-border) !important;
+    color: var(--ap-text-dim) !important;
+  }
+
+  [data-theme='light'] .panel-left,
+  [data-theme='light'] .panel-right,
+  [data-theme='light'] .timeline-container {
+    background-color: var(--ap-card) !important;
+    border-color: var(--ap-border) !important;
+    color: var(--ap-text) !important;
+  }
+
+  [data-theme='light'] .monitor-core {
+    background-color: var(--ap-stage-shell) !important;
+    border-color: var(--ap-border) !important;
+    color: var(--ap-text) !important;
+  }
+
+  [data-theme='light'] .preview-frame,
+  [data-theme='light'] .monitor-stage-shell.is-idle .preview-frame {
+    background-color: var(--ap-stage-deck) !important;
+    background-image:
+      linear-gradient(90deg, rgba(84, 71, 50, 0.08) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(84, 71, 50, 0.06) 1px, transparent 1px) !important;
+    border-color: var(--ap-border) !important;
+    box-shadow: inset 0 0 0 1px rgba(56, 45, 31, 0.08) !important;
+  }
+
+  [data-theme='light'] .monitor-empty-overlay {
+    background: rgba(255, 250, 240, 0.72) !important;
+  }
+
+  [data-theme='light'] .empty-hero .empty-icon {
+    color: rgba(29, 27, 23, 0.2) !important;
+  }
+
+  [data-theme='light'] .monitor-bottom-bar,
+  [data-theme='light'] .timeline-body-refined {
+    background-color: var(--ap-surface) !important;
+    border-color: var(--ap-border) !important;
+    color: var(--ap-text) !important;
+  }
+
+  [data-theme='light'] .pro-asset-panel,
+  [data-theme='light'] .pro-inspector-inner,
+  [data-theme='light'] .inspector-empty-lite,
+  [data-theme='light'] .asset-empty-state,
+  [data-theme='light'] .pro-asset-stat,
+  [data-theme='light'] .asset-filter-chip,
+  [data-theme='light'] .inspector-readout-card,
+  [data-theme='light'] .inspector-brief-card,
+  [data-theme='light'] .timeline-empty-hint,
+  [data-theme='light'] .panel-left .asset-search-bar,
+  [data-theme='light'] .panel-left .cat-btn:not(.active),
+  [data-theme='light'] .panel-left .asset-intel-strip,
+  [data-theme='light'] .panel-left .asset-intel-card,
+  [data-theme='light'] .panel-left .asset-tile,
+  [data-theme='light'] .panel-left .pro-empty-state-v2,
+  [data-theme='light'] .panel-left .analysis-card,
+  [data-theme='light'] .panel-left .actor-card,
+  [data-theme='light'] .panel-left .motion-card,
+  [data-theme='light'] .panel-right .pro-inspector-content-refined,
+  [data-theme='light'] .panel-right .inspector-section-lite,
+  [data-theme='light'] .panel-right .readout-lite,
+  [data-theme='light'] .panel-right .field-item,
+  [data-theme='light'] .panel-right .quick-actions-refined button {
+    background-color: var(--ap-surface) !important;
+    background-image: none !important;
+    border-color: var(--ap-border) !important;
+    color: var(--ap-text) !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme='light'] .header-select-compact,
+  [data-theme='light'] .sidebar-tab,
+  [data-theme='light'] .empty-btn,
+  [data-theme='light'] .action-pill,
+  [data-theme='light'] .theme-btn:not(.active),
+  [data-theme='light'] .mode-tab:not(.active),
+  [data-theme='light'] .header-segment-btn:not(.active),
+  [data-theme='light'] .layout-reset-btn,
+  [data-theme='light'] .guide-toggle-btn,
+  [data-theme='light'] .channel-entry-btn {
+    background-color: var(--ap-surface) !important;
+    border-color: var(--ap-border) !important;
+    color: var(--ap-text) !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme='light'] .panel-left .sidebar-tab.active {
+    background-color: var(--ap-accent) !important;
+    border-color: rgba(9, 79, 96, 0.28) !important;
+    color: #f6fbfa !important;
+  }
+
+  [data-theme='light'] .panel-left .asset-search-bar input,
+  [data-theme='light'] .panel-left .asset-intel-card strong,
+  [data-theme='light'] .panel-left .asset-tile strong,
+  [data-theme='light'] .panel-left .pro-empty-state-v2 p,
+  [data-theme='light'] .panel-left .pro-empty-state-v2 span {
+    color: var(--ap-text) !important;
+  }
+
+  [data-theme='light'] .panel-left .asset-search-bar input::placeholder,
+  [data-theme='light'] .panel-left .asset-intel-label,
+  [data-theme='light'] .panel-left .asset-tile-meta,
+  [data-theme='light'] .panel-left .pro-empty-state-v2 span,
+  [data-theme='light'] .panel-right .inspector-tabs-lite button:not(.active),
+  [data-theme='light'] .panel-right .badge-idle {
+    color: var(--ap-text-dim) !important;
+  }
+}

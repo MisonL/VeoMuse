@@ -1,0 +1,232 @@
+.monitor-stage-shell.is-idle .preview-frame {
+  min-height: 180px;
+}
+
+.preview-frame .multi-video-player {
+  border-radius: 26px;
+  overflow: hidden;
+}
+
+.monitor-overlay {
+  top: 18px;
+  left: 18px;
+  right: 18px;
+}
+
+.timecode {
+  font-size: 38px;
+  letter-spacing: -0.08em;
+}
+
+.preview-meta {
+  gap: 10px;
+}
+
+.preview-mode-toggle,
+.preview-quality {
+  min-height: 36px;
+  padding-inline: 12px;
+  border-radius: 14px;
+}
+
+.monitor-stage-aside {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.monitor-launchpad,
+.monitor-stage-aside-stack {
+  height: 100%;
+}
+
+.monitor-stage-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(240px, 0.8fr);
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--ap-accent) 26%, rgba(255, 255, 255, 0.16));
+  background:
+    linear-gradient(180deg, rgba(248, 240, 228, 0.98), rgba(245, 236, 222, 0.96)),
+    radial-gradient(circle at 100% 0, rgba(239, 106, 47, 0.12), transparent 22%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 18px 28px rgba(15, 23, 42, 0.12);
+}
+
+.monitor-stage-intro-copy {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.monitor-stage-intro-copy strong {
+  font-family: var(--ap-font-display);
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #16120e;
+}
+
+.monitor-stage-intro-copy small {
+  max-width: 54ch;
+  font-size: 12px;
+  line-height: 1.52;
+  color: color-mix(in srgb, #201810 82%, var(--ap-text-dim) 18%);
+}
+
+.monitor-stage-intro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  align-content: flex-start;
+}
+
+@media (max-width: 1440px) {
+  .monitor-stage-intro {
+    grid-template-columns: 1fr;
+  }
+
+  .monitor-stage-intro-actions {
+    justify-content: flex-start;
+  }
+}
+
+.monitor-launchpad {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 0;
+  height: auto;
+  padding: 14px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 74%, var(--ap-outline) 26%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+    ),
+    radial-gradient(circle at 100% 0, rgba(15, 76, 173, 0.09), transparent 24%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 18px 32px rgba(15, 23, 42, 0.08);
+}
+
+.monitor-launchpad-kicker {
+  display: grid;
+  gap: 4px;
+}
+
+.monitor-launchpad-kicker strong {
+  font-family: var(--ap-font-display);
+  font-size: 18px;
+  line-height: 1.02;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.monitor-launchpad-note {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px dashed color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
+  background: color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%);
+}
+
+.monitor-launchpad-note small {
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--ap-text-dim);
+}
+
+.monitor-launchpad-actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.monitor-launchpad-stats,
+.monitor-ledger,
+.monitor-readout-cluster {
+  grid-template-columns: 1fr;
+}
+
+.monitor-stage-aside-stack {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.monitor-ledger-card,
+.monitor-readout {
+  min-height: 82px;
+  padding: 12px 14px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-outline) 28%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+    ),
+    radial-gradient(circle at 100% 0, rgba(239, 106, 47, 0.06), transparent 22%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.monitor-ledger-card strong,
+.monitor-readout strong {
+  font-size: 20px;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+}
+
+.monitor-control-band {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.transport-controls {
+  min-width: 224px;
+  padding: 12px 14px;
+  border-radius: 22px;
+  border-style: solid;
+  justify-content: flex-start;
+  background:
+    linear-gradient(180deg, rgba(7, 15, 27, 0.82), rgba(7, 15, 27, 0.72)),
+    radial-gradient(circle at 50% 0, rgba(15, 76, 173, 0.18), transparent 26%);
+}
+
+.transport-btn {
+  width: 42px;
+  height: 42px;
+  color: rgba(255, 247, 237, 0.86);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.transport-btn.play {
+  width: 58px;
+  height: 58px;
+}
+
+.monitor-action-strip {
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--ap-border) 72%, var(--ap-outline) 28%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 96%, #ffffff 4%),
+      color-mix(in srgb, var(--ap-card) 86%, var(--ap-panel) 14%)
+    ),
+    radial-gradient(circle at 0 0, rgba(15, 76, 173, 0.08), transparent 22%);
+}

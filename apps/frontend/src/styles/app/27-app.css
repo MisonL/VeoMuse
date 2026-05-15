@@ -1,0 +1,234 @@
+@media (max-width: 1520px) {
+  .timeline-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .system-telemetry {
+    width: 100%;
+  }
+}
+
+@media (max-width: 1280px) {
+  .monitor-stage-shell,
+  .monitor-control-band,
+  .timeline-control-surface {
+    grid-template-columns: 1fr;
+  }
+
+  .monitor-action-strip {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 980px) {
+  .monitor-stage-shell,
+  .monitor-control-band,
+  .timeline-actions,
+  .timeline-control-surface {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-frame {
+    min-height: 320px;
+  }
+}
+
+/* Preview Ratio Guard 2026-03-10 */
+.monitor-stage-shell.is-idle {
+  grid-template-columns: 1fr !important;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-aside {
+  grid-column: 1;
+}
+
+.monitor-stage-shell.is-idle .monitor-stage-primary {
+  grid-template-rows: auto auto !important;
+}
+
+.preview-host {
+  display: flex;
+  align-items: stretch;
+}
+
+.preview-frame {
+  width: 100%;
+  max-height: none !important;
+  aspect-ratio: 16 / 9;
+  min-height: 0 !important;
+}
+
+.monitor-stage-shell.is-idle .preview-frame {
+  min-height: 0 !important;
+}
+
+@media (max-width: 1280px) {
+  .preview-frame {
+    min-height: 0 !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .preview-frame {
+    min-height: 0 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .preview-frame {
+    min-height: 0 !important;
+  }
+}
+
+/* Broadcast Console Pass 2026-03-10 */
+.pro-master-shell {
+  background:
+    radial-gradient(circle at 16% 0, rgba(63, 140, 255, 0.14), transparent 24%),
+    radial-gradient(circle at 84% 0, rgba(255, 141, 58, 0.12), transparent 18%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ap-bg) 80%, #010308 20%), var(--ap-bg)),
+    linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 79px,
+      color-mix(in srgb, var(--ap-grid-line) 88%, transparent) 79px,
+      color-mix(in srgb, var(--ap-grid-line) 88%, transparent) 80px
+    );
+}
+
+.pro-panel {
+  border-radius: 14px;
+  border-color: color-mix(in srgb, var(--ap-border) 90%, rgba(143, 189, 255, 0.08));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 22px 40px rgba(1, 4, 10, 0.46);
+}
+
+.brand-title {
+  font-size: 28px;
+  letter-spacing: 0.12em;
+}
+
+.brand-status-ribbon,
+.mode-selector,
+.header-actions-group,
+.header-segment,
+.header-actions-group--quiet .header-segment,
+.header-select,
+.layout-reset-btn,
+.guide-toggle-btn,
+.channel-entry-btn,
+.export-btn,
+.monitor-launchpad,
+.monitor-stage-aside-stack,
+.monitor-stage-intro,
+.timeline-control-surface,
+.timeline-priority-band,
+.timeline-tools,
+.system-telemetry,
+.timeline-editor-slot,
+.timeline-empty-state {
+  border-radius: 8px !important;
+}
+
+.mode-tab,
+.sidebar-tab,
+.tool-icon,
+.transport-btn,
+.transport-btn.play,
+.monitor-action-btn,
+.preview-mode-toggle,
+.preview-quality {
+  position: relative;
+  border-radius: 6px !important;
+}
+
+.mode-tab.active,
+.tool-icon.active,
+.preview-mode-toggle.active,
+.monitor-action-btn--signal {
+  box-shadow:
+    inset 0 0 0 1px rgba(143, 189, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 14px 24px rgba(2, 6, 12, 0.24);
+}
+
+.mode-tab.active::after,
+.tool-icon.active::after,
+.preview-mode-toggle.active::after,
+.monitor-action-btn--signal::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ap-signal);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--ap-signal) 72%, transparent);
+}
+
+.panel-left,
+.panel-right {
+  background:
+    linear-gradient(180deg, rgba(7, 12, 18, 0.98), rgba(10, 17, 26, 0.94)),
+    radial-gradient(circle at 100% 0, rgba(63, 140, 255, 0.12), transparent 24%);
+}
+
+.panel-center,
+.monitor-core,
+.timeline-container {
+  background:
+    linear-gradient(180deg, rgba(6, 11, 18, 0.98), rgba(10, 16, 24, 0.96)),
+    radial-gradient(circle at 0 0, rgba(63, 140, 255, 0.16), transparent 22%),
+    radial-gradient(circle at 100% 100%, rgba(255, 141, 58, 0.12), transparent 20%);
+}
+
+.monitor-stage-primary {
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(1, 5, 10, 0.98), rgba(7, 12, 20, 0.96)),
+    radial-gradient(circle at 12% 18%, rgba(63, 140, 255, 0.18), transparent 22%),
+    radial-gradient(circle at 88% 10%, rgba(255, 141, 58, 0.12), transparent 18%);
+}
+
+.monitor-stage-aside {
+  gap: 10px;
+}
+
+.monitor-stage-intro,
+.monitor-launchpad,
+.monitor-stage-aside-stack {
+  border-color: rgba(143, 189, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(9, 15, 22, 0.96), rgba(12, 19, 28, 0.92)),
+    radial-gradient(circle at 100% 0, rgba(63, 140, 255, 0.12), transparent 24%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 30px rgba(2, 6, 12, 0.22);
+}
+
+.monitor-stage-intro-copy strong,
+.monitor-launchpad-kicker strong {
+  font-size: clamp(20px, 1.7vw, 28px);
+}
+
+.monitor-stage-intro-copy small,
+.monitor-launchpad-note small,
+.timeline-priority-copy,
+.telemetry-dock-copy {
+  color: rgba(198, 215, 236, 0.72);
+}
+
+.monitor-deck-label,
+.timeline-section-title,
+.timeline-eyebrow,
+.monitor-ledger-label {
+  letter-spacing: 0.16em;
+}
+
+.timecode {
+  font-family: var(--ap-font-mono);
+  color: rgba(216, 241, 255, 0.92);
+  text-shadow: 0 0 14px rgba(100, 197, 255, 0.18);
+}

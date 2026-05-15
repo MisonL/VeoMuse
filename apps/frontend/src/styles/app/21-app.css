@@ -1,0 +1,236 @@
+.timeline-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: 30px;
+  border-color: color-mix(in srgb, var(--ap-border) 80%, var(--ap-outline) 20%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+      color-mix(in srgb, var(--ap-panel) 88%, #ffffff 12%)
+    ),
+    radial-gradient(circle at 14% 0, rgba(15, 76, 173, 0.05), transparent 20%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.84),
+    0 22px 42px rgba(15, 23, 42, 0.1);
+}
+
+.timeline-container::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, #111417, color-mix(in srgb, var(--ap-accent) 58%, #111417));
+  opacity: 0.88;
+}
+
+.timeline-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.22fr) minmax(280px, 0.78fr);
+  gap: 16px;
+  padding: 16px 16px 12px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%),
+      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+    ),
+    radial-gradient(circle at 100% 0, rgba(239, 106, 47, 0.06), transparent 24%);
+}
+
+.timeline-command-copy {
+  gap: 10px;
+}
+
+.timeline-control-surface {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 24px;
+}
+
+.timeline-priority-band {
+  min-height: 72px;
+  border-style: solid;
+  align-items: flex-start;
+}
+
+.timeline-priority-pill {
+  min-width: 86px;
+}
+
+.timeline-tools {
+  min-width: max-content;
+  border-style: solid;
+}
+
+.system-telemetry {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 10px;
+  max-width: none;
+  padding: 12px;
+  border-radius: 24px;
+  border-style: solid;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-surface) 95%, #ffffff 5%),
+      color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+    ),
+    radial-gradient(circle at 100% 0, rgba(15, 76, 173, 0.06), transparent 24%);
+}
+
+.telemetry-dock-head,
+.telemetry-item--gpu {
+  grid-column: 1 / -1;
+}
+
+.timeline-body {
+  min-height: 112px;
+  padding: 14px 16px 16px;
+  background:
+    linear-gradient(180deg, rgba(17, 24, 39, 0.05), rgba(17, 24, 39, 0.015)),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 72px,
+      color-mix(in srgb, var(--ap-grid-line) 80%, transparent) 72px,
+      color-mix(in srgb, var(--ap-grid-line) 80%, transparent) 73px
+    );
+}
+
+.timeline-editor-slot {
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.4)),
+    color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 12px 24px rgba(15, 23, 42, 0.06);
+}
+
+.timeline-empty-state {
+  width: min(540px, calc(100% - 24px));
+  border-radius: 22px;
+  border-color: color-mix(in srgb, var(--ap-border) 70%, var(--ap-accent) 30%);
+  background:
+    linear-gradient(180deg, rgba(251, 246, 238, 0.96), rgba(244, 235, 220, 0.94)),
+    radial-gradient(circle at 100% 0, rgba(239, 106, 47, 0.1), transparent 24%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.84),
+    0 16px 28px rgba(15, 23, 42, 0.08);
+}
+
+.audio-master-stage {
+  padding: 24px;
+  border-radius: 0;
+}
+
+@media (max-width: 1280px) {
+  .timeline-actions,
+  .monitor-stage-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+
+  .header-actions-layout,
+  .header-actions-quick,
+  .header-actions-export {
+    justify-self: start;
+    justify-content: flex-start;
+  }
+
+  .monitor-stage-primary {
+    grid-template-rows: minmax(360px, 1fr) auto;
+  }
+
+  .monitor-stage-intro {
+    grid-template-columns: 1fr;
+  }
+
+  .monitor-control-band {
+    grid-template-columns: 1fr;
+  }
+
+  .monitor-action-strip {
+    justify-content: flex-start;
+  }
+
+  .monitor-launchpad {
+    grid-template-columns: minmax(0, 0.92fr) repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .monitor-launchpad-kicker,
+  .monitor-launchpad-note {
+    grid-column: auto;
+  }
+
+  .monitor-launchpad-stats {
+    grid-column: span 3;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) {
+  .os-header-bridge,
+  .os-header-deck {
+    grid-template-columns: 1fr;
+  }
+
+  .header-bridge-status,
+  .mode-runtime {
+    justify-items: start;
+  }
+
+  .mode-runtime-copy {
+    text-align: left;
+  }
+
+  .panel-left,
+  .panel-right {
+    max-height: min(32vh, 320px);
+  }
+
+  .monitor-content {
+    overflow-y: auto;
+  }
+
+  .preview-frame {
+    min-height: 360px;
+  }
+
+  .monitor-stage-primary {
+    padding: 14px;
+  }
+
+  .monitor-stage-intro-copy strong {
+    font-size: 28px;
+  }
+
+  .system-telemetry,
+  .timeline-control-surface {
+    grid-template-columns: 1fr;
+  }
+
+  .monitor-launchpad {
+    grid-template-columns: 1fr;
+  }
+
+  .monitor-launchpad-stats {
+    grid-column: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-tools {
+    min-width: 0;
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}

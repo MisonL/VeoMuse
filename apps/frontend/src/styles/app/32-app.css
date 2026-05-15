@@ -1,0 +1,233 @@
+.monitor-stage-shell,
+.monitor-stage-shell.is-idle {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: minmax(380px, 1fr) auto !important;
+  gap: 18px !important;
+  min-height: 100% !important;
+}
+
+.monitor-stage-primary,
+.monitor-stage-shell.is-idle .monitor-stage-primary {
+  display: grid !important;
+  grid-template-rows: minmax(380px, 1fr) auto !important;
+  min-height: 0 !important;
+}
+
+.monitor-stage-aside,
+.monitor-stage-aside-stack,
+.monitor-stage-intro,
+.monitor-launchpad,
+.monitor-ledger,
+.monitor-readout-cluster,
+.monitor-control-band,
+.monitor-action-strip {
+  display: none !important;
+}
+
+.preview-host,
+.monitor-stage-shell.is-idle .preview-host {
+  min-height: 380px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  align-items: stretch !important;
+}
+
+.preview-frame,
+.monitor-stage-shell.is-idle .preview-frame {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 380px !important;
+  max-height: none !important;
+  aspect-ratio: 16 / 9 !important;
+  padding: 0 !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(73, 61, 44, 0.16) !important;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(230, 95, 43, 0.13), transparent 30%),
+    linear-gradient(135deg, #fff7e8, #eadfca) !important;
+  box-shadow: inset 0 0 0 10px rgba(62, 49, 34, 0.08) !important;
+}
+
+.preview-frame .multi-video-player {
+  min-height: 100% !important;
+  border-radius: 28px !important;
+  background: transparent !important;
+}
+
+.monitor-overlay,
+.monitor-deck-label {
+  display: none !important;
+}
+
+.transport-controls {
+  height: 76px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(73, 61, 44, 0.12) !important;
+  margin-top: 18px !important;
+}
+
+.timeline-container {
+  border-radius: 28px !important;
+  min-height: 240px !important;
+  overflow: hidden !important;
+}
+
+.timeline-actions {
+  height: 64px !important;
+  padding: 0 18px !important;
+}
+
+.timeline-body {
+  min-height: 176px !important;
+  padding: 18px !important;
+}
+
+.system-telemetry {
+  max-width: 620px !important;
+}
+
+.timeline-empty-state {
+  margin: 0 !important;
+  min-height: 112px !important;
+}
+
+@media (max-width: 1440px) {
+  .os-header {
+    grid-template-columns: 1fr !important;
+  }
+
+  .os-main {
+    grid-template-columns: minmax(280px, 0.72fr) 0 minmax(560px, 1.7fr) 0 minmax(280px, 0.66fr) !important;
+  }
+}
+
+@media (max-width: 1180px) {
+  .pro-master-shell,
+  .pro-master-shell[data-topbar-density='compact'] {
+    grid-template-rows: auto auto 0 auto !important;
+  }
+
+  .os-main {
+    grid-template-columns: 1fr !important;
+    min-height: 0 !important;
+  }
+
+  .panel-left,
+  .panel-center,
+  .panel-right {
+    grid-column: 1 !important;
+    max-height: none !important;
+  }
+}
+
+/* Clean studio stage correction 2026-04-24 */
+.monitor-core {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.monitor-content {
+  background: transparent !important;
+}
+
+.monitor-stage-primary,
+.monitor-stage-shell.is-idle .monitor-stage-primary {
+  border: none !important;
+  border-radius: 30px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.preview-frame,
+.monitor-stage-shell.is-idle .preview-frame {
+  border-radius: 30px !important;
+  border: 1px solid rgba(96, 78, 52, 0.16) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 252, 246, 0.96), rgba(239, 225, 202, 0.84)),
+    radial-gradient(circle at 16% 18%, rgba(230, 95, 43, 0.1), transparent 34%) !important;
+  box-shadow:
+    0 22px 54px rgba(86, 67, 38, 0.13),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.66) !important;
+}
+
+.preview-frame::after {
+  display: none !important;
+}
+
+.transport-controls {
+  margin-top: 14px !important;
+  background: rgba(255, 250, 240, 0.84) !important;
+}
+
+.panel-left,
+.panel-right {
+  max-height: none !important;
+  min-height: 620px !important;
+}
+
+.sidebar-content,
+.inspector-scroll {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(17, 91, 108, 0.28) transparent !important;
+}
+
+.pro-asset-panel,
+.inspector-panel-pro {
+  min-height: 100% !important;
+}
+
+/* First viewport composition correction 2026-04-24 */
+.pro-master-shell,
+.pro-master-shell[data-topbar-density='compact'] {
+  grid-template-rows: auto minmax(520px, auto) 0 var(--timeline-h) !important;
+  gap: 14px !important;
+  padding: 14px !important;
+}
+
+.os-header {
+  min-height: 128px !important;
+  padding: 16px 22px !important;
+}
+
+.brand-title {
+  font-size: clamp(40px, 3.2vw, 56px) !important;
+}
+
+.os-main {
+  min-height: 520px !important;
+  grid-template-columns: minmax(280px, 0.72fr) 0 minmax(720px, 1.9fr) 0 minmax(280px, 0.66fr) !important;
+}
+
+.monitor-core,
+.panel-left,
+.panel-right {
+  min-height: 520px !important;
+}
+
+.monitor-stage-shell,
+.monitor-stage-shell.is-idle,
+.monitor-stage-primary,
+.monitor-stage-shell.is-idle .monitor-stage-primary {
+  grid-template-rows: minmax(420px, 1fr) auto !important;
+}
+
+.preview-host,
+.monitor-stage-shell.is-idle .preview-host,
+.preview-frame,
+.monitor-stage-shell.is-idle .preview-frame {
+  min-height: 420px !important;
+}
+
+.preview-frame,
+.monitor-stage-shell.is-idle .preview-frame {
+  aspect-ratio: auto !important;
+}
+
+.transport-controls {
+  height: 64px !important;
+  margin-top: 12px !important;
+}

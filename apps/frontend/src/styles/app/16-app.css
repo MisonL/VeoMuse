@@ -1,0 +1,235 @@
+/* Cinematica Light final density pass */
+.pro-master-shell,
+.pro-master-shell[data-topbar-density='compact'] {
+  --header-h: 174px;
+}
+
+.os-header {
+  min-height: 158px;
+}
+
+.brand-status-ribbon,
+.mode-runtime {
+  min-height: 42px;
+  overflow: hidden;
+}
+
+.brand-status-copy,
+.mode-runtime-copy {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.monitor-stage-shell.is-idle .preview-frame {
+  padding: 18px;
+}
+
+.monitor-stage-shell.is-idle .monitor-deck-label,
+.monitor-stage-shell.is-idle .monitor-overlay {
+  display: none !important;
+}
+
+@media (max-width: 980px) {
+  .brand-zone {
+    grid-template-columns: auto 1fr;
+  }
+
+  .brand-status-ribbon {
+    grid-column: 1 / -1;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px dashed color-mix(in srgb, var(--ap-border) 72%, var(--ap-accent) 28%);
+    padding-top: 8px;
+  }
+
+  .header-center-stack {
+    gap: 6px;
+  }
+
+  .monitor-ledger,
+  .monitor-launchpad-stats,
+  .monitor-readout-cluster {
+    grid-template-columns: 1fr;
+  }
+
+  .monitor-action-strip {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .monitor-action-btn {
+    flex: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .mode-runtime {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .brand-zone {
+    gap: 10px;
+  }
+
+  .telemetry-dock-head {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .timeline-tools {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .timeline-priority-copy {
+    min-width: 0;
+  }
+
+  .monitor-launchpad-copy strong,
+  .timeline-empty-copy strong {
+    font-size: 16px;
+  }
+}
+
+.header-actions-group--quiet {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.header-actions-group--quiet .header-segment {
+  background: color-mix(in srgb, var(--ap-surface) 74%, transparent);
+  border-style: dashed;
+}
+
+.brand-status-ribbon {
+  gap: 6px;
+  padding: 8px 0 8px 14px;
+}
+
+.brand-status-pill {
+  box-shadow: none;
+}
+
+.mode-runtime {
+  padding: 2px 0 0;
+}
+
+.mode-runtime-copy {
+  font-family: var(--ap-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ap-text-dim) 76%, var(--ap-accent) 24%);
+}
+
+.header-actions {
+  grid-template-columns: max-content max-content minmax(240px, max-content);
+  gap: 10px;
+}
+
+.header-actions-layout,
+.header-actions-quick {
+  align-self: center;
+}
+
+.header-actions-export {
+  padding: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 16px 26px rgba(15, 23, 42, 0.08);
+}
+
+.panel-center {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.14), transparent 22%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ap-panel) 82%, #ffffff 18%),
+      color-mix(in srgb, var(--ap-surface) 92%, #ffffff 8%)
+    );
+}
+
+.monitor-stage-shell {
+  grid-template-rows: auto auto;
+  align-content: start;
+}
+
+.monitor-content {
+  overflow-y: auto;
+}
+
+.monitor-deck-label {
+  display: none;
+}
+
+.preview-host {
+  flex: 0 0 auto;
+  min-height: auto;
+  padding: 18px 20px 12px;
+}
+
+.preview-frame {
+  border-radius: 24px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 28px 48px rgba(2, 6, 23, 0.34);
+}
+
+.monitor-overlay {
+  top: 16px;
+  left: 16px;
+  right: 16px;
+}
+
+.preview-quality {
+  background: rgba(7, 15, 27, 0.42);
+  color: rgba(241, 245, 249, 0.78);
+}
+
+.monitor-lower-third {
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+
+.monitor-launchpad {
+  grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.9fr);
+  align-items: start;
+  gap: 14px 18px;
+  padding: 18px;
+  border-style: solid;
+}
+
+.monitor-launchpad-copy {
+  gap: 8px;
+}
+
+.monitor-launchpad-copy strong {
+  font-size: 24px;
+  letter-spacing: 0.04em;
+}
+
+.monitor-launchpad-actions {
+  gap: 12px;
+}
+
+.monitor-launchpad-stats {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  grid-template-columns: 1fr;
+  align-content: start;
+}
+
+.monitor-ledger-card,
+.monitor-readout {
+  border-style: solid;
+  box-shadow: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ap-surface) 94%, #ffffff 6%),
+    color-mix(in srgb, var(--ap-card) 88%, var(--ap-panel) 12%)
+  );
+}

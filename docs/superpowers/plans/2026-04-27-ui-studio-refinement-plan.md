@@ -15,11 +15,11 @@
 **Files:**
 - Modify: `tests/e2e/regression/layout-density.spec.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add assertions that the edit workspace has no document scroll, uses a real dark graphite palette, keeps the header compact, keeps the center monitor dominant, and preserves timeline height at `1366x768`.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bun run e2e:regression -- tests/e2e/regression/layout-density.spec.ts --workers=1 --retries=0`
 
@@ -30,11 +30,11 @@ Expected: FAIL because the current dark theme still resolves to a light beige wo
 **Files:**
 - Modify: `apps/frontend/src/theme.css`
 
-- [ ] **Step 1: Implement minimal token correction**
+- [x] **Step 1: Implement minimal token correction**
 
 Keep the light palette only for `:root` and `[data-theme='light']`. Add a dedicated `[data-theme='dark']` block after it with graphite studio tokens.
 
-- [ ] **Step 2: Run regression test**
+- [x] **Step 2: Run regression test**
 
 Run: `bun run e2e:regression -- tests/e2e/regression/layout-density.spec.ts --workers=1 --retries=0`
 
@@ -45,11 +45,11 @@ Expected: PASS for the palette check or expose the next layout error.
 **Files:**
 - Modify: `apps/frontend/src/App.css`
 
-- [ ] **Step 1: Apply focused final overrides**
+- [x] **Step 1: Apply focused final overrides**
 
 Append a dated studio override block that reduces beige/card layering, keeps the main layout locked, flattens panels, compresses header chrome, and makes timeline/monitor surfaces operational.
 
-- [ ] **Step 2: Run regression test**
+- [x] **Step 2: Run regression test**
 
 Run: `bun run e2e:regression -- tests/e2e/regression/layout-density.spec.ts --workers=1 --retries=0`
 
@@ -60,7 +60,7 @@ Expected: PASS.
 **Files:**
 - No additional files expected.
 
-- [ ] **Step 1: Run local gates**
+- [x] **Step 1: Run local gates**
 
 Run:
 
@@ -70,7 +70,7 @@ bun run build
 git diff --check
 ```
 
-- [ ] **Step 2: Rebuild Docker services**
+- [x] **Step 2: Rebuild Docker services**
 
 Run:
 
@@ -78,7 +78,7 @@ Run:
 bun run docker:up
 ```
 
-- [ ] **Step 3: Run deployed smoke checks**
+- [x] **Step 3: Run deployed smoke checks**
 
 Run:
 
@@ -87,6 +87,6 @@ bun run scripts/docker_smoke_check.ts --keep-up --no-build
 bun run docker:ui-smoke -- --workers=1 --retries=0
 ```
 
-- [ ] **Step 4: Inspect deployed UI**
+- [x] **Step 4: Inspect deployed UI**
 
 Open `http://127.0.0.1:18081/?v=20260427-studio-refinement` and verify the edit page, audio page, lab page, channel modal, and monitor page remain visually usable.
