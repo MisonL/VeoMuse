@@ -185,5 +185,5 @@ export const startAppRuntime = ({ app }: { app: StartableApp }) => {
   process.on('SIGTERM', dispose)
   process.on('SIGINT', dispose)
 
-  console.log(`🚀 VeoMuse 旗舰后端已启动: ${app.server?.port}`)
+  console.log(`VeoMuse 旗舰后端已启动: ${app.server?.port}`)
 }

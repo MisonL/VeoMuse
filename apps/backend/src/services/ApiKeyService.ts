@@ -13,7 +13,7 @@ export class ApiKeyService {
     } else {
       this.keys = keys.filter(Boolean)
     }
-    console.log(`🔑 ApiKeyService: 加载了 ${this.keys.length} 个 API 密钥`)
+    console.log(`ApiKeyService: 加载了 ${this.keys.length} 个 API 密钥`)
   }
 
   static getNextKey(): string {

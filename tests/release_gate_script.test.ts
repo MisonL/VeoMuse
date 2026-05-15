@@ -314,7 +314,7 @@ describe('发布门禁脚本策略', () => {
   it('应解析 Playwright 结果汇总计数', () => {
     const counters = parsePlaywrightResultCounters(`
 Running 2 tests using 1 worker
-  ✓ real case A
+  PASS real case A
   - real case B
 
   1 passed
@@ -341,7 +341,7 @@ Running 1 test using 1 worker
   it('real 回归存在执行样本时应通过语义校验', () => {
     const message = validateRealE2EExecution(`
 Running 2 tests using 1 worker
-  ✓ real case A
+  PASS real case A
   - real case B
 
   1 passed

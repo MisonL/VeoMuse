@@ -54,7 +54,7 @@ export const TELEMETRY_ENTRY_MARKERS = [
   '系统监控',
   '系统监控摘要',
   '展开系统监控',
-  '切到系统监控'
+  '监控'
 ] as const
 
 export const normalizeBaseUrl = (input: string) => {
@@ -146,7 +146,10 @@ export const resolveMissingTelemetryEntryMarkers = (
   expectedMarkers: readonly string[] = TELEMETRY_ENTRY_MARKERS
 ) => {
   const combinedContent = Array.isArray(assetContents) ? assetContents.join('\n') : assetContents
-  return expectedMarkers.filter((marker) => !combinedContent.includes(marker))
+  return expectedMarkers.filter((marker) => {
+    if (marker !== '监控') return !combinedContent.includes(marker)
+    return !/(^|[^\p{Script=Han}])监控($|[^\p{Script=Han}])/u.test(combinedContent)
+  })
 }
 
 export const resolveMissingSecurityHeaders = (

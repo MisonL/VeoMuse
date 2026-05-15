@@ -63,7 +63,7 @@ export abstract class BaseAiService {
         timestamp: metrics.timestamp
       })
 
-      console.log(`📊 [Metrics] ${this.serviceName}: ${durationMs}ms | ${metrics.endpoint}`)
+      console.log(`[Metrics] ${this.serviceName}: ${durationMs}ms | ${metrics.endpoint}`)
       return { data, metrics }
     } catch (error: unknown) {
       // 失败也推送遥测

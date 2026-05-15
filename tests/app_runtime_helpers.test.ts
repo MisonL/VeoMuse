@@ -30,6 +30,6 @@ describe('App 导出与时间码辅助函数', () => {
     expect(getExportButtonLabel(true, 'idle', 0)).toBe('导出中...')
     expect(getExportButtonLabel(false, 'pending', 38)).toBe('导出中 38%')
     expect(getExportButtonLabel(false, 'pending', 100)).toBe('导出中 99%')
-    expect(getExportButtonLabel(false, 'done')).toBe('导出')
+    expect(getExportButtonLabel(false, 'done')).toBe('导出项目')
   })
 })

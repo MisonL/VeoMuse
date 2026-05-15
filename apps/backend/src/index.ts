@@ -138,7 +138,7 @@ export const createApp = () => {
       const currentStatus = typeof set.status === 'number' ? set.status : 500
       set.status = currentStatus >= 400 ? currentStatus : 500
       finalizeRequestMetric(request, set.status)
-      console.error(`🚨 [Global Guard] ${code}: ${errorMessage}`)
+      console.error(`[Global Guard] ${code}: ${errorMessage}`)
       return { success: false, status: 'error', error: errorMessage, code }
     })
     .use(appMetaRoutes(storageProvider.type))

@@ -147,7 +147,7 @@ export class CompositionService {
         }
 
         command
-          .on('start', (cmd) => console.log(`🚀 [Peak Performance] 渲染启动:`, cmd))
+          .on('start', (cmd) => console.log('[Peak Performance] 渲染启动:', cmd))
           .on('end', () => resolve({ success: true, outputPath }))
           .on('error', (err) => reject(new Error(`FFmpeg 物理渲染失败: ${err.message}`)))
           .save(outputPath)

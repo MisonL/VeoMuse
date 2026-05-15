@@ -52,7 +52,7 @@ describe('App 运行态关键分支（DOM/SSR）', () => {
   it('导出流程文案分支应可稳定命中', () => {
     expect(getExportButtonLabel(true, 'idle', 0)).toBe('导出中...')
     expect(getExportButtonLabel(false, 'pending', 55.4)).toBe('导出中 55%')
-    expect(getExportButtonLabel(false, 'done', 100)).toBe('导出')
+    expect(getExportButtonLabel(false, 'done', 100)).toBe('导出项目')
 
     expect(resolveExportFeedbackTitle('validating')).toBe('准备素材中')
     expect(resolveExportFeedbackTitle('composing')).toBe('渲染时间轴中')

@@ -20,7 +20,7 @@ export class VideoOrchestrator {
   private static drivers: Map<string, VideoModelDriver> = new Map()
 
   static registerDriver(driver: VideoModelDriver) {
-    console.log(`📡 Model Orchestrator: 已注册模型驱动 [${driver.id}] - ${driver.name}`)
+    console.log(`Model Orchestrator: 已注册模型驱动 [${driver.id}] - ${driver.name}`)
     this.drivers.set(driver.id, driver)
   }
 
@@ -39,7 +39,7 @@ export class VideoOrchestrator {
   ): Promise<GenerateResult> {
     const driver = this.resolveDriver(modelId)
 
-    console.log(`🚀 分发生成任务到驱动: ${driver.name}`)
+    console.log(`分发生成任务到驱动: ${driver.name}`)
     const start = Date.now()
     try {
       const result = await driver.generate(params, context)

@@ -24,9 +24,11 @@ describe('docker UI smoke 接入', () => {
       'utf8'
     )
     expect(spec).toContain('Docker UI smoke 应串通注册、工作区创建与关键值守入口')
-    expect(spec).toContain("page.getByTestId('btn-open-channel-panel')")
     expect(spec).toContain("page.getByTestId('text-workspace-id')")
     expect(spec).toContain("page.locator('.telemetry-command-bar')")
-    expect(spec).toContain("page.getByTestId('btn-open-channel-access')")
+    expect(spec).toContain(
+      "page.getByTestId('area-right-panel').getByRole('button', { name: '监控' })"
+    )
+    expect(spec).toContain("page.getByTestId('btn-open-channel-panel')")
   })
 })
