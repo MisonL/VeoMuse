@@ -23,6 +23,8 @@ coverage/
 dump.rdb
 data/
 artifacts/
+.codex-artifacts/
+.claude/worktrees/
 
 # OS & IDE
 .vscode/
