@@ -45,6 +45,7 @@ describe('superpowers 与 TDD 工作流文档守卫', () => {
     expect(agents).toContain('spec -> plan -> failing test -> implementation -> verification')
     expect(agents).toContain('git diff --check')
     expect(agents).toContain('实施计划与实施记录写入 `docs/superpowers/plans/`')
+    expect(agents).toContain('任务完成后，原 plan 文件应回写为实施记录')
     expect(agents).not.toContain(`<${'任务跟踪文件'}>`)
   })
 

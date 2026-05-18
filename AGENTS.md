@@ -20,6 +20,7 @@ spec -> plan -> failing test -> implementation -> verification
 
 - 设计规格写入 `docs/superpowers/specs/`。
 - 实施计划与实施记录写入 `docs/superpowers/plans/`。
+- 任务完成后，原 plan 文件应回写为实施记录。
 - 先写失败测试并确认失败，再修改生产代码或长期文档。
 - 每次只处理一个原子任务，不并行开发多个无关任务。
 - 临时计划不取代代码事实；若文档与代码冲突，以当前代码、测试和 Git 记录为准。
