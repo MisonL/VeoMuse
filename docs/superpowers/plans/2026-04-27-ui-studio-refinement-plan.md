@@ -1,68 +1,62 @@
-# UI Studio Refinement Implementation Plan
+# UI Studio Refinement Implementation Record
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+This record closes the UI Studio Refinement pass that moved the default deployed VeoMuse editor away from a beige card dashboard and into a viewport-locked graphite studio UI.
 
 **Goal:** Make the default deployed VeoMuse editor render as a viewport-locked professional studio UI instead of a beige card dashboard.
 
-**Architecture:** Keep the React component structure stable and apply a focused visual-system correction through theme tokens and final workspace CSS overrides. Use Playwright layout contracts as the control sensor before changing production CSS.
+**Architecture:** The React component structure stayed stable. The pass used theme tokens, final workspace CSS overrides, and Playwright layout contracts as the control sensor before production CSS changes.
 
 **Tech Stack:** React, Vite, CSS, Playwright, Bun, Docker Compose.
 
 ---
 
-### Task 1: Add Failing Studio Layout Contract
+### Task 1: Studio Layout Contract
 
 **Files:**
 - Modify: `tests/e2e/regression/layout-density.spec.ts`
 
-- [x] **Step 1: Write the failing test**
+**Result:**
 
-Add assertions that the edit workspace has no document scroll, uses a real dark graphite palette, keeps the header compact, keeps the center monitor dominant, and preserves timeline height at `1366x768`.
-
-- [x] **Step 2: Run test to verify it fails**
+- The regression test now asserts that the edit workspace has no document scroll.
+- It verifies that dark mode resolves to a graphite palette instead of the beige light palette.
+- It checks compact header height, dominant center monitor proportions, and timeline usability at `1366x768`.
 
 Run: `bun run e2e:regression -- tests/e2e/regression/layout-density.spec.ts --workers=1 --retries=0`
 
-Expected: FAIL because the current dark theme still resolves to a light beige workspace.
+The test was introduced before the visual correction and then used as the regression gate for the implementation.
 
-### Task 2: Restore Real Dark Studio Tokens
+### Task 2: Dark Studio Tokens
 
 **Files:**
 - Modify: `apps/frontend/src/theme.css`
 
-- [x] **Step 1: Implement minimal token correction**
+**Result:**
 
-Keep the light palette only for `:root` and `[data-theme='light']`. Add a dedicated `[data-theme='dark']` block after it with graphite studio tokens.
+- The light palette remains scoped to `:root` and `[data-theme='light']`.
+- A dedicated `[data-theme='dark']` block restores graphite studio tokens.
+- The palette check is covered by `tests/e2e/regression/layout-density.spec.ts`.
 
-- [x] **Step 2: Run regression test**
-
-Run: `bun run e2e:regression -- tests/e2e/regression/layout-density.spec.ts --workers=1 --retries=0`
-
-Expected: PASS for the palette check or expose the next layout error.
-
-### Task 3: Flatten Workspace Chrome
+### Task 3: Workspace Chrome Flattening
 
 **Files:**
 - Modify: `apps/frontend/src/App.css`
 
-- [x] **Step 1: Apply focused final overrides**
+**Result:**
 
-Append a dated studio override block that reduces beige/card layering, keeps the main layout locked, flattens panels, compresses header chrome, and makes timeline/monitor surfaces operational.
+- Focused studio overrides reduce beige/card layering.
+- Main layout remains viewport-locked.
+- Panels are flattened into a single-plane studio shell.
+- Header chrome is compressed.
+- Timeline and monitor surfaces remain operational rather than decorative.
 
-- [x] **Step 2: Run regression test**
+Regression gate: `bun run e2e:regression -- tests/e2e/regression/layout-density.spec.ts --workers=1 --retries=0`
 
-Run: `bun run e2e:regression -- tests/e2e/regression/layout-density.spec.ts --workers=1 --retries=0`
-
-Expected: PASS.
-
-### Task 4: Verify and Redeploy
+### Task 4: Verification and Redeploy
 
 **Files:**
 - No additional files expected.
 
-- [x] **Step 1: Run local gates**
-
-Run:
+**Local gates:**
 
 ```bash
 bun run lint
@@ -70,23 +64,19 @@ bun run build
 git diff --check
 ```
 
-- [x] **Step 2: Rebuild Docker services**
-
-Run:
+**Docker rebuild:**
 
 ```bash
 bun run docker:up
 ```
 
-- [x] **Step 3: Run deployed smoke checks**
-
-Run:
+**Deployed smoke checks:**
 
 ```bash
 bun run scripts/docker_smoke_check.ts --keep-up --no-build
 bun run docker:ui-smoke -- --workers=1 --retries=0
 ```
 
-- [x] **Step 4: Inspect deployed UI**
+**Browser inspection:**
 
 Open `http://127.0.0.1:18081/?v=20260427-studio-refinement` and verify the edit page, audio page, lab page, channel modal, and monitor page remain visually usable.
