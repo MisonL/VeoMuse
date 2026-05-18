@@ -94,8 +94,66 @@ html[data-theme='light'] body .command-rail-steps span:last-child {
   color: #1f1a15;
 }
 
-@media (max-width: 1240px) {
+@media (min-width: 1181px) {
+  html,
+  body,
+  #root {
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  .pro-master-shell,
+  .pro-master-shell[data-topbar-density='compact'] {
+    height: 100vh !important;
+    min-height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  .os-main {
+    position: relative;
+    z-index: 2;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .timeline-container {
+    position: relative;
+    z-index: 0;
+  }
+
+  .panel-left[data-shell-role='command-rail'] {
+    position: relative;
+    z-index: 3;
+    overflow: hidden !important;
+  }
+
+  .panel-left[data-shell-role='command-rail'] .sidebar-content {
+    min-height: 0;
+    overflow: auto !important;
+  }
+}
+
+@media (min-width: 1181px) and (max-width: 1599px) {
+  .pro-master-shell[data-layout-mode='focus'] .os-main {
+    grid-template-columns:
+      260px
+      var(--split-handle-w)
+      minmax(var(--center-panel-min-w), 1fr)
+      var(--split-handle-w)
+      240px !important;
+  }
+}
+
+@media (max-width: 1440px) {
   .command-rail-flow {
     display: none;
+  }
+
+  .panel-left[data-shell-role='command-rail'] .sidebar-tab.is-ai-command {
+    grid-template-areas: 'label badge';
+    row-gap: 0;
   }
 }

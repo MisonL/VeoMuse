@@ -175,7 +175,8 @@ function App() {
     topBarDensity,
     previewAspect,
     setPreviewAspect,
-    setTimelinePx
+    setTimelinePx,
+    setCenterMode
   } = useLayoutStore(
     useShallow((state) => ({
       leftPanelPx: state.leftPanelPx,
@@ -185,7 +186,8 @@ function App() {
       topBarDensity: state.topBarDensity,
       previewAspect: state.previewAspect,
       setPreviewAspect: state.setPreviewAspect,
-      setTimelinePx: state.setTimelinePx
+      setTimelinePx: state.setTimelinePx,
+      setCenterMode: state.setCenterMode
     }))
   )
 
@@ -284,8 +286,8 @@ function App() {
     (_prev, next) => next
   )
   const [exportProgress, setExportProgress] = useState(0)
-  const [, setExportStage] = useState<ExportProgressStage>('idle')
-  const [, setLastExportOutput] = useState('')
+  const [exportStage, setExportStage] = useState<ExportProgressStage>('idle')
+  const [lastExportOutput, setLastExportOutput] = useState('')
 
   const hasRenderableClips = useMemo(() => hasRenderableClipsFromTracks(tracks), [tracks])
   const currentMetrics = useMemo(() => deriveCurrentMetrics(metrics ?? undefined), [metrics])
@@ -986,9 +988,14 @@ function App() {
 
       <AppHeader
         activeMode={activeMode}
+        centerMode={centerMode}
         previewAspect={previewAspect}
         exportUiStatus={exportUiStatus}
         exportProgress={exportProgress}
+        exportStage={exportStage}
+        exportQuality={exportQuality}
+        exportMessage={exportState.message}
+        lastExportOutput={lastExportOutput}
         isProcessing={isProcessing}
         isExportPending={isExportPending}
         onModeHover={(mode) => {
@@ -999,6 +1006,7 @@ function App() {
           }
         }}
         onModeChange={(mode) => handleModeChange(mode, { labSurface: 'stage' })}
+        onCenterModeChange={setCenterMode}
         onPreviewAspectChange={setPreviewAspect}
         onExport={handleExport}
       />

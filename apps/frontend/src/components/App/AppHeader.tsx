@@ -1,17 +1,33 @@
 import ThemeSwitcher from '../Common/ThemeSwitcher'
-import { getExportButtonLabel, type ExportUiStatus, type PreviewAspect } from '../../utils/appHelpers'
+import {
+  getExportButtonLabel,
+  resolveExportFeedbackSubtitle,
+  resolveExportFeedbackTitle,
+  resolveExportQualityLabel,
+  type ExportProgressStage,
+  type ExportQuality,
+  type ExportUiStatus,
+  type PreviewAspect
+} from '../../utils/appHelpers'
+import type { CenterPanelMode } from '../../types/layout'
 
 type AppMode = 'edit' | 'color' | 'audio'
 
 interface AppHeaderProps {
   activeMode: AppMode
+  centerMode: CenterPanelMode
   previewAspect: PreviewAspect
   exportUiStatus: ExportUiStatus
   exportProgress: number
+  exportStage: ExportProgressStage
+  exportQuality: ExportQuality
+  exportMessage?: string
+  lastExportOutput: string
   isProcessing: boolean
   isExportPending: boolean
   onModeHover: (mode: AppMode) => void
   onModeChange: (mode: AppMode) => void
+  onCenterModeChange: (mode: CenterPanelMode) => void
   onPreviewAspectChange: (aspect: PreviewAspect) => void
   onExport: () => void
 }
@@ -42,13 +58,19 @@ const DirectorFlowBus = () => (
 
 const AppHeader = ({
   activeMode,
+  centerMode,
   previewAspect,
   exportUiStatus,
   exportProgress,
+  exportStage,
+  exportQuality,
+  exportMessage,
+  lastExportOutput,
   isProcessing,
   isExportPending,
   onModeHover,
   onModeChange,
+  onCenterModeChange,
   onPreviewAspectChange,
   onExport
 }: AppHeaderProps) => (
@@ -96,6 +118,29 @@ const AppHeader = ({
     </div>
 
     <div className="os-header-right" data-testid="area-header-actions">
+      <div className="header-actions-group header-actions-layout">
+        <div className="header-segment" role="group" aria-label="中心布局模式">
+          <button
+            type="button"
+            className={`header-segment-btn ${centerMode === 'fit' ? 'active' : ''}`}
+            data-testid="btn-center-mode-fit"
+            aria-pressed={centerMode === 'fit'}
+            onClick={() => onCenterModeChange('fit')}
+          >
+            适配
+          </button>
+          <button
+            type="button"
+            className={`header-segment-btn ${centerMode === 'focus' ? 'active' : ''}`}
+            data-testid="btn-center-mode-focus"
+            aria-pressed={centerMode === 'focus'}
+            onClick={() => onCenterModeChange('focus')}
+          >
+            聚焦
+          </button>
+        </div>
+      </div>
+
       <div className="header-actions-group">
         <ThemeSwitcher />
       </div>
@@ -127,6 +172,27 @@ const AppHeader = ({
           >
             {getExportButtonLabel(isExportPending, exportUiStatus, exportProgress)}
           </button>
+          {exportUiStatus !== 'idle' && (
+            <div className={`export-feedback-pop ${exportUiStatus}`}>
+              <div className="export-feedback-top">
+                <span className="export-feedback-title">
+                  {resolveExportFeedbackTitle(exportStage)}
+                </span>
+                <span className="export-feedback-percent">{exportProgress}%</span>
+              </div>
+              <div className="export-progress-track" aria-hidden="true">
+                <span className="export-progress-fill" style={{ width: `${exportProgress}%` }} />
+              </div>
+              <span className="export-feedback-subtitle">
+                {resolveExportFeedbackSubtitle(
+                  exportUiStatus,
+                  resolveExportQualityLabel(exportQuality),
+                  exportMessage
+                )}
+              </span>
+              {lastExportOutput && <span className="export-feedback-path">{lastExportOutput}</span>}
+            </div>
+          )}
         </div>
       </div>
     </div>

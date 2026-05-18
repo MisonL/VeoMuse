@@ -6835,10 +6835,10 @@
 .comparison-lab-pro[data-lab-mode='compare'] .compare-mode-shell {
   display: grid !important;
   grid-template-columns: 1fr !important;
-  grid-template-rows: auto minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
   grid-template-areas:
-    "command"
-    "results" !important;
+    "results"
+    "command" !important;
   gap: 6px !important;
   min-height: 0 !important;
   height: 100% !important;
