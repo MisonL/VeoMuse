@@ -97,20 +97,18 @@ git diff --check
 5. 新增最终 CSS layer `61-app.css`，只覆盖命令轨链路视觉和窄宽度降噪。
 6. 运行相关 DOM/CSS 测试、构建、Docker 重建、浏览器复核、Docker smoke、Docker UI smoke、lint 与 `git diff --check`。
 
-## 第九轮执行计划
+## 第九轮执行记录
 
-1. 补充音频大师 DOM 契约测试，锁定 `Audio Bus` 和 `Input / Rhythm / Delivery` 母带链路。
-2. 补充 CSS 模块化守卫，要求第九轮音频总线样式独立放入 `62-app.css`。
-3. 运行相关测试确认 RED。
-4. 修改 `AppCenterPanel` 音频大师分支，加入只读音频总线结构，并保持导入按钮回调。
-5. 新增最终 CSS layer `62-app.css`，只覆盖音频总线视觉和窄高度降噪。
-6. 运行相关 DOM/CSS 测试、构建、Docker 重建、浏览器复核、Docker smoke、Docker UI smoke、lint 与 `git diff --check`。
+1. 已在 `AppCenterPanel` 音频大师分支加入只读 `Audio Bus` 结构，保留“导入音频素材”按钮回调。
+2. `Audio Bus` 暴露 `data-testid="audio-bus"` 和 `data-visual-system="nebula-flow"`，并显示 `Input / Rhythm / Delivery` 母带链路。
+3. 最终 CSS layer `62-app.css` 只覆盖音频总线视觉和窄高度降噪，并由 `App.css` 按顺序导入。
+4. `tests/app_shell_empty_state.dom.test.tsx` 覆盖音频大师 DOM 契约，确认音频总线、状态塔和 lane 仍存在。
+5. `tests/app_css_modularity.test.ts` 覆盖 `62-app.css` 隔离性，防止音频总线样式回流到其他 CSS layer。
 
-## 第十轮执行计划
+## 第十轮执行记录
 
-1. 补充实验室监控壳层 DOM 契约测试，锁定 `Watch Bus` 和 `Observe / Repair / Release` 运维链路。
-2. 补充 CSS 模块化守卫，要求第十轮监控总线样式独立放入 `63-app.css`。
-3. 运行相关测试确认 RED。
-4. 修改 `AppCenterPanel` 的 `labSurface="watch"` 分支，加入只读监控总线结构，并保持监控面板内容原样渲染。
-5. 新增最终 CSS layer `63-app.css`，只覆盖监控总线视觉和窄高度降噪。
-6. 运行相关 DOM/CSS 测试、构建、Docker 重建、浏览器复核、Docker smoke、Docker UI smoke、lint 与 `git diff --check`。
+1. 已在 `AppCenterPanel` 的 `labSurface="watch"` 分支加入只读 `Watch Bus` 结构，保留 `TelemetryDashboard` 内容原样渲染。
+2. `Watch Bus` 暴露 `data-testid="watch-bus"` 和 `data-visual-system="nebula-flow"`，并显示 `Observe / Repair / Release` 运维链路。
+3. 最终 CSS layer `63-app.css` 只覆盖监控总线视觉和窄高度降噪，并由 `App.css` 按顺序导入。
+4. `tests/app_shell_empty_state.dom.test.tsx` 覆盖实验室监控 DOM 契约，确认监控壳层与监控面板内容仍存在。
+5. `tests/app_css_modularity.test.ts` 覆盖 `63-app.css` 隔离性，防止监控总线样式回流到其他 CSS layer。
