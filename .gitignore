@@ -25,6 +25,7 @@ data/
 artifacts/
 .codex-artifacts/
 .claude/worktrees/
+.worktrees/
 
 # OS & IDE
 .vscode/
