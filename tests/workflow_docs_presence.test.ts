@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readdirSync, readFileSync } from 'fs'
 import path from 'path'
 
 const repoPath = process.cwd()
@@ -45,5 +45,20 @@ describe('superpowers 与 TDD 工作流文档守卫', () => {
     expect(agents).toContain('spec -> plan -> failing test -> implementation -> verification')
     expect(agents).toContain('git diff --check')
     expect(agents).not.toContain(`<${'任务跟踪文件'}>`)
+  })
+
+  it('superpowers README 应索引所有已落盘 spec 与 plan 记录', () => {
+    const readme = readDoc('docs/superpowers/README.md')
+    const indexedDirs = ['docs/superpowers/specs', 'docs/superpowers/plans']
+
+    for (const dir of indexedDirs) {
+      const files = readdirSync(path.resolve(repoPath, dir))
+        .filter((name) => name.endsWith('.md'))
+        .sort()
+
+      for (const file of files) {
+        expect(readme).toContain(`${dir}/${file}`)
+      }
+    }
   })
 })

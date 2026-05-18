@@ -22,9 +22,14 @@
 - 完成前必须做 verification，不以“看起来没问题”代替验证。
 - 任务完成后，原 plan 文件应回写为 implementation record，保留验证证据和实际落地范围。
 
-## 当前实例
+## 已落盘规格
 
 - 清理与迁移设计：`docs/superpowers/specs/2026-04-27-repo-cleanup-and-superpowers-migration-design.md`
+- UI Studio 设计：`docs/superpowers/specs/2026-04-27-ui-studio-refinement-design.md`
+- Nebula Flow 设计：`docs/superpowers/specs/2026-05-17-nebula-flow-webui-design.md`
+
+## 已落盘计划与记录
+
 - 清理与迁移实施记录：`docs/superpowers/plans/2026-04-27-repo-cleanup-and-superpowers-migration-plan.md`
 - UI Studio 实施记录：`docs/superpowers/plans/2026-04-27-ui-studio-refinement-plan.md`
 - Nebula Flow 实施记录：`docs/superpowers/plans/2026-05-17-nebula-flow-webui-plan.md`
