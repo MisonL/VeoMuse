@@ -36,8 +36,12 @@ describe('编辑器聚合面板 SSR 覆盖补强', () => {
 
   it('PropertyInspector 默认应渲染空态', () => {
     const html = renderToString(createElement(PropertyInspector, { shellMode: 'edit' }))
+    expect(html).toContain('Inspector Console')
     expect(html).toContain('未选中轨道片段')
-    expect(html).toContain('在下方时间轴选中任意片段以调节属性')
+    expect(html).toContain('从时间轴选择镜头后，在这里校准风格、修复与交付参数。')
+    expect(html).toContain('Inspect')
+    expect(html).toContain('Tune')
+    expect(html).toContain('Render')
     expect(html).toContain('监控')
   })
 

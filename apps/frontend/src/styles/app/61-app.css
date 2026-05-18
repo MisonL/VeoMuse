@@ -1,0 +1,101 @@
+/* Nebula Flow eighth-pass command rail bridge 2026-05-18 */
+.panel-left[data-shell-role='command-rail'] .sidebar-tab.is-ai-command {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-areas:
+    'label badge'
+    'flow flow';
+  align-items: center;
+  row-gap: 6px;
+}
+
+.panel-left[data-shell-role='command-rail'] .sidebar-tab.is-ai-command > span:first-child {
+  grid-area: label;
+}
+
+.panel-left[data-shell-role='command-rail'] .sidebar-tab.is-ai-command .command-rail-core-badge {
+  grid-area: badge;
+}
+
+.command-rail-flow {
+  grid-area: flow;
+  display: inline-grid;
+  min-width: 0;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 3px 5px 3px 7px;
+  border: 1px solid rgba(136, 224, 255, 0.16);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 12% 0, rgba(33, 212, 253, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(7, 11, 18, 0.7), rgba(16, 20, 32, 0.54));
+}
+
+.command-rail-kicker {
+  color: #9be8ff;
+  font-family: var(--ap-font-mono);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.command-rail-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, max-content));
+  align-items: center;
+  gap: 3px;
+}
+
+.command-rail-steps span {
+  display: inline-grid;
+  min-height: 17px;
+  place-items: center;
+  padding: 0 5px;
+  border: 1px solid rgba(136, 224, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(238, 245, 255, 0.72);
+  font-family: var(--ap-font-mono);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.command-rail-steps span:last-child {
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.12);
+  color: #f7fbff;
+}
+
+html[data-theme='light'] body .panel-left[data-shell-role='command-rail'] .command-rail-flow {
+  border-color: rgba(27, 95, 117, 0.18);
+  background:
+    radial-gradient(circle at 12% 0, rgba(27, 95, 117, 0.12), transparent 34%),
+    linear-gradient(135deg, rgba(255, 250, 240, 0.84), rgba(242, 230, 210, 0.66));
+}
+
+html[data-theme='light'] body .command-rail-kicker {
+  color: #1b5f75;
+}
+
+html[data-theme='light'] body .command-rail-steps span {
+  border-color: rgba(56, 45, 31, 0.12);
+  background: rgba(255, 255, 255, 0.48);
+  color: rgba(42, 33, 24, 0.72);
+}
+
+html[data-theme='light'] body .command-rail-steps span:last-child {
+  border-color: rgba(27, 95, 117, 0.24);
+  color: #1f1a15;
+}
+
+@media (max-width: 1240px) {
+  .command-rail-flow {
+    display: none;
+  }
+}

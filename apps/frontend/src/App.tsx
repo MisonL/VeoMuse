@@ -96,6 +96,24 @@ const SIDEBAR_TABS: Array<{ value: SidebarMode; label: string }> = [
   { value: 'motion', label: '动捕实验室' }
 ]
 
+const COMMAND_RAIL_STEPS = ['Brief', 'Cast', 'Build']
+
+const CommandRailFlow = () => (
+  <span
+    className="command-rail-flow"
+    data-testid="command-rail-flow"
+    data-visual-system="nebula-flow"
+    aria-label="命令轨分发链路"
+  >
+    <span className="command-rail-kicker">Command Rail</span>
+    <span className="command-rail-steps">
+      {COMMAND_RAIL_STEPS.map((step) => (
+        <span key={step}>{step}</span>
+      ))}
+    </span>
+  </span>
+)
+
 const LazyFallback = memo(({ label = '加载中...' }: { label?: string }) => (
   <div
     style={{
@@ -986,18 +1004,35 @@ function App() {
       />
 
       <main className="os-main main-layout" ref={mainLayoutRef} data-testid="area-main-layout">
-        <aside className="pro-panel panel-left" ref={leftPanelRef} data-testid="area-left-panel">
+        <aside
+          className="pro-panel panel-left"
+          ref={leftPanelRef}
+          data-testid="area-left-panel"
+          data-shell-role="command-rail"
+        >
           <div className="panel-title-bar">
             <div className="sidebar-tabs">
               {visibleSidebarTabs.map((tab) => (
                 <button
                   key={tab.value}
                   type="button"
-                  className={`sidebar-tab ${activeSidebar === tab.value ? 'active' : ''}`}
+                  className={`sidebar-tab ${activeSidebar === tab.value ? 'active' : ''} ${
+                    tab.value === 'director' ? 'is-ai-command' : ''
+                  }`}
+                  data-ai-command={tab.value === 'director' ? 'true' : undefined}
                   aria-pressed={activeSidebar === tab.value}
+                  aria-label={tab.label}
                   onClick={() => setActiveSidebar(tab.value)}
                 >
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  {tab.value === 'director' ? (
+                    <>
+                      <CommandRailFlow />
+                      <span className="command-rail-core-badge" aria-hidden="true">
+                        Core
+                      </span>
+                    </>
+                  ) : null}
                 </button>
               ))}
             </div>
@@ -1095,6 +1130,7 @@ function App() {
           ref={rightPanelRef}
           data-testid="area-right-panel"
           data-active-mode={activeMode}
+          data-shell-role="inspector-console"
         >
           <div className="panel-title-bar">
             <div className="inspector-shell-title">

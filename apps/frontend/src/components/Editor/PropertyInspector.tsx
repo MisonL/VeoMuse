@@ -240,7 +240,7 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
     : 0
 
   return (
-    <div className="pro-inspector-inner" data-active-tab={activeTab}>
+    <div className="pro-inspector-inner property-inspector" data-active-tab={activeTab}>
       <header className="inspector-header-compact">
         <div className="inspector-tabs-lite">
           <button
@@ -271,10 +271,20 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
             <TelemetryDashboard variant="summary" shellMode={shellMode} onOpenStage={onOpenWatchStage} />
           </div>
         ) : !current ? (
-          <div className="inspector-empty-lite">
+          <div
+            className="inspector-empty-lite inspector-console-empty"
+            data-testid="inspector-console-empty"
+            data-visual-system="nebula-flow"
+          >
             <div className="empty-hint">
+              <span className="inspector-console-kicker">Inspector Console</span>
               <strong>未选中轨道片段</strong>
-              <p>在下方时间轴选中任意片段以调节属性</p>
+              <p>从时间轴选择镜头后，在这里校准风格、修复与交付参数。</p>
+              <div className="inspector-console-spine" aria-label="属性检查链路">
+                <span>Inspect</span>
+                <span>Tune</span>
+                <span>Render</span>
+              </div>
             </div>
           </div>
         ) : (

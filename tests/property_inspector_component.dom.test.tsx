@@ -82,8 +82,13 @@ describe('PropertyInspector DOM 交互', () => {
 
   it('未选中片段时应展示空态', () => {
     const view = render(<PropertyInspector shellMode="edit" />)
+    const empty = view.getByTestId('inspector-console-empty')
+
+    expect(empty).toHaveAttribute('data-visual-system', 'nebula-flow')
+    expect(view.getByText('Inspector Console')).toBeInTheDocument()
     expect(view.getByText('未选中轨道片段')).toBeInTheDocument()
-    expect(view.getByText('在下方时间轴选中任意片段以调节属性')).toBeInTheDocument()
+    expect(view.getByText('从时间轴选择镜头后，在这里校准风格、修复与交付参数。')).toBeInTheDocument()
+    expect(view.getByLabelText('属性检查链路')).toHaveTextContent('InspectTuneRender')
   })
 
   it('监控切换按钮的可访问名称应包含可见文本', () => {

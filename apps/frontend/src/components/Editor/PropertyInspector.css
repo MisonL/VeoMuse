@@ -1758,3 +1758,76 @@
     line-height: 1.45 !important;
   }
 }
+
+/* Nebula Flow inspector console must live in the lazy inspector CSS chunk. */
+.property-inspector .inspector-console-empty {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(136, 224, 255, 0.18) !important;
+  background:
+    radial-gradient(circle at 50% 0, rgba(33, 212, 253, 0.12), transparent 36%),
+    linear-gradient(145deg, rgba(10, 14, 22, 0.72), rgba(16, 20, 32, 0.58)) !important;
+}
+
+.property-inspector .inspector-console-empty::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(circle at 50% 44%, black, transparent 70%);
+}
+
+.property-inspector .inspector-console-empty .empty-hint {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  max-width: 260px;
+  gap: 10px;
+}
+
+.property-inspector .inspector-console-empty .empty-hint p {
+  margin: 0;
+  color: rgba(238, 245, 255, 0.72) !important;
+}
+
+.property-inspector .inspector-console-spine {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.property-inspector .inspector-console-spine span {
+  display: grid;
+  min-height: 28px;
+  place-items: center;
+  border: 1px solid rgba(136, 224, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(238, 245, 255, 0.76);
+  font-family: var(--ap-font-mono);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.property-inspector .inspector-console-spine span:nth-child(2) {
+  border-color: rgba(139, 92, 246, 0.32);
+  color: #f7fbff;
+}
+
+[data-theme='dark'] .panel-right .property-inspector .inspector-console-empty,
+[data-theme='light'] .panel-right .property-inspector .inspector-console-empty {
+  border-color: rgba(136, 224, 255, 0.18) !important;
+  background:
+    radial-gradient(circle at 50% 0, rgba(33, 212, 253, 0.12), transparent 36%),
+    linear-gradient(145deg, rgba(10, 14, 22, 0.72), rgba(16, 20, 32, 0.58)) !important;
+}

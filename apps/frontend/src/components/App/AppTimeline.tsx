@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 type AppMode = 'edit' | 'color' | 'audio'
 type AppTool = 'select' | 'cut' | 'hand'
 
+const TIMELINE_BUS_STEPS = ['Queue', 'Sync', 'Deliver']
+
 const EMPTY_HINT_BY_MODE: Record<AppMode, { title: string; description: string }> = {
   edit: {
     title: '主节目轨空置',
@@ -104,6 +106,22 @@ const resolveReadoutLabel = (value: string) => {
   return text === '0 / 0' || text === '0%' || text.length === 0 ? '待载入' : value
 }
 
+const TimelineBus = () => (
+  <div
+    className="timeline-bus-flow"
+    data-testid="timeline-bus"
+    data-visual-system="nebula-flow"
+    aria-label="时间轴装配链路"
+  >
+    <span className="timeline-bus-kicker">Timeline Bus</span>
+    <span className="timeline-bus-steps" aria-hidden="true">
+      {TIMELINE_BUS_STEPS.map((step) => (
+        <span key={step}>{step}</span>
+      ))}
+    </span>
+  </div>
+)
+
 interface AppTimelineProps {
   activeMode: AppMode
   canUndo: boolean
@@ -148,6 +166,7 @@ const AppTimeline = ({
       onMouseEnter={onActivate}
       onFocusCapture={onActivate}
       data-testid="area-timeline"
+      data-shell-role="timeline-bus"
     >
       <div className="timeline-header-refined">
         <div className="timeline-tools-refined">
@@ -201,6 +220,7 @@ const AppTimeline = ({
         </div>
 
         <div className="timeline-status-refined">
+          <TimelineBus />
           <span className="status-item">
             <span className="dot" /> {hasTimelineClips ? '已就绪' : '待命'}
           </span>
@@ -223,10 +243,22 @@ const AppTimeline = ({
             </div>
             {canShowEditActions ? (
               <div className="timeline-empty-cta-rail" aria-label="时间轴空态操作">
-                <button type="button" className="timeline-empty-action primary" onClick={onOpenAssets}>
+                <button
+                  type="button"
+                  className="timeline-empty-action primary"
+                  onClick={onOpenAssets}
+                >
                   从素材库入轨
                 </button>
-                <button type="button" className="timeline-empty-action" onClick={onOpenDirector}>
+                <button
+                  type="button"
+                  className="timeline-empty-action is-ai"
+                  data-ai-emphasis="true"
+                  onClick={onOpenDirector}
+                >
+                  <span className="timeline-ai-kicker" aria-hidden="true">
+                    Queue
+                  </span>
                   AI 导演编排
                 </button>
               </div>

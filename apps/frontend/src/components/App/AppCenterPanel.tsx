@@ -3,6 +3,58 @@ import type { PreviewAspect } from '../../utils/appHelpers'
 
 type AppMode = 'edit' | 'color' | 'audio'
 
+const OUTPUT_DOCK_STEPS = ['Preview', 'Lab', 'Render']
+const AUDIO_BUS_STEPS = ['Input', 'Rhythm', 'Delivery']
+const WATCH_BUS_STEPS = ['Observe', 'Repair', 'Release']
+
+const OutputDockFlow = () => (
+  <div
+    className="output-dock-flow"
+    data-testid="output-dock"
+    data-visual-system="nebula-flow"
+    aria-label="输出停靠链路"
+  >
+    <span className="output-dock-kicker">Output Dock</span>
+    <span className="output-dock-steps" aria-hidden="true">
+      {OUTPUT_DOCK_STEPS.map((step) => (
+        <span key={step}>{step}</span>
+      ))}
+    </span>
+  </div>
+)
+
+const AudioBusFlow = () => (
+  <div
+    className="audio-bus-flow"
+    data-testid="audio-bus"
+    data-visual-system="nebula-flow"
+    aria-label="音频母带链路"
+  >
+    <span className="audio-bus-kicker">Audio Bus</span>
+    <span className="audio-bus-steps" aria-hidden="true">
+      {AUDIO_BUS_STEPS.map((step) => (
+        <span key={step}>{step}</span>
+      ))}
+    </span>
+  </div>
+)
+
+const WatchBusFlow = () => (
+  <div
+    className="watch-bus-flow"
+    data-testid="watch-bus"
+    data-visual-system="nebula-flow"
+    aria-label="实验室监控链路"
+  >
+    <span className="watch-bus-kicker">Watch Bus</span>
+    <span className="watch-bus-steps" aria-hidden="true">
+      {WATCH_BUS_STEPS.map((step) => (
+        <span key={step}>{step}</span>
+      ))}
+    </span>
+  </div>
+)
+
 interface AppCenterPanelProps {
   activeMode: AppMode
   labSurface: 'stage' | 'watch'
@@ -82,23 +134,48 @@ const AppCenterPanel = ({
                   </div>
                   {previewPlayer}
                 </div>
-
                 {!hasTimelineClips && (
                   <div className="monitor-empty-overlay">
-                    <div className="empty-hero">
-                      <div className="empty-icon">PRO</div>
+                    <div
+                      className="empty-hero director-canvas-launchpad"
+                      data-testid="director-canvas-launchpad"
+                      data-visual-system="nebula-flow"
+                    >
+                      <span className="director-canvas-kicker">Director&apos;s Canvas</span>
+                      <div className="empty-icon" aria-hidden="true">
+                        VM
+                      </div>
                       <strong>{assetCount > 0 ? '素材已就绪' : '开启创作流'}</strong>
                       <p>
                         {assetCount > 0
-                          ? '拖入素材或使用 AI 导演生成智能片段'
-                          : '导入本地素材或通过 AI 导演快速构建首个分镜'}
+                          ? '拖入素材，或让 AI 导演把现有片段扩写成可剪辑分镜。'
+                          : '导入本地素材开始剪辑，或唤醒 AI 导演从文字构建首个分镜。'}
                       </p>
+                      <div className="director-route-spine" aria-label="AI 创作链路">
+                        <span>Prompt</span>
+                        <span>Shots</span>
+                        <span>Timeline</span>
+                      </div>
                       <div className="empty-actions">
-                        <button onClick={onOpenAssets} className="empty-btn primary">
+                        <button
+                          onClick={onOpenAssets}
+                          className="empty-btn empty-action-card is-import primary"
+                          aria-label="导入素材"
+                        >
+                          <span className="empty-action-kicker" aria-hidden="true">
+                            Import
+                          </span>
                           导入素材
                         </button>
-                        <button onClick={onOpenDirector} className="empty-btn">
-                          AI 导演
+                        <button
+                          onClick={onOpenDirector}
+                          className="empty-btn empty-action-card is-ai"
+                          aria-label="AI 导演"
+                        >
+                          <span className="empty-action-kicker" aria-hidden="true">
+                            AI Director
+                          </span>
+                          <span className="empty-action-title">唤醒 AI 导演</span>
                         </button>
                       </div>
                     </div>
@@ -106,7 +183,7 @@ const AppCenterPanel = ({
                 )}
               </div>
 
-              <div className="monitor-bottom-bar">
+              <div className="monitor-bottom-bar" data-shell-role="output-dock">
                 <div className="monitor-controls-group">
                   <div className="transport-controls-compact">
                     <button className="transport-btn-small" onClick={onSeekToStart} title="跳转至开始" aria-label="跳转到开头" data-testid="btn-player-prev">
@@ -133,6 +210,8 @@ const AppCenterPanel = ({
                   </div>
                 </div>
 
+                <OutputDockFlow />
+
                 <div className="monitor-info-group">
                   <div className="monitor-stat">
                     <span className="label">片段</span>
@@ -155,12 +234,15 @@ const AppCenterPanel = ({
         </div>
       ) : activeMode === 'color' ? (
         labSurface === 'watch' ? (
-          <div className="lab-watch-stage-shell">{labWatchPanel}</div>
+          <div className="lab-watch-stage-shell" data-shell-role="watch-bus">
+            <WatchBusFlow />
+            {labWatchPanel}
+          </div>
         ) : (
           comparisonLab
         )
       ) : (
-        <div className="audio-master-stage">
+        <div className="audio-master-stage" data-shell-role="audio-bus">
           <div className="audio-master-hero" data-testid="audio-master-hero">
             <div className="audio-master-hero-copy">
               <span className="audio-master-kicker">Audio Mastering</span>
@@ -168,6 +250,7 @@ const AppCenterPanel = ({
               <p className="audio-master-summary">
                 旁白、音乐与节奏感应分析会在同一工作区对齐，导入音频后即可进入母带链路。
               </p>
+              <AudioBusFlow />
               <div className="audio-master-actions">
                 <button type="button" onClick={onOpenAssets} className="empty-btn primary">
                   导入音频素材

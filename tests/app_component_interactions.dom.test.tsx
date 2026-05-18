@@ -148,6 +148,55 @@ describe('App DOM 运行态交互补测', () => {
     expect(view.queryByRole('button', { name: '动捕实验室' })).toBeNull()
   }, 30_000)
 
+  it('剪辑模式左侧应以命令轨道突出 AI 导演入口', async () => {
+    const view = await act(async () => render(<App />))
+    const leftPanel = view.getByTestId('area-left-panel')
+    const directorEntry = leftPanel.querySelector('button[data-ai-command="true"]')
+
+    expect(leftPanel).toHaveAttribute('data-shell-role', 'command-rail')
+    expect(directorEntry).not.toBeNull()
+    expect(directorEntry).toHaveClass(/is-ai-command/)
+    expect(directorEntry?.querySelector('.command-rail-core-badge')).toHaveTextContent('Core')
+    const commandRailFlow = view.getByTestId('command-rail-flow')
+    expect(commandRailFlow).toHaveAttribute('data-visual-system', 'nebula-flow')
+    expect(commandRailFlow).toHaveTextContent('Command Rail')
+    expect(view.getByLabelText('命令轨分发链路')).toHaveTextContent('BriefCastBuild')
+
+    await click(directorEntry as HTMLElement)
+    await waitFor(() => {
+      expect(view.container.querySelector('.pro-asset-panel[data-mode="director"]')).not.toBeNull()
+    })
+  }, 30_000)
+
+  it('剪辑模式右侧应暴露 Nebula Flow 检查控制台语义', async () => {
+    const view = await act(async () => render(<App />))
+    const rightPanel = view.getByTestId('area-right-panel')
+
+    expect(rightPanel).toHaveAttribute('data-shell-role', 'inspector-console')
+    await waitFor(() =>
+      expect(view.getByTestId('inspector-console-empty')).toHaveAttribute(
+        'data-visual-system',
+        'nebula-flow'
+      )
+    )
+    expect(view.getByLabelText('属性检查链路')).toHaveTextContent('InspectTuneRender')
+  }, 30_000)
+
+  it('顶栏应暴露 Director Flow 总线且不影响主工作模式切换', async () => {
+    const view = await act(async () => render(<App />))
+    const header = view.getByTestId('area-top-header')
+    const flowBus = view.getByTestId('director-flow-bus')
+
+    expect(header).toHaveAttribute('data-shell-role', 'director-flow-command')
+    expect(flowBus).toHaveAttribute('data-visual-system', 'nebula-flow')
+    expect(flowBus).toHaveTextContent('Director Flow')
+    expect(view.getByLabelText('导演流总线')).toHaveTextContent('PromptShotsTimelineInspectRender')
+
+    await click(view.getByTestId('btn-mode-color'))
+    expect(view.getByTestId('btn-mode-color')).toHaveAttribute('aria-pressed', 'true')
+    expect(flowBus).toHaveTextContent('Director Flow')
+  }, 30_000)
+
   it('应覆盖导出守卫、成功导出、播放器与画幅控制', async () => {
     localStorage.setItem('veomuse-onboarding-v1', 'done')
     const view = await act(async () => render(<App />))

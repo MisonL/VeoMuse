@@ -22,6 +22,24 @@ const MODE_OPTIONS: Array<{ value: AppMode; label: string }> = [
   { value: 'audio', label: '音频大师' }
 ]
 
+const DIRECTOR_FLOW_STEPS = ['Prompt', 'Shots', 'Timeline', 'Inspect', 'Render']
+
+const DirectorFlowBus = () => (
+  <div
+    className="director-flow-bus"
+    data-testid="director-flow-bus"
+    data-visual-system="nebula-flow"
+    aria-label="导演流总线"
+  >
+    <span className="director-flow-kicker">Director Flow</span>
+    <span className="director-flow-steps" aria-hidden="true">
+      {DIRECTOR_FLOW_STEPS.map((step) => (
+        <span key={step}>{step}</span>
+      ))}
+    </span>
+  </div>
+)
+
 const AppHeader = ({
   activeMode,
   previewAspect,
@@ -34,7 +52,7 @@ const AppHeader = ({
   onPreviewAspectChange,
   onExport
 }: AppHeaderProps) => (
-  <header className="pro-panel os-header" data-testid="area-top-header">
+  <header className="pro-panel os-header" data-testid="area-top-header" data-shell-role="director-flow-command">
     <div className="os-header-left">
       <div className="brand-zone">
         <div className="brand-mark">
@@ -49,6 +67,8 @@ const AppHeader = ({
         <span className="status-label">{MODE_OPTIONS.find(m => m.value === activeMode)?.label || activeMode}</span>
       </div>
     </div>
+
+    <DirectorFlowBus />
 
     <div className="os-header-center">
       <div

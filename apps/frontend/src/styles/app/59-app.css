@@ -1,0 +1,88 @@
+/* Nebula Flow sixth-pass output dock bridge 2026-05-18 */
+.monitor-bottom-bar[data-shell-role='output-dock'] {
+  position: relative;
+}
+
+.output-dock-flow {
+  display: inline-grid;
+  min-width: 0;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 10px;
+  border: 1px solid rgba(136, 224, 255, 0.18);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 12% 0, rgba(33, 212, 253, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(7, 11, 18, 0.68), rgba(16, 20, 32, 0.54));
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+}
+
+.output-dock-kicker {
+  color: #9be8ff;
+  font-family: var(--ap-font-mono);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.output-dock-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, max-content));
+  align-items: center;
+  gap: 4px;
+}
+
+.output-dock-steps span {
+  display: inline-grid;
+  min-height: 22px;
+  place-items: center;
+  padding: 0 7px;
+  border: 1px solid rgba(136, 224, 255, 0.13);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(238, 245, 255, 0.74);
+  font-family: var(--ap-font-mono);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.output-dock-steps span:last-child {
+  border-color: rgba(139, 92, 246, 0.32);
+  background: rgba(139, 92, 246, 0.12);
+  color: #f7fbff;
+}
+
+html[data-theme='light'] body .monitor-bottom-bar[data-shell-role='output-dock'] .output-dock-flow {
+  border-color: rgba(27, 95, 117, 0.18);
+  background:
+    radial-gradient(circle at 12% 0, rgba(27, 95, 117, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(255, 250, 240, 0.84), rgba(242, 230, 210, 0.68));
+  box-shadow: 0 12px 28px rgba(56, 45, 31, 0.12);
+}
+
+html[data-theme='light'] body .output-dock-kicker {
+  color: #1b5f75;
+}
+
+html[data-theme='light'] body .output-dock-steps span {
+  border-color: rgba(56, 45, 31, 0.12);
+  background: rgba(255, 255, 255, 0.48);
+  color: rgba(42, 33, 24, 0.72);
+}
+
+html[data-theme='light'] body .output-dock-steps span:last-child {
+  border-color: rgba(27, 95, 117, 0.24);
+  color: #1f1a15;
+}
+
+@media (max-width: 1180px) {
+  .output-dock-flow {
+    display: none;
+  }
+}
