@@ -17,7 +17,7 @@
 ## 文档落点
 
 - 设计规格：`docs/superpowers/specs/`
-- 实施计划：`docs/superpowers/plans/`
+- 实施计划与实施记录：`docs/superpowers/plans/`
 - 仓库级工作流说明：`docs/superpowers/README.md`
 - TDD 细则：`docs/TDD_WORKFLOW.md`
 
@@ -32,6 +32,7 @@
 
 - 将设计拆成可验证步骤。
 - 计划文档写入 `docs/superpowers/plans/<date>-<topic>-plan.md`。
+- 完成后将同一文件回写为实施记录，避免长期入口保留过期计划态。
 
 ### 3. failing test
 
