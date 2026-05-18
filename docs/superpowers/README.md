@@ -4,6 +4,10 @@
 
 ## 固定顺序
 
+```text
+spec -> plan -> failing test -> implementation -> verification
+```
+
 1. `using-superpowers`
 2. `brainstorming`
 3. `writing-plans`

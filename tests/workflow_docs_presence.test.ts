@@ -21,12 +21,10 @@ describe('superpowers 与 TDD 工作流文档守卫', () => {
     const engineering = readDoc('docs/ENGINEERING_WORKFLOW.md')
     const tdd = readDoc('docs/TDD_WORKFLOW.md')
     const superpowers = readDoc('docs/superpowers/README.md')
+    const requiredSequence = 'spec -> plan -> failing test -> implementation -> verification'
 
-    expect(engineering).toContain('spec')
-    expect(engineering).toContain('plan')
-    expect(engineering).toContain('failing test')
-    expect(engineering).toContain('implementation')
-    expect(engineering).toContain('verification')
+    expect(engineering).toContain(requiredSequence)
+    expect(superpowers).toContain(requiredSequence)
 
     expect(tdd).toContain('先写失败测试')
     expect(tdd).toContain('禁止先改实现再补测试')

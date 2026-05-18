@@ -6,6 +6,10 @@
 
 所有功能、重构、清理、修复任务都按以下顺序执行：
 
+```text
+spec -> plan -> failing test -> implementation -> verification
+```
+
 1. `spec`
 2. `plan`
 3. `failing test`
