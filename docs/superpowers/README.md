@@ -35,6 +35,7 @@ using-superpowers -> brainstorming -> writing-plans -> test-driven-development -
 - VeoMuse 仓库全面清理与 Superpowers/TDD 迁移设计：`docs/superpowers/specs/2026-04-27-repo-cleanup-and-superpowers-migration-design.md`
 - UI Studio Refinement Design：`docs/superpowers/specs/2026-04-27-ui-studio-refinement-design.md`
 - Nebula Flow WebUI 设计规格：`docs/superpowers/specs/2026-05-17-nebula-flow-webui-design.md`
+- V3.3 可运营交付闭环设计规格：`docs/superpowers/specs/2026-05-18-v3-3-operational-delivery-design.md`
 
 ## 已落盘计划与记录
 
