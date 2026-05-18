@@ -31,4 +31,17 @@ describe('docker UI smoke 接入', () => {
     )
     expect(spec).toContain("page.getByTestId('btn-open-channel-panel')")
   })
+
+  it('docker smoke 应锁定 Experiment Bus 部署态 overlay 几何', () => {
+    const spec = readFileSync(
+      path.resolve(process.cwd(), 'tests/e2e/docker/experiment-bus-overlay.spec.ts'),
+      'utf8'
+    )
+    expect(spec).toContain('assertExperimentBusOverlay')
+    expect(spec).toContain("page.getByTestId('experiment-bus')")
+    expect(spec).toContain("position: style.position")
+    expect(spec).toContain("pointerEvents: style.pointerEvents")
+    expect(spec).toContain("expect(metrics.position, `${label} position`).toBe('absolute')")
+    expect(spec).toContain("expect(metrics.pointerEvents, `${label} pointer events`).toBe('none')")
+  })
 })

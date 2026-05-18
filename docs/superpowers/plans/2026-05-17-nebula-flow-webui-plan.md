@@ -129,3 +129,17 @@ bun run docker:up
 bun run docker:ui-smoke -- --workers=1 --retries=0 tests/e2e/docker/all-ui-surfaces.spec.ts
 git diff --check
 ```
+
+## 第十二轮执行记录
+
+1. 已在 `tests/docker_ui_smoke_script.test.ts` 中先补失败覆盖守卫，锁定 Docker smoke 必须包含 `assertExperimentBusOverlay`、`experiment-bus`、`position === 'absolute'` 和 `pointerEvents === 'none'`。
+2. 已新增 `tests/e2e/docker/experiment-bus-overlay.spec.ts`，直接读取部署态 computed style、盒模型、`data-shell-role` 和 `data-visual-system`。
+3. 已在 compare、marketplace、creative 和 collab 四个实验室模式中调用该 helper，保留 `all-ui-surfaces.spec.ts` 既有几何断言不变。
+4. `tests/docker_ui_smoke_script.test.ts` 先失败于缺少 `assertExperimentBusOverlay`，随后通过。
+
+## 第十二轮验证命令
+
+```bash
+bun test tests/docker_ui_smoke_script.test.ts --max-concurrency 1
+bun run docker:ui-smoke -- --workers=1 --retries=0 tests/e2e/docker/experiment-bus-overlay.spec.ts tests/e2e/docker/all-ui-surfaces.spec.ts
+```

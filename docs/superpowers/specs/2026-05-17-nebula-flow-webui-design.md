@@ -124,3 +124,12 @@
 - `Experiment Bus` 应显示 `Compare / Govern / Ship` 三段式链路，承接视频实验室从比对到治理再到交付的主路径。
 - 该结构必须是只读状态，不改变实验室阶段切换、工具栏按钮、通道接入弹窗或各子面板交互。
 - 第十一轮样式独立放入新的最终 CSS layer，避免污染 `ComparisonLab.css` 的长流程布局和 Docker UI smoke 几何约束。
+
+## 第十二轮补充
+
+第十一轮远端 Docker Delivery 暴露出一个测试断层：DOM 和 CSS 守卫能确认 `Experiment Bus` 结构与 `64-app.css` 存在，但不能证明懒加载 `ComparisonLab.css` 后的部署态 computed style 仍保持 overlay 且不挤压内容视窗。第十二轮补充要求：
+
+- Docker UI smoke 必须直接验证 `Experiment Bus` 在部署态存在，并保留 `data-shell-role="experiment-bus"` 与 `data-visual-system="nebula-flow"`。
+- Docker UI smoke 必须验证 `Experiment Bus` 的 computed style 为 absolute overlay，并且 `pointer-events: none`，避免拦截实验室按钮和阶段切换。
+- Docker UI smoke 必须在 compare 与长流程实验室模式中继续验证无内部裁切和最小内容视窗高度。
+- 本轮只补测试契约与实施记录，不改变业务逻辑和视觉结构。
