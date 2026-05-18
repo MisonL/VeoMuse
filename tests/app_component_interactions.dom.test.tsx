@@ -195,6 +195,24 @@ describe('App DOM 运行态交互补测', () => {
     await click(view.getByTestId('btn-mode-color'))
     expect(view.getByTestId('btn-mode-color')).toHaveAttribute('aria-pressed', 'true')
     expect(flowBus).toHaveTextContent('Director Flow')
+    await waitFor(() => {
+      expect(view.getByTestId('experiment-bus')).toBeInTheDocument()
+    })
+    const experimentBus = view.getByTestId('experiment-bus')
+    expect(view.getByTestId('area-comparison-lab')).toHaveAttribute(
+      'data-shell-role',
+      'experiment-bus'
+    )
+    expect(experimentBus).toHaveAttribute('data-visual-system', 'nebula-flow')
+    expect(experimentBus).toHaveTextContent('Experiment Bus')
+    expect(view.getByLabelText('实验编排总线')).toHaveTextContent('CompareGovernShip')
+
+    await click(view.getByTestId('btn-lab-mode-marketplace'))
+    expect(view.getByTestId('area-comparison-lab')).toHaveAttribute(
+      'data-lab-mode',
+      'marketplace'
+    )
+    expect(experimentBus).toHaveTextContent('Experiment Bus')
   }, 30_000)
 
   it('应覆盖导出守卫、成功导出、播放器与画幅控制', async () => {

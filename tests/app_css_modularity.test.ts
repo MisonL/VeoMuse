@@ -219,4 +219,19 @@ describe('App CSS modularity guard', () => {
       expect(watchBusCss).toContain(selector)
     }
   })
+
+  it('Nebula Flow experiment bus should remain isolated in the final CSS layer', () => {
+    const experimentBusCss = readFileSync(path.join(appCssModuleDir, '64-app.css'), 'utf8')
+
+    const requiredExperimentBusSelectors = [
+      ".comparison-lab-pro[data-shell-role='experiment-bus']",
+      '.experiment-bus-flow',
+      '.experiment-bus-steps',
+      "html[data-theme='light'] body .comparison-lab-pro[data-shell-role='experiment-bus'] .experiment-bus-flow"
+    ]
+
+    for (const selector of requiredExperimentBusSelectors) {
+      expect(experimentBusCss).toContain(selector)
+    }
+  })
 })

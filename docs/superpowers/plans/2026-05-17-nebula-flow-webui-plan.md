@@ -108,3 +108,20 @@ git diff --check
 3. 最终 CSS layer `63-app.css` 只覆盖监控总线视觉和窄高度降噪，并由 `App.css` 按顺序导入。
 4. `tests/app_shell_empty_state.dom.test.tsx` 覆盖实验室监控 DOM 契约，确认监控壳层与监控面板内容仍存在。
 5. `tests/app_css_modularity.test.ts` 覆盖 `63-app.css` 隔离性，防止监控总线样式回流到其他 CSS layer。
+
+## 第十一轮执行记录
+
+1. 已在 `ComparisonLab` 默认舞台加入只读 `Experiment Bus` 结构，保留实验室阶段切换、工具栏、通道弹窗和各子面板交互。
+2. `Experiment Bus` 暴露 `data-testid="experiment-bus"` 和 `data-visual-system="nebula-flow"`，并显示 `Compare / Govern / Ship` 实验编排链路。
+3. 最终 CSS layer `64-app.css` 只覆盖实验室总线视觉和窄高度降噪，并由 `App.css` 按顺序导入。
+4. `tests/app_component_interactions.dom.test.tsx` 先失败于缺少 `experiment-bus`，随后覆盖实验室总线 DOM 契约和 `marketplace` 阶段切换不变。
+5. `tests/app_css_modularity.test.ts` 先失败于缺少 `64-app.css`，随后覆盖 `64-app.css` 隔离性，防止实验室总线样式回流到其他 CSS layer。
+
+## 第十一轮验证命令
+
+```bash
+bun test tests/app_component_interactions.dom.test.tsx tests/app_css_modularity.test.ts --max-concurrency 1
+bun run build
+bun run lint
+git diff --check
+```

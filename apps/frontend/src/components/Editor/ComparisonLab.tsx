@@ -34,6 +34,7 @@ const LAB_STAGE_ORDER = [
   { mode: 'creative', short: '创意' },
   { mode: 'collab', short: '协作' }
 ] as const
+const EXPERIMENT_BUS_STEPS = ['Compare', 'Govern', 'Ship'] as const
 
 const LAB_STAGE_STATUS_LABEL = {
   current: '当前阶段',
@@ -55,6 +56,22 @@ const focusStageButton = (mode: (typeof LAB_STAGE_ORDER)[number]['mode']) => {
     }
   })
 }
+
+const ExperimentBusFlow = () => (
+  <div
+    className="experiment-bus-flow"
+    data-testid="experiment-bus"
+    data-visual-system="nebula-flow"
+    aria-label="实验编排总线"
+  >
+    <span className="experiment-bus-kicker">Experiment Bus</span>
+    <span className="experiment-bus-steps" aria-hidden="true">
+      {EXPERIMENT_BUS_STEPS.map((step) => (
+        <span key={step}>{step}</span>
+      ))}
+    </span>
+  </div>
+)
 
 const ComparisonLab: React.FC<ComparisonLabProps> = ({
   onOpenAssets,
@@ -105,7 +122,13 @@ const ComparisonLab: React.FC<ComparisonLabProps> = ({
   }
 
   return (
-    <div className="comparison-lab-pro" data-testid="area-comparison-lab" data-lab-mode={labMode}>
+    <div
+      className="comparison-lab-pro"
+      data-testid="area-comparison-lab"
+      data-lab-mode={labMode}
+      data-shell-role="experiment-bus"
+    >
+      <ExperimentBusFlow />
       <div className="lab-stage-shell">
         <aside className="lab-stage-spine">
           <div className="lab-stage-rail-head">
