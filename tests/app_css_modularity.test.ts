@@ -233,5 +233,7 @@ describe('App CSS modularity guard', () => {
     for (const selector of requiredExperimentBusSelectors) {
       expect(experimentBusCss).toContain(selector)
     }
+    expect(experimentBusCss).toContain('position: absolute !important;')
+    expect(experimentBusCss).toContain('pointer-events: none;')
   })
 })

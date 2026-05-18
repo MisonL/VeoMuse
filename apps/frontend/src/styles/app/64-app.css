@@ -1,19 +1,20 @@
 /* Nebula Flow eleventh-pass experiment bus bridge 2026-05-18 */
 .comparison-lab-pro[data-shell-role='experiment-bus'] {
   position: relative;
-  display: grid;
-  align-content: start;
-  gap: 10px;
 }
 
 .experiment-bus-flow {
+  position: absolute !important;
+  top: 14px !important;
+  left: 190px !important;
+  z-index: 6 !important;
   display: inline-grid;
-  width: min(100%, 420px);
+  width: min(38vw, 420px);
   min-width: 0;
   grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
   gap: 8px;
-  justify-self: start;
+  pointer-events: none;
   padding: 6px 8px 6px 10px;
   border: 1px solid rgba(136, 224, 255, 0.18);
   border-radius: 999px;
@@ -85,11 +86,15 @@ html[data-theme='light'] body .experiment-bus-steps span:last-child {
 }
 
 @media (max-height: 820px) {
-  .comparison-lab-pro[data-shell-role='experiment-bus'] {
-    gap: 8px;
-  }
-
   .experiment-bus-flow {
-    padding-block: 4px;
+    top: 10px !important;
+    padding-block: 3px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .experiment-bus-flow {
+    left: 18px !important;
+    width: min(100% - 36px, 420px);
   }
 }

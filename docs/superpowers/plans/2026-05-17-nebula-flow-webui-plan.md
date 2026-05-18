@@ -116,6 +116,8 @@ git diff --check
 3. 最终 CSS layer `64-app.css` 只覆盖实验室总线视觉和窄高度降噪，并由 `App.css` 按顺序导入。
 4. `tests/app_component_interactions.dom.test.tsx` 先失败于缺少 `experiment-bus`，随后覆盖实验室总线 DOM 契约和 `marketplace` 阶段切换不变。
 5. `tests/app_css_modularity.test.ts` 先失败于缺少 `64-app.css`，随后覆盖 `64-app.css` 隔离性，防止实验室总线样式回流到其他 CSS layer。
+6. 远端 Docker Delivery 首次失败于实验室几何：compare 内容栈 `scrollHeight 204 > clientHeight 201`，marketplace 活动面板 `clientHeight 238 < 240`。
+7. 根因是 `64-app.css` 初版改变 `.comparison-lab-pro` 布局流，并且后加载的 `ComparisonLab.css` 直子选择器会覆盖总线 absolute 定位；已改为 `position: absolute !important` 的只读 overlay，避免挤压长流程内容视窗。
 
 ## 第十一轮验证命令
 
@@ -123,5 +125,7 @@ git diff --check
 bun test tests/app_component_interactions.dom.test.tsx tests/app_css_modularity.test.ts --max-concurrency 1
 bun run build
 bun run lint
+bun run docker:up
+bun run docker:ui-smoke -- --workers=1 --retries=0 tests/e2e/docker/all-ui-surfaces.spec.ts
 git diff --check
 ```
