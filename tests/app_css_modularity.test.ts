@@ -175,6 +175,7 @@ describe('App CSS modularity guard', () => {
       ".panel-left[data-shell-role='command-rail'] .sidebar-tab.is-ai-command",
       ".panel-left[data-shell-role='command-rail']",
       ".panel-left[data-shell-role='command-rail'] .sidebar-content",
+      ".panel-left[data-shell-role='command-rail'] .pro-asset-grid",
       '.command-rail-flow',
       '.command-rail-steps',
       "html[data-theme='light'] body .panel-left[data-shell-role='command-rail'] .command-rail-flow"
@@ -186,6 +187,7 @@ describe('App CSS modularity guard', () => {
 
     expect(commandRailCss).toContain('overflow: hidden !important;')
     expect(commandRailCss).toContain('overflow: auto !important;')
+    expect(commandRailCss).toContain('align-content: start !important;')
   })
 
   it('Nebula Flow audio bus should remain isolated in the final CSS layer', () => {

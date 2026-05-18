@@ -134,6 +134,19 @@ html[data-theme='light'] body .command-rail-steps span:last-child {
     min-height: 0;
     overflow: auto !important;
   }
+
+  .panel-left[data-shell-role='command-rail'] .pro-asset-panel {
+    height: auto !important;
+    min-height: max-content !important;
+    overflow: visible !important;
+  }
+
+  .panel-left[data-shell-role='command-rail'] .pro-asset-grid {
+    min-height: 0 !important;
+    overflow: visible !important;
+    align-content: start !important;
+    padding-bottom: 16px;
+  }
 }
 
 @media (min-width: 1181px) and (max-width: 1599px) {
