@@ -26,6 +26,7 @@ describe('superpowers 与 TDD 工作流文档守卫', () => {
       'using-superpowers -> brainstorming -> writing-plans -> test-driven-development -> verification-before-completion'
 
     expect(engineering).toContain(requiredSequence)
+    expect(tdd).toContain(requiredSequence)
     expect(superpowers).toContain(requiredSequence)
 
     expect(tdd).toContain('先写失败测试')
@@ -35,6 +36,7 @@ describe('superpowers 与 TDD 工作流文档守卫', () => {
     expect(superpowers).toContain('brainstorming')
     expect(superpowers).toContain('writing-plans')
     expect(superpowers).toContain('test-driven-development')
+    expect(tdd).toContain(requiredSkillSequence)
     expect(superpowers).toContain(requiredSkillSequence)
   })
 

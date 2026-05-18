@@ -2,6 +2,10 @@
 
 本文定义本仓库的 TDD 基线。
 
+```text
+spec -> plan -> failing test -> implementation -> verification
+```
+
 ## 核心规则
 
 - 先写失败测试。
