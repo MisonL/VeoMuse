@@ -42,3 +42,4 @@ using-superpowers -> brainstorming -> writing-plans -> test-driven-development -
 - VeoMuse 仓库全面清理与 Superpowers/TDD 迁移实施记录：`docs/superpowers/plans/2026-04-27-repo-cleanup-and-superpowers-migration-plan.md`
 - UI Studio Refinement Implementation Record：`docs/superpowers/plans/2026-04-27-ui-studio-refinement-plan.md`
 - Nebula Flow WebUI 实施记录：`docs/superpowers/plans/2026-05-17-nebula-flow-webui-plan.md`
+- V3.3 可运营交付闭环 Implementation Plan：`docs/superpowers/plans/2026-05-18-v3-3-operational-delivery-plan.md`
