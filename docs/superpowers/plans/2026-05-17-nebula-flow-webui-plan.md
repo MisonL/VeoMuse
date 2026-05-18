@@ -142,4 +142,15 @@ git diff --check
 ```bash
 bun test tests/docker_ui_smoke_script.test.ts --max-concurrency 1
 bun run docker:ui-smoke -- --workers=1 --retries=0 tests/e2e/docker/experiment-bus-overlay.spec.ts tests/e2e/docker/all-ui-surfaces.spec.ts
+bun run build
+bun run lint
+git diff --check
 ```
+
+## 第十二轮远端收口记录
+
+1. 本轮提交 `59a1af61d6eedb00db7f49f9f312ac06ba666b46` 已推送到 `origin/main`。
+2. GitHub Actions `CI · Security Secrets Scan` 已通过。
+3. GitHub Actions `CI · Quality Gate` run `26028396090` 已通过。
+4. 该 Quality Gate 中 `Release Gate` 与 `Docker Delivery` 两个 job 均为 success。
+5. `Docker Delivery` 已执行并通过 `Run docker UI smoke`，覆盖部署态 `Experiment Bus` overlay 几何守卫。
