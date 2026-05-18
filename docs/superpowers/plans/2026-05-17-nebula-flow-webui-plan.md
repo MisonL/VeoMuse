@@ -61,41 +61,37 @@ git diff --check
 5. 补充 `PropertyInspector` DOM、App DOM 和 CSS 模块化守卫测试。
 6. 浏览器复查发现懒加载 `PropertyInspector.css` 会被后加载并压掉部分右侧空态背景；在组件 CSS 尾部补高特异性兜底，并加入守卫。
 
-## 第五轮执行计划
+## 第五轮执行记录
 
-1. 补充顶栏 DOM 契约测试，锁定 `Director Flow` 总线、五段链路和现有模式切换不受影响。
-2. 补充 CSS 模块化守卫，要求第五轮顶栏样式独立放入 `58-app.css`。
-3. 运行相关测试确认 RED。
-4. 修改 `AppHeader`，在品牌状态与模式切换之间插入只读 flow 胶囊。
-5. 新增最终 CSS layer `58-app.css`，只覆盖顶栏 flow 胶囊和移动端降噪。
-6. 运行 DOM/CSS 测试、构建、Docker 重建、Docker smoke、Docker UI smoke、lint 与 `git diff --check`。
+1. 已在 `AppHeader` 顶栏加入只读 `Director Flow` 总线，保持模式切换、主题、画幅和导出交互不变。
+2. `Director Flow` 暴露 `data-testid="director-flow-bus"`，并显示 `Prompt / Shots / Timeline / Inspect / Render` 五段链路。
+3. 顶栏壳层暴露 `data-shell-role="director-flow-command"`，用于限定第五轮样式作用域。
+4. 最终 CSS layer `58-app.css` 只覆盖顶栏 flow 胶囊和移动端降噪，并由 `App.css` 按顺序导入。
+5. `tests/app_component_interactions.dom.test.tsx` 与 `tests/app_css_modularity.test.ts` 覆盖顶栏 DOM 契约和 `58-app.css` 隔离性。
 
-## 第六轮执行计划
+## 第六轮执行记录
 
-1. 补充中心预览底部 DOM 契约测试，锁定 `Output Dock` 和 `Preview / Lab / Render` 输出链路。
-2. 补充 CSS 模块化守卫，要求第六轮输出 dock 样式独立放入 `59-app.css`。
-3. 运行相关测试确认 RED。
-4. 修改 `AppCenterPanel`，在 `monitor-bottom-bar` 中加入只读输出链路结构。
-5. 新增最终 CSS layer `59-app.css`，只覆盖输出 dock 视觉和移动端降噪。
-6. 运行相关 DOM/CSS 测试、构建、Docker 重建、浏览器复核、Docker smoke、Docker UI smoke、lint 与 `git diff --check`。
+1. 已在 `AppCenterPanel` 的 `monitor-bottom-bar` 中加入只读 `Output Dock` 结构，保持播放、跳转、画幅展示和“视频实验室”按钮行为不变。
+2. `Output Dock` 暴露 `data-testid="output-dock"`，并显示 `Preview / Lab / Render` 输出链路。
+3. 底部栏暴露 `data-shell-role="output-dock"`，用于限定第六轮样式作用域。
+4. 最终 CSS layer `59-app.css` 只覆盖输出 dock 视觉和移动端降噪，并由 `App.css` 按顺序导入。
+5. `tests/app_shell_empty_state.dom.test.tsx` 与 `tests/app_css_modularity.test.ts` 覆盖输出 dock DOM 契约和 `59-app.css` 隔离性。
 
-## 第七轮执行计划
+## 第七轮执行记录
 
-1. 补充时间轴 DOM 契约测试，锁定 `Timeline Bus` 和 `Queue / Sync / Deliver` 装配链路。
-2. 补充 CSS 模块化守卫，要求第七轮时间轴总线样式独立放入 `60-app.css`。
-3. 运行相关测试确认 RED。
-4. 修改 `AppTimeline`，在状态条中加入只读时间轴总线结构。
-5. 新增最终 CSS layer `60-app.css`，只覆盖时间轴总线视觉和移动端降噪。
-6. 运行相关 DOM/CSS 测试、构建、Docker 重建、浏览器复核、Docker smoke、Docker UI smoke、lint 与 `git diff --check`。
+1. 已在 `AppTimeline` 状态条中加入只读 `Timeline Bus` 结构，保持撤销、工具切换、时间轴空态 CTA 和指标展示行为不变。
+2. `Timeline Bus` 暴露 `data-testid="timeline-bus"`，并显示 `Queue / Sync / Deliver` 装配链路。
+3. 时间轴容器暴露 `data-shell-role="timeline-bus"`，用于限定第七轮样式作用域。
+4. 最终 CSS layer `60-app.css` 只覆盖时间轴总线视觉和移动端降噪，并由 `App.css` 按顺序导入。
+5. `tests/app_shell_empty_state.dom.test.tsx` 与 `tests/app_css_modularity.test.ts` 覆盖时间轴总线 DOM 契约和 `60-app.css` 隔离性。
 
-## 第八轮执行计划
+## 第八轮执行记录
 
-1. 补充左侧命令轨 DOM 契约测试，锁定 `Command Rail` 和 `Brief / Cast / Build` 入口链路。
-2. 补充 CSS 模块化守卫，要求第八轮命令轨链路样式独立放入 `61-app.css`。
-3. 运行相关测试确认 RED。
-4. 修改 `App` 左侧 AI 导演按钮，加入只读命令轨链路结构，并保持按钮可访问名称与点击行为。
-5. 新增最终 CSS layer `61-app.css`，只覆盖命令轨链路视觉和窄宽度降噪。
-6. 运行相关 DOM/CSS 测试、构建、Docker 重建、浏览器复核、Docker smoke、Docker UI smoke、lint 与 `git diff --check`。
+1. 已在 `App` 左侧 AI 导演按钮加入只读 `Command Rail` 链路，保持素材库、AI 导演、演员库和动捕实验室切换行为不变。
+2. `Command Rail` 暴露 `data-testid="command-rail-flow"`，并显示 `Brief / Cast / Build` 入口链路。
+3. 左侧面板暴露 `data-shell-role="command-rail"`，用于限定第八轮样式作用域。
+4. 最终 CSS layer `61-app.css` 只覆盖命令轨链路视觉、窄宽度降噪和后续素材面板命中修复，并由 `App.css` 按顺序导入。
+5. `tests/app_component_interactions.dom.test.tsx` 与 `tests/app_css_modularity.test.ts` 覆盖命令轨 DOM 契约和 `61-app.css` 隔离性。
 
 ## 第九轮执行记录
 
