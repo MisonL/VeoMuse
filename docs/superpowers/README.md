@@ -8,6 +8,10 @@
 spec -> plan -> failing test -> implementation -> verification
 ```
 
+```text
+using-superpowers -> brainstorming -> writing-plans -> test-driven-development -> verification-before-completion
+```
+
 1. `using-superpowers`
 2. `brainstorming`
 3. `writing-plans`

@@ -22,6 +22,8 @@ describe('superpowers 与 TDD 工作流文档守卫', () => {
     const tdd = readDoc('docs/TDD_WORKFLOW.md')
     const superpowers = readDoc('docs/superpowers/README.md')
     const requiredSequence = 'spec -> plan -> failing test -> implementation -> verification'
+    const requiredSkillSequence =
+      'using-superpowers -> brainstorming -> writing-plans -> test-driven-development -> verification-before-completion'
 
     expect(engineering).toContain(requiredSequence)
     expect(superpowers).toContain(requiredSequence)
@@ -33,6 +35,7 @@ describe('superpowers 与 TDD 工作流文档守卫', () => {
     expect(superpowers).toContain('brainstorming')
     expect(superpowers).toContain('writing-plans')
     expect(superpowers).toContain('test-driven-development')
+    expect(superpowers).toContain(requiredSkillSequence)
   })
 
   it('仓库应落盘 AGENTS.md 作为本地执行约束入口', () => {
