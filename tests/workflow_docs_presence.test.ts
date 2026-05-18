@@ -44,6 +44,7 @@ describe('superpowers 与 TDD 工作流文档守卫', () => {
     expect(agents).toContain('Debug-First')
     expect(agents).toContain('spec -> plan -> failing test -> implementation -> verification')
     expect(agents).toContain('git diff --check')
+    expect(agents).toContain('实施计划与实施记录写入 `docs/superpowers/plans/`')
     expect(agents).not.toContain(`<${'任务跟踪文件'}>`)
   })
 
