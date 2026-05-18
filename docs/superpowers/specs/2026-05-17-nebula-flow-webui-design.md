@@ -1,4 +1,4 @@
-# Nebula Flow WebUI 第一轮设计规格
+# Nebula Flow WebUI 设计规格
 
 ## 背景
 

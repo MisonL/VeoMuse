@@ -24,12 +24,12 @@
 
 ## 已落盘规格
 
-- 清理与迁移设计：`docs/superpowers/specs/2026-04-27-repo-cleanup-and-superpowers-migration-design.md`
-- UI Studio 设计：`docs/superpowers/specs/2026-04-27-ui-studio-refinement-design.md`
-- Nebula Flow 设计：`docs/superpowers/specs/2026-05-17-nebula-flow-webui-design.md`
+- VeoMuse 仓库全面清理与 Superpowers/TDD 迁移设计：`docs/superpowers/specs/2026-04-27-repo-cleanup-and-superpowers-migration-design.md`
+- UI Studio Refinement Design：`docs/superpowers/specs/2026-04-27-ui-studio-refinement-design.md`
+- Nebula Flow WebUI 设计规格：`docs/superpowers/specs/2026-05-17-nebula-flow-webui-design.md`
 
 ## 已落盘计划与记录
 
-- 清理与迁移实施记录：`docs/superpowers/plans/2026-04-27-repo-cleanup-and-superpowers-migration-plan.md`
-- UI Studio 实施记录：`docs/superpowers/plans/2026-04-27-ui-studio-refinement-plan.md`
-- Nebula Flow 实施记录：`docs/superpowers/plans/2026-05-17-nebula-flow-webui-plan.md`
+- VeoMuse 仓库全面清理与 Superpowers/TDD 迁移实施记录：`docs/superpowers/plans/2026-04-27-repo-cleanup-and-superpowers-migration-plan.md`
+- UI Studio Refinement Implementation Record：`docs/superpowers/plans/2026-04-27-ui-studio-refinement-plan.md`
+- Nebula Flow WebUI 实施记录：`docs/superpowers/plans/2026-05-17-nebula-flow-webui-plan.md`
