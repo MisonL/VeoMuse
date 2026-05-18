@@ -1,15 +1,15 @@
-# Nebula Flow WebUI 第一轮实施计划
+# Nebula Flow WebUI 实施记录
 
-## 执行顺序
+## 第一轮执行记录
 
-1. 补充 DOM 契约测试，锁定空态 launchpad、AI 提权入口和时间轴 AI CTA。
-2. 运行相关测试确认 RED。
-3. 修改 React 结构：中心空态卡片化、左侧命令轨道标识、时间轴 AI CTA 标识。
-4. 增加最后加载的 CSS 覆盖层，集中处理 Nebula Flow token、空态、命令轨道和 AI CTA。
-5. 运行相关测试、构建、`git diff --check`。
-6. 用浏览器打开 Docker 网关确认首屏视觉与控制台状态。
+1. 已补充 DOM 契约测试，锁定空态 launchpad、AI 提权入口和时间轴 AI CTA。
+2. 已修改 React 结构：中心空态卡片化、左侧命令轨道标识、时间轴 AI CTA 标识。
+3. 已增加最后加载的 CSS 覆盖层，集中处理 Nebula Flow token、空态、命令轨道和 AI CTA。
+4. `tests/app_shell_empty_state.dom.test.tsx` 覆盖中心空态、时间轴空态、输出 dock、音频大师和监控壳层。
+5. `tests/app_css_modularity.test.ts` 覆盖最终 CSS layer 的导入顺序、特异性和隔离性。
+6. Docker 网关和 UI smoke 作为部署态视觉与交互复核入口。
 
-## 验证命令
+## 基础验证命令
 
 ```bash
 bun test tests/app_shell_empty_state.dom.test.tsx --max-concurrency 1
