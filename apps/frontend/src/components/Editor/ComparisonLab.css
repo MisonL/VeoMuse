@@ -6739,7 +6739,7 @@
 /* Compare workspace layout repair 2026-04-28 */
 .comparison-lab-pro[data-lab-mode='compare'] .lab-stage-main {
   grid-template-rows: auto auto minmax(0, 1fr) !important;
-  gap: 6px !important;
+  gap: 4px !important;
   overflow: hidden !important;
   padding: 10px !important;
 }
