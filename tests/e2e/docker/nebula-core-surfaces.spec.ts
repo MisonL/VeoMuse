@@ -51,6 +51,13 @@ const assertNebulaSurface = async (page: Page, testId: string, label: string) =>
   await assertNoOverflow(surface, label)
 }
 
+const assertNebulaSemanticSurface = async (page: Page, testId: string, label: string) => {
+  const surface = page.getByTestId(testId)
+
+  await expect(surface, `${label} should exist`).toHaveCount(1)
+  await expect(surface, `${label} visual system`).toHaveAttribute('data-visual-system', 'nebula-flow')
+}
+
 const assertLabMode = async (page: Page, mode: string, label: string) => {
   await page.getByTestId(`btn-lab-mode-${mode}`).click()
   await expect(page.getByTestId('area-comparison-lab')).toHaveAttribute('data-lab-mode', mode)
@@ -69,7 +76,7 @@ test('Docker Nebula 核心 surface 应在部署态可见且无浏览器告警', 
   await dismissGuideIfPresent(page)
 
   await assertNebulaSurface(page, 'director-flow-bus', '顶部导演总线')
-  await assertNebulaSurface(page, 'command-rail-flow', '左侧命令总线')
+  await assertNebulaSemanticSurface(page, 'command-rail-flow', '左侧命令总线')
   await assertNebulaSurface(page, 'director-canvas-launchpad', '导演画布启动台')
   await assertNebulaSurface(page, 'output-dock', '输出停靠区')
   await assertNebulaSurface(page, 'timeline-bus', '时间轴总线')
