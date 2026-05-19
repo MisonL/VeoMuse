@@ -64,6 +64,59 @@ interface ChannelAccessPanelProps {
   onTestChannelConfig: (providerId: string) => void
 }
 
+const OPENAI_COMPATIBLE_CHAT_PATH = '/v1/chat/completions'
+const OPENAI_COMPATIBLE_RESPONSES_PATH = '/v1/responses'
+
+const trimPathSlashes = (path: string) => path.replace(/\/+$/, '') || '/'
+
+const parseOpenAiCompatibleEndpoint = (path: string) => {
+  const raw = path.trim()
+  const isAbsolute = /^https?:\/\//i.test(raw)
+  try {
+    return {
+      isAbsolute,
+      url: new URL(isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`, 'https://veomuse.local')
+    }
+  } catch {
+    return null
+  }
+}
+
+const replaceOpenAiCompatibleEndpoint = (path: string, fromEndpoint: string, toEndpoint: string) => {
+  const parsed = parseOpenAiCompatibleEndpoint(path)
+  if (!parsed) return path
+  const currentPath = trimPathSlashes(parsed.url.pathname)
+  if (!currentPath.toLowerCase().endsWith(fromEndpoint)) return path
+  parsed.url.pathname = `${currentPath.slice(0, currentPath.length - fromEndpoint.length)}${toEndpoint}`
+  return parsed.isAbsolute
+    ? parsed.url.toString()
+    : `${parsed.url.pathname}${parsed.url.search}${parsed.url.hash}`
+}
+
+const resolveOpenAiProtocolPatch = (protocol: string, currentPath: string) => {
+  const patch: Partial<ChannelFormState> = { protocol }
+  const path = currentPath.trim()
+  if (protocol === 'responses') {
+    patch.path = path
+      ? replaceOpenAiCompatibleEndpoint(
+          path,
+          OPENAI_COMPATIBLE_CHAT_PATH,
+          OPENAI_COMPATIBLE_RESPONSES_PATH
+        )
+      : OPENAI_COMPATIBLE_RESPONSES_PATH
+  }
+  if (protocol === 'chat') {
+    patch.path = path
+      ? replaceOpenAiCompatibleEndpoint(
+          path,
+          OPENAI_COMPATIBLE_RESPONSES_PATH,
+          OPENAI_COMPATIBLE_CHAT_PATH
+        )
+      : OPENAI_COMPATIBLE_CHAT_PATH
+  }
+  return patch
+}
+
 const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
   show,
   isCapabilitiesLoading,
@@ -114,11 +167,29 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
   onTestChannelConfig
 }) => {
   const dialogRef = useRef<HTMLElement | null>(null)
+  const workspaceScopeUnavailable = activeChannelScope === 'workspace' && !workspaceId
   const channelConfigMap = useMemo(() => {
     const map = new Map<string, AiChannelConfig>()
     for (const row of channelConfigs) map.set(row.providerId, row)
     return map
   }, [channelConfigs])
+
+  const resolveScopeSummary = () => {
+    if (!authProfile) return '请先登录后再管理组织级或工作区级渠道。'
+    if (activeChannelScope === 'workspace') {
+      if (!workspaceId) {
+        return '未选择工作区：工作区级保存与校验会被阻止，不会降级保存到组织级。'
+      }
+      return `工作区覆写：保存后仅影响当前工作区 ${workspaceId}，未覆写的渠道继续继承组织级配置。`
+    }
+    return `组织级共享：保存后影响组织 ${effectiveOrganizationId || '-'} 下未覆写的工作区。`
+  }
+
+  const resolveChannelSourceLabel = (config?: AiChannelConfig) => {
+    if (!config) return '未保存'
+    if (config.workspaceId) return '工作区覆写'
+    return activeChannelScope === 'workspace' ? '继承组织级' : '组织级共享'
+  }
 
   useEffect(() => {
     if (!show) return
@@ -196,6 +267,7 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
         apiKey: '',
         model: '',
         path: '',
+        protocol: '',
         temperature: '',
         enabled: true,
         scope: activeChannelScope
@@ -222,24 +294,32 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
             <span className={`capability-badge ${enabled ? 'ok' : 'off'}`}>
               {enabled ? '已接入' : '未接入'}
             </span>
-            <input
-              name={`channelBaseUrl-${row.id}`}
-              value={form.baseUrl}
-              aria-label={`${row.label} Base URL`}
-              onChange={(event) => onUpdateChannelForm(row.id, { baseUrl: event.target.value })}
-              placeholder="Base URL（可选）"
-            />
-            <input
-              name={`channelApiKey-${row.id}`}
-              value={form.apiKey}
-              aria-label={`${row.label} API Key`}
-              onChange={(event) => onUpdateChannelForm(row.id, { apiKey: event.target.value })}
-              placeholder="填写 API Key"
-              type="password"
-              autoComplete="new-password"
-            />
-            {row.id === 'openai-compatible' ? (
-              <>
+            <div
+              className="channel-provider-status"
+              data-testid={`channel-source-${row.id}`}
+            >
+              <span className="channel-provider-chip">{resolveChannelSourceLabel(savedConfig)}</span>
+              <span>{savedConfig?.secretMasked ? '密钥已加密保存' : '未保存密钥'}</span>
+            </div>
+            <div className="channel-control-grid">
+              <input
+                name={`channelBaseUrl-${row.id}`}
+                value={form.baseUrl}
+                aria-label={`${row.label} Base URL`}
+                onChange={(event) => onUpdateChannelForm(row.id, { baseUrl: event.target.value })}
+                placeholder="Base URL（可选）"
+              />
+              <input
+                name={`channelApiKey-${row.id}`}
+                value={form.apiKey}
+                aria-label={`${row.label} API Key`}
+                onChange={(event) => onUpdateChannelForm(row.id, { apiKey: event.target.value })}
+                placeholder="填写 API Key"
+                type="password"
+                autoComplete="new-password"
+              />
+              {row.id === 'openai-compatible' ? (
+                <>
                 <input
                   name={`channelModel-${row.id}`}
                   value={form.model}
@@ -254,6 +334,21 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                   onChange={(event) => onUpdateChannelForm(row.id, { path: event.target.value })}
                   placeholder="兼容路径（默认 /v1/chat/completions）"
                 />
+                <select
+                  name={`channelProtocol-${row.id}`}
+                  value={form.protocol}
+                  aria-label={`${row.label} 协议`}
+                  onChange={(event) =>
+                    onUpdateChannelForm(
+                      row.id,
+                      resolveOpenAiProtocolPatch(event.target.value, form.path)
+                    )
+                  }
+                >
+                  <option value="">自动识别协议</option>
+                  <option value="chat">Chat Completions</option>
+                  <option value="responses">Responses</option>
+                </select>
                 <input
                   name={`channelTemperature-${row.id}`}
                   value={form.temperature}
@@ -263,7 +358,14 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                   }
                   placeholder="temperature（可选，0~2）"
                 />
-              </>
+                </>
+              ) : null}
+            </div>
+            {row.id === 'openai-compatible' ? (
+              <p className="channel-openai-protocol-hint" data-testid="channel-openai-protocol-hint">
+                Chat Completions 使用 messages；Responses 使用 input。留空时根据路径自动识别，
+                `/v1/responses` 会按 Responses 协议发送。
+              </p>
             ) : null}
             <label className="sync-toggle">
               <input
@@ -276,10 +378,16 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
               <span>启用</span>
             </label>
             <div className="lab-inline-actions">
-              <button type="button" onClick={() => onTestChannelConfig(row.id)}>
-                测试
+              <button
+                type="button"
+                id={`btn-test-channel-${row.id}`}
+                onClick={() => onTestChannelConfig(row.id)}
+              >
+                校验配置
               </button>
-              <button type="submit">保存</button>
+              <button type="submit" id={`btn-save-channel-${row.id}`}>
+                保存
+              </button>
             </div>
           </form>
         </div>
@@ -339,6 +447,14 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
           <code className="channel-hint">
             {authProfile ? `当前账号：${authProfile.email}` : '请先登录后再管理渠道'}
           </code>
+        </div>
+
+        <div
+          className={`channel-scope-summary ${workspaceScopeUnavailable ? 'warning' : ''}`}
+          data-testid="channel-scope-summary"
+        >
+          <strong>{activeChannelScope === 'workspace' ? '工作区覆写' : '组织级共享'}</strong>
+          <span>{resolveScopeSummary()}</span>
         </div>
 
         {!authProfile ? (
@@ -495,9 +611,13 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
                       }
                     >
                       <option value="organization">组织级共享</option>
-                      <option value="workspace">工作区覆写</option>
+                      <option value="workspace" disabled={!workspaceId}>
+                        工作区覆写
+                      </option>
                     </select>
-                    <span className="channel-hint">当前工作区：{workspaceId || '未选择'}</span>
+                    <span className="channel-hint">
+                      当前工作区：{workspaceId || '未选择，工作区级操作已阻断'}
+                    </span>
                   </div>
                 </div>
               </div>

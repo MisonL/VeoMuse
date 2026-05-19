@@ -14,11 +14,55 @@ const toNumber = (value: unknown) => {
 interface OpenAiCompatibleResponse {
   id?: string
   operationName?: string
+  output_text?: string
+  output?: Array<{
+    content?: Array<{
+      text?: string
+      type?: string
+    }>
+  }>
   choices?: Array<{
     message?: {
       content?: string
     }
   }>
+}
+
+type OpenAiCompatibleProtocol = 'chat' | 'responses'
+
+const DEFAULT_CHAT_PATH = '/v1/chat/completions'
+const DEFAULT_RESPONSES_PATH = '/v1/responses'
+
+const trimPathSlashes = (path: string) => path.replace(/\/+$/, '') || '/'
+
+const parseEndpointPath = (path: string) => {
+  const raw = path.trim()
+  const isAbsolute = /^https?:\/\//i.test(raw)
+  try {
+    return {
+      isAbsolute,
+      url: new URL(isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`, 'https://veomuse.local')
+    }
+  } catch {
+    return null
+  }
+}
+
+const pathEndsWithEndpoint = (path: string, endpoint: string) => {
+  const parsed = parseEndpointPath(path)
+  if (!parsed) return false
+  return trimPathSlashes(parsed.url.pathname).toLowerCase().endsWith(endpoint)
+}
+
+const replaceEndpoint = (path: string, fromEndpoint: string, toEndpoint: string) => {
+  const parsed = parseEndpointPath(path)
+  if (!parsed) return path
+  const currentPath = trimPathSlashes(parsed.url.pathname)
+  if (!currentPath.toLowerCase().endsWith(fromEndpoint)) return path
+  parsed.url.pathname = `${currentPath.slice(0, currentPath.length - fromEndpoint.length)}${toEndpoint}`
+  return parsed.isAbsolute
+    ? parsed.url.toString()
+    : `${parsed.url.pathname}${parsed.url.search}${parsed.url.hash}`
 }
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
@@ -31,12 +75,66 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
   id = 'openai-compatible'
   name = 'OpenAI 兼容（自定义）'
 
-  private DEFAULT_PATH = '/v1/chat/completions'
-
   private resolveUrl(baseUrl: string, path: string) {
     if (/^https?:\/\//i.test(path)) return new URL(path).toString()
     const safePath = path.startsWith('/') ? path : `/${path}`
     return new URL(`${baseUrl.replace(/\/+$/, '')}${safePath}`).toString()
+  }
+
+  private resolveProtocol(rawProtocol: unknown, path: string): OpenAiCompatibleProtocol {
+    const protocol = String(rawProtocol || '').trim().toLowerCase()
+    if (protocol === 'chat' || protocol === 'chat-completions') return 'chat'
+    if (protocol === 'responses' || protocol === 'response') return 'responses'
+    if (protocol) {
+      throw new Error('OpenAI 兼容渠道 protocol 仅支持 chat 或 responses')
+    }
+    return pathEndsWithEndpoint(path, DEFAULT_RESPONSES_PATH) ? 'responses' : 'chat'
+  }
+
+  private resolvePath(rawPath: unknown, protocol: OpenAiCompatibleProtocol) {
+    const fallback = protocol === 'responses' ? DEFAULT_RESPONSES_PATH : DEFAULT_CHAT_PATH
+    const path = String(rawPath || fallback).trim() || fallback
+    if (protocol === 'responses') return replaceEndpoint(path, DEFAULT_CHAT_PATH, DEFAULT_RESPONSES_PATH)
+    if (protocol === 'chat') return replaceEndpoint(path, DEFAULT_RESPONSES_PATH, DEFAULT_CHAT_PATH)
+    return path
+  }
+
+  private buildPayload(protocol: OpenAiCompatibleProtocol, model: string, prompt: string) {
+    if (protocol === 'responses') {
+      return {
+        model,
+        input: prompt
+      }
+    }
+    return {
+      model,
+      messages: [{ role: 'user', content: prompt }]
+    }
+  }
+
+  private extractResponsesContent(data: OpenAiCompatibleResponse) {
+    if (typeof data?.output_text === 'string' && data.output_text.trim()) {
+      return data.output_text.trim()
+    }
+
+    for (const item of data?.output || []) {
+      for (const content of item.content || []) {
+        if (typeof content.text === 'string' && content.text.trim()) {
+          return content.text.trim()
+        }
+      }
+    }
+    return ''
+  }
+
+  private extractContent(data: OpenAiCompatibleResponse, protocol: OpenAiCompatibleProtocol) {
+    if (protocol === 'responses') {
+      return this.extractResponsesContent(data)
+    }
+
+    const chatContent = data?.choices?.[0]?.message?.content
+    if (typeof chatContent === 'string' && chatContent.trim()) return chatContent.trim()
+    return ''
   }
 
   async generate(
@@ -62,10 +160,23 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
     const model = String(
       channel?.extra?.model || process.env.OPENAI_COMPATIBLE_MODEL || process.env.OPENAI_MODEL || ''
     ).trim()
-    const path =
-      String(
-        channel?.extra?.path || process.env.OPENAI_COMPATIBLE_PATH || this.DEFAULT_PATH
-      ).trim() || this.DEFAULT_PATH
+    const rawPath = channel?.extra?.path || process.env.OPENAI_COMPATIBLE_PATH
+    const rawProtocol = channel?.extra?.protocol || process.env.OPENAI_COMPATIBLE_PROTOCOL
+    let protocol: OpenAiCompatibleProtocol
+    let path = ''
+    try {
+      protocol = this.resolveProtocol(rawProtocol, String(rawPath || ''))
+      path = this.resolvePath(rawPath, protocol)
+    } catch (error: unknown) {
+      return {
+        success: false,
+        status: 'error',
+        operationName: '',
+        message: 'OpenAI 兼容渠道 protocol 配置错误',
+        provider: this.id,
+        error: getErrorMessage(error, 'invalid protocol')
+      }
+    }
 
     const temperature =
       channel?.extra?.temperature !== undefined
@@ -110,10 +221,7 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
           })}`
         : ''
     const prompt = `${promptBase}${multimodalHint}`.trim()
-    const payload: Record<string, unknown> = {
-      model,
-      messages: [{ role: 'user', content: prompt }]
-    }
+    const payload: Record<string, unknown> = this.buildPayload(protocol, model, prompt)
     if (temperature !== null) {
       payload.temperature = Math.min(2, Math.max(0, temperature))
     }
@@ -141,10 +249,10 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
       }
 
       const data = (await response.json()) as OpenAiCompatibleResponse
-      const content = data?.choices?.[0]?.message?.content
+      const content = this.extractContent(data, protocol)
       const message =
-        typeof content === 'string' && content.trim()
-          ? `OpenAI 兼容响应：${content.trim().slice(0, 72)}`
+        content
+          ? `OpenAI 兼容响应：${content.slice(0, 72)}`
           : `OpenAI 兼容模型(${model})调用成功`
 
       return {

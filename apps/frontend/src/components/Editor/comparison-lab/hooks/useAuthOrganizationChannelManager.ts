@@ -234,6 +234,7 @@ export const useAuthOrganizationChannelManager = ({
         apiKey: '',
         model: String(extra.model || ''),
         path: String(extra.path || ''),
+        protocol: String(extra.protocol || ''),
         temperature:
           extra.temperature === undefined || extra.temperature === null
             ? ''
@@ -315,6 +316,14 @@ export const useAuthOrganizationChannelManager = ({
     (providerId: string): ResolvedChannelConfigRequest | null => {
       const form = channelForms[providerId]
       if (!form) return null
+      if (!effectiveOrganizationId) {
+        showToast('请先选择组织', 'info')
+        return null
+      }
+      if (activeChannelScope === 'workspace' && !workspaceId) {
+        showToast('请先选择工作区，再保存或校验工作区级渠道配置', 'warning')
+        return null
+      }
       if (!validateChannelForm(providerId, form, (message) => showToast(message, 'warning'))) {
         return null
       }
@@ -608,6 +617,7 @@ export const useAuthOrganizationChannelManager = ({
           apiKey: patch.apiKey ?? prev[providerId]?.apiKey ?? '',
           model: patch.model ?? prev[providerId]?.model ?? '',
           path: patch.path ?? prev[providerId]?.path ?? '',
+          protocol: patch.protocol ?? prev[providerId]?.protocol ?? '',
           temperature: patch.temperature ?? prev[providerId]?.temperature ?? '',
           enabled: patch.enabled ?? prev[providerId]?.enabled ?? true,
           scope: patch.scope ?? prev[providerId]?.scope ?? activeChannelScope

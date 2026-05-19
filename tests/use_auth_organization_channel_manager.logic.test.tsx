@@ -13,7 +13,10 @@ type AuthManagerController = ReturnType<typeof useAuthOrganizationChannelManager
 
 let latestController: AuthManagerController | null = null
 const stableLoadPolicies = async () => {}
-const stableShowToast = () => {}
+let toastMessages: Array<{ message: string; type?: string }> = []
+const stableShowToast = (message: string, type?: string) => {
+  toastMessages.push({ message, type })
+}
 const stableMarkJourneyStep = () => {}
 const stableReportJourney = async () => true
 const stableResetJourney = () => {}
@@ -32,7 +35,7 @@ const buildAccessToken = () => {
 
 function AuthManagerHarness(props: { workspaceId?: string; showChannelPanel?: boolean }) {
   latestController = useAuthOrganizationChannelManager({
-    workspaceId: props.workspaceId || 'ws_1',
+    workspaceId: props.workspaceId ?? 'ws_1',
     showChannelPanel: props.showChannelPanel || false,
     loadPolicies: stableLoadPolicies,
     showToast: stableShowToast,
@@ -49,6 +52,7 @@ describe('useAuthOrganizationChannelManager 逻辑回归', () => {
   beforeEach(() => {
     cleanup()
     latestController = null
+    toastMessages = []
     clearAuthSession()
     setAccessToken(buildAccessToken())
     setOrganizationId('org_1')
@@ -82,7 +86,8 @@ describe('useAuthOrganizationChannelManager 逻辑回归', () => {
         expect(body.baseUrl).toBe('https://example.com')
         expect(body.apiKey).toBe(fakeApiKey)
         expect(body.extra.model).toBe('gpt-4.1')
-        expect(body.extra.path).toBe('/v1/chat/completions')
+        expect(body.extra.path).toBe('/v1/responses')
+        expect(body.extra.protocol).toBe('responses')
         expect(body.extra.temperature).toBe(0.7)
         return Promise.resolve(new Response(JSON.stringify({ success: true })))
       }
@@ -102,6 +107,7 @@ describe('useAuthOrganizationChannelManager 逻辑回归', () => {
                   extra: {
                     model: 'gpt-4.1',
                     path: '/v1/chat/completions',
+                    protocol: 'responses',
                     temperature: 0.7
                   }
                 }
@@ -136,6 +142,7 @@ describe('useAuthOrganizationChannelManager 逻辑回归', () => {
         apiKey: fakeApiKey,
         model: 'gpt-4.1',
         path: '/v1/chat/completions',
+        protocol: 'responses',
         temperature: '0.7',
         enabled: true,
         scope: 'workspace'
@@ -240,5 +247,93 @@ describe('useAuthOrganizationChannelManager 逻辑回归', () => {
     expect(latestController?.quotaForm.requestLimit).toBe('11')
     expect(latestController?.quotaForm.storageLimitMb).toBe('2')
     expect(latestController?.quotaForm.concurrencyLimit).toBe('3')
+  })
+
+  it('工作区作用域缺少 workspaceId 时应阻止渠道保存且不静默落到组织级', async () => {
+    const fetchMock = mock((input: string | URL, init?: RequestInit) => {
+      const url = String(input)
+      const method = String(init?.method || 'GET').toUpperCase()
+
+      if (url.includes('/api/auth/me')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              success: true,
+              user: { id: 'user_1', email: 'owner@veomuse.local' },
+              organizations: [{ id: 'org_1', name: '组织一' }]
+            })
+          )
+        )
+      }
+
+      if (method === 'PUT' && url.includes('/api/organizations/org_1/channels')) {
+        throw new Error('should not save organization channel from workspace scope')
+      }
+
+      return Promise.resolve(new Response(JSON.stringify({ success: true })))
+    })
+    globalThis.fetch = fetchMock as typeof fetch
+
+    render(<AuthManagerHarness workspaceId="" />)
+
+    await waitFor(() => {
+      expect(latestController?.authProfile?.id).toBe('user_1')
+    })
+
+    await act(async () => {
+      latestController?.setActiveChannelScope('workspace')
+      latestController?.updateChannelForm('openai-compatible', {
+        providerId: 'openai-compatible',
+        baseUrl: 'https://example.com',
+        apiKey: fakeApiKey,
+        model: 'gpt-4.1',
+        path: '/v1/responses',
+        protocol: 'responses',
+        enabled: true,
+        scope: 'workspace'
+      })
+    })
+
+    await act(async () => {
+      await latestController?.saveChannelConfig('openai-compatible')
+    })
+
+    const saveCalls = fetchMock.mock.calls.filter(
+      ([url, init]) =>
+        String(url).includes('/api/organizations/org_1/channels') &&
+        String((init as RequestInit | undefined)?.method || 'GET').toUpperCase() === 'PUT'
+    )
+
+    expect(saveCalls).toHaveLength(0)
+    expect(toastMessages.some((item) => item.message.includes('请先选择工作区'))).toBe(true)
+  })
+
+  it('未选择组织时应阻止渠道校验请求', async () => {
+    clearAuthSession()
+    setAccessToken('')
+    setOrganizationId('')
+    const fetchMock = mock(() => {
+      throw new Error('should not call channel test without organization')
+    })
+    globalThis.fetch = fetchMock as typeof fetch
+
+    render(<AuthManagerHarness showChannelPanel={false} />)
+
+    await act(async () => {
+      latestController?.updateChannelForm('openai-compatible', {
+        providerId: 'openai-compatible',
+        baseUrl: 'https://example.com',
+        apiKey: fakeApiKey,
+        model: 'gpt-4.1',
+        enabled: true
+      })
+    })
+
+    await act(async () => {
+      await latestController?.testChannelConfig('openai-compatible')
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(0)
+    expect(toastMessages.some((item) => item.message.includes('请先选择组织'))).toBe(true)
   })
 })

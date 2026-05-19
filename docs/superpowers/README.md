@@ -36,6 +36,8 @@ using-superpowers -> brainstorming -> writing-plans -> test-driven-development -
 - UI Studio Refinement Design：`docs/superpowers/specs/2026-04-27-ui-studio-refinement-design.md`
 - Nebula Flow WebUI 设计规格：`docs/superpowers/specs/2026-05-17-nebula-flow-webui-design.md`
 - V3.3 可运营交付闭环设计规格：`docs/superpowers/specs/2026-05-18-v3-3-operational-delivery-design.md`
+- OpenAI 兼容渠道协议扩展设计：`docs/superpowers/specs/2026-05-19-openai-compatible-protocols-design.md`
+- 渠道接入模块 UX 审查优化设计：`docs/superpowers/specs/2026-05-19-channel-access-ux-review-design.md`
 
 ## 已落盘计划与记录
 
@@ -43,3 +45,5 @@ using-superpowers -> brainstorming -> writing-plans -> test-driven-development -
 - UI Studio Refinement Implementation Record：`docs/superpowers/plans/2026-04-27-ui-studio-refinement-plan.md`
 - Nebula Flow WebUI 实施记录：`docs/superpowers/plans/2026-05-17-nebula-flow-webui-plan.md`
 - V3.3 可运营交付闭环 Implementation Plan：`docs/superpowers/plans/2026-05-18-v3-3-operational-delivery-plan.md`
+- OpenAI 兼容渠道协议扩展实施记录：`docs/superpowers/plans/2026-05-19-openai-compatible-protocols-plan.md`
+- 渠道接入模块 UX 审查优化实施记录：`docs/superpowers/plans/2026-05-19-channel-access-ux-review-plan.md`

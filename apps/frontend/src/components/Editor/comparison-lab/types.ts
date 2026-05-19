@@ -241,6 +241,7 @@ export interface ChannelFormState {
   apiKey: string
   model: string
   path: string
+  protocol: string
   temperature: string
   enabled: boolean
   scope: 'organization' | 'workspace'

@@ -160,6 +160,59 @@ const resolveErrorMessage = (error: unknown, fallback: string) => {
   return fallback
 }
 
+const OPENAI_COMPATIBLE_CHAT_PATH = '/v1/chat/completions'
+const OPENAI_COMPATIBLE_RESPONSES_PATH = '/v1/responses'
+
+const trimPathSlashes = (path: string) => path.replace(/\/+$/, '') || '/'
+
+const parseOpenAiCompatibleEndpoint = (path: string) => {
+  const raw = path.trim()
+  const isAbsolute = /^https?:\/\//i.test(raw)
+  try {
+    return {
+      isAbsolute,
+      url: new URL(isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`, 'https://veomuse.local')
+    }
+  } catch {
+    return null
+  }
+}
+
+const openAiCompatiblePathEndsWith = (path: string, endpoint: string) => {
+  const parsed = parseOpenAiCompatibleEndpoint(path)
+  if (!parsed) return false
+  return trimPathSlashes(parsed.url.pathname).toLowerCase().endsWith(endpoint)
+}
+
+const replaceOpenAiCompatibleEndpoint = (path: string, fromEndpoint: string, toEndpoint: string) => {
+  const parsed = parseOpenAiCompatibleEndpoint(path)
+  if (!parsed) return path
+  const currentPath = trimPathSlashes(parsed.url.pathname)
+  if (!currentPath.toLowerCase().endsWith(fromEndpoint)) return path
+  parsed.url.pathname = `${currentPath.slice(0, currentPath.length - fromEndpoint.length)}${toEndpoint}`
+  return parsed.isAbsolute
+    ? parsed.url.toString()
+    : `${parsed.url.pathname}${parsed.url.search}${parsed.url.hash}`
+}
+
+const normalizeOpenAiCompatiblePathForProtocol = (path: string, protocol: 'chat' | 'responses') => {
+  if (protocol === 'responses') {
+    return replaceOpenAiCompatibleEndpoint(
+      path,
+      OPENAI_COMPATIBLE_CHAT_PATH,
+      OPENAI_COMPATIBLE_RESPONSES_PATH
+    )
+  }
+  if (protocol === 'chat') {
+    return replaceOpenAiCompatibleEndpoint(
+      path,
+      OPENAI_COMPATIBLE_RESPONSES_PATH,
+      OPENAI_COMPATIBLE_CHAT_PATH
+    )
+  }
+  return path
+}
+
 export class ChannelConfigService {
   static listProviders() {
     return PROVIDERS
@@ -185,8 +238,18 @@ export class ChannelConfigService {
       throw new Error('OpenAI 兼容渠道必须填写 model')
     }
 
-    const rawPath = String(normalized.path || '/v1/chat/completions').trim()
-    let path = rawPath || '/v1/chat/completions'
+    const rawProtocol = String(normalized.protocol || '').trim().toLowerCase()
+    let protocol = rawProtocol
+    if (protocol === 'chat-completions') protocol = 'chat'
+    if (protocol === 'response') protocol = 'responses'
+    if (protocol && protocol !== 'chat' && protocol !== 'responses') {
+      throw new Error('OpenAI 兼容渠道 protocol 仅支持 chat 或 responses')
+    }
+
+    const defaultPath =
+      protocol === 'responses' ? OPENAI_COMPATIBLE_RESPONSES_PATH : OPENAI_COMPATIBLE_CHAT_PATH
+    const rawPath = String(normalized.path || defaultPath).trim()
+    let path = rawPath || defaultPath
     if (/^https?:\/\//i.test(path)) {
       try {
         const parsed = new URL(path)
@@ -201,8 +264,15 @@ export class ChannelConfigService {
       path = `/${path}`
     }
 
+    const resolvedProtocol = (protocol ||
+      (openAiCompatiblePathEndsWith(path, OPENAI_COMPATIBLE_RESPONSES_PATH)
+        ? 'responses'
+        : 'chat')) as 'chat' | 'responses'
+    path = normalizeOpenAiCompatiblePathForProtocol(path, resolvedProtocol)
+
     const next: Record<string, unknown> = {
       ...normalized,
+      protocol: resolvedProtocol,
       path
     }
     if (model) next.model = model
