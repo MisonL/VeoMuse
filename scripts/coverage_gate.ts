@@ -307,6 +307,7 @@ export const runCoverageGate = async (
       cwd: os.tmpdir(),
       env: {
         ...process.env,
+        GITHUB_ACTIONS: 'false',
         NODE_ENV: 'development',
         VEOMUSE_TEST_RUNTIME: '1'
       },
