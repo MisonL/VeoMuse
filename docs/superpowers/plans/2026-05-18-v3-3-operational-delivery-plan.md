@@ -749,6 +749,25 @@ Recorded on 2026-05-19.
 
 ### Task 5: Closure Status
 
-- Local closure is in progress.
-- Final local gates and remote CI results must be recorded in the final handoff after this record is committed and pushed.
-- Real E2E remains a separate credential-gated check and is only complete after `release:gate:real` or external real acceptance runs with real provider credentials.
+- Commit: `584f046 docs record v3.3 operational implementation`
+- Follow-up commits:
+  - `0adb46e test stabilize nebula docker surface guard`
+  - `36ce7fe test align nebula surface viewport`
+  - `5793329 test keep command rail semantic in docker smoke`
+  - `de49193 fix docker compare layout headroom`
+- Final remote CI:
+  - `CI · Security Secrets Scan` run `26069780243`: success.
+  - `CI · Quality Gate` run `26069780244`: success.
+  - `Docker Delivery` job `76648663367`: success, including `Run docker UI smoke`.
+- Final local verification:
+  - `bun run release:gate` passed before push.
+  - `bun run build` passed after the final compare-layout headroom fix.
+  - `bun run docker:up` rebuilt and reported redis, backend and frontend healthy.
+  - `PLAYWRIGHT_BASE_URL=http://127.0.0.1:18081 PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:18081 bunx playwright test -c playwright.docker.config.ts --project=docker-smoke-chromium --workers=1 --retries=0 tests/e2e/docker/all-ui-surfaces.spec.ts -g "Docker 实验室 compare 模式"` passed.
+  - `bun run docker:ui-smoke -- --workers=1 --retries=0` passed with 6/6 tests.
+  - `bun run scripts/docker_smoke_check.ts --keep-up --no-build` passed against `http://127.0.0.1:18081`.
+  - `bun run acceptance:deploy -- --base-url http://127.0.0.1:18081` passed and wrote `artifacts/deploy-acceptance/2026-05-19T01-19-08-262Z/summary.json`.
+  - `git diff --check` passed before each committed code/docs change.
+- Real E2E status:
+  - `bun run release:real:precheck` failed fast because `GEMINI_API_KEYS` is not configured.
+  - Real E2E remains credential-gated and is not marked complete until `release:gate:real` or external real acceptance runs with real provider credentials.
