@@ -9,6 +9,7 @@ VeoMuse 是一个基于 Bun Monorepo 的 AI 视频创作与协作平台，覆盖
 - Superpowers 入口：[docs/superpowers/README.md](docs/superpowers/README.md)
 - 部署说明：[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 - 发布检查清单：[docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
+- 运营证据索引：[docs/OPERATIONAL_EVIDENCE.md](docs/OPERATIONAL_EVIDENCE.md)
 - 核心能力清单：[docs/CORE_FEATURES.md](docs/CORE_FEATURES.md)
 - API 说明：[docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md)
 - 前端测试策略：[docs/FRONTEND_TEST_STRATEGY.md](docs/FRONTEND_TEST_STRATEGY.md)

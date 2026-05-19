@@ -46,6 +46,8 @@ E2E_REAL_CHANNELS=true bun run acceptance:real -- --base-url https://veomuse.exa
 - `artifacts/deploy-acceptance/<timestamp>/summary.json`
 - `artifacts/real-acceptance/<timestamp>/summary.json`
 
+证据索引与跳过口径见：`docs/OPERATIONAL_EVIDENCE.md`。
+
 ## 4. 清理
 
 ```bash
