@@ -767,6 +767,8 @@ Recorded on 2026-05-19.
   - `bun run docker:ui-smoke -- --workers=1 --retries=0` passed with 6/6 tests.
   - `bun run scripts/docker_smoke_check.ts --keep-up --no-build` passed against `http://127.0.0.1:18081`.
   - `bun run acceptance:deploy -- --base-url http://127.0.0.1:18081` passed and wrote `artifacts/deploy-acceptance/2026-05-19T01-19-08-262Z/summary.json`.
+  - `bun test tests/db_repair_drill_script.test.ts --max-concurrency 1` passed with 2/2 tests.
+  - `bun run drill:db-repair` passed and wrote `data/drills/db-repair-drill-2026-05-19T01-33-17-081Z.json` with `repairStatus=repaired`, `copiedRows=9505` and `afterStatus=ok`.
   - `git diff --check` passed before each committed code/docs change.
 - Real E2E status:
   - `bun run release:real:precheck` failed fast because `GEMINI_API_KEYS` is not configured.
