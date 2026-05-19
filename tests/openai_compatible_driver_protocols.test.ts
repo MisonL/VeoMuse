@@ -59,9 +59,7 @@ describe('OpenAI 兼容渠道协议支持', () => {
     expect(result.operationName).toBe('chatcmpl_1')
     expect(calls[0].url).toBe('https://mock-openai.local/v1/chat/completions')
     expect(calls[0].body.model).toBe('gpt-compatible')
-    expect(calls[0].body.messages).toEqual([
-      { role: 'user', content: '生成一段视频提示词' }
-    ])
+    expect(calls[0].body.messages).toEqual([{ role: 'user', content: '生成一段视频提示词' }])
     expect(calls[0].body.input).toBeUndefined()
   })
 
@@ -235,9 +233,7 @@ describe('OpenAI 兼容渠道协议支持', () => {
 
     expect(result.status).toBe('ok')
     expect(calls[0].url).toBe('https://mock-openai.local/v1/responses-log')
-    expect(calls[0].body.messages).toEqual([
-      { role: 'user', content: '生成一段视频提示词' }
-    ])
+    expect(calls[0].body.messages).toEqual([{ role: 'user', content: '生成一段视频提示词' }])
     expect(calls[0].body.input).toBeUndefined()
   })
 

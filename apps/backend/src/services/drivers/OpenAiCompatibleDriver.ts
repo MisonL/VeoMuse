@@ -41,7 +41,10 @@ const parseEndpointPath = (path: string) => {
   try {
     return {
       isAbsolute,
-      url: new URL(isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`, 'https://veomuse.local')
+      url: new URL(
+        isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`,
+        'https://veomuse.local'
+      )
     }
   } catch {
     return null
@@ -82,7 +85,9 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
   }
 
   private resolveProtocol(rawProtocol: unknown, path: string): OpenAiCompatibleProtocol {
-    const protocol = String(rawProtocol || '').trim().toLowerCase()
+    const protocol = String(rawProtocol || '')
+      .trim()
+      .toLowerCase()
     if (protocol === 'chat' || protocol === 'chat-completions') return 'chat'
     if (protocol === 'responses' || protocol === 'response') return 'responses'
     if (protocol) {
@@ -94,7 +99,8 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
   private resolvePath(rawPath: unknown, protocol: OpenAiCompatibleProtocol) {
     const fallback = protocol === 'responses' ? DEFAULT_RESPONSES_PATH : DEFAULT_CHAT_PATH
     const path = String(rawPath || fallback).trim() || fallback
-    if (protocol === 'responses') return replaceEndpoint(path, DEFAULT_CHAT_PATH, DEFAULT_RESPONSES_PATH)
+    if (protocol === 'responses')
+      return replaceEndpoint(path, DEFAULT_CHAT_PATH, DEFAULT_RESPONSES_PATH)
     if (protocol === 'chat') return replaceEndpoint(path, DEFAULT_RESPONSES_PATH, DEFAULT_CHAT_PATH)
     return path
   }
@@ -250,10 +256,9 @@ export class OpenAiCompatibleDriver implements VideoModelDriver {
 
       const data = (await response.json()) as OpenAiCompatibleResponse
       const content = this.extractContent(data, protocol)
-      const message =
-        content
-          ? `OpenAI 兼容响应：${content.slice(0, 72)}`
-          : `OpenAI 兼容模型(${model})调用成功`
+      const message = content
+        ? `OpenAI 兼容响应：${content.slice(0, 72)}`
+        : `OpenAI 兼容模型(${model})调用成功`
 
       return {
         success: true,

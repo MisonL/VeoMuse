@@ -171,7 +171,10 @@ const parseOpenAiCompatibleEndpoint = (path: string) => {
   try {
     return {
       isAbsolute,
-      url: new URL(isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`, 'https://veomuse.local')
+      url: new URL(
+        isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`,
+        'https://veomuse.local'
+      )
     }
   } catch {
     return null
@@ -184,7 +187,11 @@ const openAiCompatiblePathEndsWith = (path: string, endpoint: string) => {
   return trimPathSlashes(parsed.url.pathname).toLowerCase().endsWith(endpoint)
 }
 
-const replaceOpenAiCompatibleEndpoint = (path: string, fromEndpoint: string, toEndpoint: string) => {
+const replaceOpenAiCompatibleEndpoint = (
+  path: string,
+  fromEndpoint: string,
+  toEndpoint: string
+) => {
   const parsed = parseOpenAiCompatibleEndpoint(path)
   if (!parsed) return path
   const currentPath = trimPathSlashes(parsed.url.pathname)
@@ -238,7 +245,9 @@ export class ChannelConfigService {
       throw new Error('OpenAI 兼容渠道必须填写 model')
     }
 
-    const rawProtocol = String(normalized.protocol || '').trim().toLowerCase()
+    const rawProtocol = String(normalized.protocol || '')
+      .trim()
+      .toLowerCase()
     let protocol = rawProtocol
     if (protocol === 'chat-completions') protocol = 'chat'
     if (protocol === 'response') protocol = 'responses'

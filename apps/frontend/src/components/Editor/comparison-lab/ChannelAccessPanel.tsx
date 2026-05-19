@@ -75,14 +75,21 @@ const parseOpenAiCompatibleEndpoint = (path: string) => {
   try {
     return {
       isAbsolute,
-      url: new URL(isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`, 'https://veomuse.local')
+      url: new URL(
+        isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`,
+        'https://veomuse.local'
+      )
     }
   } catch {
     return null
   }
 }
 
-const replaceOpenAiCompatibleEndpoint = (path: string, fromEndpoint: string, toEndpoint: string) => {
+const replaceOpenAiCompatibleEndpoint = (
+  path: string,
+  fromEndpoint: string,
+  toEndpoint: string
+) => {
   const parsed = parseOpenAiCompatibleEndpoint(path)
   if (!parsed) return path
   const currentPath = trimPathSlashes(parsed.url.pathname)
@@ -294,11 +301,10 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
             <span className={`capability-badge ${enabled ? 'ok' : 'off'}`}>
               {enabled ? '已接入' : '未接入'}
             </span>
-            <div
-              className="channel-provider-status"
-              data-testid={`channel-source-${row.id}`}
-            >
-              <span className="channel-provider-chip">{resolveChannelSourceLabel(savedConfig)}</span>
+            <div className="channel-provider-status" data-testid={`channel-source-${row.id}`}>
+              <span className="channel-provider-chip">
+                {resolveChannelSourceLabel(savedConfig)}
+              </span>
               <span>{savedConfig?.secretMasked ? '密钥已加密保存' : '未保存密钥'}</span>
             </div>
             <div className="channel-control-grid">
@@ -320,49 +326,52 @@ const ChannelAccessPanel: React.FC<ChannelAccessPanelProps> = ({
               />
               {row.id === 'openai-compatible' ? (
                 <>
-                <input
-                  name={`channelModel-${row.id}`}
-                  value={form.model}
-                  aria-label={`${row.label} 模型 ID`}
-                  onChange={(event) => onUpdateChannelForm(row.id, { model: event.target.value })}
-                  placeholder="模型 ID（必填）"
-                />
-                <input
-                  name={`channelPath-${row.id}`}
-                  value={form.path}
-                  aria-label={`${row.label} 兼容路径`}
-                  onChange={(event) => onUpdateChannelForm(row.id, { path: event.target.value })}
-                  placeholder="兼容路径（默认 /v1/chat/completions）"
-                />
-                <select
-                  name={`channelProtocol-${row.id}`}
-                  value={form.protocol}
-                  aria-label={`${row.label} 协议`}
-                  onChange={(event) =>
-                    onUpdateChannelForm(
-                      row.id,
-                      resolveOpenAiProtocolPatch(event.target.value, form.path)
-                    )
-                  }
-                >
-                  <option value="">自动识别协议</option>
-                  <option value="chat">Chat Completions</option>
-                  <option value="responses">Responses</option>
-                </select>
-                <input
-                  name={`channelTemperature-${row.id}`}
-                  value={form.temperature}
-                  aria-label={`${row.label} temperature`}
-                  onChange={(event) =>
-                    onUpdateChannelForm(row.id, { temperature: event.target.value })
-                  }
-                  placeholder="temperature（可选，0~2）"
-                />
+                  <input
+                    name={`channelModel-${row.id}`}
+                    value={form.model}
+                    aria-label={`${row.label} 模型 ID`}
+                    onChange={(event) => onUpdateChannelForm(row.id, { model: event.target.value })}
+                    placeholder="模型 ID（必填）"
+                  />
+                  <input
+                    name={`channelPath-${row.id}`}
+                    value={form.path}
+                    aria-label={`${row.label} 兼容路径`}
+                    onChange={(event) => onUpdateChannelForm(row.id, { path: event.target.value })}
+                    placeholder="兼容路径（默认 /v1/chat/completions）"
+                  />
+                  <select
+                    name={`channelProtocol-${row.id}`}
+                    value={form.protocol}
+                    aria-label={`${row.label} 协议`}
+                    onChange={(event) =>
+                      onUpdateChannelForm(
+                        row.id,
+                        resolveOpenAiProtocolPatch(event.target.value, form.path)
+                      )
+                    }
+                  >
+                    <option value="">自动识别协议</option>
+                    <option value="chat">Chat Completions</option>
+                    <option value="responses">Responses</option>
+                  </select>
+                  <input
+                    name={`channelTemperature-${row.id}`}
+                    value={form.temperature}
+                    aria-label={`${row.label} temperature`}
+                    onChange={(event) =>
+                      onUpdateChannelForm(row.id, { temperature: event.target.value })
+                    }
+                    placeholder="temperature（可选，0~2）"
+                  />
                 </>
               ) : null}
             </div>
             {row.id === 'openai-compatible' ? (
-              <p className="channel-openai-protocol-hint" data-testid="channel-openai-protocol-hint">
+              <p
+                className="channel-openai-protocol-hint"
+                data-testid="channel-openai-protocol-hint"
+              >
                 Chat Completions 使用 messages；Responses 使用 input。留空时根据路径自动识别，
                 `/v1/responses` 会按 Responses 协议发送。
               </p>

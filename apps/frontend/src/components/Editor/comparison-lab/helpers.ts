@@ -13,14 +13,21 @@ const parseOpenAiCompatibleEndpoint = (path: string) => {
   try {
     return {
       isAbsolute,
-      url: new URL(isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`, 'https://veomuse.local')
+      url: new URL(
+        isAbsolute ? raw : raw.startsWith('/') ? raw : `/${raw}`,
+        'https://veomuse.local'
+      )
     }
   } catch {
     return null
   }
 }
 
-const replaceOpenAiCompatibleEndpoint = (path: string, fromEndpoint: string, toEndpoint: string) => {
+const replaceOpenAiCompatibleEndpoint = (
+  path: string,
+  fromEndpoint: string,
+  toEndpoint: string
+) => {
   const parsed = parseOpenAiCompatibleEndpoint(path)
   if (!parsed) return path
   const currentPath = trimPathSlashes(parsed.url.pathname)

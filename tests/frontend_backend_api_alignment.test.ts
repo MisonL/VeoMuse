@@ -4,7 +4,9 @@ import path from 'path'
 
 const FRONTEND_SRC_DIR = path.resolve(process.cwd(), 'apps/frontend/src')
 const ROUTE_REGISTRY_PATH = path.resolve(process.cwd(), 'docs/api-routes.generated.json')
-const FRONTEND_API_HELPER_PATH = path.normalize('apps/frontend/src/components/Editor/comparison-lab/api.ts')
+const FRONTEND_API_HELPER_PATH = path.normalize(
+  'apps/frontend/src/components/Editor/comparison-lab/api.ts'
+)
 
 const listSourceFiles = async (dir: string): Promise<string[]> => {
   const entries = await fs.readdir(dir, { withFileTypes: true })
@@ -45,9 +47,7 @@ const endpointMatchesRoute = (endpoint: string, route: string) => {
   const normalizedRoute = normalizeDynamicEndpoint(route)
   if (normalizedEndpoint === normalizedRoute) return true
   const routePattern = new RegExp(
-    `^${normalizedRoute
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      .replace(/:param/g, '[^/]+')}$`
+    `^${normalizedRoute.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/:param/g, '[^/]+')}$`
   )
   return routePattern.test(normalizedEndpoint)
 }
@@ -74,7 +74,9 @@ const collectFrontendApiEndpoints = async () => {
         addEndpoint(file, match[1] || '', 'literal')
       }
 
-      for (const match of content.matchAll(/requestV4(?:<[\s\S]*?>)?\s*\(\s*([`'"])([\s\S]*?)\1/g)) {
+      for (const match of content.matchAll(
+        /requestV4(?:<[\s\S]*?>)?\s*\(\s*([`'"])([\s\S]*?)\1/g
+      )) {
         addEndpoint(file, normalizeV4Endpoint(match[2] || ''), 'requestV4')
       }
     })

@@ -159,9 +159,7 @@ describe('ChannelAccessPanel 键盘可访问性', () => {
 
     expect(view.getByTestId('channel-scope-summary').textContent).toContain('工作区覆写')
     expect(view.getByTestId('channel-scope-summary').textContent).toContain('ws_1')
-    expect(view.getByTestId('channel-source-openai-compatible').textContent).toContain(
-      '继承组织级'
-    )
+    expect(view.getByTestId('channel-source-openai-compatible').textContent).toContain('继承组织级')
     expect(view.getAllByText('校验配置').length).toBeGreaterThan(0)
     expect(document.getElementById('btn-test-channel-openai-compatible')?.textContent).toContain(
       '校验配置'
