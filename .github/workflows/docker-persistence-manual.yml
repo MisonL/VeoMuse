@@ -12,8 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+      - name: Configure git defaults
+        run: git config --global init.defaultBranch main
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -23,12 +26,13 @@ jobs:
 
       - name: Prepare drill env
         run: |
+          secret_encryption_key="$(printf '%s' "ci-secret-encryption-key:${GITHUB_RUN_ID}:${GITHUB_RUN_ATTEMPT}" | sha256sum | awk '{print $1}')"
           cat > .env <<'EOF'
           REDIS_PASSWORD=ci-redis-password
           JWT_SECRET=ci-jwt-secret-please-change
-          SECRET_ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
           ADMIN_TOKEN=ci-admin-token
           EOF
+          printf 'SECRET_ENCRYPTION_KEY=%s\n' "${secret_encryption_key}" >> .env
 
       - name: Run docker persistence drill
         run: |
@@ -44,7 +48,7 @@ jobs:
 
       - name: Upload persistence drill artifacts
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docker-persistence-drill-artifacts
           path: |
