@@ -741,6 +741,9 @@ Recorded on 2026-05-19.
   - `bun run docker:ui-smoke -- --workers=1 --retries=0` passed with 6/6 tests.
   - `bun test tests/docker_ui_smoke_script.test.ts --max-concurrency 1` passed.
   - `git diff --check` passed.
+- Remote CI follow-up:
+  - First push reached Release Gate success, then Docker Delivery failed on the new Nebula core surface spec because the hosted runner rendered the top Director Flow bus with a 9px scroll/client width delta.
+  - The Docker spec tolerance was widened to 12px for these small Nebula bus surfaces while still preserving visibility, `data-visual-system`, and no-fatal-browser-signal checks.
 
 ### Task 5: Closure Status
 

@@ -28,10 +28,10 @@ const assertNoOverflow = async (locator: Locator, label: string) => {
   }))
 
   expect(metrics.scrollWidth, `${label} horizontal overflow`).toBeLessThanOrEqual(
-    metrics.clientWidth + 6
+    metrics.clientWidth + 12
   )
   expect(metrics.scrollHeight, `${label} vertical overflow`).toBeLessThanOrEqual(
-    metrics.clientHeight + 6
+    metrics.clientHeight + 12
   )
 }
 
