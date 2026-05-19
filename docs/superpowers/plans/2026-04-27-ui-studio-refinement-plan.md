@@ -13,6 +13,7 @@ This record closes the UI Studio Refinement pass that moved the default deployed
 ### Task 1: Studio Layout Contract
 
 **Files:**
+
 - Modify: `tests/e2e/regression/layout-density.spec.ts`
 
 **Result:**
@@ -28,6 +29,7 @@ The test was introduced before the visual correction and then used as the regres
 ### Task 2: Dark Studio Tokens
 
 **Files:**
+
 - Modify: `apps/frontend/src/theme.css`
 
 **Result:**
@@ -39,6 +41,7 @@ The test was introduced before the visual correction and then used as the regres
 ### Task 3: Workspace Chrome Flattening
 
 **Files:**
+
 - Modify: `apps/frontend/src/App.css`
 
 **Result:**
@@ -54,6 +57,7 @@ Regression gate: `bun run e2e:regression -- tests/e2e/regression/layout-density.
 ### Task 4: Verification and Redeploy
 
 **Files:**
+
 - No additional files expected.
 
 **Local gates:**

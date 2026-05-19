@@ -17,14 +17,14 @@ VeoMuse 是一个基于 Bun Monorepo 的 AI 视频创作与协作平台，覆盖
 
 ## 技术栈
 
-| 领域 | 选型 |
-| --- | --- |
-| Runtime | Bun `1.3.9` |
-| Frontend | React `19` + Vite |
-| Backend | Elysia |
-| Data | SQLite + Redis |
-| Testing | Bun Test + Playwright |
-| Deploy | Docker Compose + Nginx |
+| 领域     | 选型                   |
+| -------- | ---------------------- |
+| Runtime  | Bun `1.3.9`            |
+| Frontend | React `19` + Vite      |
+| Backend  | Elysia                 |
+| Data     | SQLite + Redis         |
+| Testing  | Bun Test + Playwright  |
+| Deploy   | Docker Compose + Nginx |
 
 ## 仓库结构
 
@@ -72,18 +72,18 @@ bun run dev
 
 ## 常用命令
 
-| 目标 | 命令 |
-| --- | --- |
-| 本地开发 | `bun run dev` |
-| 构建 | `bun run build` |
-| Lint | `bun run lint` |
-| 测试 | `bun run test` |
-| 覆盖率门禁 | `bun run test:coverage` |
-| API 契约守卫 | `bun run quality:api-contract` |
-| Docker 烟测 | `bun run docker:smoke` |
-| Docker UI 烟测 | `bun run docker:ui-smoke` |
-| 发布门禁 | `bun run release:gate` |
-| 工作区清理 | `bun run clean` |
+| 目标           | 命令                           |
+| -------------- | ------------------------------ |
+| 本地开发       | `bun run dev`                  |
+| 构建           | `bun run build`                |
+| Lint           | `bun run lint`                 |
+| 测试           | `bun run test`                 |
+| 覆盖率门禁     | `bun run test:coverage`        |
+| API 契约守卫   | `bun run quality:api-contract` |
+| Docker 烟测    | `bun run docker:smoke`         |
+| Docker UI 烟测 | `bun run docker:ui-smoke`      |
+| 发布门禁       | `bun run release:gate`         |
+| 工作区清理     | `bun run clean`                |
 
 ## 发布与部署
 

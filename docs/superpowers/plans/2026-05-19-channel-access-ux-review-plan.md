@@ -13,6 +13,7 @@
 ## Task 1: RED 测试
 
 **Files:**
+
 - Modify: `tests/channel_access_panel_accessibility.dom.test.tsx`
 - Modify: `tests/use_auth_organization_channel_manager.logic.test.tsx`
 
@@ -23,6 +24,7 @@
 ## Task 2: 实现交互与业务逻辑
 
 **Files:**
+
 - Modify: `apps/frontend/src/components/Editor/comparison-lab/ChannelAccessPanel.tsx`
 - Modify: `apps/frontend/src/components/Editor/comparison-lab/hooks/useAuthOrganizationChannelManager.ts`
 
@@ -36,6 +38,7 @@
 ## Task 3: 视觉层级优化
 
 **Files:**
+
 - Modify: `apps/frontend/src/components/Editor/ComparisonLab.css`
 
 - [x] 增加渠道面板顶部摘要、渠道状态条、字段网格、OpenAI 提示卡样式。
@@ -44,6 +47,7 @@
 ## Task 4: 验证与记录
 
 **Files:**
+
 - Modify: `docs/superpowers/README.md`
 - Modify: `docs/superpowers/plans/2026-05-19-channel-access-ux-review-plan.md`
 

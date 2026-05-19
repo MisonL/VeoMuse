@@ -34,15 +34,15 @@ docker compose -f config/docker/docker-compose.yml ps
 
 ## 核心环境变量
 
-| Key | Default | Note |
-| --- | --- | --- |
-| `PORT` | `33117` | 后端端口 |
-| `REDIS_PASSWORD` | required | Redis 口令 |
-| `UPLOADS_PATH` | `/app/uploads` | 上传与导出根目录 |
-| `VEOMUSE_DB_PATH` | `/app/data/veomuse.sqlite` | SQLite 数据路径 |
-| `JWT_SECRET` | empty | 生产环境必填 |
-| `SECRET_ENCRYPTION_KEY` | empty | 生产环境必填 |
-| `ADMIN_TOKEN` | empty | 管理接口鉴权 |
+| Key                     | Default                    | Note             |
+| ----------------------- | -------------------------- | ---------------- |
+| `PORT`                  | `33117`                    | 后端端口         |
+| `REDIS_PASSWORD`        | required                   | Redis 口令       |
+| `UPLOADS_PATH`          | `/app/uploads`             | 上传与导出根目录 |
+| `VEOMUSE_DB_PATH`       | `/app/data/veomuse.sqlite` | SQLite 数据路径  |
+| `JWT_SECRET`            | empty                      | 生产环境必填     |
+| `SECRET_ENCRYPTION_KEY` | empty                      | 生产环境必填     |
+| `ADMIN_TOKEN`           | empty                      | 管理接口鉴权     |
 
 ## Docker 验证
 

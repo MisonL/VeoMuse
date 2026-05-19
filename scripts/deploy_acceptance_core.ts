@@ -50,12 +50,7 @@ export const LAB_ENTRY_MARKERS = [
   '创意闭环',
   '协作平台'
 ] as const
-export const TELEMETRY_ENTRY_MARKERS = [
-  '系统监控',
-  '系统监控摘要',
-  '展开系统监控',
-  '监控'
-] as const
+export const TELEMETRY_ENTRY_MARKERS = ['系统监控', '系统监控摘要', '展开系统监控', '监控'] as const
 
 export const normalizeBaseUrl = (input: string) => {
   if (!input.endsWith('/')) return input

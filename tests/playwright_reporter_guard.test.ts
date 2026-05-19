@@ -4,8 +4,7 @@ import path from 'path'
 
 const repoPath = process.cwd()
 
-const readConfig = (fileName: string) =>
-  readFileSync(path.resolve(repoPath, fileName), 'utf8')
+const readConfig = (fileName: string) => readFileSync(path.resolve(repoPath, fileName), 'utf8')
 
 describe('Playwright CI reporter 守卫', () => {
   it.each(['playwright.config.ts', 'playwright.docker.config.ts'])(

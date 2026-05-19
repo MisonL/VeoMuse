@@ -69,7 +69,9 @@ describe('superpowers 与 TDD 工作流文档守卫', () => {
 
   it('superpowers README 索引名称应匹配目标文档标题', () => {
     const readme = readDoc('docs/superpowers/README.md')
-    const links = [...readme.matchAll(/- ([^：\n]+)：`(docs\/superpowers\/(?:specs|plans)\/[^`]+\.md)`/g)]
+    const links = [
+      ...readme.matchAll(/- ([^：\n]+)：`(docs\/superpowers\/(?:specs|plans)\/[^`]+\.md)`/g)
+    ]
 
     expect(links.length).toBeGreaterThan(0)
 

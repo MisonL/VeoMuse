@@ -1,6 +1,7 @@
 node_modules
 .git
 .github
+.worktrees
 .DS_Store
 *.log
 
@@ -8,6 +9,10 @@ data
 uploads
 dist
 build
+artifacts
+coverage
+playwright-report
+test-results
 
 conductor
 docs

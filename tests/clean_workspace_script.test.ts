@@ -28,7 +28,12 @@ describe('仓库清理脚本守卫', () => {
   it('clean_workspace 应清理 uploads 下所有运行期产物但保留目录骨架', () => {
     const source = readRootFile('scripts/clean_workspace.ts')
 
-    const requiredUploadTargets = ['uploads/imports', 'uploads/workspace', 'uploads/generated', 'uploads/audio']
+    const requiredUploadTargets = [
+      'uploads/imports',
+      'uploads/workspace',
+      'uploads/generated',
+      'uploads/audio'
+    ]
 
     for (const target of requiredUploadTargets) {
       expect(source).toContain(target)
@@ -71,14 +76,20 @@ describe('仓库清理脚本守卫', () => {
       await writeFile(path.join(tempRoot, 'uploads/imports/a.txt'), 'runtime', 'utf8')
       await writeFile(path.join(tempRoot, 'uploads/workspace/a.txt'), 'runtime', 'utf8')
 
-      const result = spawnSync(process.execPath, [path.resolve('scripts/clean_workspace.ts'), '--runtime-only'], {
-        cwd: tempRoot,
-        encoding: 'utf8'
-      })
+      const result = spawnSync(
+        process.execPath,
+        [path.resolve('scripts/clean_workspace.ts'), '--runtime-only'],
+        {
+          cwd: tempRoot,
+          encoding: 'utf8'
+        }
+      )
 
       expect(result.status, result.stderr).toBe(0)
       expect(await readFile(path.join(tempRoot, 'node_modules/keep.txt'), 'utf8')).toBe('keep')
-      expect(await readFile(path.join(tempRoot, 'apps/frontend/dist/bundle.js'), 'utf8')).toBe('build')
+      expect(await readFile(path.join(tempRoot, 'apps/frontend/dist/bundle.js'), 'utf8')).toBe(
+        'build'
+      )
       expect(await readFile(path.join(tempRoot, 'uploads/.gitkeep'), 'utf8')).toBe('')
       expect(Bun.file(path.join(tempRoot, 'uploads/image.jpg')).exists()).resolves.toBe(false)
       expect(Bun.file(path.join(tempRoot, 'uploads/imports/a.txt')).exists()).resolves.toBe(false)
