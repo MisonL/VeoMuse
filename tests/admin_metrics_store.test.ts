@@ -25,6 +25,14 @@ const importStoreModule = async () =>
     `../apps/frontend/src/store/adminMetricsStore.ts?case=${Date.now()}-${Math.random()}`
   )) as AdminMetricsModule
 
+const waitForCondition = async (condition: () => boolean) => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (condition()) return
+    await Promise.resolve()
+  }
+  throw new Error('condition was not met before async work drained')
+}
+
 describe('AdminMetricsStore 轮询退避策略', () => {
   const originalWindow = (globalThis as any).window
   const originalDocument = (globalThis as any).document
@@ -89,6 +97,19 @@ describe('AdminMetricsStore 轮询退避策略', () => {
     expect(state.failureStreak).toBe(0)
   })
 
+  it('已有错误时缺少 admin token 不应覆盖原始错误', async () => {
+    storeModule.useAdminMetricsStore.setState({
+      error: 'previous failure',
+      failureStreak: 3
+    })
+
+    await expect(storeModule.useAdminMetricsStore.getState().refreshNow()).resolves.toBe(false)
+
+    const state = storeModule.useAdminMetricsStore.getState()
+    expect(state.error).toBe('previous failure')
+    expect(state.failureStreak).toBe(0)
+  })
+
   it('并发 refreshNow 应复用同一 in-flight 请求并只触发一次 fetch', async () => {
     localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, 'admin-token')
     let resolveFetch: ((response: Response) => void) | null = null
@@ -106,6 +127,7 @@ describe('AdminMetricsStore 轮询退避策略', () => {
 
     expect(typeof (p1 as Promise<boolean>).then).toBe('function')
     expect(typeof (p2 as Promise<boolean>).then).toBe('function')
+    await waitForCondition(() => fetchMock.mock.calls.length === 1)
     expect(fetchMock).toHaveBeenCalledTimes(1)
 
     resolveFetch?.(
@@ -126,6 +148,29 @@ describe('AdminMetricsStore 轮询退避策略', () => {
     expect(state.error).toBe('')
   })
 
+  it('成功刷新应在 renderLoad 非数值时回落为 0 并截断历史长度', async () => {
+    localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, 'admin-token')
+    const longHistory = Array.from({ length: 24 }, (_, index) => index + 1)
+    storeModule.useAdminMetricsStore.setState({
+      renderLoadHistory: longHistory
+    })
+    global.fetch = mock(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ system: { renderLoad: Number.NaN } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+    ) as any
+
+    await expect(storeModule.useAdminMetricsStore.getState().refreshNow()).resolves.toBe(true)
+
+    const history = storeModule.useAdminMetricsStore.getState().renderLoadHistory
+    expect(history).toHaveLength(24)
+    expect(history.at(-1)).toBe(0)
+    expect(history[0]).toBe(2)
+  })
+
   it('轮询失败后应按 hidden 因子放大下一次退避间隔', async () => {
     localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, 'admin-token')
     Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
@@ -139,13 +184,37 @@ describe('AdminMetricsStore 轮询退避策略', () => {
     globalThis.clearTimeout = (() => {}) as typeof clearTimeout
 
     const unsubscribe = storeModule.subscribeAdminMetricsPolling()
-    await Promise.resolve()
-    await Promise.resolve()
+    await waitForCondition(() => capturedDelay.length > 0)
     unsubscribe()
 
     const expectedDelay = storeModule.computeMetricsPollDelay(1) * 4
     expect(capturedDelay.includes(expectedDelay)).toBe(true)
     expect(storeModule.useAdminMetricsStore.getState().error).toContain('network down')
+  })
+
+  it('重复订阅应复用轮询并在最后解除订阅时停止', async () => {
+    localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, 'admin-token')
+    global.fetch = mock(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ system: { renderLoad: 12 } }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+    ) as any
+    globalThis.setTimeout = ((_: TimerHandler, __?: number) => 1 as any) as typeof setTimeout
+    globalThis.clearTimeout = (() => {}) as typeof clearTimeout
+
+    const unsubscribeA = storeModule.subscribeAdminMetricsPolling()
+    const unsubscribeB = storeModule.subscribeAdminMetricsPolling()
+    await waitForCondition(() => (global.fetch as ReturnType<typeof mock>).mock.calls.length === 1)
+
+    expect(storeModule.useAdminMetricsStore.getState().isPolling).toBe(true)
+    unsubscribeA()
+    expect(storeModule.useAdminMetricsStore.getState().isPolling).toBe(true)
+    unsubscribeB()
+    expect(storeModule.useAdminMetricsStore.getState().isPolling).toBe(false)
+    expect(storeModule.useAdminMetricsStore.getState().failureStreak).toBe(0)
   })
 
   it('失败后恢复成功应清理错误并重置 failureStreak', async () => {

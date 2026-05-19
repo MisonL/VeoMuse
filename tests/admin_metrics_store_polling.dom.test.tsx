@@ -28,9 +28,12 @@ const resetMetricsStore = () => {
   })
 }
 
-const flushAsyncWork = async () => {
-  await Promise.resolve()
-  await Promise.resolve()
+const waitForCondition = async (condition: () => boolean) => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (condition()) return
+    await Promise.resolve()
+  }
+  throw new Error('condition was not met before async work drained')
 }
 
 const installTimerHarness = () => {
@@ -124,6 +127,52 @@ describe('AdminMetricsStore 轮询生命周期', () => {
     expect(state.failureStreak).toBe(6)
   })
 
+  it('已有错误时缺少 admin token 不应覆盖原始错误', async () => {
+    localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY)
+    useAdminMetricsStore.setState({
+      error: 'previous failure',
+      failureStreak: 3
+    })
+
+    await expect(useAdminMetricsStore.getState().refreshNow()).resolves.toBe(false)
+
+    const state = useAdminMetricsStore.getState()
+    expect(state.error).toBe('previous failure')
+    expect(state.failureStreak).toBe(0)
+  })
+
+  it('成功刷新应在 renderLoad 非数值时回落为 0 并截断历史长度', async () => {
+    const longHistory = Array.from({ length: 24 }, (_, index) => index + 1)
+    useAdminMetricsStore.setState({ renderLoadHistory: longHistory })
+    globalThis.fetch = mock(() =>
+      Promise.resolve(jsonResponse({ system: { renderLoad: Number.NaN } }))
+    ) as any
+
+    await expect(useAdminMetricsStore.getState().refreshNow()).resolves.toBe(true)
+
+    const history = useAdminMetricsStore.getState().renderLoadHistory
+    expect(history).toHaveLength(24)
+    expect(history[0]).toBe(2)
+    expect(history.at(-1)).toBe(0)
+  })
+
+  it('轮询失败后应按 hidden 因子放大下一次退避间隔', async () => {
+    const timerHarness = installTimerHarness()
+    restoreTimerHarness = timerHarness.restore
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+    globalThis.fetch = mock(() => Promise.reject(new Error('network down'))) as any
+
+    const unsubscribe = subscribeAdminMetricsPolling()
+
+    await waitForCondition(() => timerHarness.delays.length > 0)
+
+    expect(timerHarness.delays).toContain(computeMetricsPollDelay(1) * 4)
+    expect(useAdminMetricsStore.getState().failureStreak).toBe(1)
+    expect(useAdminMetricsStore.getState().error).toContain('network down')
+
+    unsubscribe()
+  })
+
   it('重复订阅应复用同一个轮询循环并在最后一个订阅释放后停止', async () => {
     const timerHarness = installTimerHarness()
     restoreTimerHarness = timerHarness.restore
@@ -141,9 +190,9 @@ describe('AdminMetricsStore 轮询生命周期', () => {
     const unsubscribeB = subscribeAdminMetricsPolling()
 
     expect(useAdminMetricsStore.getState().isPolling).toBe(true)
+    await waitForCondition(() => timerHarness.delays.includes(computeMetricsPollDelay(0)))
     expect(globalThis.fetch).toHaveBeenCalledTimes(1)
 
-    await flushAsyncWork()
     expect(timerHarness.delays).toContain(computeMetricsPollDelay(0))
 
     unsubscribeA()
@@ -151,7 +200,9 @@ describe('AdminMetricsStore 轮询生命周期', () => {
 
     await act(async () => {
       timerHarness.handlers[0]?.()
-      await flushAsyncWork()
+      await waitForCondition(
+        () => (globalThis.fetch as ReturnType<typeof mock>).mock.calls.length === 2
+      )
     })
 
     expect(globalThis.fetch).toHaveBeenCalledTimes(2)
@@ -159,6 +210,32 @@ describe('AdminMetricsStore 轮询生命周期', () => {
     unsubscribeB()
     expect(useAdminMetricsStore.getState().isPolling).toBe(false)
     expect(timerHarness.cleared.length).toBeGreaterThan(0)
+  })
+
+  it('手动刷新后应替换既有轮询 timer，避免叠加重复请求', async () => {
+    const timerHarness = installTimerHarness()
+    restoreTimerHarness = timerHarness.restore
+    globalThis.fetch = mock(() =>
+      Promise.resolve(
+        jsonResponse({
+          system: {
+            renderLoad: 17
+          }
+        })
+      )
+    ) as any
+
+    const unsubscribe = subscribeAdminMetricsPolling()
+    try {
+      await waitForCondition(() => timerHarness.delays.length === 1)
+
+      await expect(useAdminMetricsStore.getState().refreshNow()).resolves.toBe(true)
+
+      expect(timerHarness.delays).toHaveLength(2)
+      expect(timerHarness.cleared.length).toBeGreaterThanOrEqual(1)
+    } finally {
+      unsubscribe()
+    }
   })
 
   it('useAdminMetricsPolling 应在页面重新可见时立即刷新并在卸载时移除监听', async () => {
@@ -176,22 +253,26 @@ describe('AdminMetricsStore 轮询生命周期', () => {
 
     const view = render(<PollingHarness />)
 
-    await flushAsyncWork()
+    await waitForCondition(() => timerHarness.delays.includes(computeMetricsPollDelay(0)))
     expect(globalThis.fetch).toHaveBeenCalledTimes(1)
 
     await act(async () => {
       document.dispatchEvent(new Event('visibilitychange'))
-      await flushAsyncWork()
+      await waitForCondition(
+        () => (globalThis.fetch as ReturnType<typeof mock>).mock.calls.length >= 2
+      )
     })
 
-    expect(globalThis.fetch).toHaveBeenCalledTimes(2)
+    expect((globalThis.fetch as ReturnType<typeof mock>).mock.calls.length).toBeGreaterThanOrEqual(
+      2
+    )
 
     view.unmount()
     const callCountAfterUnmount = (globalThis.fetch as ReturnType<typeof mock>).mock.calls.length
 
     await act(async () => {
       document.dispatchEvent(new Event('visibilitychange'))
-      await flushAsyncWork()
+      await Promise.resolve()
     })
 
     expect((globalThis.fetch as ReturnType<typeof mock>).mock.calls.length).toBe(

@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
 import { create } from 'zustand'
 import { adminGetJson, getAdminToken } from '../utils/eden'
+import { createAdminMetricsPollingController } from './adminMetricsPolling'
 
 const BASE_INTERVAL_MS = 2000
 const MAX_INTERVAL_MS = 30000
@@ -23,8 +23,6 @@ interface AdminMetricsState {
   refreshNow: () => Promise<boolean>
 }
 
-let pollingSubscribers = 0
-let pollingTimer: ReturnType<typeof setTimeout> | null = null
 let inFlightRefresh: Promise<boolean> | null = null
 
 export const computeMetricsPollDelay = (failureStreak: number) => {
@@ -42,26 +40,10 @@ export const useAdminMetricsStore = create<AdminMetricsState>((set) => ({
   refreshNow: async () => refreshAdminMetricsNow(set)
 }))
 
-const scheduleNextTick = () => {
-  if (pollingSubscribers <= 0) return
-  const { failureStreak } = useAdminMetricsStore.getState()
-  const hiddenFactor =
-    typeof document !== 'undefined' && document.visibilityState === 'hidden' ? 4 : 1
-  const delay = computeMetricsPollDelay(failureStreak) * hiddenFactor
-  pollingTimer = setTimeout(() => {
-    void refreshAdminMetricsNow(useAdminMetricsStore.setState)
-  }, delay)
-}
-
 const pushRenderLoad = (history: number[], renderLoad: number) => {
   const next = [...history, renderLoad]
   if (next.length <= HISTORY_SIZE) return next
   return next.slice(next.length - HISTORY_SIZE)
-}
-
-const clearPollingTimer = () => {
-  if (pollingTimer) clearTimeout(pollingTimer)
-  pollingTimer = null
 }
 
 const refreshAdminMetricsNow = async (
@@ -71,15 +53,15 @@ const refreshAdminMetricsNow = async (
 ) => {
   if (inFlightRefresh) return inFlightRefresh
 
-  inFlightRefresh = (async () => {
-    if (!getAdminToken().trim()) {
-      set((state) => ({
-        error: state.error || '请先填写 Admin Token 后查看监控',
-        failureStreak: 0
-      }))
-      return false
-    }
+  inFlightRefresh = Promise.resolve().then(async () => {
     try {
+      if (!getAdminToken().trim()) {
+        set((state) => ({
+          error: state.error || '请先填写 Admin Token 后查看监控',
+          failureStreak: 0
+        }))
+        return false
+      }
       const data = await adminGetJson<AdminMetricsPayload>('/api/admin/metrics')
       const renderLoadRaw = data?.system?.renderLoad
       const renderLoad =
@@ -102,50 +84,21 @@ const refreshAdminMetricsNow = async (
       return false
     } finally {
       inFlightRefresh = null
-      clearPollingTimer()
-      scheduleNextTick()
+      pollingController.onRefreshSettled()
     }
-  })()
+  })
 
   return inFlightRefresh
 }
 
-const startPolling = () => {
-  if (pollingSubscribers <= 0) return
-  const { isPolling } = useAdminMetricsStore.getState()
-  if (isPolling) return
-  useAdminMetricsStore.setState({ isPolling: true, failureStreak: 0 })
-  clearPollingTimer()
-  void refreshAdminMetricsNow(useAdminMetricsStore.setState)
-}
-
-const stopPolling = () => {
-  clearPollingTimer()
-  useAdminMetricsStore.setState({ isPolling: false, failureStreak: 0 })
-}
-
-export const subscribeAdminMetricsPolling = () => {
-  pollingSubscribers += 1
-  startPolling()
-  return () => {
-    pollingSubscribers = Math.max(0, pollingSubscribers - 1)
-    if (pollingSubscribers === 0) stopPolling()
+const pollingController = createAdminMetricsPollingController({
+  computeDelay: computeMetricsPollDelay,
+  getFailureStreak: () => useAdminMetricsStore.getState().failureStreak,
+  refreshNow: () => refreshAdminMetricsNow(useAdminMetricsStore.setState),
+  setPollingState: (state) => {
+    useAdminMetricsStore.setState(state)
   }
-}
+})
 
-export const useAdminMetricsPolling = () => {
-  useEffect(() => {
-    const unsubscribe = subscribeAdminMetricsPolling()
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        clearPollingTimer()
-        void useAdminMetricsStore.getState().refreshNow()
-      }
-    }
-    document.addEventListener('visibilitychange', onVisibilityChange)
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibilityChange)
-      unsubscribe()
-    }
-  }, [])
-}
+export const subscribeAdminMetricsPolling = pollingController.subscribe
+export const useAdminMetricsPolling = pollingController.usePolling
