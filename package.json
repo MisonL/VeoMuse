@@ -42,7 +42,7 @@
     "format:check": "prettier . --check --ignore-unknown",
     "quality:full": "bun run format:check && bun run lint && bun run build && bun run test:coverage && bun run quality:coverage-targets && bun run quality:api-contract && bun run e2e:smoke -- --workers=1 --retries=0 && bun run release:gate",
     "docker:smoke": "bun run scripts/docker_smoke_check.ts",
-    "docker:ui-smoke": "env -u NO_COLOR PLAYWRIGHT_BASE_URL=http://127.0.0.1:18081 PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:18081 bunx playwright test -c playwright.docker.config.ts --project=docker-smoke-chromium --workers=1",
+    "docker:ui-smoke": "env -u NO_COLOR PLAYWRIGHT_BASE_URL=http://127.0.0.1:18081 PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:18081 bunx playwright test -c playwright.docker.config.ts --project=docker-smoke-chromium --workers=1 tests/e2e/docker/auth-org-workspace-ui.spec.ts tests/e2e/docker/all-ui-surfaces.spec.ts tests/e2e/docker/experiment-bus-overlay.spec.ts tests/e2e/docker/nebula-core-surfaces.spec.ts",
     "docker:drill:persistence": "bun run scripts/docker_persistence_drill.ts",
     "docker:up": "docker compose -f config/docker/docker-compose.yml up -d --build --wait --wait-timeout 180",
     "docker:down": "docker compose -f config/docker/docker-compose.yml down",
