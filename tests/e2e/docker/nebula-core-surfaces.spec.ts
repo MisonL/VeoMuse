@@ -64,7 +64,7 @@ test('Docker Nebula 核心 surface 应在部署态可见且无浏览器告警', 
   attachPageDebug(page, 'docker-nebula-core-surfaces')
   const assertNoFatalBrowserSignals = observeFatalBrowserSignals(page)
 
-  await page.setViewportSize({ width: 1366, height: 768 })
+  await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   await dismissGuideIfPresent(page)
 

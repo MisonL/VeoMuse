@@ -744,6 +744,7 @@ Recorded on 2026-05-19.
 - Remote CI follow-up:
   - First push reached Release Gate success, then Docker Delivery failed on the new Nebula core surface spec because the hosted runner rendered the top Director Flow bus with a 9px scroll/client width delta.
   - The Docker spec tolerance was widened to 12px for these small Nebula bus surfaces while still preserving visibility, `data-visual-system`, and no-fatal-browser-signal checks.
+  - Second push reached Release Gate success, then Docker Delivery showed the left Command Rail bus is hidden at the hosted runner's 1366px compact layout. The core surface evidence spec now uses the existing 1440x900 deployed UI surface viewport, while 1366px density remains covered by `layout-density` and existing Docker surface tests.
 
 ### Task 5: Closure Status
 
