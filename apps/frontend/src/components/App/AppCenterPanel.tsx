@@ -186,25 +186,43 @@ const AppCenterPanel = ({
               <div className="monitor-bottom-bar" data-shell-role="output-dock">
                 <div className="monitor-controls-group">
                   <div className="transport-controls-compact">
-                    <button className="transport-btn-small" onClick={onSeekToStart} title="跳转至开始" aria-label="跳转到开头" data-testid="btn-player-prev">
+                    <button
+                      className="transport-btn-small"
+                      onClick={onSeekToStart}
+                      title="跳转至开始"
+                      aria-label="跳转到开头"
+                      data-testid="btn-player-prev"
+                    >
                       <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                        <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
+                        <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
                       </svg>
                     </button>
-                    <button className="transport-btn-main" onClick={onTogglePlay} title={isPlaying ? '暂停' : '播放'} aria-label={isPlaying ? '暂停' : '播放'} data-testid="btn-player-play">
+                    <button
+                      className="transport-btn-main"
+                      onClick={onTogglePlay}
+                      title={isPlaying ? '暂停' : '播放'}
+                      aria-label={isPlaying ? '暂停' : '播放'}
+                      data-testid="btn-player-play"
+                    >
                       {isPlaying ? (
                         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                         </svg>
                       ) : (
                         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                          <path d="M8 5v14l11-7z"/>
+                          <path d="M8 5v14l11-7z" />
                         </svg>
                       )}
                     </button>
-                    <button className="transport-btn-small" onClick={onSeekToNextClip} title="下一片段" aria-label="跳转到下一片段" data-testid="btn-player-next">
+                    <button
+                      className="transport-btn-small"
+                      onClick={onSeekToNextClip}
+                      title="下一片段"
+                      aria-label="跳转到下一片段"
+                      data-testid="btn-player-next"
+                    >
                       <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                        <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
                       </svg>
                     </button>
                   </div>

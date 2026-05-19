@@ -63,7 +63,10 @@
   color: #f7fbff;
 }
 
-html[data-theme='light'] body .comparison-lab-pro[data-shell-role='experiment-bus'] .experiment-bus-flow {
+html[data-theme='light']
+  body
+  .comparison-lab-pro[data-shell-role='experiment-bus']
+  .experiment-bus-flow {
   border-color: rgba(27, 95, 117, 0.18);
   background:
     radial-gradient(circle at 12% 0, rgba(27, 95, 117, 0.13), transparent 34%),

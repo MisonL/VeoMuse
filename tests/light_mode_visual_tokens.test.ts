@@ -7,7 +7,10 @@ describe('亮色主题与视觉令牌验证', () => {
     readFileSync(path.resolve(process.cwd(), 'apps/frontend/src/theme.css'), 'utf8')
 
   const readAssetPanelCss = () =>
-    readFileSync(path.resolve(process.cwd(), 'apps/frontend/src/components/Editor/AssetPanel.css'), 'utf8')
+    readFileSync(
+      path.resolve(process.cwd(), 'apps/frontend/src/components/Editor/AssetPanel.css'),
+      'utf8'
+    )
 
   const readThemeBlock = (content: string, selector: string) => {
     const start = content.lastIndexOf(selector)
@@ -76,7 +79,7 @@ describe('亮色主题与视觉令牌验证', () => {
       "[data-theme='light'] .pro-asset-panel",
       "[data-theme='light'] .pro-inspector-inner",
       "[data-theme='light'] .timeline-body-refined",
-      "[data-theme='light'] .monitor-empty-overlay",
+      "[data-theme='light'] .monitor-empty-overlay"
     ]
 
     for (const selector of requiredLightSelectors) {
@@ -102,7 +105,7 @@ describe('亮色主题与视觉令牌验证', () => {
       "[data-theme='light'] .pro-nle-container .timeline-editor-time-area",
       "[data-theme='light'] .pro-nle-container .timeline-editor-edit-area",
       "[data-theme='light'] .timeline-empty-hint",
-      "[data-theme='light'] .timeline-empty-hint p",
+      "[data-theme='light'] .timeline-empty-hint p"
     ]
 
     for (const selector of requiredTimelineSelectors) {
@@ -121,7 +124,7 @@ describe('亮色主题与视觉令牌验证', () => {
     const readabilityCorrection = content.slice(readabilityStart)
     const highSpecificitySelectors = [
       "html[data-theme='light'] body .pro-nle-container .timeline-editor-edit-area",
-      "html[data-theme='dark'] body .pro-nle-container .timeline-editor-edit-area",
+      "html[data-theme='dark'] body .pro-nle-container .timeline-editor-edit-area"
     ]
 
     for (const selector of highSpecificitySelectors) {
@@ -147,7 +150,7 @@ describe('亮色主题与视觉令牌验证', () => {
       '.sidebar-tab',
       '.panel-left .sidebar-tab',
       '.inspector-tabs-lite button',
-      '.panel-right .inspector-tabs-lite button',
+      '.panel-right .inspector-tabs-lite button'
     ]
 
     for (const selector of requiredControlSelectors) {
@@ -193,7 +196,7 @@ describe('亮色主题与视觉令牌验证', () => {
       "[data-theme='dark'] .timeline-editor-edit-area",
       "[data-theme='dark'] .pro-nle-container .timeline-editor-time-area",
       "[data-theme='dark'] .pro-nle-container .timeline-editor-edit-area",
-      "[data-theme='dark'] .timeline-empty-hint",
+      "[data-theme='dark'] .timeline-empty-hint"
     ]
 
     for (const selector of requiredDarkSelectors) {
@@ -220,13 +223,13 @@ describe('亮色主题与视觉令牌验证', () => {
       "[data-theme='dark'] .panel-right",
       "[data-theme='dark'] .timeline-container",
       '.timeline-empty-hint',
-      '.timeline-body.is-idle .timeline-empty-state',
+      '.timeline-body.is-idle .timeline-empty-state'
     ]
     const requiredHighSpecificitySelectors = [
       "html[data-theme='light'] body .timeline-empty-hint",
       "html[data-theme='dark'] body .timeline-empty-hint",
       "html[data-theme='light'] body .timeline-body.is-idle .timeline-empty-state",
-      "html[data-theme='dark'] body .timeline-body.is-idle .timeline-empty-state",
+      "html[data-theme='dark'] body .timeline-body.is-idle .timeline-empty-state"
     ]
 
     for (const selector of requiredSelectors) {
@@ -260,7 +263,7 @@ describe('亮色主题与视觉令牌验证', () => {
       '.tool-btn-lite:disabled',
       '.pro-btn-primary:disabled',
       '.pro-btn-secondary:disabled',
-      '.quick-actions-refined',
+      '.quick-actions-refined'
     ]
 
     for (const selector of requiredDisabledSelectors) {

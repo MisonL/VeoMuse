@@ -1,5 +1,5 @@
 @media (min-width: 1181px) {
-.timeline-body.is-idle .timeline-empty-glyph {
+  .timeline-body.is-idle .timeline-empty-glyph {
     grid-area: glyph !important;
     width: 52px !important;
     height: 52px !important;
@@ -8,26 +8,26 @@
     margin-top: 8px !important;
   }
 
-.timeline-body.is-idle .timeline-empty-copy {
+  .timeline-body.is-idle .timeline-empty-copy {
     grid-area: copy !important;
     gap: 8px !important;
     align-content: start !important;
     padding-top: 8px !important;
   }
 
-.timeline-body.is-idle .timeline-empty-copy strong {
+  .timeline-body.is-idle .timeline-empty-copy strong {
     font-size: clamp(22px, 1.65vw, 30px) !important;
     line-height: 1.06 !important;
     letter-spacing: -0.01em !important;
   }
 
-.timeline-body.is-idle .timeline-empty-copy span:last-child {
+  .timeline-body.is-idle .timeline-empty-copy span:last-child {
     max-width: 52ch !important;
     font-size: 13px !important;
     line-height: 1.55 !important;
   }
 
-.timeline-body.is-idle .timeline-empty-readout {
+  .timeline-body.is-idle .timeline-empty-readout {
     grid-area: readout !important;
     align-self: start !important;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -35,7 +35,7 @@
     padding-top: 4px !important;
   }
 
-.timeline-empty-readout > div {
+  .timeline-empty-readout > div {
     align-content: center !important;
     min-height: 0 !important;
     border-radius: 14px !important;

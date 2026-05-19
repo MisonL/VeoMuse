@@ -133,9 +133,9 @@
   .monitor-stage-shell.is-idle .preview-frame .player-empty-state {
     grid-template-columns: 1fr !important;
     grid-template-areas:
-      "status"
-      "title"
-      "subtitle" !important;
+      'status'
+      'title'
+      'subtitle' !important;
     align-content: center !important;
     justify-items: start !important;
     padding: 28px 34px !important;

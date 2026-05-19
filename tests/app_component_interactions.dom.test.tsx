@@ -208,10 +208,7 @@ describe('App DOM 运行态交互补测', () => {
     expect(view.getByLabelText('实验编排总线')).toHaveTextContent('CompareGovernShip')
 
     await click(view.getByTestId('btn-lab-mode-marketplace'))
-    expect(view.getByTestId('area-comparison-lab')).toHaveAttribute(
-      'data-lab-mode',
-      'marketplace'
-    )
+    expect(view.getByTestId('area-comparison-lab')).toHaveAttribute('data-lab-mode', 'marketplace')
     expect(experimentBus).toHaveTextContent('Experiment Bus')
   }, 30_000)
 
@@ -258,7 +255,7 @@ describe('App DOM 运行态交互补测', () => {
     await waitFor(() => {
       expect(useEditorStore.getState().isPlaying).toBe(true)
     })
-    const pauseBtn = view.getByTitle('暂停')
+    const pauseBtn = await view.findByTitle('暂停')
     await click(pauseBtn)
     await waitFor(() => {
       expect(useEditorStore.getState().isPlaying).toBe(false)

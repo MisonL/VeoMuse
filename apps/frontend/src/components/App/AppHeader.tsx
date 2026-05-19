@@ -74,7 +74,11 @@ const AppHeader = ({
   onPreviewAspectChange,
   onExport
 }: AppHeaderProps) => (
-  <header className="pro-panel os-header" data-testid="area-top-header" data-shell-role="director-flow-command">
+  <header
+    className="pro-panel os-header"
+    data-testid="area-top-header"
+    data-shell-role="director-flow-command"
+  >
     <div className="os-header-left">
       <div className="brand-zone">
         <div className="brand-mark">
@@ -86,7 +90,9 @@ const AppHeader = ({
       </div>
       <div className="header-status-lite">
         <span className="status-indicator live"></span>
-        <span className="status-label">{MODE_OPTIONS.find(m => m.value === activeMode)?.label || activeMode}</span>
+        <span className="status-label">
+          {MODE_OPTIONS.find((m) => m.value === activeMode)?.label || activeMode}
+        </span>
       </div>
     </div>
 

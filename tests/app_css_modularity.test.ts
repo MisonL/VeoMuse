@@ -14,6 +14,8 @@ const appCssImportLinePattern = /^@import ['"]\.\/styles\/app\/([^'"]+\.css)['"]
 
 const readLines = (target: string) => readFileSync(target, 'utf8').split(/\r?\n/)
 
+const normalizeCssWhitespace = (css: string) => css.replace(/\s+/g, ' ').trim()
+
 const readAppCssImports = () => {
   const appCss = readFileSync(appCssPath, 'utf8')
   return readLines(appCssPath)
@@ -36,7 +38,9 @@ describe('App CSS modularity guard', () => {
 
     expect(appCssLines.length).toBeGreaterThan(0)
     for (const line of appCssLines) {
-      expect(appCssImportLinePattern.test(line), `${line} is not an ordered app style import`).toBe(true)
+      expect(appCssImportLinePattern.test(line), `${line} is not an ordered app style import`).toBe(
+        true
+      )
     }
   })
 
@@ -59,14 +63,16 @@ describe('App CSS modularity guard', () => {
 
     for (const moduleName of modules) {
       const lines = readLines(path.join(appCssModuleDir, moduleName))
-      expect(lines.length, `${moduleName} exceeds ${MAX_CSS_MODULE_LINES} lines`).toBeLessThanOrEqual(
-        MAX_CSS_MODULE_LINES
-      )
+      expect(
+        lines.length,
+        `${moduleName} exceeds ${MAX_CSS_MODULE_LINES} lines`
+      ).toBeLessThanOrEqual(MAX_CSS_MODULE_LINES)
     }
   })
 
   it('Nebula Flow overrides should use theme-scoped specificity for deployed CSS order', () => {
     const nebulaCss = readFileSync(path.join(appCssModuleDir, '55-app.css'), 'utf8')
+    const normalizedNebulaCss = normalizeCssWhitespace(nebulaCss)
 
     const requiredRuntimeSelectors = [
       "html[data-theme='light'] body .monitor-stage-shell.is-idle .director-canvas-launchpad",
@@ -76,7 +82,7 @@ describe('App CSS modularity guard', () => {
     ]
 
     for (const selector of requiredRuntimeSelectors) {
-      expect(nebulaCss).toContain(selector)
+      expect(normalizedNebulaCss).toContain(selector)
     }
   })
 
@@ -96,6 +102,7 @@ describe('App CSS modularity guard', () => {
 
   it('Nebula Flow inspector console bridge should remain isolated after workstream CSS', () => {
     const inspectorCss = readFileSync(path.join(appCssModuleDir, '57-app.css'), 'utf8')
+    const normalizedInspectorCss = normalizeCssWhitespace(inspectorCss)
 
     const requiredInspectorSelectors = [
       ".panel-right[data-shell-role='inspector-console']",
@@ -105,12 +112,13 @@ describe('App CSS modularity guard', () => {
     ]
 
     for (const selector of requiredInspectorSelectors) {
-      expect(inspectorCss).toContain(selector)
+      expect(normalizedInspectorCss).toContain(selector)
     }
   })
 
   it('Nebula Flow inspector console critical visuals should survive lazy inspector CSS order', () => {
     const propertyInspectorCss = readFileSync(propertyInspectorCssPath, 'utf8')
+    const normalizedPropertyInspectorCss = normalizeCssWhitespace(propertyInspectorCss)
 
     const requiredLazySelectors = [
       '.property-inspector .inspector-console-empty',
@@ -119,12 +127,13 @@ describe('App CSS modularity guard', () => {
     ]
 
     for (const selector of requiredLazySelectors) {
-      expect(propertyInspectorCss).toContain(selector)
+      expect(normalizedPropertyInspectorCss).toContain(selector)
     }
   })
 
   it('Nebula Flow director flow header should remain isolated in the final CSS layer', () => {
     const directorFlowCss = readFileSync(path.join(appCssModuleDir, '58-app.css'), 'utf8')
+    const normalizedDirectorFlowCss = normalizeCssWhitespace(directorFlowCss)
 
     const requiredDirectorFlowSelectors = [
       ".os-header[data-shell-role='director-flow-command']",
@@ -134,12 +143,13 @@ describe('App CSS modularity guard', () => {
     ]
 
     for (const selector of requiredDirectorFlowSelectors) {
-      expect(directorFlowCss).toContain(selector)
+      expect(normalizedDirectorFlowCss).toContain(selector)
     }
   })
 
   it('Nebula Flow output dock should remain isolated in the final CSS layer', () => {
     const outputDockCss = readFileSync(path.join(appCssModuleDir, '59-app.css'), 'utf8')
+    const normalizedOutputDockCss = normalizeCssWhitespace(outputDockCss)
 
     const requiredOutputDockSelectors = [
       ".monitor-bottom-bar[data-shell-role='output-dock']",
@@ -149,12 +159,13 @@ describe('App CSS modularity guard', () => {
     ]
 
     for (const selector of requiredOutputDockSelectors) {
-      expect(outputDockCss).toContain(selector)
+      expect(normalizedOutputDockCss).toContain(selector)
     }
   })
 
   it('Nebula Flow timeline bus should remain isolated in the final CSS layer', () => {
     const timelineBusCss = readFileSync(path.join(appCssModuleDir, '60-app.css'), 'utf8')
+    const normalizedTimelineBusCss = normalizeCssWhitespace(timelineBusCss)
 
     const requiredTimelineBusSelectors = [
       ".timeline-container[data-shell-role='timeline-bus']",
@@ -164,12 +175,13 @@ describe('App CSS modularity guard', () => {
     ]
 
     for (const selector of requiredTimelineBusSelectors) {
-      expect(timelineBusCss).toContain(selector)
+      expect(normalizedTimelineBusCss).toContain(selector)
     }
   })
 
   it('Nebula Flow command rail flow should remain isolated in the final CSS layer', () => {
     const commandRailCss = readFileSync(path.join(appCssModuleDir, '61-app.css'), 'utf8')
+    const normalizedCommandRailCss = normalizeCssWhitespace(commandRailCss)
 
     const requiredCommandRailSelectors = [
       ".panel-left[data-shell-role='command-rail'] .sidebar-tab.is-ai-command",
@@ -182,7 +194,7 @@ describe('App CSS modularity guard', () => {
     ]
 
     for (const selector of requiredCommandRailSelectors) {
-      expect(commandRailCss).toContain(selector)
+      expect(normalizedCommandRailCss).toContain(selector)
     }
 
     expect(commandRailCss).toContain('overflow: hidden !important;')
@@ -192,6 +204,7 @@ describe('App CSS modularity guard', () => {
 
   it('Nebula Flow audio bus should remain isolated in the final CSS layer', () => {
     const audioBusCss = readFileSync(path.join(appCssModuleDir, '62-app.css'), 'utf8')
+    const normalizedAudioBusCss = normalizeCssWhitespace(audioBusCss)
 
     const requiredAudioBusSelectors = [
       ".audio-master-stage[data-shell-role='audio-bus']",
@@ -201,12 +214,13 @@ describe('App CSS modularity guard', () => {
     ]
 
     for (const selector of requiredAudioBusSelectors) {
-      expect(audioBusCss).toContain(selector)
+      expect(normalizedAudioBusCss).toContain(selector)
     }
   })
 
   it('Nebula Flow watch bus should remain isolated in the final CSS layer', () => {
     const watchBusCss = readFileSync(path.join(appCssModuleDir, '63-app.css'), 'utf8')
+    const normalizedWatchBusCss = normalizeCssWhitespace(watchBusCss)
 
     const requiredWatchBusSelectors = [
       ".lab-watch-stage-shell[data-shell-role='watch-bus']",
@@ -216,12 +230,13 @@ describe('App CSS modularity guard', () => {
     ]
 
     for (const selector of requiredWatchBusSelectors) {
-      expect(watchBusCss).toContain(selector)
+      expect(normalizedWatchBusCss).toContain(selector)
     }
   })
 
   it('Nebula Flow experiment bus should remain isolated in the final CSS layer', () => {
     const experimentBusCss = readFileSync(path.join(appCssModuleDir, '64-app.css'), 'utf8')
+    const normalizedExperimentBusCss = normalizeCssWhitespace(experimentBusCss)
 
     const requiredExperimentBusSelectors = [
       ".comparison-lab-pro[data-shell-role='experiment-bus']",
@@ -231,7 +246,7 @@ describe('App CSS modularity guard', () => {
     ]
 
     for (const selector of requiredExperimentBusSelectors) {
-      expect(experimentBusCss).toContain(selector)
+      expect(normalizedExperimentBusCss).toContain(selector)
     }
     expect(experimentBusCss).toContain('position: absolute !important;')
     expect(experimentBusCss).toContain('pointer-events: none;')

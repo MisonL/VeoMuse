@@ -171,7 +171,9 @@ describe('AssetPanel DOM 交互', () => {
   it('演员库空表单不应暴露无效新增操作', () => {
     setFreshAccessToken()
     useActorsStore.setState({
-      actors: [{ id: 'actor-1', name: '参考演员', refImage: 'https://example.com/ref.png', createdAt: '-' }],
+      actors: [
+        { id: 'actor-1', name: '参考演员', refImage: 'https://example.com/ref.png', createdAt: '-' }
+      ],
       isLoading: false,
       error: '',
       lastLoadedAt: Date.now()

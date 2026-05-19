@@ -1,11 +1,11 @@
 @media (min-width: 1181px) {
-.panel-left .pro-asset-grid {
+  .panel-left .pro-asset-grid {
     min-height: 0 !important;
     overflow: hidden !important;
     align-content: stretch !important;
   }
 
-.panel-right:has(.inspector-empty) .inspector-body {
+  .panel-right:has(.inspector-empty) .inspector-body {
     overflow-y: hidden !important;
   }
 }

@@ -7,7 +7,9 @@
   --ap-radius-m: 8px;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100vh;
   margin: 0;
   padding: 0;
@@ -148,7 +150,10 @@ html, body, #root {
 /* Main Layout Refactoring */
 .os-main {
   display: grid;
-  grid-template-columns: var(--left-panel-w, 320px) var(--handle-size) 1fr var(--handle-size) var(--right-panel-w, 300px);
+  grid-template-columns: var(--left-panel-w, 320px) var(--handle-size) 1fr var(--handle-size) var(
+      --right-panel-w,
+      300px
+    );
   gap: 0;
   min-height: 0;
 }
@@ -180,7 +185,7 @@ html, body, #root {
 .preview-frame {
   max-width: 100%;
   max-height: 100%;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   background: #000;
   border-radius: 4px;
   position: relative;

@@ -47,7 +47,10 @@ const assertNebulaSurface = async (page: Page, testId: string, label: string) =>
   const surface = page.getByTestId(testId)
 
   await assertVisibleSurface(surface, label)
-  await expect(surface, `${label} visual system`).toHaveAttribute('data-visual-system', 'nebula-flow')
+  await expect(surface, `${label} visual system`).toHaveAttribute(
+    'data-visual-system',
+    'nebula-flow'
+  )
   await assertNoOverflow(surface, label)
 }
 
@@ -55,7 +58,10 @@ const assertNebulaSemanticSurface = async (page: Page, testId: string, label: st
   const surface = page.getByTestId(testId)
 
   await expect(surface, `${label} should exist`).toHaveCount(1)
-  await expect(surface, `${label} visual system`).toHaveAttribute('data-visual-system', 'nebula-flow')
+  await expect(surface, `${label} visual system`).toHaveAttribute(
+    'data-visual-system',
+    'nebula-flow'
+  )
 }
 
 const assertLabMode = async (page: Page, mode: string, label: string) => {
@@ -102,7 +108,10 @@ test('Docker Nebula 核心 surface 应在部署态可见且无浏览器告警', 
   await expect(page.getByText('实验值守摘要')).toBeVisible()
   await page.getByRole('button', { name: '展开系统监控', exact: true }).click()
   await assertNebulaSurface(page, 'watch-bus', '系统监控总线')
-  await assertVisibleSurface(page.locator('.lab-watch-stage-shell .telemetry-dashboard'), '系统监控页')
+  await assertVisibleSurface(
+    page.locator('.lab-watch-stage-shell .telemetry-dashboard'),
+    '系统监控页'
+  )
   await expect(page.locator('.lab-watch-stage-shell .telemetry-command-bar')).toBeVisible()
   await expect(page.locator('.lab-watch-stage-shell .telemetry-command-stat')).toHaveCount(3)
 

@@ -1,13 +1,13 @@
 /* Gemini-guided desktop rebalance 2026-04-27 */
 @media (min-width: 1181px) {
-.pro-master-shell,
+  .pro-master-shell,
   .pro-master-shell[data-topbar-density='compact'] {
     gap: 10px !important;
     padding: 10px !important;
     grid-template-rows: 58px minmax(0, 1fr) 0 clamp(172px, var(--timeline-h), 192px) !important;
   }
 
-.os-header {
+  .os-header {
     min-height: 58px !important;
     max-height: 58px !important;
     display: grid !important;
@@ -19,7 +19,7 @@
     border-radius: 16px !important;
   }
 
-.os-header-left,
+  .os-header-left,
   .os-header-center,
   .os-header-right {
     min-width: 0 !important;
@@ -27,100 +27,100 @@
     align-self: center !important;
   }
 
-.os-header-left {
+  .os-header-left {
     gap: 12px !important;
   }
 
-.os-header-center {
+  .os-header-center {
     grid-column: 2 !important;
     justify-content: center !important;
   }
 
-.os-header-right {
+  .os-header-right {
     grid-column: 3 !important;
     justify-self: end !important;
     gap: 10px !important;
     flex-wrap: nowrap !important;
   }
 
-.brand-zone {
+  .brand-zone {
     min-width: 0 !important;
     width: auto !important;
     gap: 14px !important;
   }
 
-.brand-mark {
+  .brand-mark {
     width: 56px !important;
     min-width: 56px !important;
   }
 
-.brand-logo {
+  .brand-logo {
     width: 40px !important;
     height: 40px !important;
     border-radius: 12px !important;
   }
 
-.brand-title {
+  .brand-title {
     font-size: clamp(20px, 1.8vw, 26px) !important;
     letter-spacing: 0.08em !important;
   }
 
-.header-status-lite {
+  .header-status-lite {
     min-height: 36px !important;
     padding: 0 12px !important;
     border-radius: 999px !important;
   }
 
-.mode-selector {
+  .mode-selector {
     min-height: 44px !important;
     padding: 4px !important;
     gap: 4px !important;
   }
 
-.mode-tab {
+  .mode-tab {
     min-height: 36px !important;
     padding: 0 18px !important;
     border-radius: 14px !important;
     font-size: 14px !important;
   }
 
-.header-actions-group,
+  .header-actions-group,
   .header-actions-export {
     min-height: 44px !important;
     gap: 8px !important;
     padding: 4px !important;
   }
 
-.header-actions-export {
+  .header-actions-export {
     flex-wrap: nowrap !important;
   }
 
-.header-control-item {
+  .header-control-item {
     gap: 6px !important;
   }
 
-.control-label-mini {
+  .control-label-mini {
     font-size: 10px !important;
   }
 
-.header-select-compact,
+  .header-select-compact,
   .export-btn-compact,
   .theme-segment button {
     min-height: 36px !important;
     border-radius: 14px !important;
   }
 
-.header-select-compact {
+  .header-select-compact {
     min-width: 152px !important;
     padding-inline: 14px !important;
   }
 
-.export-btn-compact {
+  .export-btn-compact {
     min-width: 132px !important;
     padding-inline: 18px !important;
   }
 
-.os-main {
+  .os-main {
     grid-template-columns:
       minmax(272px, clamp(272px, var(--left-panel-w), 304px))
       var(--split-handle-w)
@@ -130,109 +130,109 @@
     column-gap: 0 !important;
   }
 
-.panel-left,
+  .panel-left,
   .panel-right {
     border-radius: 18px !important;
   }
 
-.monitor-core {
+  .monitor-core {
     padding: 12px !important;
   }
 
-.monitor-content,
+  .monitor-content,
   .monitor-stage-primary,
   .monitor-stage-shell.is-idle .monitor-stage-primary {
     padding: 0 !important;
   }
 
-.preview-host {
+  .preview-host {
     padding: 8px 10px 0 !important;
   }
 
-.preview-frame,
+  .preview-frame,
   .monitor-stage-shell.is-idle .preview-frame {
     border-radius: 22px !important;
   }
 
-.monitor-empty-overlay {
+  .monitor-empty-overlay {
     padding: 18px 22px !important;
   }
 
-.empty-hero {
+  .empty-hero {
     width: min(100%, 340px) !important;
     align-items: flex-start !important;
     text-align: left !important;
     gap: 12px !important;
   }
 
-.empty-hero .empty-icon {
+  .empty-hero .empty-icon {
     width: auto !important;
     height: auto !important;
     font-size: clamp(54px, 4.8vw, 76px) !important;
     opacity: 0.24 !important;
   }
 
-.empty-hero strong {
+  .empty-hero strong {
     font-size: clamp(28px, 2.1vw, 34px) !important;
     line-height: 0.96 !important;
     letter-spacing: -0.03em !important;
   }
 
-.empty-hero p {
+  .empty-hero p {
     max-width: 30ch !important;
     font-size: 12px !important;
     line-height: 1.5 !important;
   }
 
-.empty-actions {
+  .empty-actions {
     gap: 10px !important;
   }
 
-.empty-btn {
+  .empty-btn {
     min-height: 42px !important;
     padding: 0 18px !important;
     border-radius: 14px !important;
   }
 
-.monitor-bottom-bar {
+  .monitor-bottom-bar {
     min-height: 58px !important;
     margin-top: 10px !important;
     padding: 0 16px !important;
     border-radius: 16px !important;
   }
 
-.transport-controls-compact {
+  .transport-controls-compact {
     gap: 8px !important;
   }
 
-.transport-btn-main {
+  .transport-btn-main {
     width: 56px !important;
     height: 56px !important;
   }
 
-.transport-btn-small {
+  .transport-btn-small {
     width: 36px !important;
     height: 36px !important;
   }
 
-.monitor-stat {
+  .monitor-stat {
     min-width: 86px !important;
     padding: 0 10px !important;
   }
 
-.panel-right .panel-title-bar {
+  .panel-right .panel-title-bar {
     padding: 10px 12px 6px !important;
   }
 
-.panel-right .inspector-title {
+  .panel-right .inspector-title {
     font-size: 16px !important;
   }
 
-.panel-right .inspector-shell-subtitle {
+  .panel-right .inspector-shell-subtitle {
     font-size: 11px !important;
   }
 
-.panel-right .inspector-scroll {
+  .panel-right .inspector-scroll {
     padding: 6px 10px 10px !important;
   }
 }

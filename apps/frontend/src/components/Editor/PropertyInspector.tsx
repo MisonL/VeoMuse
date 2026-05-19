@@ -261,14 +261,22 @@ const PropertyInspector: React.FC<PropertyInspectorProps> = ({
           </button>
         </div>
         <div className="inspector-header-status">
-          {current ? <span className="badge-live">在线</span> : <span className="badge-idle">待命</span>}
+          {current ? (
+            <span className="badge-live">在线</span>
+          ) : (
+            <span className="badge-idle">待命</span>
+          )}
         </div>
       </header>
 
       <div className="inspector-body-refined">
         {activeTab === 'lab' ? (
           <div className="inspector-lab-lite">
-            <TelemetryDashboard variant="summary" shellMode={shellMode} onOpenStage={onOpenWatchStage} />
+            <TelemetryDashboard
+              variant="summary"
+              shellMode={shellMode}
+              onOpenStage={onOpenWatchStage}
+            />
           </div>
         ) : !current ? (
           <div

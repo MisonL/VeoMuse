@@ -74,7 +74,10 @@
   color: #f7fbff;
 }
 
-html[data-theme='light'] body .os-header[data-shell-role='director-flow-command'] .director-flow-bus {
+html[data-theme='light']
+  body
+  .os-header[data-shell-role='director-flow-command']
+  .director-flow-bus {
   border-color: rgba(27, 95, 117, 0.22);
   background:
     radial-gradient(circle at 18% 0, rgba(27, 95, 117, 0.16), transparent 34%),

@@ -1,14 +1,15 @@
 import { expect, test } from '@playwright/test'
 
 const luminanceFromRgb = (rgb: string) => {
-  const channels = rgb.match(/\d+(\.\d+)?/g)?.slice(0, 3).map(Number)
+  const channels = rgb
+    .match(/\d+(\.\d+)?/g)
+    ?.slice(0, 3)
+    .map(Number)
   if (!channels || channels.length < 3) return 1
 
   const [r, g, b] = channels.map((value) => {
     const normalized = value / 255
-    return normalized <= 0.03928
-      ? normalized / 12.92
-      : Math.pow((normalized + 0.055) / 1.055, 2.4)
+    return normalized <= 0.03928 ? normalized / 12.92 : Math.pow((normalized + 0.055) / 1.055, 2.4)
   })
 
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
@@ -57,7 +58,15 @@ test('默认剪辑工作台应为无滚动的专业暗色布局', async ({ page 
   const previewBox = await preview.boundingBox()
   const timelineBox = await timeline.boundingBox()
 
-  if (!headerBox || !mainBox || !leftBox || !centerBox || !rightBox || !previewBox || !timelineBox) {
+  if (
+    !headerBox ||
+    !mainBox ||
+    !leftBox ||
+    !centerBox ||
+    !rightBox ||
+    !previewBox ||
+    !timelineBox
+  ) {
     throw new Error('布局区域不可测量')
   }
 
@@ -83,23 +92,33 @@ test('默认剪辑工作台应为无滚动的专业暗色布局', async ({ page 
   )
 
   for (const tab of sidebarTabMetrics) {
-    expect(tab.scrollWidth, `${tab.label} 页签不应横向裁切`).toBeLessThanOrEqual(tab.clientWidth + 1)
-    expect(tab.scrollHeight, `${tab.label} 页签不应纵向裁切`).toBeLessThanOrEqual(tab.clientHeight + 1)
+    expect(tab.scrollWidth, `${tab.label} 页签不应横向裁切`).toBeLessThanOrEqual(
+      tab.clientWidth + 1
+    )
+    expect(tab.scrollHeight, `${tab.label} 页签不应纵向裁切`).toBeLessThanOrEqual(
+      tab.clientHeight + 1
+    )
   }
 
-  const inspectorTabMetrics = await page.locator('.panel-right .inspector-tabs-lite button').evaluateAll((tabs) =>
-    tabs.map((tab) => ({
-      label: tab.textContent?.trim() || '',
-      clientWidth: tab.clientWidth,
-      scrollWidth: tab.scrollWidth,
-      clientHeight: tab.clientHeight,
-      scrollHeight: tab.scrollHeight
-    }))
-  )
+  const inspectorTabMetrics = await page
+    .locator('.panel-right .inspector-tabs-lite button')
+    .evaluateAll((tabs) =>
+      tabs.map((tab) => ({
+        label: tab.textContent?.trim() || '',
+        clientWidth: tab.clientWidth,
+        scrollWidth: tab.scrollWidth,
+        clientHeight: tab.clientHeight,
+        scrollHeight: tab.scrollHeight
+      }))
+    )
 
   for (const tab of inspectorTabMetrics) {
-    expect(tab.scrollWidth, `${tab.label} 属性页签不应横向裁切`).toBeLessThanOrEqual(tab.clientWidth + 1)
-    expect(tab.scrollHeight, `${tab.label} 属性页签不应纵向裁切`).toBeLessThanOrEqual(tab.clientHeight + 1)
+    expect(tab.scrollWidth, `${tab.label} 属性页签不应横向裁切`).toBeLessThanOrEqual(
+      tab.clientWidth + 1
+    )
+    expect(tab.scrollHeight, `${tab.label} 属性页签不应纵向裁切`).toBeLessThanOrEqual(
+      tab.clientHeight + 1
+    )
   }
 
   const sidebarPressedState = await page.locator('.panel-left .sidebar-tab').evaluateAll((tabs) =>
@@ -114,13 +133,15 @@ test('默认剪辑工作台应为无滚动的专业暗色布局', async ({ page 
     expect(tab.pressed, `${tab.label} 页签应暴露未选中状态`).toBe('false')
   }
 
-  const inspectorPressedState = await page.locator('.panel-right .inspector-tabs-lite button').evaluateAll((tabs) =>
-    tabs.map((tab) => ({
-      label: tab.textContent?.trim() || '',
-      pressed: tab.getAttribute('aria-pressed'),
-      active: tab.classList.contains('active')
-    }))
-  )
+  const inspectorPressedState = await page
+    .locator('.panel-right .inspector-tabs-lite button')
+    .evaluateAll((tabs) =>
+      tabs.map((tab) => ({
+        label: tab.textContent?.trim() || '',
+        pressed: tab.getAttribute('aria-pressed'),
+        active: tab.classList.contains('active')
+      }))
+    )
   expect(inspectorPressedState).toContainEqual({ label: '属性', pressed: 'true', active: true })
   for (const tab of inspectorPressedState.filter((item) => !item.active)) {
     expect(tab.pressed, `${tab.label} 属性页签应暴露未选中状态`).toBe('false')
@@ -154,8 +175,9 @@ test('默认剪辑工作台应为无滚动的专业暗色布局', async ({ page 
 
   for (const surface of surfaceColors) {
     expect(surface.backgroundColor, `${surface.selector} 应有可测背景色`).not.toBe('')
-    expect(luminanceFromRgb(surface.backgroundColor), `${surface.selector} 不应仍是浅米色`).toBeLessThan(
-      surface.maxLuminance
-    )
+    expect(
+      luminanceFromRgb(surface.backgroundColor),
+      `${surface.selector} 不应仍是浅米色`
+    ).toBeLessThan(surface.maxLuminance)
   }
 })

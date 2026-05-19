@@ -4,12 +4,15 @@
     grid-template-columns: 62px minmax(460px, 1fr) minmax(460px, 520px) !important;
     grid-template-rows: 82px minmax(0, 1fr) !important;
     grid-template-areas:
-      "glyph copy readout"
-      "tracks tracks tracks" !important;
+      'glyph copy readout'
+      'tracks tracks tracks' !important;
     padding: 16px 22px 18px !important;
     align-items: start !important;
-    background:
-      linear-gradient(180deg, rgba(255, 251, 244, 0.98), rgba(246, 238, 224, 0.96)) !important;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 251, 244, 0.98),
+      rgba(246, 238, 224, 0.96)
+    ) !important;
   }
 
   .timeline-body.is-idle .timeline-empty-state > * {
@@ -18,7 +21,7 @@
   }
 
   .timeline-body.is-idle .timeline-empty-state::before {
-    content: "" !important;
+    content: '' !important;
     position: absolute !important;
     z-index: 0 !important;
     left: 22px !important;
@@ -43,8 +46,18 @@
     height: auto !important;
     border-radius: 0 0 16px 16px !important;
     background:
-      linear-gradient(180deg, transparent 0 28px, rgba(15, 86, 107, 0.14) 28px 29px, transparent 29px 100%),
-      linear-gradient(180deg, transparent 0 56px, rgba(15, 86, 107, 0.11) 56px 57px, transparent 57px 100%),
+      linear-gradient(
+        180deg,
+        transparent 0 28px,
+        rgba(15, 86, 107, 0.14) 28px 29px,
+        transparent 29px 100%
+      ),
+      linear-gradient(
+        180deg,
+        transparent 0 56px,
+        rgba(15, 86, 107, 0.11) 56px 57px,
+        transparent 57px 100%
+      ),
       linear-gradient(90deg, rgba(77, 59, 38, 0.1) 0 1px, transparent 1px 100%) 0 0 / 76px 100%,
       linear-gradient(180deg, rgba(255, 250, 240, 0.58), rgba(232, 226, 211, 0.42)) !important;
   }

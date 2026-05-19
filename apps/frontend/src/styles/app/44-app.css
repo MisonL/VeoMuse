@@ -5,7 +5,9 @@
 
 @media (min-width: 1181px) {
   .os-main {
-    grid-template-columns: minmax(280px, 0.78fr) var(--split-handle-w) minmax(0, 1.72fr) var(--split-handle-w) minmax(280px, 0.72fr) !important;
+    grid-template-columns:
+      minmax(280px, 0.78fr) var(--split-handle-w) minmax(0, 1.72fr) var(--split-handle-w)
+      minmax(280px, 0.72fr) !important;
   }
 
   .main-resize-handle {

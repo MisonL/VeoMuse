@@ -25,7 +25,7 @@
 .monitor-empty-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.85);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -64,7 +64,7 @@
 .empty-btn {
   padding: 8px 16px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   background: transparent;
   color: white;
   font-weight: 700;

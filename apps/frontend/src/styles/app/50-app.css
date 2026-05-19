@@ -10,7 +10,12 @@
 
   [data-theme='light'] .os-header {
     background-color: var(--ap-surface) !important;
-    background-image: linear-gradient(90deg, rgba(27, 95, 117, 0.12), rgba(230, 95, 43, 0.08), transparent 72%) !important;
+    background-image: linear-gradient(
+      90deg,
+      rgba(27, 95, 117, 0.12),
+      rgba(230, 95, 43, 0.08),
+      transparent 72%
+    ) !important;
     border-color: var(--ap-border) !important;
     color: var(--ap-text) !important;
   }

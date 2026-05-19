@@ -78,9 +78,7 @@ const assertReadableTextContrast = async (locator: Locator, label: string) => {
 
     const relativeLuminance = (channel: number) => {
       const normalized = channel / 255
-      return normalized <= 0.03928
-        ? normalized / 12.92
-        : ((normalized + 0.055) / 1.055) ** 2.4
+      return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4
     }
 
     const contrastRatio = (foreground: string, background: string) => {
@@ -137,8 +135,9 @@ const assertVisibleHeightAtLeast = async (locator: Locator, minHeight: number, l
 }
 
 const assertStageNavigationReadable = async (page: Page, label: string) => {
-  const markerMetrics = await page.locator('.comparison-lab-pro .lab-stage-marker').evaluateAll(
-    (nodes) =>
+  const markerMetrics = await page
+    .locator('.comparison-lab-pro .lab-stage-marker')
+    .evaluateAll((nodes) =>
       nodes.map((node) => {
         const copy = node.querySelector('.lab-stage-marker-copy') as HTMLElement | null
         const text = node.querySelector('.lab-stage-marker-label') as HTMLElement | null
@@ -149,16 +148,17 @@ const assertStageNavigationReadable = async (page: Page, label: string) => {
           textWidth: text?.getBoundingClientRect().width ?? 0
         }
       })
-  )
+    )
 
   expect(markerMetrics, `${label} stage marker count`).toHaveLength(4)
   for (const [index, metrics] of markerMetrics.entries()) {
     expect(metrics.markerWidth, `${label} stage marker ${index + 1} width`).toBeGreaterThanOrEqual(
       120
     )
-    expect(metrics.copyWidth, `${label} stage marker ${index + 1} copy width`).toBeGreaterThanOrEqual(
-      56
-    )
+    expect(
+      metrics.copyWidth,
+      `${label} stage marker ${index + 1} copy width`
+    ).toBeGreaterThanOrEqual(56)
     expect(metrics.textWidth, `${label} stage marker ${index + 1} text width`).toBeGreaterThan(24)
     expect(metrics.gridTemplateColumns, `${label} stage marker ${index + 1} columns`).not.toContain(
       '0px'
@@ -267,9 +267,10 @@ const assertTimelineEmptyActionsAreReachable = async (page: Page, label: string)
   expect(metrics.hasActions, `${label} timeline empty actions`).toBe(true)
   expect(metrics.gap, `${label} timeline empty action proximity`).toBeLessThanOrEqual(18)
   expect(metrics.actionsTop, `${label} timeline empty action top`).toBeGreaterThanOrEqual(24)
-  expect(metrics.actionsBottomGap, `${label} timeline empty action bottom gap`).toBeGreaterThanOrEqual(
-    24
-  )
+  expect(
+    metrics.actionsBottomGap,
+    `${label} timeline empty action bottom gap`
+  ).toBeGreaterThanOrEqual(24)
   expect(metrics.buttonWidths, `${label} timeline empty action count`).toHaveLength(2)
   for (const [index, width] of metrics.buttonWidths.entries()) {
     expect(width, `${label} timeline empty action ${index + 1} width`).toBeGreaterThanOrEqual(40)
@@ -295,8 +296,10 @@ const assertLightPreviewHasMonitorDepth = async (page: Page, label: string) => {
     const frame = host.querySelector('[data-testid="area-preview-frame"]') ?? host
     const visibleSurface = frame.querySelector('.player-empty-state') ?? frame
     const emptyOverlay = host.querySelector('.monitor-empty-overlay') ?? host
-    const primaryAction = emptyOverlay.querySelector('.empty-actions button:first-of-type') ?? emptyOverlay
-    const secondaryAction = emptyOverlay.querySelector('.empty-actions button:nth-of-type(2)') ?? emptyOverlay
+    const primaryAction =
+      emptyOverlay.querySelector('.empty-actions button:first-of-type') ?? emptyOverlay
+    const secondaryAction =
+      emptyOverlay.querySelector('.empty-actions button:nth-of-type(2)') ?? emptyOverlay
     const style = getComputedStyle(frame)
     const surfaceStyle = getComputedStyle(visibleSurface)
     const overlayStyle = getComputedStyle(emptyOverlay)
@@ -318,7 +321,9 @@ const assertLightPreviewHasMonitorDepth = async (page: Page, label: string) => {
       ? 0.2126 * overlayBg.red + 0.7152 * overlayBg.green + 0.0722 * overlayBg.blue
       : Number.POSITIVE_INFINITY
     const primaryActionLuminance = primaryActionBg
-      ? 0.2126 * primaryActionBg.red + 0.7152 * primaryActionBg.green + 0.0722 * primaryActionBg.blue
+      ? 0.2126 * primaryActionBg.red +
+        0.7152 * primaryActionBg.green +
+        0.0722 * primaryActionBg.blue
       : Number.POSITIVE_INFINITY
     const secondaryActionLuminance = secondaryActionBg
       ? 0.2126 * secondaryActionBg.red +
@@ -348,17 +353,20 @@ const assertLightPreviewHasMonitorDepth = async (page: Page, label: string) => {
   expect(metrics.surfaceOpacity, `${label} visible preview surface opacity`).toBeGreaterThanOrEqual(
     0.9
   )
-  expect(metrics.surfaceLuminance, `${label} visible preview surface minimum luminance`).toBeGreaterThanOrEqual(
-    44
-  )
-  expect(metrics.surfaceLuminance, `${label} visible preview surface luminance`).toBeLessThanOrEqual(
-    80
-  )
+  expect(
+    metrics.surfaceLuminance,
+    `${label} visible preview surface minimum luminance`
+  ).toBeGreaterThanOrEqual(44)
+  expect(
+    metrics.surfaceLuminance,
+    `${label} visible preview surface luminance`
+  ).toBeLessThanOrEqual(80)
   expect(metrics.overlayLuminance, `${label} preview overlay luminance`).toBeLessThanOrEqual(80)
   expect(metrics.overlayOpacity, `${label} preview overlay opacity`).toBeLessThanOrEqual(0.22)
-  expect(metrics.primaryActionLuminance, `${label} primary action background luminance`).toBeLessThanOrEqual(
-    170
-  )
+  expect(
+    metrics.primaryActionLuminance,
+    `${label} primary action background luminance`
+  ).toBeLessThanOrEqual(170)
   expect(
     Math.abs(metrics.primaryActionLuminance - metrics.secondaryActionLuminance),
     `${label} empty action visual hierarchy`
@@ -377,10 +385,7 @@ test('Docker 实验室 compare 模式不应出现首屏内部裁切', async ({ p
 
   await page.getByTestId('btn-mode-color').click()
   await page.getByTestId('btn-lab-mode-compare').click()
-  await expect(page.getByTestId('area-comparison-lab')).toHaveAttribute(
-    'data-lab-mode',
-    'compare'
-  )
+  await expect(page.getByTestId('area-comparison-lab')).toHaveAttribute('data-lab-mode', 'compare')
 
   await assertNoVerticalOverflow(
     page.locator('.comparison-lab-pro .lab-stage-main'),
@@ -410,7 +415,10 @@ test('Docker 实验室 compare 模式不应出现首屏内部裁切', async ({ p
     page.getByTestId('btn-open-channel-panel'),
     '实验室 compare 渠道接入按钮'
   )
-  await assertInteractionTargetSize(page.locator('.comparison-lab-pro .sync-toggle'), '实验室 compare 同步开关')
+  await assertInteractionTargetSize(
+    page.locator('.comparison-lab-pro .sync-toggle'),
+    '实验室 compare 同步开关'
+  )
   await assertInteractionTargetSize(page.getByLabel('A 通道模型'), '实验室 compare A 模型选择器')
   await assertInteractionTargetSize(page.getByLabel('A 通道素材'), '实验室 compare A 素材选择器')
   await assertInteractionTargetSize(
@@ -503,15 +511,24 @@ test('Docker 部署态所有 WebUI 子页面入口应可达且不破版', async 
   await expect(page.locator('.pro-asset-panel[data-mode="actors"]')).toBeVisible()
   await expect(page.getByPlaceholder('演员名称，例如：都市女主角')).toBeVisible()
   await expect(page.getByRole('button', { name: '新增演员', exact: true })).toBeVisible()
-  await assertReadableTextContrast(page.getByRole('button', { name: '新增演员', exact: true }), '演员库主操作按钮')
+  await assertReadableTextContrast(
+    page.getByRole('button', { name: '新增演员', exact: true }),
+    '演员库主操作按钮'
+  )
   await assertNoHorizontalOverflow(leftPanel, '演员库面板')
 
   await sidebar.getByRole('button', { name: '动捕实验室', exact: true }).click()
   await expect(page.locator('.pro-asset-panel[data-mode="motion"]')).toBeVisible()
   await expect(page.getByRole('button', { name: '启动动捕', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '同步至演员', exact: true })).toBeVisible()
-  await assertReadableTextContrast(page.getByRole('button', { name: '启动动捕', exact: true }), '动捕启动按钮')
-  await assertReadableTextContrast(page.getByRole('button', { name: '同步至演员', exact: true }), '动捕同步按钮')
+  await assertReadableTextContrast(
+    page.getByRole('button', { name: '启动动捕', exact: true }),
+    '动捕启动按钮'
+  )
+  await assertReadableTextContrast(
+    page.getByRole('button', { name: '同步至演员', exact: true }),
+    '动捕同步按钮'
+  )
   await assertNoHorizontalOverflow(leftPanel, '动捕实验室面板')
 
   await page.getByTestId('btn-mode-audio').click()

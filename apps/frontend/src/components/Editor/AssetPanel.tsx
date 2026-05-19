@@ -535,21 +535,21 @@ const AssetPanel: React.FC<AssetPanelProps> = ({
                 (scene, idx) => {
                   const scenePrompt = scene.videoPrompt?.trim() || ''
                   return (
-                  <div className="scene-card" key={`${scene.title || 'scene'}-${idx}`}>
-                    <div className="scene-index">{idx + 1}</div>
-                    <div className="scene-info">
-                      <div className="scene-title">{scene.title || '未命名分镜'}</div>
-                      <div className="scene-meta">{scene.duration || 0}s</div>
+                    <div className="scene-card" key={`${scene.title || 'scene'}-${idx}`}>
+                      <div className="scene-index">{idx + 1}</div>
+                      <div className="scene-info">
+                        <div className="scene-title">{scene.title || '未命名分镜'}</div>
+                        <div className="scene-meta">{scene.duration || 0}s</div>
+                      </div>
+                      <button
+                        type="button"
+                        className="scene-add-btn"
+                        disabled={!scenePrompt}
+                        onClick={() => onDirectorPromptChange?.(scenePrompt)}
+                      >
+                        填入提示词
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className="scene-add-btn"
-                      disabled={!scenePrompt}
-                      onClick={() => onDirectorPromptChange?.(scenePrompt)}
-                    >
-                      填入提示词
-                    </button>
-                  </div>
                   )
                 }
               )}

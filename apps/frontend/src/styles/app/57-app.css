@@ -111,7 +111,10 @@
   color: #f7fbff;
 }
 
-html[data-theme='light'] body .panel-right[data-shell-role='inspector-console'] .inspector-console-empty {
+html[data-theme='light']
+  body
+  .panel-right[data-shell-role='inspector-console']
+  .inspector-console-empty {
   background:
     radial-gradient(circle at 50% 0, rgba(33, 212, 253, 0.1), transparent 36%),
     linear-gradient(145deg, rgba(7, 17, 18, 0.84), rgba(21, 28, 38, 0.72)) !important;

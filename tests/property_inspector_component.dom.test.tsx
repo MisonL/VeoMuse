@@ -87,7 +87,9 @@ describe('PropertyInspector DOM 交互', () => {
     expect(empty).toHaveAttribute('data-visual-system', 'nebula-flow')
     expect(view.getByText('Inspector Console')).toBeInTheDocument()
     expect(view.getByText('未选中轨道片段')).toBeInTheDocument()
-    expect(view.getByText('从时间轴选择镜头后，在这里校准风格、修复与交付参数。')).toBeInTheDocument()
+    expect(
+      view.getByText('从时间轴选择镜头后，在这里校准风格、修复与交付参数。')
+    ).toBeInTheDocument()
     expect(view.getByLabelText('属性检查链路')).toHaveTextContent('InspectTuneRender')
   })
 

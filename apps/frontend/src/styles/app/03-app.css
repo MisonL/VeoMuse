@@ -67,7 +67,8 @@
   color: var(--ap-text);
 }
 
-.pro-input-refined, .pro-textarea-refined {
+.pro-input-refined,
+.pro-textarea-refined {
   width: 100%;
   background: var(--ap-surface);
   border: 1px solid var(--ap-border);

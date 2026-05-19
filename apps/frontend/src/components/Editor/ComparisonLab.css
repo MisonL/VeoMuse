@@ -5051,12 +5051,11 @@
   gap: 5px;
   border: 1px solid color-mix(in srgb, var(--ap-accent) 28%, var(--ap-border));
   border-radius: 16px;
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--ap-accent-soft) 68%, transparent),
-      color-mix(in srgb, var(--ap-panel) 88%, transparent)
-    );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ap-accent-soft) 68%, transparent),
+    color-mix(in srgb, var(--ap-panel) 88%, transparent)
+  );
 }
 
 .channel-scope-summary strong {
@@ -5074,12 +5073,11 @@
 
 .channel-scope-summary.warning {
   border-color: color-mix(in srgb, #f59e0b 58%, var(--ap-border));
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, #f59e0b 16%, var(--ap-panel)),
-      color-mix(in srgb, var(--ap-panel) 92%, transparent)
-    );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #f59e0b 16%, var(--ap-panel)),
+    color-mix(in srgb, var(--ap-panel) 92%, transparent)
+  );
 }
 
 .channel-grid {
@@ -6771,8 +6769,8 @@
     display: grid !important;
     grid-template-columns: 1fr !important;
     grid-template-areas:
-      "results"
-      "command" !important;
+      'results'
+      'command' !important;
   }
 
   .comparison-lab-pro[data-lab-mode='compare'] .lab-split-engine {
@@ -6917,8 +6915,8 @@
   grid-template-columns: 1fr !important;
   grid-template-rows: minmax(0, 1fr) auto !important;
   grid-template-areas:
-    "results"
-    "command" !important;
+    'results'
+    'command' !important;
   gap: 6px !important;
   min-height: 0 !important;
   height: 100% !important;

@@ -1,5 +1,5 @@
 @media (min-width: 1181px) {
-.monitor-bottom-bar {
+  .monitor-bottom-bar {
     min-height: 46px !important;
     margin-top: 8px !important;
     padding: 0 12px !important;
@@ -9,18 +9,18 @@
     color: var(--ap-text) !important;
   }
 
-.transport-btn-main {
+  .transport-btn-main {
     width: 44px !important;
     height: 44px !important;
     background-color: var(--ap-accent) !important;
   }
 
-.transport-btn-small,
+  .transport-btn-small,
   .tool-btn-lite {
     color: var(--ap-text-dim) !important;
   }
 
-.pro-asset-panel,
+  .pro-asset-panel,
   .pro-inspector-inner,
   .inspector-empty-lite,
   .asset-empty-state,
@@ -35,7 +35,7 @@
     box-shadow: none !important;
   }
 
-.sidebar-tab,
+  .sidebar-tab,
   .asset-filter-chip,
   .empty-btn,
   .action-pill {
@@ -45,44 +45,44 @@
     box-shadow: none !important;
   }
 
-.sidebar-tab.active,
+  .sidebar-tab.active,
   .asset-filter-chip.active,
   .tool-btn-lite.active {
     background-color: var(--ap-accent) !important;
     color: #f6fbfa !important;
   }
 
-.timeline-container {
+  .timeline-container {
     height: clamp(184px, var(--timeline-h), 204px) !important;
     min-height: clamp(184px, var(--timeline-h), 204px) !important;
     max-height: clamp(184px, var(--timeline-h), 204px) !important;
     padding: 4px 8px 8px !important;
   }
 
-.timeline-body-refined {
+  .timeline-body-refined {
     padding-top: 4px !important;
     background-color: #0e1112 !important;
     border-color: rgba(219, 229, 226, 0.1) !important;
   }
 
-.timeline-ruler,
+  .timeline-ruler,
   .timeline-grid {
     opacity: 0.72 !important;
   }
 
-.timeline-empty-hint {
+  .timeline-empty-hint {
     bottom: 18px !important;
     width: min(100%, 440px) !important;
     padding: 8px 14px !important;
   }
 
-.timeline-empty-hint strong {
+  .timeline-empty-hint strong {
     font-size: 18px !important;
     line-height: 1.15 !important;
     letter-spacing: 0 !important;
   }
 
-.timeline-empty-hint p {
+  .timeline-empty-hint p {
     color: var(--ap-text-dim) !important;
   }
 }

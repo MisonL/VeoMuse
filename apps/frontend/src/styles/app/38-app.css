@@ -12,7 +12,7 @@
       linear-gradient(180deg, #e8e6dd 0%, #d9d5c7 100%) !important;
   }
 
-.os-header {
+  .os-header {
     min-height: 84px !important;
     max-height: 84px !important;
     padding: 8px 18px !important;
@@ -21,31 +21,31 @@
     align-items: center !important;
   }
 
-.brand-title {
+  .brand-title {
     font-size: clamp(30px, 2vw, 36px) !important;
     line-height: 0.92 !important;
     letter-spacing: 0.06em !important;
   }
 
-.brand-logo {
+  .brand-logo {
     width: 50px !important;
     height: 50px !important;
     border-radius: 13px !important;
   }
 
-.brand-block {
+  .brand-block {
     gap: 14px !important;
   }
 
-.brand-meta {
+  .brand-meta {
     gap: 6px !important;
   }
 
-.os-header-deck {
+  .os-header-deck {
     gap: 8px !important;
   }
 
-.os-main {
+  .os-main {
     gap: 12px !important;
     grid-template-columns:
       clamp(360px, 21vw, 390px)
@@ -55,106 +55,106 @@
       clamp(340px, 19.5vw, 370px) !important;
   }
 
-.panel-left,
+  .panel-left,
   .panel-right,
   .monitor-core,
   .timeline-container {
     border-radius: 22px !important;
   }
 
-.monitor-core {
+  .monitor-core {
     padding: 12px !important;
   }
 
-.monitor-content {
+  .monitor-content {
     padding: 8px !important;
   }
 
-.monitor-stage-shell,
+  .monitor-stage-shell,
   .monitor-stage-shell.is-idle,
   .monitor-stage-primary,
   .monitor-stage-shell.is-idle .monitor-stage-primary {
     gap: 8px !important;
   }
 
-.monitor-stage-primary,
+  .monitor-stage-primary,
   .monitor-stage-shell.is-idle .monitor-stage-primary {
     padding: 8px !important;
   }
 
-.preview-frame,
+  .preview-frame,
   .monitor-stage-shell.is-idle .preview-frame {
     border-radius: 22px !important;
   }
 
-.preview-frame .player-empty-state,
+  .preview-frame .player-empty-state,
   .monitor-stage-shell.is-idle .preview-frame .player-empty-state {
     inset: 12px !important;
     padding: 26px 32px !important;
     gap: 10px 22px !important;
   }
 
-.panel-right .inspector-scroll {
+  .panel-right .inspector-scroll {
     padding: 12px !important;
     overflow: hidden !important;
   }
 
-.panel-right .pro-inspector-inner {
+  .panel-right .pro-inspector-inner {
     height: 100% !important;
     display: grid !important;
     grid-template-rows: minmax(0, 218px) minmax(0, 1fr) !important;
     gap: 10px !important;
   }
 
-.panel-right .inspector-header {
+  .panel-right .inspector-header {
     min-height: 0 !important;
     padding: 14px !important;
     gap: 10px !important;
   }
 
-.panel-right .inspector-header-badge {
+  .panel-right .inspector-header-badge {
     width: 38px !important;
     height: 38px !important;
   }
 
-.panel-right .inspector-tabs {
+  .panel-right .inspector-tabs {
     gap: 8px !important;
   }
 
-.panel-right .inspector-tabs button {
+  .panel-right .inspector-tabs button {
     min-height: 50px !important;
     padding: 9px 10px !important;
   }
 
-.panel-right .inspector-context-bar {
+  .panel-right .inspector-context-bar {
     min-height: 0 !important;
     height: auto !important;
     padding: 14px !important;
   }
 
-.panel-right:has(.inspector-empty) .inspector-context-readouts,
+  .panel-right:has(.inspector-empty) .inspector-context-readouts,
   .panel-right:has(.inspector-empty) .inspector-body {
     display: none !important;
   }
 
-.preview-frame .player-empty-title {
+  .preview-frame .player-empty-title {
     max-width: 11ch !important;
     font-size: clamp(30px, 2.45vw, 42px) !important;
     line-height: 0.98 !important;
   }
 
-.preview-frame .player-empty-subtitle {
+  .preview-frame .player-empty-subtitle {
     max-width: 42ch !important;
     font-size: 13px !important;
     line-height: 1.55 !important;
   }
 
-.preview-frame .player-empty-readouts div {
+  .preview-frame .player-empty-readouts div {
     border-radius: 12px !important;
     padding: 10px 12px !important;
   }
 
-.timeline-container {
+  .timeline-container {
     height: var(--timeline-h) !important;
     max-height: var(--timeline-h) !important;
     display: grid !important;
@@ -163,40 +163,40 @@
     border-radius: 22px !important;
   }
 
-.timeline-container.is-idle .timeline-actions {
+  .timeline-container.is-idle .timeline-actions {
     height: 44px !important;
     min-height: 44px !important;
     padding: 4px 10px 6px !important;
     align-items: center !important;
   }
 
-.timeline-container.is-idle .timeline-command-deck {
+  .timeline-container.is-idle .timeline-command-deck {
     grid-template-columns: minmax(0, 1fr) max-content !important;
   }
 
-.timeline-container.is-idle .timeline-tools .tool-icon {
+  .timeline-container.is-idle .timeline-tools .tool-icon {
     width: 36px !important;
     min-width: 36px !important;
     min-height: 36px !important;
   }
 
-.timeline-body {
+  .timeline-body {
     height: auto !important;
     min-height: 0 !important;
   }
 
-.timeline-body.is-idle {
+  .timeline-body.is-idle {
     padding: 12px 12px 0 !important;
   }
 
-.timeline-body.is-idle .timeline-empty-state {
+  .timeline-body.is-idle .timeline-empty-state {
     position: relative !important;
     isolation: isolate !important;
     grid-template-columns: 62px minmax(420px, 1fr) minmax(420px, 520px) !important;
     grid-template-rows: 92px minmax(0, 1fr) !important;
     grid-template-areas:
-      "glyph copy readout"
-      "glyph copy readout" !important;
+      'glyph copy readout'
+      'glyph copy readout' !important;
     gap: 18px !important;
     min-height: 0 !important;
     height: 100% !important;
@@ -208,8 +208,8 @@
       linear-gradient(180deg, rgba(255, 251, 244, 0.98), rgba(246, 238, 224, 0.96)) !important;
   }
 
-.timeline-body.is-idle .timeline-empty-state::after {
-    content: "" !important;
+  .timeline-body.is-idle .timeline-empty-state::after {
+    content: '' !important;
     position: absolute !important;
     z-index: -1 !important;
     left: 102px !important;
@@ -219,8 +219,18 @@
     border-radius: 16px !important;
     border: 1px solid rgba(77, 59, 38, 0.1) !important;
     background:
-      linear-gradient(180deg, transparent 0 30px, rgba(15, 86, 107, 0.12) 30px 31px, transparent 31px 100%),
-      linear-gradient(180deg, transparent 0 56px, rgba(15, 86, 107, 0.1) 56px 57px, transparent 57px 100%),
+      linear-gradient(
+        180deg,
+        transparent 0 30px,
+        rgba(15, 86, 107, 0.12) 30px 31px,
+        transparent 31px 100%
+      ),
+      linear-gradient(
+        180deg,
+        transparent 0 56px,
+        rgba(15, 86, 107, 0.1) 56px 57px,
+        transparent 57px 100%
+      ),
       linear-gradient(90deg, rgba(77, 59, 38, 0.1) 0 1px, transparent 1px 100%) 0 0 / 76px 100%,
       linear-gradient(180deg, rgba(255, 250, 240, 0.64), rgba(232, 226, 211, 0.46)) !important;
     box-shadow:

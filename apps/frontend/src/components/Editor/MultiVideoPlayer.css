@@ -712,8 +712,7 @@ html[data-theme='light'] body .monitor-stage-shell.is-idle .preview-frame .playe
   background:
     radial-gradient(circle at 50% 42%, rgba(35, 124, 133, 0.22), transparent 46%),
     linear-gradient(rgba(168, 207, 199, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(168, 207, 199, 0.08) 1px, transparent 1px),
-    #2a3f3f !important;
+    linear-gradient(90deg, rgba(168, 207, 199, 0.08) 1px, transparent 1px), #2a3f3f !important;
   background-size:
     100% 100%,
     88px 88px,

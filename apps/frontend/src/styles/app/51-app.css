@@ -23,7 +23,9 @@
     background-image:
       linear-gradient(90deg, rgba(56, 45, 31, 0.15) 1px, transparent 1px),
       linear-gradient(180deg, rgba(56, 45, 31, 0.13) 1px, transparent 1px) !important;
-    background-size: 96px 100%, 100% 42px !important;
+    background-size:
+      96px 100%,
+      100% 42px !important;
     opacity: 1 !important;
   }
 
@@ -32,7 +34,9 @@
     background-image:
       linear-gradient(90deg, rgba(56, 45, 31, 0.15) 1px, transparent 1px),
       linear-gradient(180deg, rgba(56, 45, 31, 0.13) 1px, transparent 1px) !important;
-    background-size: 96px 100%, 100% 42px !important;
+    background-size:
+      96px 100%,
+      100% 42px !important;
     opacity: 1 !important;
   }
 
@@ -104,7 +108,9 @@
     background-image:
       linear-gradient(90deg, rgba(159, 214, 222, 0.12) 1px, transparent 1px),
       linear-gradient(180deg, rgba(219, 229, 226, 0.1) 1px, transparent 1px) !important;
-    background-size: 96px 100%, 100% 42px !important;
+    background-size:
+      96px 100%,
+      100% 42px !important;
     opacity: 1 !important;
   }
 
@@ -113,7 +119,9 @@
     background-image:
       linear-gradient(90deg, rgba(159, 214, 222, 0.12) 1px, transparent 1px),
       linear-gradient(180deg, rgba(219, 229, 226, 0.1) 1px, transparent 1px) !important;
-    background-size: 96px 100%, 100% 42px !important;
+    background-size:
+      96px 100%,
+      100% 42px !important;
     opacity: 1 !important;
   }
 
