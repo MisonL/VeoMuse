@@ -55,6 +55,6 @@
 
 - Workflow：`CI · Security Secrets Scan`
 - 轻量入口：`bun run security:scan`
-- 深度扫描：`gitleaks/gitleaks-action@v2`
+- 深度扫描：`docker run zricethezav/gitleaks:v8.30.1 detect`
 - SARIF：`gitleaks.sarif`
 - 通过标准：Bun Secrets Guard 与 Gitleaks Deep Scan 均为 success。

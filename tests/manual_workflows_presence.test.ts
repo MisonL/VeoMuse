@@ -25,7 +25,7 @@ describe('手动 workflows 存在性与关键字段守卫', () => {
     expect(workflow).toContain("if: ${{ steps.guard.outputs.enabled == 'true' }}")
     expect(workflow).toContain("if: ${{ !cancelled() && steps.guard.outputs.enabled == 'true' }}")
     expect(workflow).toContain('run: bun run e2e:regression:real -- --workers=1')
-    expect(workflow).toContain('uses: actions/upload-artifact@v4')
+    expect(workflow).toContain('uses: actions/upload-artifact@v7')
     expect(workflow).toContain('playwright-report/')
     expect(workflow).toContain('if-no-files-found: error')
   })
