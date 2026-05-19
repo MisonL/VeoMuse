@@ -24,9 +24,7 @@ export default defineConfig({
   retries: 0,
   workers: 1,
   outputDir: 'test-results/playwright-docker',
-  reporter: process.env.CI
-    ? [['github'], ['html', { open: 'never' }]]
-    : [['list'], ['html', { open: 'never' }]],
+  reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     ...devices['Desktop Chrome'],
     baseURL: FRONTEND_URL,
