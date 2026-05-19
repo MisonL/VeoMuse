@@ -692,3 +692,58 @@ Expected after completion:
 - Spec coverage: Task 1 covers CI Node 24 compatibility; Task 2 covers operational evidence indexing; Task 3 covers North Star runtime mapping; Task 4 covers deployed visual surface evidence; Task 5 covers closure and remote verification evidence.
 - Placeholder scan: this plan intentionally contains no placeholder sections or deferred implementation steps.
 - Type and naming consistency: all new test filenames, doc paths, commands, artifact paths, and workflow names are used consistently across tasks.
+
+## Actual Implementation Record
+
+Recorded on 2026-05-19.
+
+### Task 1: CI Node 24 Compatibility Guard
+
+- Commit: `56fc533 ci enable node 24 actions runtime`
+- Added `tests/github_actions_node24_guard.test.ts`.
+- Added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'` to all GitHub Actions workflows.
+- Preserved the existing Release Gate, Docker Delivery and manual workflow command paths.
+- Verification:
+  - `bun test tests/github_actions_node24_guard.test.ts --max-concurrency 1` failed first because workflows did not include the Node 24 opt-in.
+  - `bun test tests/github_actions_node24_guard.test.ts tests/manual_workflows_presence.test.ts --max-concurrency 1` passed.
+  - `git diff --check` passed.
+
+### Task 2: Operational Evidence Index
+
+- Commit: `7a51ce9 docs add operational evidence index`
+- Added `docs/OPERATIONAL_EVIDENCE.md`.
+- Added `tests/operational_evidence_docs.test.ts`.
+- Linked the evidence index from `README.md` and `docs/RELEASE_CHECKLIST.md`.
+- Verification:
+  - `bun test tests/operational_evidence_docs.test.ts --max-concurrency 1` failed first because the evidence index and links did not exist.
+  - `bun test tests/operational_evidence_docs.test.ts --max-concurrency 1` passed.
+  - `git diff --check` passed.
+
+### Task 3: North Star Operations Matrix
+
+- Commit: `541973b docs map north star operations evidence`
+- Added `docs/NORTH_STAR_OPERATIONS.md`.
+- Added `tests/north_star_operations_docs.test.ts`.
+- Linked the matrix from `docs/requirements/PROJECT_REQUIREMENTS.md`.
+- Verification:
+  - `bun test tests/north_star_operations_docs.test.ts --max-concurrency 1` failed first because the matrix and requirements link did not exist.
+  - `bun test tests/north_star_operations_docs.test.ts --max-concurrency 1` passed.
+  - `git diff --check` passed.
+
+### Task 4: Docker Nebula Core Surface Evidence
+
+- Commit: `a9bb81d test cover nebula docker surfaces`
+- Added `tests/e2e/docker/nebula-core-surfaces.spec.ts`.
+- Updated `docker:ui-smoke` and `tests/docker_ui_smoke_script.test.ts` so the root Docker UI smoke command explicitly includes the deployed Nebula core surface spec.
+- Verification:
+  - `bun test tests/docker_ui_smoke_script.test.ts --max-concurrency 1` failed first because the root command did not include `nebula-core-surfaces.spec.ts`.
+  - `env -u NO_COLOR PLAYWRIGHT_BASE_URL=http://127.0.0.1:18081 PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:18081 bunx playwright test -c playwright.docker.config.ts --project=docker-smoke-chromium --workers=1 --retries=0 tests/e2e/docker/nebula-core-surfaces.spec.ts` passed.
+  - `bun run docker:ui-smoke -- --workers=1 --retries=0` passed with 6/6 tests.
+  - `bun test tests/docker_ui_smoke_script.test.ts --max-concurrency 1` passed.
+  - `git diff --check` passed.
+
+### Task 5: Closure Status
+
+- Local closure is in progress.
+- Final local gates and remote CI results must be recorded in the final handoff after this record is committed and pushed.
+- Real E2E remains a separate credential-gated check and is only complete after `release:gate:real` or external real acceptance runs with real provider credentials.
