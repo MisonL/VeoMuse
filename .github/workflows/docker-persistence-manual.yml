@@ -3,6 +3,9 @@ name: Manual · Docker Persistence Drill
 on:
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   drill:
     name: Docker Persistence Drill

@@ -3,6 +3,9 @@ name: Manual · DB Repair Drill
 on:
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   drill:
     name: DB Repair Drill

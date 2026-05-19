@@ -3,6 +3,9 @@ name: Manual · Collaboration WS Stress
 on:
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
 jobs:
   stress:
     name: Collaboration WS Stress
